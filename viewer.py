@@ -3,7 +3,7 @@ from tkinter import Tk, Canvas
 from PIL import Image, ImageTk, ImageDraw
 import os.path
 from pathlib import Path
-debug = True
+debug = False
 ICONSPACE = 30
 
 #  fits width and height to tkinter window
@@ -122,7 +122,7 @@ def drawWrapper(event):
     imageLoader(files[curInd], drawtop)
 
 if len(argv) > 1 or debug:
-    image = Path(r"C:\Users\jimde\OneDrive\Pictures\deve_meme.png") if debug else Path(argv[1])
+    image = Path(r"C:\path\for\testing") if debug else Path(argv[1])
     # initialize main window + important data
     drawtop = False  # bool if menu at top is drawn
     cache = dict()  # cache calculated data on images
