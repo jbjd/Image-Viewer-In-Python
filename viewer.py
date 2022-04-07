@@ -1,5 +1,4 @@
 #  example compile code: python -m nuitka --windows-disable-console viewer.py  (pyinstaller is very slow, please use nuitka if you plan to compile it yourself)
-from operator import index
 from sys import argv
 from tkinter import Tk, Canvas
 from PIL import Image, ImageTk, ImageDraw
@@ -7,6 +6,7 @@ from os import path
 from send2trash import send2trash
 from pathlib import Path
 from ctypes import windll
+from cython import int, cfunc
 windll.shcore.SetProcessDpiAwareness(1)
 debug = False
 SPACE = 32
@@ -15,16 +15,18 @@ ICONCOL = (100, 104, 102)
 ICONHOV = (95, 92, 88)
 
 #  fits width and height to tkinter window
-def dimensionFinder(w, h):
+@cfunc
+def dimensionFinder(w: int, h: int) -> tuple[int, int]:
     global app
-     
+    height: int
+    width: int
     height = app.winfo_height()
     width = int(w * (height/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
     return (width, height) if width <= app.winfo_width() else (app.winfo_width(), int(h * (app.winfo_width()/w)))
     
 # loads image path
-def imageLoader(path, drawtop):
+def imageLoader(path, drawtop) -> None:
     if not path:
         return
     global image
@@ -37,6 +39,8 @@ def imageLoader(path, drawtop):
     global trashb
 
     if path not in cache:
+        w: int
+        h: int
         image = Image.open(path)
         w, h = image.size
         w, h = dimensionFinder(w, h)  # get resized dimensions for fullscreen view
@@ -69,48 +73,48 @@ def imageLoader(path, drawtop):
         canvas.tag_bind(t, '<Leave>', _removeHoverTrash)
 
 # series of functions to change icons on hover
-def _removeHoverTrash(event):
+def _removeHoverTrash(event) -> None:
     global canvas
     global trashb
     canvas.itemconfig('trasher', image=trashb)
 
-def _hoverTrash(event):
+def _hoverTrash(event) -> None:
     global canvas
     global hoverTrash
     canvas.itemconfig('trasher', image=hoverTrash)
 
-def _removeHoverMini(event):
+def _removeHoverMini(event) -> None:
     global canvas
     global minib
     canvas.itemconfig('minimizer', image=minib)
 
-def _hoverMini(event):
+def _hoverMini(event) -> None:
     global canvas
     global hoveredMini
     canvas.itemconfig('minimizer', image=hoveredMini)
 
-def _removeHoverExit(event):
+def _removeHoverExit(event) -> None:
     global canvas
     global exitb
     canvas.itemconfig('exiter', image=exitb)
 
-def _hoverExit(event):
+def _hoverExit(event) -> None:
     global canvas
     global hoveredExit
     canvas.itemconfig('exiter', image=hoveredExit)
 
 # minimizes app
-def _minimize(event):
+def _minimize(event) -> None:
     global app
     app.iconify()
 
 # closes app    
-def _exit(event):
+def _exit(event) -> None:
     global app
     app.quit()
 
 # move between images when mouse scolls
-def _mouseScroll(event):
+def _mouseScroll(event) -> None:
     global curInd
     global files
     global secondToLast
@@ -123,12 +127,12 @@ def _mouseScroll(event):
         imageLoader(files[curInd], drawtop)
 
 # clear cached images if window gets resized
-def _resize(event):
+def _resize(event) -> None:
     global cache
     cache = dict()
 
 # ask user if they want to delete image
-def _trashWindow(event):
+def _trashWindow(event) -> None:
     global curInd
     global files
     global drawtop
@@ -141,7 +145,7 @@ def _trashWindow(event):
     imageLoader(files[curInd], drawtop)
 
 # skip clicks to menu, draws menu if not present
-def _click(event):
+def _click(event) -> None:
     global curInd
     global files
     global drawtop
@@ -151,14 +155,14 @@ def _click(event):
     imageLoader(files[curInd], drawtop)
 
 # sometimes (inconsistently) goes blank when opening from taskbar. This redraws to prevent that
-def drawWrapper(event):
+def drawWrapper(event) -> None:
     global curInd
     global files
     global drawtop
     imageLoader(files[curInd], drawtop)
 
 if len(argv) > 1 or debug:
-    image = Path(r"C:\somewhere\example.png") if debug else Path(argv[1])
+    image = Path(r"C:\place\thing.png") if debug else Path(argv[1])
     # initialize main window + important data
     drawtop = False  # bool if menu at top is drawn
     cache = dict()  # cache calculated data on images
