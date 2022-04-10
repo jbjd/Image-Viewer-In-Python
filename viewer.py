@@ -1,4 +1,4 @@
-#  example compile code: python -m nuitka --windows-disable-console viewer.py  (pyinstaller is very slow, please use nuitka if you plan to compile it yourself)
+#  example compile code: python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon.ico" viewer.py  (pyinstaller is very slow, please use nuitka if you plan to compile it yourself)
 from sys import argv
 from tkinter import Tk, Canvas, Entry
 from PIL import Image, ImageTk, ImageDraw, ImageFont
@@ -15,11 +15,11 @@ SPACE = 32
 LINECOL = (170, 170, 170)
 ICONCOL = (100, 104, 102)
 ICONHOV = (95, 92, 88)
-TOPCOL = (70, 70, 70, 160)
+TOPCOL = (60, 60, 60, 170)
 FILETYPE = {".png", ".jpg", ".jpeg", ".webp"}
 DROPDOWNWIDTH = 190
 DROPDOWNHEIGHT = 110
-FONT =('cambria 11')
+FONT =('arial 11')
 
 #  fits width and height to tkinter window
 @cfunc
@@ -35,7 +35,7 @@ def dimensionFinder(w: int, h: int, dimw: int, dimh: int) -> tuple[int, int]:
 def imageLoader(path) -> None:
     if not path:
         return
-    global image, canvas, topbar, cache, app, drawtop, dropDown, trueWidth, trueHeight, trueSize  # variables for drawing
+    global image, canvas, topbar, cache, app, drawtop, dropDown, trueWidth, trueHeight, trueSize, loc  # variables for drawing
     global exitb, minib, trashb, dropb, upb, renameb  # images for UI
  
     try:
@@ -62,8 +62,9 @@ def imageLoader(path) -> None:
             canvas.create_image(data[1], data[2], image=data[0], anchor='nw')
         if drawtop:
             canvas.create_image(0, 0, image=topbar, anchor='nw')
-            text = canvas.create_text(36, 5, text=path.name, fill="white", anchor='nw', font=FONT)
-            r = canvas.create_image(canvas.bbox(text)[2], 0, image=renameb, anchor='nw', tag='renamer')
+            text = canvas.create_text(36, 5, text=path.name, fill="white", anchor='nw', font=FONT, tag="text")
+            loc = canvas.bbox(text)[2]
+            r = canvas.create_image(loc, 0, image=renameb, anchor='nw', tag='renamer')
             b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
             b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
             t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
@@ -213,11 +214,11 @@ def _drawWrapper(event) -> None:
 
 # opens tkinter entry to accept user input
 def _renameWindow(event) -> None:
-    global canvas, app, entryText
+    global canvas, app, entryText, loc
     entryText = Entry(app, font=FONT)
     entryText.insert('end', savedText)
     entryText.bind('<Return>', _renameFile)
-    a = canvas.create_window(canvas.bbox('renamer')[0]+SPACE+10, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+    canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
     
 # asks os to rename file and changes position in list to new location
 def _renameFile(event):
@@ -243,18 +244,18 @@ def deleteRenameBox():
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\example\some.png") if DEBUG else Path(argv[1])
+        image = Path(r"C:\a\b\c.png") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
         drawtop, dropDown = False, False  # if given menu is drawn
         dropRef, dropImage, entryText = None, None, None  # refrences to items on menu
         savedText = ''
-        fnt = ImageFont.truetype("C:/Windows/Fonts/Calibri.ttf", 22)  # font for drawing on images
+        fnt = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
         trueWidth: int
         trueHeight: int
         trueSize: int
-        trueWidth, trueHeight, trueSize = 0, 0, 0  # true data of current image
+        trueWidth, trueHeight, trueSize, loc = 0, 0, 0, 0  # true data of current image
         isGif = None  # None if current image not gif, else id for animation loop
         cache = dict()  # cache rendered images
         app = Tk()
@@ -267,7 +268,7 @@ if __name__ == "__main__":
 
         # make assests for menu
         topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
-        dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (50, 50, 50, 160))
+        dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
         exitb = ImageTk.PhotoImage(Image.new('RGBA', (SPACE, SPACE), (190, 40, 40)))
         hoveredExit = Image.new('RGBA', (SPACE, SPACE), (180, 25, 20))
         draw = ImageDraw.Draw(hoveredExit) 
