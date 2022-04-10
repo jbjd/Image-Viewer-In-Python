@@ -1,20 +1,25 @@
 #  example compile code: python -m nuitka --windows-disable-console viewer.py  (pyinstaller is very slow, please use nuitka if you plan to compile it yourself)
 from sys import argv
-from tkinter import Tk, Canvas
+from tkinter import Tk, Canvas, Entry
 from PIL import Image, ImageTk, ImageDraw, ImageFont
-from os import path, stat
+from os import path, stat, rename
 from send2trash import send2trash
 from pathlib import Path
 from ctypes import windll
 from cython import int, cfunc
-windll.shcore.SetProcessDpiAwareness(1)
-debug = False
+from bisect import insort_right
+
+# constants
+DEBUG = False
 SPACE = 32
 LINECOL = (170, 170, 170)
 ICONCOL = (100, 104, 102)
 ICONHOV = (95, 92, 88)
+TOPCOL = (70, 70, 70, 160)
 FILETYPE = {".png", ".jpg", ".jpeg", ".webp"}
 DROPDOWNWIDTH = 190
+DROPDOWNHEIGHT = 110
+FONT =('cambria 11')
 
 #  fits width and height to tkinter window
 @cfunc
@@ -31,7 +36,7 @@ def imageLoader(path) -> None:
     if not path:
         return
     global image, canvas, topbar, cache, app, drawtop, dropDown, trueWidth, trueHeight, trueSize  # variables for drawing
-    global exitb, minib, trashb, dropb, upb  # images for UI
+    global exitb, minib, trashb, dropb, upb, renameb  # images for UI
  
     try:
         image = Image.open(path)
@@ -57,19 +62,23 @@ def imageLoader(path) -> None:
             canvas.create_image(data[1], data[2], image=data[0], anchor='nw')
         if drawtop:
             canvas.create_image(0, 0, image=topbar, anchor='nw')
-            canvas.create_text(36, 5, text=path.name, fill="white", anchor='nw', font=('cambria 11'))
+            text = canvas.create_text(36, 5, text=path.name, fill="white", anchor='nw', font=FONT)
+            r = canvas.create_image(canvas.bbox(text)[2], 0, image=renameb, anchor='nw', tag='renamer')
             b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
             b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
             t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
             canvas.tag_bind(b, '<Button-1>', _exit)
             canvas.tag_bind(b2,'<Button-1>', _minimize)
             canvas.tag_bind(t, '<Button-1>', _trashWindow)
+            canvas.tag_bind(r, '<Button-1>', _renameWindow)
             canvas.tag_bind(b, '<Enter>', _hoverExit)
             canvas.tag_bind(b, '<Leave>', _removeHoverExit)
             canvas.tag_bind(b2,'<Enter>', _hoverMini)
             canvas.tag_bind(b2,'<Leave>', _removeHoverMini)
             canvas.tag_bind(t, '<Enter>', _hoverTrash)
             canvas.tag_bind(t, '<Leave>', _removeHoverTrash)
+            canvas.tag_bind(r, '<Enter>', _hoverRename)
+            canvas.tag_bind(r, '<Leave>', _removeHoverRename)
             if dropDown:
                 d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=upb, anchor='nw', tag='dropper')
                 createDropbar()
@@ -83,6 +92,14 @@ def imageLoader(path) -> None:
     
 
 # series of functions to change icons on hover
+def _removeHoverRename(event) -> None:
+    global canvas, renameb
+    canvas.itemconfig('renamer', image=renameb)
+
+def _hoverRename(event) -> None:
+    global canvas, hoverRename
+    canvas.itemconfig('renamer', image=hoverRename)
+
 def _removeHoverDrop(event) -> None:
     global canvas,  trashb, dropDown
     switch = upb if dropDown else dropb
@@ -119,11 +136,11 @@ def _hoverExit(event) -> None:
 
 # switches if dropdown is drawn or not
 def _toggleDrop(event) -> None:
-    global dropDown, canvas, dropRef
+    global dropDown, canvas
     dropDown = not dropDown
     _hoverDrop(event)
     if dropDown: createDropbar()
-    else: canvas.delete(dropRef)
+    else: canvas.delete("dropped")
 
 def createDropbar() -> None:
     global canvas, dropbar, dropRef, dropImage, fnt, trueWidth, trueHeight, trueSize
@@ -145,7 +162,9 @@ def _exit(event) -> None:
 
 # move between images when mouse scolls
 def _mouseScroll(event) -> None:
-    global curInd, files, app, isGif
+    global curInd, files, app, isGif, entryText
+    if entryText is not None:
+        deleteRenameBox()
     if isGif is not None:  # cancel gif animation before drawing new image
         isGif = None
         app.after_cancel()
@@ -168,7 +187,7 @@ def _trashWindow(event) -> None:
     removeAndMove()
 
 # remove from list and move to next image
-def removeAndMove():
+def removeAndMove() -> None:
     global files, curInd, cache
     if files[curInd] in cache:
         del cache[files[curInd]]
@@ -179,10 +198,11 @@ def removeAndMove():
 
 # skip clicks to menu, draws menu if not present
 def _click(event) -> None:
-    global curInd, files, drawtop
-    if drawtop and event.y <= SPACE:  
+    global curInd, files, drawtop, dropDown, app
+    if drawtop and (event.y <= SPACE or (dropDown and event.x > app.winfo_width()-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)): 
         return
     drawtop = not drawtop
+    deleteRenameBox()
     imageLoader(files[curInd])
 
 # sometimes (inconsistently) goes blank when opening from taskbar. This redraws to prevent that
@@ -190,14 +210,49 @@ def _drawWrapper(event) -> None:
     global curInd, files
     imageLoader(files[curInd])
 
+# opens tkinter entry to accept user input
+def _renameWindow(event) -> None:
+    global canvas, app, entryText
+    entryText = Entry(app, font=FONT)
+    entryText.insert('end', savedText)
+    entryText.bind('<Return>', _renameFile)
+    a = canvas.create_window(canvas.bbox('renamer')[0]+SPACE+10, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+    
+# asks os to rename file and changes position in list to new location
+def _renameFile(event):
+    global entryText, files, curInd
+    if entryText is None: return
+    newname, oldname = str(files[curInd].parent)+'/'+entryText.get()+str(files[curInd].suffix), files[curInd]
+    rename(files[curInd], newname) 
+    newname = Path(newname)
+    del files[curInd]
+    if newname < oldname: insort_right(files, newname, hi=curInd)
+    else: insort_right(files, newname, lo=curInd)
+    #curInd = files.index(newname)  # uncomment if you want to move with image when renamed instead of moving to next image
+    deleteRenameBox()
+    imageLoader(files[curInd])
+
+def deleteRenameBox():
+    global canvas, entryText, savedText
+    if entryText is None: return
+    savedText = entryText.get()  # comment this to remove text saving in rename window
+    canvas.delete('userinput')
+    entryText.destroy()
+    entryText = None
+
 if __name__ == "__main__":
-    if len(argv) > 1 or debug:
-        image = Path(r"C:\place\meme.png") if debug else Path(argv[1])
+    if len(argv) > 1 or DEBUG:
+        image = Path(r"C:/dir/dur.png") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
+        windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
         drawtop, dropDown = False, False  # if given menu is drawn
-        dropRef, dropImage = None, None  # refrences to dropdown menu on canvas and image thats drawn
+        dropRef, dropImage, entryText = None, None, None  # refrences to items on menu
+        savedText = ''
         fnt = ImageFont.truetype("C:/Windows/Fonts/Calibri.ttf", 22)  # font for drawing on images
+        trueWidth: int
+        trueHeight: int
+        trueSize: int
         trueWidth, trueHeight, trueSize = 0, 0, 0  # true data of current image
         isGif = None  # None if current image not gif, else id for animation loop
         cache = dict()  # cache rendered images
@@ -210,8 +265,8 @@ if __name__ == "__main__":
         app.update()  # updates winfo width and height to the current size, this is necessary
 
         # make assests for menu
-        topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), (70, 70, 70, 160)))
-        dropbar = Image.new('RGBA', (DROPDOWNWIDTH, 110), (50, 50, 50, 160))
+        topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
+        dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (50, 50, 50, 160))
         exitb = ImageTk.PhotoImage(Image.new('RGBA', (SPACE, SPACE), (190, 40, 40)))
         hoveredExit = Image.new('RGBA', (SPACE, SPACE), (180, 25, 20))
         draw = ImageDraw.Draw(hoveredExit) 
@@ -264,6 +319,19 @@ if __name__ == "__main__":
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
         hoverUp = ImageTk.PhotoImage(draw._image)
+        renameb = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
+        draw = ImageDraw.Draw(renameb) 
+        draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
+        draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
+        draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
+        renameb = ImageTk.PhotoImage(draw._image)
+        hoverRename = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
+        draw = ImageDraw.Draw(hoverRename) 
+        draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
+        draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
+        draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
+        draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
+        hoverRename = ImageTk.PhotoImage(draw._image)
 
         # events based on input
         app.bind("<MouseWheel>", _mouseScroll)
