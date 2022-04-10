@@ -1,7 +1,7 @@
 # Image-Viewer-In-Python
 a Lightweight Image Viewer written in Python 3.9
 
-An image viewer with the intend of being fast and simple; Images are always fullscreened and in high quality. Currently includes a button for deletion, renaming,
+An image viewer with the intent of being fast and simple; Images are always fullscreened and in high quality. Currently includes a button for deletion, renaming,
 and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click, so nothing clutters the screen.
 
 Other features I plan to add:
