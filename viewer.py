@@ -182,7 +182,8 @@ def _resize(event) -> None:
 
 # delete image
 def _trashWindow(event) -> None:
-    global curInd, files
+    global curInd, files, image
+    image = None  # error if file opened by image variable and try to delete, so set to none
     send2trash(files[curInd])
     removeAndMove()
 
@@ -222,7 +223,7 @@ def _renameWindow(event) -> None:
 def _renameFile(event):
     global entryText, files, curInd
     if entryText is None: return
-    newname, oldname = str(files[curInd].parent)+'/'+entryText.get()+str(files[curInd].suffix), files[curInd]
+    newname, oldname = str(files[curInd].parent)+'/'+entryText.get().strip()+str(files[curInd].suffix), files[curInd]
     rename(files[curInd], newname) 
     newname = Path(newname)
     del files[curInd]
@@ -242,7 +243,7 @@ def deleteRenameBox():
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:/dir/dur.png") if DEBUG else Path(argv[1])
+        image = Path(r"C:\example\some.png") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
