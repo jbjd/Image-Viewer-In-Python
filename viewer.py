@@ -6,88 +6,62 @@ from os import path, stat, rename
 from send2trash import send2trash
 from pathlib import Path
 from ctypes import windll
-from cython import int, cfunc
-from bisect import insort_right
+import cython
+from natsort import os_sorted
 
 # constants
-DEBUG = False
-SPACE = 32
-LINECOL = (170, 170, 170)
-ICONCOL = (100, 104, 102)
-ICONHOV = (95, 92, 88)
-TOPCOL = (60, 60, 60, 170)
-FILETYPE = {".png", ".jpg", ".jpeg", ".webp"}
-DROPDOWNWIDTH = 190
-DROPDOWNHEIGHT = 110
-FONT =('arial 11')
+DEBUG: cython.bint = False
+SPACE: cython.int = 32
+LINECOL: tuple = (170, 170, 170)
+ICONCOL: tuple = (100, 104, 102)
+ICONHOV: tuple = (95, 92, 88)
+TOPCOL: tuple = (60, 60, 60, 170)
+FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp"}
+DROPDOWNWIDTH: cython.int = 190
+DROPDOWNHEIGHT: cython.int = 110
+FONT: tuple =('arial 11')
+cached = cython.struct(
+    w=cython.int, h=cython.int, tw=cython.int, th=cython.int, ts=str, im=ImageTk)
 
 #  fits width and height to tkinter window
-@cfunc
-def dimensionFinder(w: int, h: int, dimw: int, dimh: int) -> tuple[int, int]:
-    height: int
-    width: int
-    height = dimh
-    width = int(w * (height/h))
+@cython.cfunc
+def dimensionFinder(w: cython.int, h: cython.int, dimw: cython.int, dimh: cython.int) -> tuple[cython.int, cython.int]:
+    height: cython.int = dimh
+    width: cython.int = int(w * (height/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
     return (width, height) if width <= dimw else (dimw, int(h * (dimw/w)))
     
 # loads image path
-def imageLoader(path) -> None:
-    if not path:
-        return
+def imageLoader(path: Path) -> None:
+    if not path: return
     global image, canvas, topbar, cache, app, drawtop, dropDown, trueWidth, trueHeight, trueSize, loc  # variables for drawing
     global exitb, minib, trashb, dropb, upb, renameb  # images for UI
  
     try:
-        image = Image.open(path)
+        temp = Image.open(path)
         if path not in cache:
-            w: int
-            h: int
-            trueWidth, trueHeight = image.size
-            trueSize = round(stat(path).st_size/1000)
-            trueSize = str(round(trueSize/1000, 2))+"mb" if trueSize > 999 else str(trueSize)+"kb"
+            trueWidth, trueHeight = temp.size
+            intSize: cython.int = round(stat(path).st_size/1000)
+            trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
+            w: cython.int
+            h: cython.int
             w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())  # get resized dimensions for fullscreen view
             
-            image = image.resize((w, h), Image.ANTIALIAS)
+            image = temp.resize((w, h), Image.ANTIALIAS)
             image = ImageTk.PhotoImage(image)
             w = int((app.winfo_width()-w)/2)
             h = int((app.winfo_height()-h)/2)
             canvas.create_rectangle(0, 0, app.winfo_width(), app.winfo_height(), fill='black')
             canvas.create_image(w, h, image=image, anchor='nw')
-            cache[path] = (image, w, h, (trueWidth, trueHeight, trueSize))
+            cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=image)
+            temp.close()
         else:
             data = cache[path]
-            trueWidth, trueHeight, trueSize = data[3]
+            trueWidth, trueHeight, trueSize = data.tw, data.th, data.ts
             canvas.create_rectangle(0, 0, app.winfo_width(), app.winfo_height(), fill='black')
-            canvas.create_image(data[1], data[2], image=data[0], anchor='nw')
+            canvas.create_image(data.w, data.h, image=data.im, anchor='nw')
         if drawtop:
-            canvas.create_image(0, 0, image=topbar, anchor='nw')
-            text = canvas.create_text(36, 5, text=path.name, fill="white", anchor='nw', font=FONT, tag="text")
-            loc = canvas.bbox(text)[2]
-            r = canvas.create_image(loc, 0, image=renameb, anchor='nw', tag='renamer')
-            b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
-            b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
-            t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
-            canvas.tag_bind(b, '<Button-1>', _exit)
-            canvas.tag_bind(b2,'<Button-1>', _minimize)
-            canvas.tag_bind(t, '<Button-1>', _trashWindow)
-            canvas.tag_bind(r, '<Button-1>', _renameWindow)
-            canvas.tag_bind(b, '<Enter>', _hoverExit)
-            canvas.tag_bind(b, '<Leave>', _removeHoverExit)
-            canvas.tag_bind(b2,'<Enter>', _hoverMini)
-            canvas.tag_bind(b2,'<Leave>', _removeHoverMini)
-            canvas.tag_bind(t, '<Enter>', _hoverTrash)
-            canvas.tag_bind(t, '<Leave>', _removeHoverTrash)
-            canvas.tag_bind(r, '<Enter>', _hoverRename)
-            canvas.tag_bind(r, '<Leave>', _removeHoverRename)
-            if dropDown:
-                d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=upb, anchor='nw', tag='dropper')
-                createDropbar()
-            else:
-                d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper')
-            canvas.tag_bind(d, '<Enter>', _hoverDrop)
-            canvas.tag_bind(d, '<Leave>', _removeHoverDrop)
-            canvas.tag_bind(d, '<Button-1>', _toggleDrop)
+            drawTop()
     except(FileNotFoundError):
         removeAndMove()
     
@@ -143,14 +117,44 @@ def _toggleDrop(event) -> None:
     if dropDown: createDropbar()
     else: canvas.delete("dropped")
 
+def drawTop() -> None:
+    global canvas, loc, exitb, minib, trashb, dropb, upb, renameb, files, curInd
+    canvas.create_image(0, 0, image=topbar, anchor='nw')
+    text = canvas.create_text(36, 5, text=files[curInd].name, fill="white", anchor='nw', font=FONT, tag="text")
+    loc = canvas.bbox(text)[2]
+    r = canvas.create_image(loc, 0, image=renameb, anchor='nw', tag='renamer')
+    b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
+    b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
+    t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
+    canvas.tag_bind(b, '<Button-1>', _exit)
+    canvas.tag_bind(b2,'<Button-1>', _minimize)
+    canvas.tag_bind(t, '<Button-1>', _trashWindow)
+    canvas.tag_bind(r, '<Button-1>', _renameWindow)
+    canvas.tag_bind(b, '<Enter>', _hoverExit)
+    canvas.tag_bind(b, '<Leave>', _removeHoverExit)
+    canvas.tag_bind(b2,'<Enter>', _hoverMini)
+    canvas.tag_bind(b2,'<Leave>', _removeHoverMini)
+    canvas.tag_bind(t, '<Enter>', _hoverTrash)
+    canvas.tag_bind(t, '<Leave>', _removeHoverTrash)
+    canvas.tag_bind(r, '<Enter>', _hoverRename)
+    canvas.tag_bind(r, '<Leave>', _removeHoverRename)
+    if dropDown:
+        d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=upb, anchor='nw', tag='dropper')
+        createDropbar()
+    else:
+        d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper')
+    canvas.tag_bind(d, '<Enter>', _hoverDrop)
+    canvas.tag_bind(d, '<Leave>', _removeHoverDrop)
+    canvas.tag_bind(d, '<Button-1>', _toggleDrop)
+
 def createDropbar() -> None:
-    global canvas, dropbar, dropRef, dropImage, fnt, trueWidth, trueHeight, trueSize
+    global canvas, dropbar, dropImage, fnt, trueWidth, trueHeight, trueSize
     draw = ImageDraw.Draw(dropbar.copy())
-    draw.text((10, 25), "Pixels: "+str(trueWidth)+'x'+str(trueHeight), font=fnt, fill="white")
-    draw.text((10, 60), "Size: "+trueSize, font=fnt, fill="white")
+    draw.text((10, 25), f"Pixels: {trueWidth}x{trueHeight}", font=fnt, fill="white")
+    draw.text((10, 60), f"Size: {trueSize}", font=fnt, fill="white")
     dropImage = ImageTk.PhotoImage(draw._image)
-    dropRef = canvas.create_image(app.winfo_width()-DROPDOWNWIDTH, SPACE, image=dropImage, anchor='nw', tag="dropped")
-    #canvas.create_text(app.winfo_width()-DROPDOWNWIDTH+10, 5, text="test", fill="white", anchor='nw', font=('cambria 10'))
+    canvas.create_image(app.winfo_width()-DROPDOWNWIDTH, SPACE, image=dropImage, anchor='nw', tag="dropped")
+
 # minimizes app
 def _minimize(event) -> None:
     global app
@@ -184,7 +188,6 @@ def _resize(event) -> None:
 # delete image
 def _trashWindow(event) -> None:
     global curInd, files, image
-    image = None  # error if file opened by image variable and try to delete, so set to none
     send2trash(files[curInd])
     removeAndMove()
 
@@ -205,7 +208,8 @@ def _click(event) -> None:
         return
     drawtop = not drawtop
     deleteRenameBox()
-    imageLoader(files[curInd])
+    if drawtop: drawTop()
+    else : imageLoader(files[curInd])
 
 # sometimes (inconsistently) goes blank when opening from taskbar. This redraws to prevent that
 def _drawWrapper(event) -> None:
@@ -224,15 +228,22 @@ def _renameWindow(event) -> None:
 def _renameFile(event):
     global entryText, files, curInd
     if entryText is None: return
-    newname, oldname = str(files[curInd].parent)+'/'+entryText.get().strip()+str(files[curInd].suffix), files[curInd]
-    rename(files[curInd], newname) 
-    newname = Path(newname)
-    del files[curInd]
-    if newname < oldname: insort_right(files, newname, hi=curInd)
-    else: insort_right(files, newname, lo=curInd)
-    #curInd = files.index(newname)  # uncomment if you want to move with image when renamed instead of moving to next image
-    deleteRenameBox()
-    imageLoader(files[curInd])
+    newname = str(files[curInd].parent)+'/'+entryText.get().strip()+str(files[curInd].suffix)
+    try:
+        rename(files[curInd], newname) 
+        newname = Path(newname)
+        del files[curInd]
+        files.append(newname)
+        files = os_sorted(files)  # less efficent than insertion, but os sorting not same as normal sorting...
+        deleteRenameBox()
+        imageLoader(files[curInd])
+    except Exception as e:
+        entryText.config(bg='#e6505f')  # flash red to tell user can't rename
+        app.after(400, revert)
+
+def revert() -> None:
+    global entryText
+    entryText.config(bg="White")
 
 def deleteRenameBox():
     global canvas, entryText, savedText
@@ -244,22 +255,25 @@ def deleteRenameBox():
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\a\b\c.png") if DEBUG else Path(argv[1])
+        image: Path = Path(r"C:\test\path.jpeg") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
-        drawtop, dropDown = False, False  # if given menu is drawn
-        dropRef, dropImage, entryText = None, None, None  # refrences to items on menu
-        savedText = ''
+        drawtop: cython.bint = False  # if drawn
+        dropDown: cython.bint = False  # if drawn
+        entryText: Entry = None  # input box where user renames file
+        dropImage: ImageTk.PhotoImage = None  # refrences to items on menu
+        savedText: str = ''
         fnt = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
-        trueWidth: int
-        trueHeight: int
-        trueSize: int
-        trueWidth, trueHeight, trueSize, loc = 0, 0, 0, 0  # true data of current image
+        # data on current image
+        trueWidth: cython.int = 0 
+        trueHeight: cython.int = 0
+        trueSize: str = ''
+        loc: cython.int = 0
         isGif = None  # None if current image not gif, else id for animation loop
-        cache = dict()  # cache rendered images
-        app = Tk()
-        canvas = Canvas(app, bg='black', highlightthickness=0)
+        cache: dict = dict()  # cache rendered images
+        app: Tk = Tk()
+        canvas: Canvas = Canvas(app, bg='black', highlightthickness=0)
         canvas.pack(anchor='nw', fill='both', expand=1)
 
         app.attributes('-fullscreen', True)
@@ -267,11 +281,11 @@ if __name__ == "__main__":
         app.update()  # updates winfo width and height to the current size, this is necessary
 
         # make assests for menu
-        topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
+        topbar: ImageTk.PhotoImage = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
         dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
-        exitb = ImageTk.PhotoImage(Image.new('RGBA', (SPACE, SPACE), (190, 40, 40)))
+        exitb: ImageTk.PhotoImage = ImageTk.PhotoImage(Image.new('RGBA', (SPACE, SPACE), (190, 40, 40)))
         hoveredExit = Image.new('RGBA', (SPACE, SPACE), (180, 25, 20))
-        draw = ImageDraw.Draw(hoveredExit) 
+        draw: ImageDraw = ImageDraw.Draw(hoveredExit) 
         draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
         draw.line((6, 26, 26, 6), width=2, fill=LINECOL)
         hoveredExit = ImageTk.PhotoImage(draw._image)
@@ -341,9 +355,9 @@ if __name__ == "__main__":
         app.bind("<Configure>", _resize)
         app.bind("<FocusIn>", _drawWrapper)
 
-        dir = path.dirname(image)+'/'
-        files = sorted(list(p for p in Path(dir).glob("*") if p.suffix in FILETYPE))
-        curInd = files.index(image)
+        dir: Path = Path(f'{path.dirname(image)}/')
+        files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
+        curInd: cython.int = files.index(image)
         
         imageLoader(files[curInd])
         
