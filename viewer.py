@@ -8,7 +8,6 @@ from pathlib import Path
 from ctypes import windll
 import cython
 from natsort import os_sorted
-from functools import partial
 
 # constants
 DEBUG: cython.bint = False
@@ -17,10 +16,10 @@ LINECOL: tuple = (170, 170, 170)
 ICONCOL: tuple = (100, 104, 102)
 ICONHOV: tuple = (95, 92, 88)
 TOPCOL: tuple = (60, 60, 60, 170)
-FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 DROPDOWNWIDTH: cython.int = 190
 DROPDOWNHEIGHT: cython.int = 110
-FONT: tuple = 'arial 11'
+FONT: str = 'arial 11'
 cached = cython.struct(w=cython.int, h=cython.int, tw=cython.int, th=cython.int, ts=str, im=ImageTk)  # struct for holding cached data
 
 #  fits width and height to tkinter window
@@ -47,16 +46,16 @@ def imageLoader(path) -> None:
             w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())
             if not gifFrames:
                 temp.seek(temp.tell())
-                gifFrames.append(ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)))
+                gifFrames.append((ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)), temp.info['duration']))
                 for i in range(temp.n_frames-1):
                     try:
                         temp.seek(temp.tell()+1)
-                        gifFrames.append(ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)))
+                        gifFrames.append((ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)), temp.info['duration']))
                     except EOFError:
                         break
-            image = gifFrames[gifFrame]
+            image, speed = gifFrames[gifFrame]
             w, h = int((app.winfo_width()-w)/2), int((app.winfo_height()-h)/2)
-            if gifId is None: gifId = app.after(150, animate)
+            if gifId is None: gifId = app.after(speed, animate)
         elif path not in cache:
             trueWidth, trueHeight = temp.size
             intSize: cython.int = round(stat(path).st_size/1000)
@@ -85,8 +84,9 @@ def animate():
     global gifFrames, gifId, gifFrame
     gifFrame += 1
     if gifFrame >= len(gifFrames): gifFrame = 0
-    canvas.itemconfig('drawnImage', image=gifFrames[gifFrame])
-    gifId = app.after(150, animate)
+    img, speed = gifFrames[gifFrame]
+    canvas.itemconfig('drawnImage', image=img)
+    gifId = app.after(speed, animate)
 
 # handles hovering icons
 def hoverExit(id, img) -> None:
@@ -249,7 +249,7 @@ def deleteRenameBox():
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\gifs\are\working.png") if DEBUG else Path(argv[1])
+        image = Path(r"C:\PythonCode\cool.gif") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
