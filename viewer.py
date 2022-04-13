@@ -2,7 +2,7 @@
 # pyinstaller is very slow, please use nuitka if you plan to compile it yourself
 from sys import argv
 from tkinter import Tk, Canvas, Entry
-from PIL import Image, ImageTk, ImageDraw, ImageFont
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError
 from os import path, stat, rename
 from send2trash import send2trash
 from pathlib import Path
@@ -10,8 +10,9 @@ from ctypes import windll
 from cython import int as cint
 from cython import struct, cfunc, bint
 from natsort import os_sorted
-from gifraw import GifRaw
 from io import BytesIO
+from gifraw import GifRaw
+#import time
 
 # constants
 DEBUG: bint = False
@@ -29,6 +30,9 @@ cached = struct(w=cint, h=cint, tw=cint, th=cint, ts=str, im=ImageTk)  # struct 
 #  fits width and height to tkinter window
 @cfunc
 def dimensionFinder(w: cint, h: cint, dimw: cint, dimh: cint) -> tuple[cint, cint]:
+    ''' w,h are width and height of image before resize
+        dimw, dimh are the screen's dimentions 
+    '''
     height: cint = dimh
     width: cint = int(w * (height/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
@@ -36,7 +40,7 @@ def dimensionFinder(w: cint, h: cint, dimw: cint, dimh: cint) -> tuple[cint, cin
     
 # loads image path
 def imageLoader(path) -> None:
-    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId, gifRaw  # variables for drawing
+    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId, gifRaw, gifCache  # variables for drawing
     if not path: return
 
     try:
@@ -48,14 +52,17 @@ def imageLoader(path) -> None:
             intSize: cint = round(stat(path).st_size/1000)
             trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
             w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())
-            if not gifFrames:
-                gifRaw = GifRaw(str(path))
-                gifRaw.make_raw_image_list()
-                gifFrames = [None] * gifRaw.frames
-                createFrame(0, w, h)
+            if path not in gifCache:
+                if not gifFrames:
+                    gifRaw = GifRaw(str(path))
+                    gifRaw.make_raw_image_list()
+                    gifFrames = [None] * gifRaw.frames
+                    createFrame(0, w, h, path)
+            else:
+                gifFrames = gifCache[path].copy()
             image, speed = gifFrames[gifFrame]
-            if speed == 0: speed = 100
-            if gifId is None: gifId = app.after(speed, animate, w, h)
+            if speed < 10: speed = 100
+            if gifId is None: gifId = app.after(speed, animate, w, h, path)
             w, h = int((app.winfo_width()-w)/2), int((app.winfo_height()-h)/2)
         elif path not in cache:
             trueWidth, trueHeight = temp.size
@@ -72,28 +79,30 @@ def imageLoader(path) -> None:
             data = cache[path]
             trueWidth, trueHeight, trueSize, image = data.tw, data.th, data.ts, data.im
             w, h = data.w, data.h
-        canvas.create_rectangle(0, 0, app.winfo_width(), app.winfo_height(), fill='black')
+        canvas.delete("all")
         canvas.create_image(w, h, image=image, anchor='nw', tag='drawnImage')
         temp.close()
         if drawtop:
             drawTop()
-    except(FileNotFoundError):
+    except(FileNotFoundError, UnidentifiedImageError):
         removeAndMove()
 
 # used for gif files
-def animate(w, h):
+def animate(w, h, path):
     global gifFrames, gifId, gifFrame
     gifFrame += 1
     if gifFrame >= len(gifFrames): gifFrame = 0
-    if gifFrames[gifFrame] == None: createFrame(gifFrame, w, h)
+    if gifFrames[gifFrame] == None: createFrame(gifFrame, w, h, path)
     img, speed = gifFrames[gifFrame]
-    if speed == 0: speed = 100
+    if speed < 10: speed = 100
     canvas.itemconfig('drawnImage', image=img)
-    gifId = app.after(speed, animate, w, h)
+    gifId = app.after(speed, animate, w, h, path)
 
-def createFrame(idx, w, h):
-    global gifRaw, gifFrame, saved_img
+def createFrame(idx, w, h, path):
+    global gifRaw, gifFrame, saved_img, gifCache
+    
     outimg = Image.open(BytesIO(gifRaw.raw_img_list[idx])).convert("RGBA")
+       
     if idx == 0:
         saved_img = outimg
     else:
@@ -101,6 +110,7 @@ def createFrame(idx, w, h):
         saved_img.alpha_composite(outimg)
         
     gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), outimg.info['duration'])
+    if idx+1 == len(gifFrames) and len(gifCache) < 16: gifCache[path] =  gifFrames.copy()
 
 
 # handles hovering icons
@@ -175,14 +185,10 @@ def exitApp(event) -> None:
 
 # move between images when mouse scolls
 def scrollhandler(event) -> None:
-    global curInd, files, app, gifFrames, entryText, gifId, gifFrame, gifRaw
+    global curInd, files, app, entryText
     if entryText is not None:
         deleteRenameBox()
-    if gifId is not None:  # cancel gif animation before drawing new image
-        app.after_cancel(gifId)
-        gifId = gifRaw = None
-        gifFrames = []
-        gifFrame = 0
+    clearGif()
     if event.delta > 0:
         curInd = len(files)-1 if curInd == 0 else curInd-1
         imageLoader(files[curInd])
@@ -192,18 +198,15 @@ def scrollhandler(event) -> None:
 
 # clear cached images if window gets resized
 def resizeHandler(event) -> None:
-    global cache
-    cache = dict()
+    global cache, gifCache
+    cache.clear()
+    gifCache.clear()
 
 # delete image
 def trashFile(event) -> None:
-    global curInd, files, image, gifId, gifFrame, gifFrames, gifRaw
+    global curInd, files, image
     send2trash(files[curInd])
-    if gifId is not None:  # cancel gif animation before drawing new image
-        app.after_cancel(gifId)
-        gifId = gifRaw = None
-        gifFrames = []
-        gifFrame = 0
+    clearGif()
     removeAndMove()
 
 # remove from list and move to next image
@@ -240,8 +243,8 @@ def renameWindow(event) -> None:
     canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
     
 # asks os to rename file and changes position in list to new location
-def renameFile(event):
-    global entryText, files, curInd, gifId, gifFrames, gifFrame, gifRaw
+def renameFile(event) -> None:
+    global entryText, files, curInd
     if entryText is None: return
     newname = f'{files[curInd].parent}/{entryText.get().strip()}{files[curInd].suffix}'
     try:
@@ -251,11 +254,7 @@ def renameFile(event):
         files.append(newname)
         files = os_sorted(files)  # less efficent than insertion, but os sorting not same as normal sorting...
         deleteRenameBox()
-        if gifId is not None:  # cancel gif animation before drawing new image
-            app.after_cancel(gifId)
-            gifId = gifRaw = None
-            gifFrames = []
-            gifFrame = 0
+        clearGif()
         imageLoader(files[curInd])
     except Exception as e:
         entryText.config(bg='#e6505f')  # flash red to tell user can't rename
@@ -265,7 +264,7 @@ def revert() -> None:
     global entryText
     entryText.config(bg="White")
 
-def deleteRenameBox():
+def deleteRenameBox() -> None:
     global canvas, entryText, savedText
     if entryText is None: return
     savedText = entryText.get()  # comment this to remove text saving in rename window
@@ -273,11 +272,23 @@ def deleteRenameBox():
     entryText.destroy()
     entryText = None
 
-def refresh():
-    global cache, files, dir, curInd, image
-    cache = dict()
+def clearGif() -> None:
+    global gifFrames, gifFrame, gifRaw, gifId, app
+    if gifId is None: return
+    app.after_cancel(gifId)
+    gifId = gifRaw = None
+    gifFrames.clear()
+    gifFrame = 0 
+
+def refresh() -> None:
+    global cache, gifCache, files, dir, curInd, image
+    cache.clear()
+    gifCache.clear()
     files = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
-    curInd = files.index(image) if image in files else 0
+    try:
+        curInd = files.index(image)
+    except  ValueError:
+        curInd = 0
     drawWrapper()
 
 if __name__ == "__main__":
@@ -299,6 +310,7 @@ if __name__ == "__main__":
         gifFrames: list = []  # None if current image not gif, else id for animation loop
         gifId = gifRaw = None  # id for gif animiation
         gifFrame = 0
+        gifCache: dict = dict()  # cache rendered frames of a gif
         cache: dict = dict()  # cache rendered images
         app = Tk()
         canvas = Canvas(app, bg='black', highlightthickness=0)
