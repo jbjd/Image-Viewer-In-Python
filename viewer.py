@@ -1,4 +1,5 @@
-#  example compile code: python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon.ico" viewer.py  (pyinstaller is very slow, please use nuitka if you plan to compile it yourself)
+# python -m nuitka --windows-disable-console --include-plugin-directory=C:\PythonCode\Viewer\gifraw --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" viewer.py
+# pyinstaller is very slow, please use nuitka if you plan to compile it yourself
 from sys import argv
 from tkinter import Tk, Canvas, Entry
 from PIL import Image, ImageTk, ImageDraw, ImageFont
@@ -6,59 +7,59 @@ from os import path, stat, rename
 from send2trash import send2trash
 from pathlib import Path
 from ctypes import windll
-import cython
+from cython import int as cint
+from cython import struct, cfunc, bint
 from natsort import os_sorted
+from gifraw import GifRaw
+from io import BytesIO
 
 # constants
-DEBUG: cython.bint = False
-SPACE: cython.int = 32
+DEBUG: bint = False
+SPACE: cint = 32
 LINECOL: tuple = (170, 170, 170)
 ICONCOL: tuple = (100, 104, 102)
 ICONHOV: tuple = (95, 92, 88)
 TOPCOL: tuple = (60, 60, 60, 170)
 FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
-DROPDOWNWIDTH: cython.int = 190
-DROPDOWNHEIGHT: cython.int = 110
+DROPDOWNWIDTH: cint = 190
+DROPDOWNHEIGHT: cint = 110
 FONT: str = 'arial 11'
-cached = cython.struct(w=cython.int, h=cython.int, tw=cython.int, th=cython.int, ts=str, im=ImageTk)  # struct for holding cached data
+cached = struct(w=cint, h=cint, tw=cint, th=cint, ts=str, im=ImageTk)  # struct for holding cached data
 
 #  fits width and height to tkinter window
-@cython.cfunc
-def dimensionFinder(w: cython.int, h: cython.int, dimw: cython.int, dimh: cython.int) -> tuple[cython.int, cython.int]:
-    height: cython.int = dimh
-    width: cython.int = int(w * (height/h))
+@cfunc
+def dimensionFinder(w: cint, h: cint, dimw: cint, dimh: cint) -> tuple[cint, cint]:
+    height: cint = dimh
+    width: cint = int(w * (height/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
     return (width, height) if width <= dimw else (dimw, int(h * (dimw/w)))
     
 # loads image path
 def imageLoader(path) -> None:
-    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId  # variables for drawing
+    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId, gifRaw  # variables for drawing
     if not path: return
 
     try:
         temp = Image.open(path)
-        w: cython.int
-        h: cython.int
+        w: cint
+        h: cint
         if path.suffix == '.gif':
             trueWidth, trueHeight = temp.size
-            intSize: cython.int = round(stat(path).st_size/1000)
+            intSize: cint = round(stat(path).st_size/1000)
             trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
             w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())
             if not gifFrames:
-                temp.seek(temp.tell())
-                gifFrames.append((ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)), temp.info['duration']))
-                for i in range(temp.n_frames-1):
-                    try:
-                        temp.seek(temp.tell()+1)
-                        gifFrames.append((ImageTk.PhotoImage(temp.resize((w, h), Image.ANTIALIAS)), temp.info['duration']))
-                    except EOFError:
-                        break
+                gifRaw = GifRaw(str(path))
+                gifRaw.make_raw_image_list()
+                gifFrames = [None] * gifRaw.frames
+                createFrame(0, w, h)
             image, speed = gifFrames[gifFrame]
+            if speed == 0: speed = 100
+            if gifId is None: gifId = app.after(speed, animate, w, h)
             w, h = int((app.winfo_width()-w)/2), int((app.winfo_height()-h)/2)
-            if gifId is None: gifId = app.after(speed, animate)
         elif path not in cache:
             trueWidth, trueHeight = temp.size
-            intSize: cython.int = round(stat(path).st_size/1000)
+            intSize: cint = round(stat(path).st_size/1000)
             trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
             w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())  # get resized dimensions for fullscreen view
             
@@ -80,13 +81,27 @@ def imageLoader(path) -> None:
         removeAndMove()
 
 # used for gif files
-def animate():
+def animate(w, h):
     global gifFrames, gifId, gifFrame
     gifFrame += 1
     if gifFrame >= len(gifFrames): gifFrame = 0
+    if gifFrames[gifFrame] == None: createFrame(gifFrame, w, h)
     img, speed = gifFrames[gifFrame]
+    if speed == 0: speed = 100
     canvas.itemconfig('drawnImage', image=img)
-    gifId = app.after(speed, animate)
+    gifId = app.after(speed, animate, w, h)
+
+def createFrame(idx, w, h):
+    global gifRaw, gifFrame, saved_img
+    outimg = Image.open(BytesIO(gifRaw.raw_img_list[idx])).convert("RGBA")
+    if idx == 0:
+        saved_img = outimg
+    else:
+        outimg.point(lambda p: p > 255 and 255)
+        saved_img.alpha_composite(outimg)
+        
+    gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), outimg.info['duration'])
+
 
 # handles hovering icons
 def hoverExit(id, img) -> None:
@@ -98,7 +113,7 @@ def hover(id, img) -> None:
     canvas.itemconfig(id, image=img)
 
 # switches if dropdown is drawn or not
-def _toggleDrop(event) -> None:
+def toggleDrop(event) -> None:
     global dropDown, canvas, hoverUp
     dropDown = not dropDown
     hover('dropper', hoverUp)
@@ -114,10 +129,10 @@ def drawTop() -> None:
     b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
     b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
     t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
-    canvas.tag_bind(b, '<Button-1>', _exit)
-    canvas.tag_bind(b2,'<Button-1>', _minimize)
-    canvas.tag_bind(t, '<Button-1>', _trashWindow)
-    canvas.tag_bind(r, '<Button-1>', _renameWindow)
+    canvas.tag_bind(b, '<Button-1>', exitApp)
+    canvas.tag_bind(b2,'<Button-1>', minimize)
+    canvas.tag_bind(t, '<Button-1>', trashFile)
+    canvas.tag_bind(r, '<Button-1>', renameWindow)
     canvas.tag_bind(b, '<Enter>', lambda e: hover(id="exiter", img=hoveredExit))
     canvas.tag_bind(b, '<Leave>', lambda e: hover(id="exiter", img=exitb))
     canvas.tag_bind(b2,'<Enter>', lambda e: hover(id="minimizer", img=hoveredMini))
@@ -133,7 +148,7 @@ def drawTop() -> None:
     else:
         d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper')
         dropimg, hoverimg = dropb, hoverDrop
-    canvas.tag_bind(d, '<Button-1>', _toggleDrop)
+    canvas.tag_bind(d, '<Button-1>', toggleDrop)
     canvas.tag_bind(d, '<Enter>', lambda e: hover(id="dropper", img=hoverimg))
     canvas.tag_bind(d, '<Leave>', lambda e: hover(id="dropper", img=dropimg))
     
@@ -146,7 +161,7 @@ def createDropbar() -> None:
     canvas.create_image(app.winfo_width()-DROPDOWNWIDTH, SPACE, image=dropImage, anchor='nw', tag="dropped")
 
 # minimizes app
-def _minimize(event) -> None:
+def minimize(event) -> None:
     global app, gifId
     if gifId is not None: 
         app.after_cancel(gifId)
@@ -154,19 +169,20 @@ def _minimize(event) -> None:
     app.iconify()
 
 # closes app    
-def _exit(event) -> None:
+def exitApp(event) -> None:
     global app
     app.quit()
 
 # move between images when mouse scolls
-def _mouseScroll(event) -> None:
-    global curInd, files, app, gifFrames, entryText, gifId
+def scrollhandler(event) -> None:
+    global curInd, files, app, gifFrames, entryText, gifId, gifFrame, gifRaw
     if entryText is not None:
         deleteRenameBox()
     if gifId is not None:  # cancel gif animation before drawing new image
         app.after_cancel(gifId)
-        gifId = None
+        gifId = gifRaw = None
         gifFrames = []
+        gifFrame = 0
     if event.delta > 0:
         curInd = len(files)-1 if curInd == 0 else curInd-1
         imageLoader(files[curInd])
@@ -175,14 +191,19 @@ def _mouseScroll(event) -> None:
         imageLoader(files[curInd])
 
 # clear cached images if window gets resized
-def _resize(event) -> None:
+def resizeHandler(event) -> None:
     global cache
     cache = dict()
 
 # delete image
-def _trashWindow(event) -> None:
-    global curInd, files, image
+def trashFile(event) -> None:
+    global curInd, files, image, gifId, gifFrame, gifFrames, gifRaw
     send2trash(files[curInd])
+    if gifId is not None:  # cancel gif animation before drawing new image
+        app.after_cancel(gifId)
+        gifId = gifRaw = None
+        gifFrames = []
+        gifFrame = 0
     removeAndMove()
 
 # remove from list and move to next image
@@ -196,7 +217,7 @@ def removeAndMove() -> None:
     imageLoader(files[curInd])
 
 # skip clicks to menu, draws menu if not present
-def _click(event) -> None:
+def clickHandler(event) -> None:
     global curInd, files, drawtop, dropDown, app
     if drawtop and (event.y <= SPACE or (dropDown and event.x > app.winfo_width()-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)): 
         return
@@ -206,21 +227,21 @@ def _click(event) -> None:
     else: imageLoader(files[curInd])
 
 # sometimes (inconsistently) goes blank when opening from taskbar. This redraws to prevent that
-def _drawWrapper(event) -> None:
+def drawWrapper(event) -> None:
     global curInd, files
     imageLoader(files[curInd])
 
 # opens tkinter entry to accept user input
-def _renameWindow(event) -> None:
+def renameWindow(event) -> None:
     global canvas, app, entryText, loc
     entryText = Entry(app, font=FONT)
     entryText.insert('end', savedText)
-    entryText.bind('<Return>', _renameFile)
+    entryText.bind('<Return>', renameFile)
     canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
     
 # asks os to rename file and changes position in list to new location
-def _renameFile(event):
-    global entryText, files, curInd
+def renameFile(event):
+    global entryText, files, curInd, gifId, gifFrames, gifFrame, gifRaw
     if entryText is None: return
     newname = f'{files[curInd].parent}/{entryText.get().strip()}{files[curInd].suffix}'
     try:
@@ -230,6 +251,11 @@ def _renameFile(event):
         files.append(newname)
         files = os_sorted(files)  # less efficent than insertion, but os sorting not same as normal sorting...
         deleteRenameBox()
+        if gifId is not None:  # cancel gif animation before drawing new image
+            app.after_cancel(gifId)
+            gifId = gifRaw = None
+            gifFrames = []
+            gifFrame = 0
         imageLoader(files[curInd])
     except Exception as e:
         entryText.config(bg='#e6505f')  # flash red to tell user can't rename
@@ -247,24 +273,31 @@ def deleteRenameBox():
     entryText.destroy()
     entryText = None
 
+def refresh():
+    global cache, files, dir, curInd, image
+    cache = dict()
+    files = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
+    curInd = files.index(image) if image in files else 0
+    drawWrapper()
+
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\PythonCode\cool.gif") if DEBUG else Path(argv[1])
+        image = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
-        drawtop: cython.bint = False  # if drawn
-        dropDown: cython.bint = False  # if drawn
+        drawtop: bint = False  # if drawn
+        dropDown: bint = False  # if drawn
         entryText = dropImage = None  # acts as refrences to items
         savedText: str = ''
         fnt = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
         # data on current image
-        trueWidth: cython.int = 0 
-        trueHeight: cython.int = 0
+        trueWidth: cint = 0 
+        trueHeight: cint = 0
         trueSize: str = ''
-        loc: cython.int = 0  # location of rename button
+        loc: cint = 0  # location of rename button
         gifFrames: list = []  # None if current image not gif, else id for animation loop
-        gifId = None  # id for gif animiation
+        gifId = gifRaw = None  # id for gif animiation
         gifFrame = 0
         cache: dict = dict()  # cache rendered images
         app = Tk()
@@ -345,14 +378,14 @@ if __name__ == "__main__":
         hoverRename = ImageTk.PhotoImage(draw._image)
 
         # events based on input
-        app.bind("<MouseWheel>", _mouseScroll)
-        canvas.bind("<Button-1>", _click)
-        app.bind("<Configure>", _resize)
-        app.bind("<FocusIn>", _drawWrapper)
+        app.bind("<MouseWheel>", scrollhandler)
+        canvas.bind("<Button-1>", clickHandler)
+        app.bind("<Configure>", resizeHandler)
+        app.bind("<FocusIn>", drawWrapper)
 
         dir = Path(f'{path.dirname(image)}/')
         files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
-        curInd: cython.int = files.index(image)
+        curInd: cint = files.index(image)
         
         imageLoader(files[curInd])
         
