@@ -23,6 +23,9 @@ Feel free to take this code and edit it however you like.
   - ctypes
   - cython
   - bisect
+  - IO
+  - natsort
+  There is one additional depency, which is 'gifraw'. Install a copy of it to the same directory as this python file: https://github.com/bongdang/gifraw
 3. Use 'python viewer.py "C:/example/path/to/image.png"' to run it, or continue following to convert it to an exe
 4. Install Nuitka with the command 'python -m pip install -U nuitka' This is a compiler which converts Python to C. pyinstaller is also an option but it loads slower and the file is much larger, thus I reccomend nuitka.
 5. Convert the python file to an exe with the command 'python -m nuitka --windows-disable-console viewer.py'. Without the "--windows-disable-console" flag, it will open a console in the background that does nothing.
