@@ -96,7 +96,7 @@ def animate(w, h, path):
     img, speed = gifFrames[gifFrame]
     if speed < 10: speed = 100
     canvas.itemconfig('drawnImage', image=img)
-    gifId = app.after(speed, animate, w, h, path)
+    if len(gifFrames) > 1: gifId = app.after(speed, animate, w, h, path)
 
 def createFrame(idx, w, h, path):
     global gifRaw, gifFrame, saved_img, gifCache
@@ -108,8 +108,10 @@ def createFrame(idx, w, h, path):
     else:
         outimg.point(lambda p: p > 255 and 255)
         saved_img.alpha_composite(outimg)
-        
-    gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), outimg.info['duration'])
+    try:
+        gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), outimg.info['duration'])
+    except KeyError:
+        gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), 100)
     if idx+1 == len(gifFrames) and len(gifCache) < 16: gifCache[path] =  gifFrames.copy()
 
 
@@ -293,7 +295,7 @@ def refresh() -> None:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
+        image = Path(r"C:\Pictures\grafu.gif") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # initialize main window + important data
