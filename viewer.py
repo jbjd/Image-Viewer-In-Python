@@ -33,14 +33,13 @@ def dimensionFinder(w: cint, h: cint, dimw: cint, dimh: cint) -> tuple[cint, cin
     ''' w,h are width and height of image before resize
         dimw, dimh are the screen's dimentions 
     '''
-    height: cint = dimh
-    width: cint = int(w * (height/h))
+    width: cint = int(w * (dimh/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
-    return (width, height) if width <= dimw else (dimw, int(h * (dimw/w)))
+    return (width, dimh) if width <= dimw else (dimw, int(h * (dimw/w)))
     
 # loads image path
 def imageLoader(path) -> None:
-    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId, gifRaw, gifCache  # variables for drawing
+    global image, canvas, cache, app, drawtop, trueWidth, trueHeight, trueSize, gifFrames, gifFrame, gifId, gifRaw, gifCache, appw, apph
     if not path: return
 
     try:
@@ -51,7 +50,7 @@ def imageLoader(path) -> None:
             trueWidth, trueHeight = temp.size
             intSize: cint = round(stat(path).st_size/1000)
             trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
-            w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())
+            w, h = dimensionFinder(trueWidth, trueHeight, appw, apph)
             if path not in gifCache:
                 if not gifFrames:
                     gifRaw = GifRaw(str(path))
@@ -63,16 +62,16 @@ def imageLoader(path) -> None:
             image, speed = gifFrames[gifFrame]
             if speed < 10: speed = 100
             if gifId is None: gifId = app.after(speed, animate, w, h, path)
-            w, h = int((app.winfo_width()-w)/2), int((app.winfo_height()-h)/2)
+            w, h = int((appw-w)/2), int((apph-h)/2)
         elif path not in cache:
             trueWidth, trueHeight = temp.size
             intSize: cint = round(stat(path).st_size/1000)
             trueSize = str(round(intSize/1000, 2))+"mb" if intSize > 999 else str(intSize)+"kb"
-            w, h = dimensionFinder(trueWidth, trueHeight, app.winfo_width(), app.winfo_height())  # get resized dimensions for fullscreen view
+            w, h = dimensionFinder(trueWidth, trueHeight, appw, apph)  # get resized dimensions for fullscreen view
             
             image = temp.resize((w, h), Image.ANTIALIAS)
             image = ImageTk.PhotoImage(image)
-            w, h = int((app.winfo_width()-w)/2), int((app.winfo_height()-h)/2)
+            w, h = int((appw-w)/2), int((apph-h)/2)
             
             cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=image)
         else:
@@ -81,6 +80,7 @@ def imageLoader(path) -> None:
             w, h = data.w, data.h
         canvas.delete("all")
         canvas.create_image(w, h, image=image, anchor='nw', tag='drawnImage')
+        app.title(files[curInd].name)
         temp.close()
         if drawtop:
             drawTop()
@@ -114,32 +114,37 @@ def createFrame(idx, w, h, path):
         gifFrames[idx] = (ImageTk.PhotoImage(saved_img.resize((w, h), Image.ANTIALIAS)), 100)
     if idx+1 == len(gifFrames) and len(gifCache) < 16: gifCache[path] =  gifFrames.copy()
 
-
-# handles hovering icons
-def hoverExit(id, img) -> None:
-    global canvas
-    canvas.itemconfig(id, image=img)
-
 def hover(id, img) -> None:
     global canvas
     canvas.itemconfig(id, image=img)
+
+def removeHoverDrop(event=None) -> None:
+    global canvas, dropDown, upb, dropb
+    switch = upb if dropDown else dropb
+    canvas.itemconfig('dropper', image=switch)
+
+def hoverOnDrop(event=None) -> None:
+    global canvas, dropDown, hoverUp, hoverDrop
+    switch = hoverUp if dropDown else hoverDrop
+    canvas.itemconfig('dropper', image=switch)
 
 # switches if dropdown is drawn or not
 def toggleDrop(event) -> None:
     global dropDown, canvas, hoverUp
     dropDown = not dropDown
-    hover('dropper', hoverUp)
+    hoverOnDrop()
     if dropDown: createDropbar()
-    else: canvas.delete("dropped")
+    else: 
+        canvas.itemconfig("dropped", state='hidden')
 
 def drawTop() -> None:
-    global canvas, loc, files, curInd
+    global canvas, loc, files, curInd, appw
     canvas.create_image(0, 0, image=topbar, anchor='nw')
     text = canvas.create_text(36, 5, text=files[curInd].name, fill="white", anchor='nw', font=FONT, tag="text")
     loc = canvas.bbox(text)[2]
     r = canvas.create_image(loc, 0, image=renameb, anchor='nw', tag='renamer')
-    b = canvas.create_image(app.winfo_width()-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
-    b2 = canvas.create_image(app.winfo_width()-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
+    b = canvas.create_image(appw-SPACE, 0, image=exitb, anchor='nw', tag='exiter')
+    b2 = canvas.create_image(appw-SPACE-SPACE, 0, image=minib, anchor='nw', tag='minimizer')
     t = canvas.create_image(0, 0, image=trashb, anchor='nw', tag='trasher')
     canvas.tag_bind(b, '<Button-1>', exitApp)
     canvas.tag_bind(b2,'<Button-1>', minimize)
@@ -154,15 +159,14 @@ def drawTop() -> None:
     canvas.tag_bind(r, '<Enter>', lambda e: hover(id="renamer", img=hoverRename))
     canvas.tag_bind(r, '<Leave>', lambda e: hover(id="renamer", img=renameb))
     if dropDown:
-        d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=upb, anchor='nw', tag='dropper')
+        d = canvas.create_image(appw-(SPACE*3), 0, image=upb, anchor='nw', tag='dropper')
         createDropbar()
-        dropimg, hoverimg = upb, hoverUp
     else:
-        d = canvas.create_image(app.winfo_width()-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper')
-        dropimg, hoverimg = dropb, hoverDrop
+        d = canvas.create_image(appw-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper') 
     canvas.tag_bind(d, '<Button-1>', toggleDrop)
-    canvas.tag_bind(d, '<Enter>', lambda e: hover(id="dropper", img=hoverimg))
-    canvas.tag_bind(d, '<Leave>', lambda e: hover(id="dropper", img=dropimg))
+    canvas.tag_bind(d, '<Enter>', hoverOnDrop)
+    canvas.tag_bind(d, '<Leave>', removeHoverDrop)
+    
     
 def createDropbar() -> None:
     global canvas, dropbar, dropImage, fnt, trueWidth, trueHeight, trueSize
@@ -170,7 +174,11 @@ def createDropbar() -> None:
     draw.text((10, 25), f"Pixels: {trueWidth}x{trueHeight}", font=fnt, fill="white")
     draw.text((10, 60), f"Size: {trueSize}", font=fnt, fill="white")
     dropImage = ImageTk.PhotoImage(draw._image)
-    canvas.create_image(app.winfo_width()-DROPDOWNWIDTH, SPACE, image=dropImage, anchor='nw', tag="dropped")
+    if not canvas.itemcget("dropped", "tag"):
+        canvas.create_image(appw-DROPDOWNWIDTH, SPACE, image=dropImage, anchor='nw', tag="dropped")
+    else:
+        canvas.itemconfig("dropped", image=dropImage)
+        canvas.itemconfig("dropped", state='normal')
 
 # minimizes app
 def minimize(event) -> None:
@@ -200,9 +208,11 @@ def scrollhandler(event) -> None:
 
 # clear cached images if window gets resized
 def resizeHandler(event) -> None:
-    global cache, gifCache
+    global cache, gifCache, app, appw, apph
     cache.clear()
     gifCache.clear()
+    app.update()
+    appw, apph = app.winfo_width(), app.winfo_height()
 
 # delete image
 def trashFile(event) -> None:
@@ -223,26 +233,31 @@ def removeAndMove() -> None:
 
 # skip clicks to menu, draws menu if not present
 def clickHandler(event) -> None:
-    global curInd, files, drawtop, dropDown, app
-    if drawtop and (event.y <= SPACE or (dropDown and event.x > app.winfo_width()-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)): 
+    global curInd, files, drawtop, dropDown, app, appw
+    if drawtop and (event.y <= SPACE or (dropDown and event.x > appw-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)):
         return
     drawtop = not drawtop
     deleteRenameBox()
-    if drawtop: drawTop()
-    else: imageLoader(files[curInd])
+    if drawtop: 
+        drawTop()
+    else: 
+        imageLoader(files[curInd])
 
 # sometimes (inconsistently) goes blank when opening from taskbar. This redraws to prevent that
-def drawWrapper(event) -> None:
+def drawWrapper(event=None) -> None:
     global curInd, files
     imageLoader(files[curInd])
 
 # opens tkinter entry to accept user input
 def renameWindow(event) -> None:
-    global canvas, app, entryText, loc
-    entryText = Entry(app, font=FONT)
-    entryText.insert('end', savedText)
-    entryText.bind('<Return>', renameFile)
-    canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+    global canvas, app, entryText, loc, savedText
+    if entryText is None:
+        entryText = Entry(app, font=FONT)
+        entryText.insert('end', savedText)
+        entryText.bind('<Return>', renameFile)
+        canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+    else: deleteRenameBox()
+
     
 # asks os to rename file and changes position in list to new location
 def renameFile(event) -> None:
@@ -295,32 +310,35 @@ def refresh() -> None:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\Pictures\grafu.gif") if DEBUG else Path(argv[1])
+        image = Path(r"C:\graph.gif") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
-        # initialize main window + important data
+        # UI varaibles
         drawtop: bint = False  # if drawn
         dropDown: bint = False  # if drawn
         entryText = dropImage = None  # acts as refrences to items
-        savedText: str = ''
+        savedText = ''
         fnt = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
         # data on current image
         trueWidth: cint = 0 
         trueHeight: cint = 0
         trueSize: str = ''
+        # gif support
         loc: cint = 0  # location of rename button
         gifFrames: list = []  # None if current image not gif, else id for animation loop
         gifId = gifRaw = None  # id for gif animiation
         gifFrame = 0
         gifCache: dict = dict()  # cache rendered frames of a gif
-        cache: dict = dict()  # cache rendered images
+        # main stuff
         app = Tk()
+        cache: dict = dict()  # cache rendered images
         canvas = Canvas(app, bg='black', highlightthickness=0)
         canvas.pack(anchor='nw', fill='both', expand=1)
-
         app.attributes('-fullscreen', True)
         app.state('zoomed')
         app.update()  # updates winfo width and height to the current size, this is necessary
+        appw: cint = app.winfo_width()
+        apph: cint = app.winfo_height()
 
         # make assests for menu
         topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
@@ -395,7 +413,6 @@ if __name__ == "__main__":
         app.bind("<MouseWheel>", scrollhandler)
         canvas.bind("<Button-1>", clickHandler)
         app.bind("<Configure>", resizeHandler)
-        app.bind("<FocusIn>", drawWrapper)
 
         dir = Path(f'{path.dirname(image)}/')
         files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
