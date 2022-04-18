@@ -1,6 +1,5 @@
 # python -m nuitka --windows-disable-console --include-plugin-directory=C:\PythonCode\Viewer\gifraw --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" viewer.py
 # pyinstaller is very slow, please use nuitka if you plan to compile it yourself
-from re import M
 from sys import argv
 from tkinter import Tk, Canvas, Entry
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError
