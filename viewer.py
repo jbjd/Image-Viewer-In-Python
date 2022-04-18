@@ -220,7 +220,9 @@ def renameWindow(event) -> None:
         entryText = Entry(app, font=FONT)
         entryText.insert('end', savedText)
         entryText.bind('<Return>', renameFile)
-        canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+        #canvas.create_window(loc+40, 4, width=200, height=24, window=entryText, anchor='nw', tag="userinput")
+        canvas.itemconfig("userinput", window=entryText, state='normal')
+        canvas.coords("userinput", loc+40, 4)
     else: deleteRenameBox()
 
     
@@ -238,6 +240,7 @@ def renameFile(event) -> None:
         deleteRenameBox()
         clearGif()
         imageLoader(files[curInd])
+        updateTop()
     except Exception as e:
         entryText.config(bg='#e6505f')  # flash red to tell user can't rename
         app.after(400, revert)
@@ -250,7 +253,7 @@ def deleteRenameBox() -> None:
     global canvas, entryText, savedText
     if entryText is None: return
     savedText = entryText.get()  # comment this to remove text saving in rename window
-    canvas.delete('userinput')
+    canvas.itemconfig("userinput", state='hidden')
     entryText.destroy()
     entryText = None
 
@@ -379,6 +382,7 @@ if __name__ == "__main__":
         app.bind("<MouseWheel>", scrollhandler)
         canvas.bind("<Button-1>", clickHandler)
         app.bind("<Configure>", resizeHandler)
+        #app.bind("<FocusIn>", lambda e: print('focus!'))
 
         dir = Path(f'{path.dirname(image)}/')
         files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
@@ -407,6 +411,7 @@ if __name__ == "__main__":
             createDropbar()
         else:
             d = canvas.create_image(appw-(SPACE*3), 0, image=dropb, anchor='nw', tag='dropper') 
+        canvas.create_window(0, 0, width=200, height=24, anchor='nw', tag="userinput")  # rename window
         canvas.tag_bind(d, '<Button-1>', toggleDrop)
         canvas.tag_bind(d, '<Enter>', hoverOnDrop)
         canvas.tag_bind(d, '<Leave>', removeHoverDrop)
@@ -417,6 +422,7 @@ if __name__ == "__main__":
         canvas.itemconfig(b2, state='hidden')
         canvas.itemconfig(t, state='hidden')
         canvas.itemconfig(d, state='hidden')
+        canvas.itemconfig("userinput", state='hidden')
         # dropbox
         canvas.create_image(appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="dropped")
 
