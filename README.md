@@ -2,13 +2,12 @@
 a Lightweight Image Viewer written in Python 3.9
 
 An image viewer with the intent of being fast and simple; Images are always fullscreened and in high quality. Currently includes a button for deletion, renaming,
-and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click, so nothing clutters the screen.
+and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click, so nothing clutters the screen. Supports standard image types and GIFs, the first load of a GIF might be slightly slower due to loading in each frame as it comes. I will see if this can be improved
 
 Other features I plan to add:
-- ~~GIF support~~
-- Searching
 - More data on file info tab
-- Make GIF loading faster
+- Searching
+- Possibly making GIF loading faster
 
 Feel free to take this code and edit it however you like.
 
@@ -16,20 +15,10 @@ Feel free to take this code and edit it however you like.
 
 1. Have python 3.9+ installed (along with nuitka if you want to convert it to an .exe file).
 2. Make sure your python has all the following Packages which you can use 'pip' to install:
-  - sys
-  - tkinter
   - PIL
-  - os
   - send2trash
-  - pathlib
-  - ctypes
   - cython
-  - bisect
-  - IO
   - natsort
-
-  Credit to bongdang for making the gifraw class that fixes gifs with unqiue frame palettes. I use an edited version of this class, but I mainly just removed parts 
-  that I didn't use.
   
 3. Use 'python viewer.py "C:/example/path/to/image.png"' to run it, or continue following to convert it to an exe
 
