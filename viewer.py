@@ -10,6 +10,7 @@ from ctypes import windll  # std
 from cython import int as cint  # 0.29.28
 from cython import struct, cfunc, bint  # 0.29.28
 from natsort import os_sorted  # 8.1.0
+from threading import Thread
 #import time
 
 # constants
@@ -60,6 +61,8 @@ def imageLoader(path) -> None:
 
                 image = gifFrames[0]
                 gifId = app.after(speed, animate, 0, w, h, path, speed, temp)
+                Thread(target=loadFrame, args=(1, temp, w, h)).start()
+            
                 w, h = (appw-w) >> 1, (apph-h) >> 1
             else:
                 image = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
@@ -70,8 +73,8 @@ def imageLoader(path) -> None:
             trueWidth, trueHeight, trueSize, image, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
         canvas.itemconfig('drawnImage', image=image)
         canvas.coords('drawnImage', w, h)
-        if path.suffix != '.gif': temp.close()
         app.title(files[curInd].name)
+        if path.suffix != '.gif': temp.close()
     except(FileNotFoundError, UnidentifiedImageError):
         removeAndMove()
 
@@ -81,20 +84,14 @@ def animate(gifFrame: cint, w: cint, h: cint, path, speed: cint, temp) -> None:
     gifFrame = gifFrame+1 
     if gifFrame >= len(gifFrames): gifFrame = 0
     img = gifFrames[gifFrame]
-    if img is None:
-        img = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
-        gifFrames[gifFrame] = img
-        temp.seek(gifFrame)
-        if gifFrame == len(gifFrames)-1: temp.close()
     canvas.itemconfig('drawnImage', image=img)
     if len(gifFrames) > 1: gifId = app.after(speed, animate, gifFrame, w, h, path, speed, temp)   
 
 
-def loadFrame(frameNum: cint, temp, w: cint, h: cint):
-    gifFrames[gifFrame] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
+def loadFrame(gifFrame: cint, temp, w: cint, h: cint):
     temp.seek(gifFrame)
-    if gifFrame == len(gifFrames)-1: temp.close()
-    
+    gifFrames[gifFrame] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
+    if gifFrame < len(gifFrames)-1: Thread(target=loadFrame, args=(gifFrame+1, temp, w, h)).start()
 
 def hover(id, img) -> None:
     global canvas
