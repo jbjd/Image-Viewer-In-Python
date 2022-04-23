@@ -24,6 +24,7 @@ FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 DROPDOWNWIDTH: cint = 190
 DROPDOWNHEIGHT: cint = 110
 FONT: str = 'arial 11'
+PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 cached = struct(w=cint, h=cint, tw=cint, th=cint, ts=str, im=ImageTk)  # struct for holding cached data
 
 #  fits width and height to tkinter window
@@ -89,9 +90,13 @@ def animate(gifFrame: cint, w: cint, h: cint, path, speed: cint, temp) -> None:
 
 
 def loadFrame(gifFrame: cint, temp, w: cint, h: cint):
-    temp.seek(gifFrame)
-    gifFrames[gifFrame] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
-    if gifFrame < len(gifFrames)-1: Thread(target=loadFrame, args=(gifFrame+1, temp, w, h)).start()
+    try:
+        temp.seek(gifFrame)
+        gifFrames[gifFrame] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
+        if gifFrame < len(gifFrames)-1: Thread(target=loadFrame, args=(gifFrame+1, temp, w, h)).start()
+        else: temp.close()
+    except Exception as e:  # index out of bounds triggered by scrolling during load, catch and close
+        temp.close()
 
 def hover(id, img) -> None:
     global canvas
@@ -116,10 +121,10 @@ def toggleDrop(event=None) -> None:
     else: canvas.itemconfig(infod, state='hidden')
     
 def createDropbar() -> None:
-    global canvas, dropbar, dropImage, fnt, trueWidth, trueHeight, trueSize, infod
+    global canvas, dropbar, dropImage, PILFNT, trueWidth, trueHeight, trueSize, infod
     draw = ImageDraw.Draw(dropbar.copy())  # copy plain window and draw on it
-    draw.text((10, 25), f"Pixels: {trueWidth}x{trueHeight}", font=fnt, fill="white")
-    draw.text((10, 60), f"Size: {trueSize}", font=fnt, fill="white")
+    draw.text((10, 25), f"Pixels: {trueWidth}x{trueHeight}", font=PILFNT, fill="white")
+    draw.text((10, 60), f"Size: {trueSize}", font=PILFNT, fill="white")
     dropImage = ImageTk.PhotoImage(draw._image)
     canvas.itemconfig(infod, image=dropImage, state='normal')
 
@@ -171,10 +176,10 @@ def removeAndMove() -> None:
     imageLoader(files[curInd])
 
 def updateTop() -> None:
-    global canvas, loc, files, curInd, dropDown, text
+    global canvas, loc, files, curInd, dropDown, text, r
     canvas.itemconfig(text, text=files[curInd].name)
     loc = canvas.bbox(text)[2]
-    canvas.coords('renamer', loc, 0)
+    canvas.coords(r, loc, 0)
     if dropDown: createDropbar()
 
 # skip clicks to menu, draws menu if not present
@@ -262,16 +267,15 @@ if __name__ == "__main__":
         # UI varaibles
         drawtop: bint = False  # if drawn
         dropDown: bint = False  # if drawn
-        entryText = dropImage = None  # acts as refrences to items
+        entryText = dropImage = None  # acts as refrences to items on screen
         savedText = ''
-        fnt = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
         # data on current image
         trueWidth: cint = 0 
         trueHeight: cint = 0
         trueSize: str = ''
-        # gif support
         loc: cint = 0  # location of rename button
-        gifFrames: list = []  # None if current image not gif, else id for animation loop
+        # gif support
+        gifFrames: list = []
         gifId = None  # id for gif animiation
         # main stuff
         app = Tk()
@@ -284,7 +288,6 @@ if __name__ == "__main__":
         app.update()  # updates winfo width and height to the current size, this is necessary
         appw: cint = app.winfo_width()
         apph: cint = app.winfo_height()
-
         # make assests for menu
         topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
         dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
@@ -340,13 +343,13 @@ if __name__ == "__main__":
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
         hoverUp = ImageTk.PhotoImage(draw._image)
-        renameb = Image.new('RGB', (SPACE, SPACE), (0,0,0,0))
+        renameb = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(renameb) 
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
         renameb = ImageTk.PhotoImage(draw._image)
-        hoverRename = Image.new('RGB', (SPACE, SPACE), (0,0,0,0))
+        hoverRename = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(hoverRename) 
         draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
@@ -358,7 +361,6 @@ if __name__ == "__main__":
         app.bind("<MouseWheel>", scrollhandler)
         canvas.bind("<Button-1>", clickHandler)
         app.bind("<Configure>", resizeHandler)
-        #app.bind("<FocusIn>", lambda e: print('focus!'))
 
         dir = Path(f'{path.dirname(image)}/')
         files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
@@ -392,12 +394,6 @@ if __name__ == "__main__":
         canvas.tag_bind(d, '<Enter>', hoverOnDrop)
         canvas.tag_bind(d, '<Leave>', removeHoverDrop)
         canvas.itemconfig("topb", state='hidden')
-        canvas.itemconfig(text, state='hidden')
-        canvas.itemconfig(r, state='hidden')
-        canvas.itemconfig(b, state='hidden')
-        canvas.itemconfig(b2, state='hidden')
-        canvas.itemconfig(t, state='hidden')
-        canvas.itemconfig(d, state='hidden')
         canvas.itemconfig("userinput", state='hidden')
         # dropbox
         infod = canvas.create_image(appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="topb")
