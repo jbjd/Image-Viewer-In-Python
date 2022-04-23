@@ -10,6 +10,7 @@ from ctypes import windll  # std
 from cython import int as cint  # 0.29.28
 from cython import struct, cfunc, bint  # 0.29.28
 from natsort import os_sorted  # 8.1.0
+#import time
 
 # constants
 DEBUG: bint = False
@@ -58,14 +59,13 @@ def imageLoader(path) -> None:
                     speed = 100
                 if not gifFrames:
                     gifFrames = [None] * temp.n_frames
-                    
-                    gifFrames[0] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
+                    gifFrames[0] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
 
                 image = gifFrames[gifFrame]
                 gifId = app.after(speed, animate, w, h, path, speed, temp)
                 w, h = (appw-w) >> 1, (apph-h) >> 1
             else:
-                image = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS), Image.Resampling.LANCZOS)
+                image = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
                 w, h = (appw-w) >> 1, (apph-h) >> 1
                 cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=image)
 
@@ -83,7 +83,7 @@ def animate(w, h, path, speed, temp) -> None:
     if gifFrame >= len(gifFrames): gifFrame = 0
     img = gifFrames[gifFrame]
     if img is None:
-        img = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
+        img = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
         gifFrames[gifFrame] = img
         temp.seek(gifFrame)
         if gifFrame == len(gifFrames)-1: temp.close()
@@ -260,7 +260,7 @@ def refresh() -> None:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:/ool/thing.gif") if DEBUG else Path(argv[1])
+        image = Path(r"C:\PythonCode\test.jpg") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # UI varaibles
@@ -293,21 +293,21 @@ if __name__ == "__main__":
         # make assests for menu
         topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
         dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
-        exitb = ImageTk.PhotoImage(Image.new('RGBA', (SPACE, SPACE), (190, 40, 40)))
-        hoveredExit = Image.new('RGBA', (SPACE, SPACE), (180, 25, 20))
+        exitb = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
+        hoveredExit = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
         draw: ImageDraw = ImageDraw.Draw(hoveredExit) 
         draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
         draw.line((6, 26, 26, 6), width=2, fill=LINECOL)
         hoveredExit = ImageTk.PhotoImage(draw._image)
-        minib = Image.new('RGBA', (SPACE, SPACE), ICONCOL)
+        minib = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(minib) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
         minib = ImageTk.PhotoImage(draw._image)
-        hoveredMini = Image.new('RGBA', (SPACE, SPACE), ICONHOV)
+        hoveredMini = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(hoveredMini) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
         hoveredMini = ImageTk.PhotoImage(draw._image)
-        trashb = Image.new('RGBA', (SPACE, SPACE), ICONCOL)
+        trashb = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(trashb) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
         draw.line((21, 9, 21, 22), width=2, fill=LINECOL)
@@ -315,7 +315,7 @@ if __name__ == "__main__":
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
         trashb = ImageTk.PhotoImage(draw._image)
-        hoverTrash = Image.new('RGBA', (SPACE, SPACE), ICONHOV)
+        hoverTrash = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(hoverTrash) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
         draw.line((21, 9, 21, 22), width=2, fill=LINECOL)
@@ -323,35 +323,35 @@ if __name__ == "__main__":
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
         hoverTrash = ImageTk.PhotoImage(draw._image)
-        dropb = Image.new('RGBA', (SPACE, SPACE), ICONCOL)
+        dropb = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(dropb) 
         draw.line((6, 11, 16, 21), width=2, fill=LINECOL)
         draw.line((16, 21, 26, 11), width=2, fill=LINECOL)
         dropb = ImageTk.PhotoImage(draw._image)
-        hoverDrop = Image.new('RGBA', (SPACE, SPACE), ICONHOV)
+        hoverDrop = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(hoverDrop) 
         draw.line((6, 11, 16, 21), width=2, fill=LINECOL)
         draw.line((16, 21, 26, 11), width=2, fill=LINECOL)
         hoverDrop = ImageTk.PhotoImage(draw._image)
-        upb = Image.new('RGBA', (SPACE, SPACE), ICONCOL)
+        upb = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(upb) 
         draw.line((6, 21, 16, 11), width=2, fill=LINECOL)
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
         upb = ImageTk.PhotoImage(draw._image)
-        hoverUp = Image.new('RGBA', (SPACE, SPACE), ICONHOV)
+        hoverUp = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(hoverUp) 
         draw.line((6, 21, 16, 11), width=2, fill=LINECOL)
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
         hoverUp = ImageTk.PhotoImage(draw._image)
-        renameb = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
+        renameb = Image.new('RGB', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(renameb) 
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
         renameb = ImageTk.PhotoImage(draw._image)
-        hoverRename = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
+        hoverRename = Image.new('RGB', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(hoverRename) 
         draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
