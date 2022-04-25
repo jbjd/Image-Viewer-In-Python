@@ -37,7 +37,7 @@ def dimensionFinder(w: int, h: int, dimw: int, dimh: int) -> tuple[int, int]:
     
 # loads image path
 def imageLoader(path) -> None:
-    global canvas, cache, app, trueWidth, trueHeight, trueSize, gifFrames, gifId, appw, apph, temp
+    global canvas, cache, app, trueWidth, trueHeight, trueSize, gifFrames, gifId, appw, apph, temp, conImg
     
     try:
         temp = Image.open(path)  #  open even if in cache to interrupt if user deleted it outside of program
@@ -63,20 +63,20 @@ def imageLoader(path) -> None:
                         speed: int = GIFSPEED
                     gifFrames[0] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
 
-                img, speed = gifFrames[0]
+                conImg, speed = gifFrames[0]
                 gifId = app.after(speed, animate, 0, w, h, path, temp)
                 t = Thread(target=loadFrame, args=(1, temp, w, h))
                 t.setDaemon(True)
                 t.start()
                 w, h = (appw-w) >> 1, (apph-h) >> 1
             else:
-                img = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
+                conImg = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
                 w, h = (appw-w) >> 1, (apph-h) >> 1
-                cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=img)
+                cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=conImg)
         else:
             data = cache[path]
-            trueWidth, trueHeight, trueSize, img, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
-        canvas.itemconfig('drawnImage', image=img)
+            trueWidth, trueHeight, trueSize, conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
+        canvas.itemconfig('drawnImage', image=conImg)
         canvas.coords('drawnImage', w, h)
         app.title(files[curInd].name)
         if path.suffix != '.gif': temp.close()
