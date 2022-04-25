@@ -11,7 +11,6 @@ from cython import int as cint  # 0.29.28
 from cython import struct, cfunc, bint  # 0.29.28
 from natsort import os_sorted  # 8.1.0
 from threading import Thread
-#import time
 
 # constants
 DEBUG: bint = False
@@ -25,6 +24,7 @@ DROPDOWNWIDTH: cint = 190
 DROPDOWNHEIGHT: cint = 110
 FONT: str = 'arial 11'
 PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
+GIFSPEED: cint = 100
 cached = struct(w=cint, h=cint, tw=cint, th=cint, ts=str, im=ImageTk)  # struct for holding cached data
 
 #  fits width and height to tkinter window
@@ -58,12 +58,18 @@ def imageLoader(path) -> None:
                     speed: cint = 100
                 if not gifFrames:
                     gifFrames = [None] * temp.n_frames
-                    gifFrames[0] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
+                    try:
+                        speed: cint = int(temp.info['duration'] * .79)
+                        if speed < 2: speed = GIFSPEED
+                    except(KeyError, AttributeError):
+                        speed: cint = GIFSPEED
+                    gifFrames[0] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
 
-                image = gifFrames[0]
-                gifId = app.after(speed, animate, 0, w, h, path, speed, temp)
-                Thread(target=loadFrame, args=(1, temp, w, h)).start()
-            
+                image, speed = gifFrames[0]
+                gifId = app.after(speed, animate, 0, w, h, path, temp)
+                t = Thread(target=loadFrame, args=(1, temp, w, h))
+                t.setDaemon(True)
+                t.start()
                 w, h = (appw-w) >> 1, (apph-h) >> 1
             else:
                 image = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
@@ -80,22 +86,29 @@ def imageLoader(path) -> None:
         removeAndMove()
 
 # used for gif files
-def animate(gifFrame: cint, w: cint, h: cint, path, speed: cint, temp) -> None:
+def animate(gifFrame: cint, w: cint, h: cint, path, temp) -> None:
     global gifFrames, gifId
     gifFrame = gifFrame+1 
     if gifFrame >= len(gifFrames): gifFrame = 0
-    img = gifFrames[gifFrame]
+    try:
+        img, speed = gifFrames[gifFrame]
+    except TypeError:
+        img, speed = None, 200
     canvas.itemconfig('drawnImage', image=img)
-    if len(gifFrames) > 1: gifId = app.after(speed, animate, gifFrame, w, h, path, speed, temp)   
+    if len(gifFrames) > 1: gifId = app.after(speed, animate, gifFrame, w, h, path, temp)   
 
 
 def loadFrame(gifFrame: cint, temp, w: cint, h: cint):
     try:
         temp.seek(gifFrame)
-        gifFrames[gifFrame] = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING))
-        if gifFrame < len(gifFrames)-1: Thread(target=loadFrame, args=(gifFrame+1, temp, w, h)).start()
-        else: temp.close()
-    except Exception as e:  # index out of bounds triggered by scrolling during load, catch and close
+        try:
+            speed: cint = int(temp.info['duration'] * .79)
+            if speed < 2: speed = GIFSPEED
+        except(KeyError, AttributeError):
+            speed: cint = GIFSPEED
+        gifFrames[gifFrame] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
+        loadFrame(gifFrame+1, temp, w, h)
+    except Exception as e:  # index out of bounds triggered by scrolling during load / when recurrsion ends, close
         temp.close()
 
 def hover(id, img) -> None:
@@ -161,6 +174,7 @@ def resizeHandler(event) -> None:
 # delete image
 def trashFile(event) -> None:
     global curInd, files, image
+    clearGif()
     send2trash(files[curInd])
     clearGif()
     removeAndMove()
@@ -174,6 +188,7 @@ def removeAndMove() -> None:
     if curInd >= len(files):
         curInd = len(files)-1
     imageLoader(files[curInd])
+    updateTop()
 
 def updateTop() -> None:
     global canvas, loc, files, curInd, dropDown, text, r
@@ -242,16 +257,15 @@ def deleteRenameBox() -> None:
     entryText = None
 
 def clearGif() -> None:
-    global gifFrames, gifFrame, gifId, app, temp
+    global gifFrames, gifId, app, temp
     if gifId is None: return
     app.after_cancel(gifId)
     gifId = None
     gifFrames.clear()
     temp.close()
 
-def refresh() -> None:
-    global cache, files, dir, curInd, image
-    cache.clear()
+def refresh(dir) -> None:
+    global cache, files, curInd, image
     files = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
     try:
         curInd = files.index(image)
@@ -261,7 +275,7 @@ def refresh() -> None:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\PythonCode\test.jpg") if DEBUG else Path(argv[1])
+        image = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # UI varaibles
@@ -363,8 +377,6 @@ if __name__ == "__main__":
         app.bind("<Configure>", resizeHandler)
 
         dir = Path(f'{path.dirname(image)}/')
-        files: list = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
-        curInd: cint = files.index(image)
         # topbar assests
         canvas.create_image(0, 0, image=topbar, anchor='nw', tag="topb")
         text = canvas.create_text(36, 5, text='', fill="white", anchor='nw', font=FONT, tag="topb")
@@ -398,6 +410,6 @@ if __name__ == "__main__":
         # dropbox
         infod = canvas.create_image(appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="topb")
 
-        imageLoader(files[curInd])
+        refresh(dir)
         
         app.mainloop()
