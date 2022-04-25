@@ -7,78 +7,76 @@ from os import path, stat, rename  # std
 from send2trash import send2trash  # 1.8.0
 from pathlib import Path  # std
 from ctypes import windll  # std
-from cython import int as cint  # 0.29.28
-from cython import struct, cfunc, bint  # 0.29.28
+from cython import struct  # 0.29.28
 from natsort import os_sorted  # 8.1.0
 from threading import Thread
 
 # constants
-DEBUG: bint = False
-SPACE: cint = 32
+DEBUG: bool = False
+SPACE: int = 32
 LINECOL: tuple = (170, 170, 170)
 ICONCOL: tuple = (100, 104, 102)
 ICONHOV: tuple = (95, 92, 88)
 TOPCOL: tuple = (60, 60, 60, 170)
 FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
-DROPDOWNWIDTH: cint = 190
-DROPDOWNHEIGHT: cint = 110
+DROPDOWNWIDTH: int = 190
+DROPDOWNHEIGHT: int = 110
 FONT: str = 'arial 11'
 PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
-GIFSPEED: cint = 100
-cached = struct(w=cint, h=cint, tw=cint, th=cint, ts=str, im=ImageTk)  # struct for holding cached data
+GIFSPEED: int = 100
+cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk)  # struct for holding cached data
 
 #  fits width and height to tkinter window
-@cfunc
-def dimensionFinder(w: cint, h: cint, dimw: cint, dimh: cint) -> tuple[cint, cint]:
+def dimensionFinder(w: int, h: int, dimw: int, dimh: int) -> tuple[int, int]:
     ''' w,h are width and height of image before resize
         dimw, dimh are the screen's dimentions 
     '''
-    width: cint = round(w * (dimh/h))
+    width: int = round(w * (dimh/h))
     #  Size to height of window. If that makes the image too wide, size to width instead
     return (width, dimh) if width <= dimw else (dimw, round(h * (dimw/w)))
     
 # loads image path
 def imageLoader(path) -> None:
-    global image, canvas, cache, app, trueWidth, trueHeight, trueSize, gifFrames, gifId, appw, apph, temp
+    global canvas, cache, app, trueWidth, trueHeight, trueSize, gifFrames, gifId, appw, apph, temp
     
     try:
         temp = Image.open(path)  #  open even if in cache to interrupt if user deleted it outside of program
-        w: cint
-        h: cint
+        w: int
+        h: int
         if path not in cache:
             trueWidth, trueHeight = temp.size
-            intSize: cint = round(stat(path).st_size/1000)
+            intSize: int = round(stat(path).st_size/1000)
             trueSize = f"{round(intSize/1000, 2)}mb" if intSize > 999 else f"{intSize}kb"
             w, h = dimensionFinder(trueWidth, trueHeight, appw, apph)
             if path.suffix == '.gif':
                 try:
-                    speed: cint = temp.info['duration']
+                    speed: int = temp.info['duration']
                     if speed < 2: speed = 100
                 except(KeyError, AttributeError):
-                    speed: cint = 100
+                    speed: int = 100
                 if not gifFrames:
                     gifFrames = [None] * temp.n_frames
                     try:
-                        speed: cint = int(temp.info['duration'] * .79)
+                        speed: int = int(temp.info['duration'] * .79)
                         if speed < 2: speed = GIFSPEED
                     except(KeyError, AttributeError):
-                        speed: cint = GIFSPEED
+                        speed: int = GIFSPEED
                     gifFrames[0] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
 
-                image, speed = gifFrames[0]
+                img, speed = gifFrames[0]
                 gifId = app.after(speed, animate, 0, w, h, path, temp)
                 t = Thread(target=loadFrame, args=(1, temp, w, h))
                 t.setDaemon(True)
                 t.start()
                 w, h = (appw-w) >> 1, (apph-h) >> 1
             else:
-                image = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
+                img = ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS))
                 w, h = (appw-w) >> 1, (apph-h) >> 1
-                cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=image)
+                cache[path] = cached(w=w, h=h, tw=trueWidth, th=trueHeight, ts=trueSize, im=img)
         else:
             data = cache[path]
-            trueWidth, trueHeight, trueSize, image, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
-        canvas.itemconfig('drawnImage', image=image)
+            trueWidth, trueHeight, trueSize, img, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
+        canvas.itemconfig('drawnImage', image=img)
         canvas.coords('drawnImage', w, h)
         app.title(files[curInd].name)
         if path.suffix != '.gif': temp.close()
@@ -86,7 +84,7 @@ def imageLoader(path) -> None:
         removeAndMove()
 
 # used for gif files
-def animate(gifFrame: cint, w: cint, h: cint, path, temp) -> None:
+def animate(gifFrame: int, w: int, h: int, path, temp) -> None:
     global gifFrames, gifId
     gifFrame = gifFrame+1 
     if gifFrame >= len(gifFrames): gifFrame = 0
@@ -98,14 +96,14 @@ def animate(gifFrame: cint, w: cint, h: cint, path, temp) -> None:
     if len(gifFrames) > 1: gifId = app.after(speed, animate, gifFrame, w, h, path, temp)   
 
 
-def loadFrame(gifFrame: cint, temp, w: cint, h: cint):
+def loadFrame(gifFrame: int, temp, w: int, h: int):
     try:
         temp.seek(gifFrame)
         try:
-            speed: cint = int(temp.info['duration'] * .79)
+            speed: int = int(temp.info['duration'] * .79)
             if speed < 2: speed = GIFSPEED
         except(KeyError, AttributeError):
-            speed: cint = GIFSPEED
+            speed: int = GIFSPEED
         gifFrames[gifFrame] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
         loadFrame(gifFrame+1, temp, w, h)
     except Exception as e:  # index out of bounds triggered by scrolling during load / when recurrsion ends, close
@@ -173,7 +171,7 @@ def resizeHandler(event) -> None:
 
 # delete image
 def trashFile(event) -> None:
-    global curInd, files, image
+    global curInd, files
     clearGif()
     send2trash(files[curInd])
     clearGif()
@@ -264,8 +262,8 @@ def clearGif() -> None:
     gifFrames.clear()
     temp.close()
 
-def refresh(dir) -> None:
-    global cache, files, curInd, image
+def refresh(dir, image) -> None:
+    global cache, files, curInd
     files = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
     try:
         curInd = files.index(image)
@@ -279,15 +277,15 @@ if __name__ == "__main__":
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # UI varaibles
-        drawtop: bint = False  # if drawn
-        dropDown: bint = False  # if drawn
+        drawtop: bool = False  # if drawn
+        dropDown: bool = False  # if drawn
         entryText = dropImage = None  # acts as refrences to items on screen
         savedText = ''
         # data on current image
-        trueWidth: cint = 0 
-        trueHeight: cint = 0
+        trueWidth: int = 0 
+        trueHeight: int = 0
         trueSize: str = ''
-        loc: cint = 0  # location of rename button
+        loc: int = 0  # location of rename button
         # gif support
         gifFrames: list = []
         gifId = None  # id for gif animiation
@@ -300,8 +298,8 @@ if __name__ == "__main__":
         app.attributes('-fullscreen', True)
         app.state('zoomed')
         app.update()  # updates winfo width and height to the current size, this is necessary
-        appw: cint = app.winfo_width()
-        apph: cint = app.winfo_height()
+        appw: int = app.winfo_width()
+        apph: int = app.winfo_height()
         # make assests for menu
         topbar = ImageTk.PhotoImage(Image.new('RGBA', (app.winfo_width(), SPACE), TOPCOL))
         dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
@@ -410,6 +408,6 @@ if __name__ == "__main__":
         # dropbox
         infod = canvas.create_image(appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="topb")
 
-        refresh(dir)
+        refresh(dir, image)
         
         app.mainloop()
