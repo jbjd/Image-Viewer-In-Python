@@ -2,14 +2,14 @@
 # pyinstaller is very slow, please use nuitka if you plan to compile it yourself
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.1.0
-from os import path, stat, rename  # std
-from send2trash import send2trash  # 1.8.0
+from threading import Thread  # std
 from pathlib import Path  # std
 from ctypes import windll  # std
+from os import path, stat, rename  # std
+from functools import cmp_to_key  # std
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.1.0
+from send2trash import send2trash  # 1.8.0
 from cython import struct  # 0.29.28
-from natsort import os_sorted  # 8.1.0
-from threading import Thread
 
 # constants
 DEBUG: bool = False
@@ -61,7 +61,7 @@ def imageLoader(path) -> None:
                         if speed < 2: speed = GIFSPEED
                     except(KeyError, AttributeError):
                         speed: int = GIFSPEED
-                    gifFrames[0] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
+                    gifFrames[0] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS)), speed)
 
                 conImg, speed = gifFrames[0]
                 gifId = app.after(speed, animate, 0, w, h, path, temp)
@@ -104,7 +104,7 @@ def loadFrame(gifFrame: int, temp, w: int, h: int):
             if speed < 2: speed = GIFSPEED
         except(KeyError, AttributeError):
             speed: int = GIFSPEED
-        gifFrames[gifFrame] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.HAMMING)), speed)
+        gifFrames[gifFrame] = (ImageTk.PhotoImage(temp.resize((w, h), Image.Resampling.LANCZOS)), speed)
         loadFrame(gifFrame+1, temp, w, h)
     except Exception as e:  # index out of bounds triggered by scrolling during load / when recurrsion ends, close
         temp.close()
@@ -174,17 +174,14 @@ def trashFile(event) -> None:
     global curInd, files
     clearGif()
     send2trash(files[curInd])
-    clearGif()
     removeAndMove()
 
 # remove from list and move to next image
 def removeAndMove() -> None:
     global files, curInd, cache
-    if files[curInd] in cache:
-        del cache[files[curInd]]
+    if files[curInd] in cache: del cache[files[curInd]]
     del files[curInd]
-    if curInd >= len(files):
-        curInd = len(files)-1
+    if curInd >= len(files): curInd = len(files)-1
     imageLoader(files[curInd])
     updateTop()
 
@@ -232,8 +229,7 @@ def renameFile(event) -> None:
         rename(files[curInd], newname) 
         newname = Path(newname)
         del files[curInd]
-        files.append(newname)
-        files = os_sorted(files)  # less efficent than insertion, but os sorting not same as normal sorting...
+        files.insert(binarySearch(newname), newname)
         deleteRenameBox()
         clearGif()
         imageLoader(files[curInd])
@@ -264,16 +260,27 @@ def clearGif() -> None:
 
 def refresh(dir, image) -> None:
     global cache, files, curInd
-    files = os_sorted([p for p in dir.glob("*") if p.suffix in FILETYPE])
-    try:
-        curInd = files.index(image)
-    except ValueError:
-        curInd = 0
+    files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(str(a), str(b)) ))
+    curInd = binarySearch(image)
     drawWrapper()
+
+def binarySearch(path):
+    global files
+    strpth = path.name
+    low = 0
+    high = len(files)-1
+    mid = 0
+    while True:
+        if high < low: return low
+        mid = (low+high)>>1
+        cur = files[mid].name
+        if strpth == cur: return mid
+        if 1 == windll.shlwapi.StrCmpLogicalW(strpth, cur):low = mid+1
+        else: high = mid-1
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        image = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
+        image = Path(r"C:\Users\jimde\OneDrive\Pictures\meme.png") if DEBUG else Path(argv[1])
         if image.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         # UI varaibles
