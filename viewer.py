@@ -241,35 +241,30 @@ class viewer:
             self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
             w: int
             h: int
+            close: bool = True
             if curPath not in self.cache:
                 self.trueWidth, self.trueHeight = self.temp.size
                 intSize: int = round(stat(curPath).st_size/1000)
                 self.trueSize = f"{round(intSize/1000, 2)}mb" if intSize > 999 else f"{intSize}kb"
                 w, h = self.dimensionFinder()
-                if curPath.suffix == '.gif':
+                if(curPath.suffix != '.png' and hasattr(self.temp, 'n_frames')):  # any non-png animated file
+                    self.gifFrames = [None] * self.temp.n_frames
                     try:
-                        speed: int = self.temp.info['duration']
-                        if speed < 2: speed = 100
+                        speed: int = int(self.temp.info['duration'] * .81)
+                        if speed < 2: speed = GIFSPEED
                     except(KeyError, AttributeError):
-                        speed: int = 100
-                    if not self.gifFrames:
-                        self.gifFrames = [None] * self.temp.n_frames
-                        try:
-                            speed: int = int(self.temp.info['duration'] * .81)
-                            if speed < 2: speed = GIFSPEED
-                        except(KeyError, AttributeError):
-                            speed: int = GIFSPEED
-                        self.buffer = int(speed*1.4)
-                        self.gifFrames[0] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
-                        t = Thread(target=self.loadFrame, args=(1, w, h, curPath.name))
-                        
-                        t.setDaemon(True)
-                        t.start()
-                        sleep(.028)  # makes a huge difference, gives thread a large head start to load gif
+                        speed: int = GIFSPEED
+                    self.buffer = int(speed*1.4)
+                    self.gifFrames[0] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
+                    t = Thread(target=self.loadFrame, args=(1, w, h, curPath.name))
+                    t.setDaemon(True)
+                    t.start()
+                    sleep(.028)  # makes a huge difference, gives thread a large head start to load
                     self.conImg, speed = self.gifFrames[0]
-                    if len(self.gifFrames) > 1: self.gifId = self.app.after(speed, self.animate, 0, w, h, curPath)
+                    self.gifId = self.app.after(speed, self.animate, 0, w, h, curPath)
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
-                else:
+                    close = False  # keep open since this is an animation and we need to wait thead to load frames
+                else:  # any image thats not cached or animated
                     self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), Image.Resampling.LANCZOS))
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg)
@@ -279,7 +274,7 @@ class viewer:
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
             self.canvas.coords(self.drawnImage, w, h)
             self.app.title(self.files[self.curInd].name)
-            if curPath.suffix != '.gif': self.temp.close()  # closes in clearGIF function or at end of loading frames
+            if close: self.temp.close()  # closes in clearGIF function or at end of loading frames
         except(FileNotFoundError, UnidentifiedImageError):
             self.removeAndMove()
 
@@ -398,7 +393,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\any\aniamted\file.webp") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
