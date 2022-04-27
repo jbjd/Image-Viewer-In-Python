@@ -32,8 +32,7 @@ class viewer:
             # UI varaibles
             self.drawtop: bool = False  # if topbar drawn
             self.dropDown: bool = False  # if dropdown drawn
-            self.entryText = self.dropImage = None  # acts as refrences to items on screen
-            self.savedText = ''
+            self.dropImage = None  # acts as refrences to items on screen
             # data on current image
             self.trueWidth: int = 0 
             self.trueHeight: int = 0
@@ -154,14 +153,18 @@ class viewer:
             self.createDropbar()
         else:
             self.d = self.canvas.create_image(self.appw-(SPACE*3), 0, image=self.dropb, anchor='nw', tag='topb') 
-        self.canvas.create_window(0, 0, width=200, height=24, anchor='nw', tag="userinput")  # rename window
+        self.inp = self.canvas.create_window(0, 0, width=200, height=24, anchor='nw')  # rename window
         self.canvas.tag_bind(self.d, '<Button-1>', self.toggleDrop)
         self.canvas.tag_bind(self.d, '<Enter>', self.hoverOnDrop)
         self.canvas.tag_bind(self.d, '<Leave>', self.removeHoverDrop)
         self.canvas.itemconfig("topb", state='hidden')
-        self.canvas.itemconfig("userinput", state='hidden')
         # dropbox
         self.infod = self.canvas.create_image(self.appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="topb")
+        # rename window
+        self.entryText = Entry(self.app, font=FONT)
+        self.entryText.bind('<Return>', self.renameFile)
+        self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
+
     # START BUTTON FUNCTIONS
     def hover(self, id, img) -> None:
         self.canvas.itemconfig(id, image=img)
@@ -182,24 +185,22 @@ class viewer:
 
     # opens tkinter entry to accept user input
     def renameWindow(self, event) -> None:
-        if self.entryText is None:
-            self.entryText = Entry(self.app, font=FONT)
-            self.entryText.insert('end', self.savedText)
-            self.entryText.bind('<Return>', self.renameFile)
-            self.canvas.itemconfig("userinput", window=self.entryText, state='normal')
-            self.canvas.coords("userinput", self.loc+40, 4)
-        else: self.deleteRenameBox()
+        if self.canvas.itemcget(self.inp,'state') == 'hidden':
+            self.canvas.itemconfig(self.inp, state='normal')
+            self.canvas.coords(self.inp, self.loc+40, 4)
+        else:
+            self.canvas.itemconfig(self.inp, state='hidden')
 
     # asks os to rename file and changes position in list to new location
     def renameFile(self, event) -> None:
-        if self.entryText is None: return
-        newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].curPath.suffix}'
+        if self.canvas.itemcget(self.inp,'state') == 'hidden': return
+        newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
         try:
             rename(self.files[self.curInd], newname) 
             newname = Path(newname)
             del self.files[self.curInd]
             self.files.insert(self.binarySearch(newname), newname)
-            self.deleteRenameBox()
+            self.canvas.itemconfig(self.inp, state='hidden')
             self.clearGif()
             self.imageLoader()
             self.updateTop()
@@ -210,12 +211,8 @@ class viewer:
     def revert(self) -> None:
         if self.entryText is not None: self.entryText.config(bg="White")
 
-    def deleteRenameBox(self) -> None:
-        if self.entryText is None: return
-        self.savedText = self.entryText.get()  # comment this to remove text saving in rename window
-        self.canvas.itemconfig("userinput", state='hidden')
-        self.entryText.destroy()
-        self.entryText = None
+    def hideRenameBox(self) -> None:
+        self.canvas.itemconfig(self.inp, state='hidden')
 
     # minimizes app
     def minimize(self, event) -> None:
@@ -261,7 +258,7 @@ class viewer:
                     t.start()
                     sleep(.028)  # makes a huge difference, gives thread a large head start to load
                     self.conImg, speed = self.gifFrames[0]
-                    self.gifId = self.app.after(speed, self.animate, 0, w, h, curPath)
+                    self.gifId = self.app.after(speed, self.animate, 1)
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     close = False  # keep open since this is an animation and we need to wait thead to load frames
                 else:  # any image thats not cached or animated
@@ -280,10 +277,11 @@ class viewer:
 
     # skip clicks to menu, draws menu if not present
     def clickHandler(self, event) -> None:
+        
         if self.drawtop and (event.y <= SPACE or (self.dropDown and event.x > self.appw-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)):
             return
         self.drawtop = not self.drawtop
-        self.deleteRenameBox()
+        self.canvas.itemconfig(self.inp, state='hidden')
         if self.drawtop: 
             self.canvas.itemconfig("topb", state='normal')
             self.updateTop()
@@ -293,8 +291,7 @@ class viewer:
 
     # move between images when mouse scolls
     def scrollhandler(self, event) -> None:
-        if self.entryText is not None:
-            self.deleteRenameBox()
+        self.canvas.itemconfig(self.inp, state='hidden')
         self.clearGif()
         if event.delta > 0:
             self.curInd = len(self.files)-1 if self.curInd == 0 else self.curInd-1
@@ -318,7 +315,7 @@ class viewer:
     # END MAIN IMAGE FUNCTIONS
 
     # START GIF FUNCTIONS
-    def animate(self, gifFrame: int, w: int, h: int, path) -> None:
+    def animate(self, gifFrame: int) -> None:
         gifFrame = gifFrame+1 
         if gifFrame >= len(self.gifFrames): gifFrame = 0
         try:
@@ -328,7 +325,7 @@ class viewer:
             speed = self.buffer
             gifFrame -= 1
         
-        self.gifId = self.app.after(speed, self.animate, gifFrame, w, h, path)
+        self.gifId = self.app.after(speed, self.animate, gifFrame)
 
     def loadFrame(self, gifFrame: int, w: int, h: int, name):
         if name != self.files[self.curInd].name: return
@@ -393,7 +390,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\any\aniamted\file.webp") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\PythonCode\ny.gif") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
