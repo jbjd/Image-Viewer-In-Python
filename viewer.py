@@ -240,8 +240,9 @@ class viewer:
                 intSize: int = round(stat(curPath).st_size/1000)
                 self.trueSize = f"{round(intSize/10)/100}mb" if intSize > 999 else f"{intSize}kb"
                 w, h = self.dimensionFinder()
-                if(curPath.suffix != '.png' and hasattr(self.temp, 'n_frames')):  # any non-png animated file
-                    self.gifFrames = [None] * self.temp.n_frames
+                frames: int = getattr(self.temp, 'n_frames', 1)-1
+                if(frames and curPath.suffix != '.png'):  # any non-png animated file
+                    self.gifFrames = [None] * frames
                     try:
                         speed: int = int(self.temp.info['duration'] * .81)
                         if speed < 2: speed = GIFSPEED
@@ -258,7 +259,7 @@ class viewer:
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     close = False  # keep open since this is an animation and we need to wait thead to load frames
                 else:  # any image thats not cached or animated
-                    self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), Image.Resampling.LANCZOS))
+                    self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg)
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
@@ -336,7 +337,7 @@ class viewer:
             self.buffer = int(speed*1.4)
             self.gifFrames[gifFrame] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
             self.loadFrame(gifFrame+1, w, h, name)
-        except Exception as e:  
+        except Exception:  
             # scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
             if name == self.files[self.curInd].name: self.temp.close()
 
@@ -384,7 +385,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\a\meme.png") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.webp") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
