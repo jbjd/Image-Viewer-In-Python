@@ -5,7 +5,7 @@ from tkinter import Tk, Canvas, Entry  # std
 from threading import Thread  # std
 from pathlib import Path  # std
 from ctypes import windll  # std
-from os import path, stat, rename, getcwd  # std
+from os import path, stat, rename  # std
 from functools import cmp_to_key  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.1.0
 from send2trash import send2trash  # 1.8.0
@@ -26,14 +26,11 @@ cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk)  # struct for 
 class viewer:
     def __init__(self, pth):
             # UI varaibles
-            self.drawtop: bool = False  # if topbar drawn
-            self.dropDown: bool = False  # if dropdown drawn
-            self.dropImage: ImageTk.PhotoImage = None  # acts as refrences to items on screen
+            self.drawtop = self.dropDown = False  # if topbar/dropdown drawn
+            self.dropImage = None  # acts as refrences to items on screen
             # data on current image
-            self.trueWidth: int = 0 
-            self.trueHeight: int = 0
+            self.trueWidth = self.trueHeigh = self.loc = 0  # loc is x location of rename window, found dynamically
             self.trueSize: str = ''
-            self.loc: int = 0  # x location of rename button
             # gif support
             self.gifFrames: list = []
             self.gifId: str = ''  # id for gif animiation
@@ -64,22 +61,22 @@ class viewer:
         ICONHOV: tuple = (95, 92, 88)
         TOPCOL: tuple = (60, 60, 60, 170)
         # stuff on topbar
-        self.topbar: ImageTk.PhotoImage = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
+        self.topbar = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
         self.dropbar: Image.Image = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
-        self.exitb: ImageTk.PhotoImage = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
+        self.exitb = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
         loadedImg: Image.Image = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
         draw.line((6, 26, 26, 6), width=2, fill=LINECOL)
-        self.hoveredExit: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoveredExit = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
-        self.minib: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.minib = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
-        self.hoveredMini: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoveredMini = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
@@ -87,7 +84,7 @@ class viewer:
         draw.line((9, 22, 21, 22), width=2, fill=LINECOL)
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
-        self.trashb: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.trashb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
@@ -95,42 +92,42 @@ class viewer:
         draw.line((9, 22, 21, 22), width=2, fill=LINECOL)
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
-        self.hoverTrash: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoverTrash = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 11, 16, 21), width=2, fill=LINECOL)
         draw.line((16, 21, 26, 11), width=2, fill=LINECOL)
-        self.dropb: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.dropb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 11, 16, 21), width=2, fill=LINECOL)
         draw.line((16, 21, 26, 11), width=2, fill=LINECOL)
-        self.hoverDrop: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoverDrop = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 21, 16, 11), width=2, fill=LINECOL)
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
-        self.upb: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.upb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 21, 16, 11), width=2, fill=LINECOL)
         draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
         draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
-        self.hoverUp: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoverUp = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(loadedImg) 
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
-        self.renameb: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.renameb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(loadedImg) 
         draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
-        self.hoverRename: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+        self.hoverRename = ImageTk.PhotoImage(draw._image)
         # topbar assests
         self.canvas.create_image(0, 0, image=self.topbar, anchor='nw', tag="topb")
         self.text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor='nw', font=FONT, tag="topb")
@@ -231,8 +228,7 @@ class viewer:
             w: int
             h: int
             close: bool = True
-            data = None
-            if curPath in self.cache: data = self.cache[curPath]
+            data = self.cache.get(curPath, None)
             if data is not None and data.tw == self.temp.size[0]:
                 self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
             else:
@@ -240,14 +236,14 @@ class viewer:
                 intSize: int = round(stat(curPath).st_size/1000)
                 self.trueSize = f"{round(intSize/10)/100}mb" if intSize > 999 else f"{intSize}kb"
                 w, h = self.dimensionFinder()
-                frames: int = getattr(self.temp, 'n_frames', 1)-1
-                if(frames and curPath.suffix != '.png'):  # any non-png animated file
+                frames: int = getattr(self.temp, 'n_frames', 0)
+                if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file
                     self.gifFrames = [None] * frames
                     try:
-                        speed: int = int(self.temp.info['duration'] * .81)
+                        speed = int(self.temp.info['duration'] * .81)
                         if speed < 2: speed = GIFSPEED
                     except(KeyError, AttributeError):
-                        speed: int = GIFSPEED
+                        speed = GIFSPEED
                     self.buffer = int(speed*1.4)
                     self.gifFrames[0] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
                     t = Thread(target=self.loadFrame, args=(1, w, h, curPath.name))
@@ -294,13 +290,15 @@ class viewer:
         if self.drawtop: self.updateTop()
 
     def removeImg(self) -> None:
-        if self.files[self.curInd] in self.cache: del self.cache[self.files[self.curInd]]
+        self.cache.pop(self.files[self.curInd])
         del self.files[self.curInd]
 
     # remove from list and move to next image
     def removeAndMove(self) -> None:
         self.removeImg()
-        if self.curInd >= len(self.files): self.curInd = len(self.files)-1
+        size = len(self.files)
+        if not size: self.app.quit()
+        if self.curInd >= size: self.curInd = size-1
         self.imageLoader()
         if self.drawtop: self.updateTop()
 
@@ -328,7 +326,6 @@ class viewer:
         if name != self.files[self.curInd].name: return
         try:
             self.temp.seek(gifFrame)
-            speed: int
             try:
                 speed = int(self.temp.info['duration'] * .81)
                 if speed < 2: speed = GIFSPEED
@@ -367,21 +364,20 @@ class viewer:
     # pth: Path object of path to current image 
     def refresh(self, pth) -> None:
         dir = Path(f'{path.dirname(pth)}/')
-        self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(str(a), str(b)) ))
+        self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name) ))
         self.curInd = self.binarySearch(pth.name)
         self.imageLoader()
 
     # pth: Path object of path to current image 
     def binarySearch(self, pth):
-        low = 0
-        high = len(self.files)-1
-        while 1:
-            if high < low: return low
+        low, high = 0, len(self.files)-1
+        while low <= high:
             mid = (low+high)>>1
             cur = self.files[mid].name
             if pth == cur: return mid
             if windll.shlwapi.StrCmpLogicalW(pth, cur) == 1: low = mid+1
             else: high = mid-1
+        return low
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
