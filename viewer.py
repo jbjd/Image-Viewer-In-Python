@@ -21,7 +21,7 @@ DROPDOWNHEIGHT: int = 110
 FONT: str = 'arial 11'
 PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 GIFSPEED: int = 90
-cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk)  # struct for holding cached data
+cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk, bits=int)  # struct for holding cached data
 
 class viewer:
     def __init__(self, pth):
@@ -52,7 +52,13 @@ class viewer:
             self.canvas.bind("<Button-1>", self.clickHandler)
             # start up app
             self.refresh(pth)
+            self.app.bind("<FocusIn>", self.redraw)
             self.app.mainloop()
+
+    def redraw(self, event):
+        if event.widget != self.app:
+            return
+        self.imageLoader()
 
     def loadAssests(self):
         # consts
@@ -225,19 +231,18 @@ class viewer:
         curPath = self.files[self.curInd]
         try:
             self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
-            w: int
-            h: int
+            bitSize: int = stat(curPath).st_size
             close: bool = True
             data = self.cache.get(curPath, None)
-            if data is not None and data.tw == self.temp.size[0]:
+            if data is not None and bitSize == data.bits:  # was cached
                 self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
             else:
                 self.trueWidth, self.trueHeight = self.temp.size
-                intSize: int = round(stat(curPath).st_size/1000)
+                intSize: int = round(bitSize/1000)
                 self.trueSize = f"{round(intSize/10)/100}mb" if intSize > 999 else f"{intSize}kb"
                 w, h = self.dimensionFinder()
                 frames: int = getattr(self.temp, 'n_frames', 0)
-                if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file
+                if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
                     self.gifFrames = [None] * frames
                     try:
                         speed = int(self.temp.info['duration'] * .81)
@@ -257,11 +262,11 @@ class viewer:
                 else:  # any image thats not cached or animated
                     self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
-                    self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg)
+                    self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=bitSize)
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
             self.canvas.coords(self.drawnImage, w, h)
             self.app.title(self.files[self.curInd].name)
-            if close: self.temp.close()  # closes in clearGIF function or at end of loading frames
+            if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
         except(FileNotFoundError, UnidentifiedImageError):
             self.removeAndMove()
 
@@ -290,7 +295,8 @@ class viewer:
         if self.drawtop: self.updateTop()
 
     def removeImg(self) -> None:
-        self.cache.pop(self.files[self.curInd])
+        pth = self.files[self.curInd]
+        if pth in self.cache: self.cache.pop(pth)
         del self.files[self.curInd]
 
     # remove from list and move to next image
@@ -381,7 +387,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.webp") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\folder\test.webp") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
