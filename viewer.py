@@ -10,7 +10,7 @@ from functools import cmp_to_key  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.1.0
 from send2trash import send2trash  # 1.8.0
 from cython import struct  # 0.29.28
-from time import sleep#, time_ns
+from time import sleep, time_ns
 
 # constants
 DEBUG: bool = False
@@ -47,11 +47,16 @@ class viewer:
             self.appw: int = self.app.winfo_width()
             self.apph: int = self.app.winfo_height()
             self.loadAssests()
+            # draw first img, then get all paths in dir
+            dir = Path(f'{path.dirname(pth)}/')
+            self.files = [pth]
+            self.curInd = 0
+            self.imageLoader()
+            self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name) ))
+            self.curInd = self.binarySearch(pth.name)
             # events based on input
             self.app.bind("<MouseWheel>", self.scrollhandler)
             self.canvas.bind("<Button-1>", self.clickHandler)
-            # start up app
-            self.refresh(pth)
             self.app.bind("<FocusIn>", self.redraw)
             self.app.mainloop()
 
@@ -67,22 +72,22 @@ class viewer:
         ICONHOV: tuple = (95, 92, 88)
         TOPCOL: tuple = (60, 60, 60, 170)
         # stuff on topbar
-        self.topbar = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
-        self.dropbar: Image.Image = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
-        self.exitb = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
-        loadedImg: Image.Image = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
-        draw: ImageDraw.ImageDraw = ImageDraw.Draw(loadedImg) 
+        self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
+        self.dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
+        exitb        = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
+        loadedImg = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
+        draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
         draw.line((6, 26, 26, 6), width=2, fill=LINECOL)
-        self.hoveredExit = ImageTk.PhotoImage(draw._image)
+        hoveredExit = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
-        self.minib = ImageTk.PhotoImage(draw._image)
+        minib = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
-        self.hoveredMini = ImageTk.PhotoImage(draw._image)
+        hoveredMini = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
@@ -90,7 +95,7 @@ class viewer:
         draw.line((9, 22, 21, 22), width=2, fill=LINECOL)
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
-        self.trashb = ImageTk.PhotoImage(draw._image)
+        trashb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONHOV)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((9, 9, 9, 22), width=2, fill=LINECOL)
@@ -98,7 +103,7 @@ class viewer:
         draw.line((9, 22, 21, 22), width=2, fill=LINECOL)
         draw.line((7, 9, 24, 9), width=2, fill=LINECOL)
         draw.line((12, 8, 19, 8), width=3, fill=LINECOL)
-        self.hoverTrash = ImageTk.PhotoImage(draw._image)
+        hoverTrash = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGB', (SPACE, SPACE), ICONCOL)
         draw = ImageDraw.Draw(loadedImg) 
         draw.line((6, 11, 16, 21), width=2, fill=LINECOL)
@@ -126,33 +131,33 @@ class viewer:
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
-        self.renameb = ImageTk.PhotoImage(draw._image)
+        renameb = ImageTk.PhotoImage(draw._image)
         loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
         draw = ImageDraw.Draw(loadedImg) 
         draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
         draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
         draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
         draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
-        self.hoverRename = ImageTk.PhotoImage(draw._image)
+        hoverRename = ImageTk.PhotoImage(draw._image)
         # topbar assests
         self.canvas.create_image(0, 0, image=self.topbar, anchor='nw', tag="topb")
         self.text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor='nw', font=FONT, tag="topb")
-        self.r: int = self.canvas.create_image(0, 0, image=self.renameb, anchor='nw', tag='topb')
-        self.b: int = self.canvas.create_image(self.appw-SPACE, 0, image=self.exitb, anchor='nw', tag='topb')
-        self.b2: int = self.canvas.create_image(self.appw-SPACE-SPACE, 0, image=self.minib, anchor='nw', tag='topb')
-        self.t: int = self.canvas.create_image(0, 0, image=self.trashb, anchor='nw', tag='topb')
+        self.r: int = self.canvas.create_image(0, 0, image=renameb, anchor='nw', tag='topb')
+        self.b: int = self.canvas.create_image(self.appw-SPACE, 0, image=exitb, anchor='nw', tag='topb')
+        self.b2: int = self.canvas.create_image(self.appw-SPACE-SPACE, 0, image=minib, anchor='nw', tag='topb')
+        self.t: int = self.canvas.create_image(0, 0, image=trashb, anchor='nw', tag='topb')
         self.canvas.tag_bind(self.b, '<Button-1>', lambda e: self.app.quit())
         self.canvas.tag_bind(self.b2,'<Button-1>', self.minimize)
         self.canvas.tag_bind(self.t, '<Button-1>', self.trashFile)
         self.canvas.tag_bind(self.r, '<Button-1>', self.renameWindow)
-        self.canvas.tag_bind(self.b, '<Enter>', lambda e: self.hover(id=self.b, img=self.hoveredExit))
-        self.canvas.tag_bind(self.b, '<Leave>', lambda e: self.hover(id=self.b, img=self.exitb))
-        self.canvas.tag_bind(self.b2,'<Enter>', lambda e: self.hover(id=self.b2, img=self.hoveredMini))
-        self.canvas.tag_bind(self.b2,'<Leave>', lambda e: self.hover(id=self.b2, img=self.minib))
-        self.canvas.tag_bind(self.t, '<Enter>', lambda e: self.hover(id=self.t, img=self.hoverTrash))
-        self.canvas.tag_bind(self.t, '<Leave>', lambda e: self.hover(id=self.t, img=self.trashb))
-        self.canvas.tag_bind(self.r, '<Enter>', lambda e: self.hover(id=self.r, img=self.hoverRename))
-        self.canvas.tag_bind(self.r, '<Leave>', lambda e: self.hover(id=self.r, img=self.renameb))
+        self.canvas.tag_bind(self.b, '<Enter>', lambda e: self.hover(self.b, hoveredExit))
+        self.canvas.tag_bind(self.b, '<Leave>', lambda e: self.hover(self.b, exitb))
+        self.canvas.tag_bind(self.b2,'<Enter>', lambda e: self.hover(self.b2, hoveredMini))
+        self.canvas.tag_bind(self.b2,'<Leave>', lambda e: self.hover(self.b2, minib))
+        self.canvas.tag_bind(self.t, '<Enter>', lambda e: self.hover(self.t, hoverTrash))
+        self.canvas.tag_bind(self.t, '<Leave>', lambda e: self.hover(self.t, trashb))
+        self.canvas.tag_bind(self.r, '<Enter>', lambda e: self.hover(self.r, hoverRename))
+        self.canvas.tag_bind(self.r, '<Leave>', lambda e: self.hover(self.r, renameb))
         if self.dropDown:
             self.d: int = self.canvas.create_image(self.appw-(SPACE*3), 0, image=self.upb, anchor='nw', tag='topb')
             self.createDropbar()
@@ -265,7 +270,7 @@ class viewer:
                     self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=bitSize)
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
             self.canvas.coords(self.drawnImage, w, h)
-            self.app.title(self.files[self.curInd].name)
+            self.app.title(curPath.name)
             if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
         except(FileNotFoundError, UnidentifiedImageError):
             self.removeAndMove()
@@ -387,7 +392,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\folder\test.webp") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.webp") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
