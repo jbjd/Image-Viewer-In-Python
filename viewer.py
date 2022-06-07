@@ -10,7 +10,7 @@ from functools import cmp_to_key  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.1.0
 from send2trash import send2trash  # 1.8.0
 from cython import struct  # 0.29.28
-from time import sleep#, time_ns
+from time import sleep, time_ns
 
 # constants
 DEBUG: bool = False
@@ -26,14 +26,15 @@ cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk, bits=int)  # s
 class viewer:
     def __init__(self, pth):
             # UI varaibles
-            self.drawtop = self.dropDown = self.topLoaded = False  # if topbar/dropdown drawn
+            self.drawtop = self.dropDown = False  # if topbar/dropdown drawn
+            self.dropImage = None  # acts as refrences to items on screen
             # data on current image
-            self.trueWidth: int
-            self.trueHeigh: int
-            self.trueSize: str
+            self.trueWidth = self.trueHeigh = self.loc = 0  # loc is x location of rename window, found dynamically
+            self.trueSize: str = ''
             # gif support
-            self.gifFrames: list
+            self.gifFrames: list = []
             self.gifId: str = ''  # id for gif animiation
+            self.buffer: int = 100
             # main stuff
             self.app: Tk = Tk()
             self.cache: dict = dict()  # cache for already rendered images
@@ -41,20 +42,22 @@ class viewer:
             self.canvas.pack(anchor='nw', fill='both', expand=1)
             self.drawnImage = self.canvas.create_image(0, 0, anchor='nw')  # main image, replaced as necessary
             self.app.attributes('-fullscreen', True)
+            self.app.state('zoomed')
             self.app.update()  # updates winfo width and height to the current size, this is necessary
             self.appw: int = self.app.winfo_width()
             self.apph: int = self.app.winfo_height()
-            t = Thread(target=self.loadAssests)
-            t.setDaemon(True)
-            t.start()
+            self.loadAssests()
             # draw first img, then get all paths in dir
+            dir = Path(f'{path.dirname(pth)}/')
             self.files = [pth]
             self.curInd = 0
             self.imageLoader()
-            dir = Path(f'{path.dirname(pth)}/')
             self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name) ))
             self.curInd = self.binarySearch(pth.name)
             # events based on input
+            self.app.bind("<MouseWheel>", self.scrollhandler)
+            self.canvas.bind("<Button-1>", self.clickHandler)
+            self.app.bind("<FocusIn>", self.redraw)
             self.app.mainloop()
 
     def redraw(self, event):
@@ -71,7 +74,6 @@ class viewer:
         # stuff on topbar
         self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
         self.dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
-        self.dropImage = None  # acts as refrences to items on screen
         exitb        = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
         loadedImg = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
         draw = ImageDraw.Draw(loadedImg) 
@@ -169,14 +171,9 @@ class viewer:
         # dropbox
         self.infod: int = self.canvas.create_image(self.appw-DROPDOWNWIDTH, SPACE, anchor='nw', tag="topb")
         # rename window
-        self.loc = 0
         self.entryText: Entry = Entry(self.app, font=FONT)
         self.entryText.bind('<Return>', self.renameFile)
         self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
-        self.app.bind("<MouseWheel>", self.scrollhandler)
-        self.canvas.bind("<Button-1>", self.clickHandler)
-        self.app.bind("<FocusIn>", self.redraw)
-        self.topLoaded = True
 
     # START BUTTON FUNCTIONS
     def hover(self, id, img) -> None:
@@ -240,10 +237,10 @@ class viewer:
         try:
             self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
             bitSize: int = stat(curPath).st_size
+            close: bool = True
             data = self.cache.get(curPath, None)
             if data is not None and bitSize == data.bits:  # was cached
                 self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
-                self.temp.close()
             else:
                 self.trueWidth, self.trueHeight = self.temp.size
                 intSize: int = round(bitSize/1000)
@@ -271,20 +268,17 @@ class viewer:
                     self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=bitSize)
-                    self.temp.close()
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
             self.canvas.coords(self.drawnImage, w, h)
             self.app.title(curPath.name)
+            if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
         except(FileNotFoundError, UnidentifiedImageError):
             self.removeAndMove()
 
     # skip clicks to menu, draws menu if not present
     def clickHandler(self, event) -> None:
-        if not self.topLoaded:
-            return
         if self.drawtop and (event.y <= SPACE or (self.dropDown and event.x > self.appw-DROPDOWNWIDTH and event.y < SPACE+DROPDOWNHEIGHT)):
             return
-        # if assests loaded, toggle state of drawing top
         self.drawtop = not self.drawtop
         self.canvas.itemconfig(self.inp, state='hidden')
         if self.drawtop: 
@@ -398,7 +392,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\Users\YOU\Pictures\tester.webp") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.webp") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
