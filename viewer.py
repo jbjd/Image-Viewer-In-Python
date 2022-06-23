@@ -26,10 +26,10 @@ cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk, bits=int)  # s
 class viewer:
     def __init__(self, pth):
             # UI varaibles
-            self.drawtop = self.dropDown = False  # if topbar/dropdown drawn
+            self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
             self.dropImage = None  # acts as refrences to items on screen
             # data on current image
-            self.trueWidth = self.trueHeigh = self.loc = 0  # loc is x location of rename window, found dynamically
+            self.trueWidth = self.trueHeigh = self.loc = self.bitSize = 0  # loc is x location of rename window, found dynamically
             self.trueSize: str = ''
             # gif support
             self.gifFrames: list = []
@@ -46,6 +46,7 @@ class viewer:
             self.app.update()  # updates winfo width and height to the current size, this is necessary
             self.appw: int = self.app.winfo_width()
             self.apph: int = self.app.winfo_height()
+            self.maxsize = (self.appw, self.apph)
             self.loadAssests()
             # draw first img, then get all paths in dir
             dir = Path(f'{path.dirname(pth)}/')
@@ -61,8 +62,12 @@ class viewer:
             self.app.mainloop()
 
     def redraw(self, event):
-        if event.widget != self.app:
+        if event.widget != self.app or not self.needRedraw:
             return
+        self.needRedraw = False
+        if(stat(self.files[self.curInd]).st_size == self.bitSize):
+            return
+        self.clearGif()
         self.imageLoader()
 
     def loadAssests(self):
@@ -220,6 +225,7 @@ class viewer:
 
     # minimizes app
     def minimize(self, event) -> None:
+        self.needRedraw = True
         self.app.iconify()
 
     # START MAIN IMAGE FUNCTIONS
@@ -236,14 +242,14 @@ class viewer:
         curPath = self.files[self.curInd]
         try:
             self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
-            bitSize: int = stat(curPath).st_size
+            self.bitSize: int = stat(curPath).st_size
             close: bool = True
             data = self.cache.get(curPath, None)
-            if data is not None and bitSize == data.bits:  # was cached
+            if data is not None and self.bitSize == data.bits:  # was cached
                 self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
             else:
                 self.trueWidth, self.trueHeight = self.temp.size
-                intSize: int = round(bitSize/1000)
+                intSize: int = round(self.bitSize/1000)
                 self.trueSize = f"{round(intSize/10)/100}mb" if intSize > 999 else f"{intSize}kb"
                 w, h = self.dimensionFinder()
                 frames: int = getattr(self.temp, 'n_frames', 0)
@@ -265,9 +271,13 @@ class viewer:
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
                     close = False  # keep open since this is an animation and we need to wait thead to load frames
                 else:  # any image thats not cached or animated
-                    self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
+                    if(self.trueHeight > h): 
+                        self.temp.thumbnail(self.maxsize, 1)  # Image.Resampling.LANCZOS = 1
+                        self.conImg = ImageTk.PhotoImage(self.temp)
+                    else:
+                        self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
                     w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
-                    self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=bitSize)
+                    self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=self.bitSize)
             self.canvas.itemconfig(self.drawnImage, image=self.conImg)
             self.canvas.coords(self.drawnImage, w, h)
             self.app.title(curPath.name)
@@ -392,7 +402,7 @@ class viewer:
 
 if __name__ == "__main__":
     if len(argv) > 1 or DEBUG:
-        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.webp") if DEBUG else Path(argv[1])
+        pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.jpg") if DEBUG else Path(argv[1])
         if pathToImage.suffix not in FILETYPE: exit()
         windll.shcore.SetProcessDpiAwareness(1)
         viewer(pathToImage)
