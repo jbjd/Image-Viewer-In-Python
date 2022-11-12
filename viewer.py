@@ -26,45 +26,45 @@ cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk, bits=int)  # s
 
 class viewer:
 	def __init__(self, pth):
-			# UI varaibles
-			self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
-			self.dropImage = None  # acts as refrences to items on screen
-			# data on current image
-			self.trueWidth = self.trueHeigh = self.loc = self.bitSize = 0  # loc is x location of rename window, found dynamically
-			self.trueSize: str = ''
-			# gif support
-			self.gifFrames: list = []
-			self.gifId: str = ''  # id for gif animiation
-			self.buffer: int = 100
-			# main stuff
-			self.app: Tk = Tk()
-			self.cache: dict = dict()  # cache for already rendered images
-			self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
-			self.canvas.pack(anchor='nw', fill='both', expand=1)
-			self.drawnImage = self.canvas.create_image(0, 0, anchor='nw')  # main image, replaced as necessary
-			self.app.attributes('-fullscreen', True)
-			self.app.state('zoomed')
-			self.app.update()  # updates winfo width and height to the current size, this is necessary
-			self.appw: int = self.app.winfo_width()
-			self.apph: int = self.app.winfo_height()
-			self.maxsize = (self.appw, self.apph)
-			self.loadAssests()
-			# draw first img, then get all paths in dir
-			dir = Path(f'{pth.parent}/')
-			self.files = [pth]
-			self.curInd = 0
-			self.imageLoader()
-			self.sortKey = cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name))
-			self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=self.sortKey)
-			self.curInd = self.binarySearch(pth.name)
-			# events based on input
-			
-			self.canvas.bind("<Button-1>", self.clickHandler)
-			self.app.bind("<FocusIn>", self.redraw)
-			self.app.bind("<Left>", lambda e: self.move(-1))
-			self.app.bind("<Right>", lambda e: self.move(1))
-			self.app.bind("<MouseWheel>", lambda e: self.move(-1 if e.delta > 0 else 1))
-			self.app.mainloop()
+		# UI varaibles
+		self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
+		self.dropImage = None  # acts as refrences to items on screen
+		# data on current image
+		self.trueWidth = self.trueHeigh = self.loc = self.bitSize = 0  # loc is x location of rename window, found dynamically
+		self.trueSize: str = ''
+		# gif support
+		self.gifFrames: list = []
+		self.gifId: str = ''  # id for gif animiation
+		self.buffer: int = 100
+		# main stuff
+		self.app: Tk = Tk()
+		self.cache: dict = dict()  # cache for already rendered images
+		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
+		self.canvas.pack(anchor='nw', fill='both', expand=1)
+		self.drawnImage = self.canvas.create_image(0, 0, anchor='nw')  # main image, replaced as necessary
+		self.app.attributes('-fullscreen', True)
+		self.app.state('zoomed')
+		self.app.update()  # updates winfo width and height to the current size, this is necessary
+		self.appw: int = self.app.winfo_width()
+		self.apph: int = self.app.winfo_height()
+		self.maxsize = (self.appw, self.apph)
+		self.loadAssests()
+		# draw first img, then get all paths in dir
+		dir = Path(f'{pth.parent}/')
+		self.files = [pth]
+		self.curInd = 0
+		self.imageLoader()
+		self.sortKey = cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name))
+		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=self.sortKey)
+		self.curInd = self.binarySearch(pth.name)
+		# events based on input
+		
+		self.canvas.bind("<Button-1>", self.clickHandler)
+		self.app.bind("<FocusIn>", self.redraw)
+		self.app.bind("<Left>", lambda e: self.move(-1))
+		self.app.bind("<Right>", lambda e: self.move(1))
+		self.app.bind("<MouseWheel>", lambda e: self.move(-1 if e.delta > 0 else 1))
+		self.app.mainloop()
 
 	# move to next image, dir shoud be either -1 or 1 to move left or right
 	def move(self, dir):
