@@ -12,7 +12,7 @@ from send2trash import send2trash  # 1.8.0
 #from time import time_ns
 
 # constants
-DEBUG: bool = True
+DEBUG: bool = False
 SPACE: int = 32
 FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 DROPDOWNWIDTH: int = 190
