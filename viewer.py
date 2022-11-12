@@ -5,11 +5,10 @@ from tkinter import Tk, Canvas, Entry  # std
 from threading import Thread  # std
 from pathlib import Path  # std
 from ctypes import windll  # std
-from os import stat, rename  # std
-from functools import cmp_to_key  # std
+from os import rename  # std
+from os.path import getsize
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.3.0
 from send2trash import send2trash  # 1.8.0
-from cython import struct  # 0.29.28
 #from time import time_ns
 
 # constants
@@ -22,7 +21,26 @@ FONT: str = 'arial 11'
 PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 DEFAULTSPEED: int = 90
 GIFSPEED: float = .88
-cached = struct(w=int, h=int, tw=int, th=int, ts=str, im=ImageTk, bits=int)  # struct for holding cached data
+
+# struct for holding cached images
+class cached:
+	__slots__ = ['w', 'h', 'tw', 'th', 'ts', 'im', 'bits']
+	def __init__(self, w, h, tw, th, ts, im, bits):
+		self.w: int = w
+		self.h: int = h
+		self.tw: int = tw
+		self.th: int = th
+		self.ts: str = ts  # string rep of file size
+		self.im: ImageTk.PhotoImage = im
+		self.bits: int = bits
+
+# key for sorting on windows
+class WKey:
+	__slots__ = ['pth']
+	def __init__(self, pth):
+		self.pth = pth
+	def __lt__(self, b):
+		return windll.shlwapi.StrCmpLogicalW(self.pth.name, b.pth.name) < 0
 
 class viewer:
 	def __init__(self, pth):
@@ -54,20 +72,29 @@ class viewer:
 		self.files = [pth]
 		self.curInd = 0
 		self.imageLoader()
-		self.sortKey = cmp_to_key(lambda a, b: windll.shlwapi.StrCmpLogicalW(a.name, b.name))
-		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=self.sortKey)
+		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=WKey)
 		self.curInd = self.binarySearch(pth.name)
 		# events based on input
 		
 		self.canvas.bind("<Button-1>", self.clickHandler)
 		self.app.bind("<FocusIn>", self.redraw)
-		self.app.bind("<Left>", lambda e: self.move(-1))
-		self.app.bind("<Right>", lambda e: self.move(1))
-		self.app.bind("<MouseWheel>", lambda e: self.move(-1 if e.delta > 0 else 1))
+		self.app.bind("<Left>", lambda e: self.arrow(e, -1))
+		self.app.bind("<Right>", lambda e: self.arrow(e, 1))
+		self.app.bind("<MouseWheel>", lambda e: self.scroll(e))
 		self.app.mainloop()
 
+	def arrow(self, e, dir):
+		# only move images if user not in entry
+		if type(e.widget) is not Entry:
+			self.move(e, dir)
+		
+
+	def scroll(self, e):
+		self.move(e, -1 if e.delta > 0 else 1)
+		self.app.focus()
+
 	# move to next image, dir shoud be either -1 or 1 to move left or right
-	def move(self, dir):
+	def move(self, e, dir):
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.clearGif()
 		self.curInd += dir
@@ -82,7 +109,7 @@ class viewer:
 		if event.widget != self.app or not self.needRedraw:
 			return
 		self.needRedraw = False
-		if(stat(self.files[self.curInd]).st_size == self.bitSize):
+		if(getsize(self.files[self.curInd]) == self.bitSize):
 			return
 		self.clearGif()
 		self.imageLoader()
@@ -220,6 +247,7 @@ class viewer:
 			self.canvas.coords(self.inp, self.loc+40, 4)
 			return
 		self.canvas.itemconfig(self.inp, state='hidden')
+		self.app.focus()
 
 	# asks os to rename file and changes position in list to new location
 	def renameFile(self, event) -> None:
@@ -231,6 +259,7 @@ class viewer:
 			self.removeImg()
 			self.files.insert(self.binarySearch(newname.name), newname)
 			self.canvas.itemconfig(self.inp, state='hidden')
+			self.app.focus()
 			self.clearGif()
 			self.imageLoader()
 			self.updateTop()
@@ -257,7 +286,7 @@ class viewer:
 		curPath = self.files[self.curInd]
 		try:
 			self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
-			self.bitSize: int = stat(curPath).st_size
+			self.bitSize: int = getsize(curPath)
 			close: bool = True
 			data = self.cache.get(curPath, None)
 			if data is not None and self.bitSize == data.bits:  # was cached
@@ -303,6 +332,7 @@ class viewer:
 			return
 		self.drawtop = not self.drawtop
 		self.canvas.itemconfig(self.inp, state='hidden')
+		self.app.focus()
 		if self.drawtop: 
 			self.canvas.itemconfig("topb", state='normal')
 			self.updateTop()
