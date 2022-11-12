@@ -1,4 +1,4 @@
-# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" viewer.py
+# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
 # pyinstaller is very slow, please use nuitka if you plan to compile it yourself
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
@@ -12,7 +12,7 @@ from send2trash import send2trash  # 1.8.0
 #from time import time_ns
 
 # constants
-DEBUG: bool = False
+DEBUG: bool = True
 SPACE: int = 32
 FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 DROPDOWNWIDTH: int = 190
@@ -68,7 +68,7 @@ class viewer:
 		self.maxsize = (self.appw, self.apph)
 		self.loadAssests()
 		# draw first img, then get all paths in dir
-		dir = Path(f'{pth.parent}/')
+		dir = Path(pth.parent)
 		self.files = [pth]
 		self.curInd = 0
 		self.imageLoader()
@@ -109,6 +109,7 @@ class viewer:
 		if event.widget != self.app or not self.needRedraw:
 			return
 		self.needRedraw = False
+		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
 		if(getsize(self.files[self.curInd]) == self.bitSize):
 			return
 		self.clearGif()
@@ -121,7 +122,7 @@ class viewer:
 		ICONHOV: tuple = (95, 92, 88)
 		TOPCOL: tuple = (60, 60, 60, 170)
 		# stuff on topbar
-		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.app.winfo_width(), SPACE), TOPCOL))
+		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, SPACE), TOPCOL))
 		self.dropbar = Image.new('RGBA', (DROPDOWNWIDTH, DROPDOWNHEIGHT), (40, 40, 40, 170))
 		exitb        = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
 		loadedImg = Image.new('RGB', (SPACE, SPACE), (180, 25, 20))
@@ -177,14 +178,14 @@ class viewer:
 		self.hoverUp = ImageTk.PhotoImage(draw._image)
 		loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
 		draw = ImageDraw.Draw(loadedImg) 
-		draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
+		draw.rectangle((7, 10, 25, 22), width=1, outline=LINECOL)
 		draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
 		draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
 		renameb = ImageTk.PhotoImage(draw._image)
 		loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))
 		draw = ImageDraw.Draw(loadedImg) 
 		draw.rectangle((4, 5, 28, 27), width=1, fill=ICONHOV)
-		draw.rectangle((7, 10, 25, 22), width=1, fill=None, outline=LINECOL)
+		draw.rectangle((7, 10, 25, 22), width=1, outline=LINECOL)
 		draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
 		draw.line((16, 8, 16, 24), width=2, fill=LINECOL)
 		hoverRename = ImageTk.PhotoImage(draw._image)
@@ -195,7 +196,7 @@ class viewer:
 		self.b: int = self.canvas.create_image(self.appw-SPACE, 0, image=exitb, anchor='nw', tag='topb')
 		self.b2: int = self.canvas.create_image(self.appw-SPACE-SPACE, 0, image=minib, anchor='nw', tag='topb')
 		self.t: int = self.canvas.create_image(0, 0, image=trashb, anchor='nw', tag='topb')
-		self.canvas.tag_bind(self.b, '<Button-1>', lambda e: self.app.quit())
+		self.canvas.tag_bind(self.b, '<Button-1>', lambda e: self.exit())
 		self.canvas.tag_bind(self.b2,'<Button-1>', self.minimize)
 		self.canvas.tag_bind(self.t, '<Button-1>', self.trashFile)
 		self.canvas.tag_bind(self.r, '<Button-1>', self.renameWindow)
@@ -223,6 +224,10 @@ class viewer:
 		self.entryText: Entry = Entry(self.app, font=FONT)
 		self.entryText.bind('<Return>', self.renameFile)
 		self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
+
+	def exit(self):
+		self.canvas.delete(self.text)
+		self.app.destroy()
 
 	# START BUTTON FUNCTIONS
 	def hover(self, id, img) -> None:
@@ -265,7 +270,7 @@ class viewer:
 			self.updateTop()
 		except Exception:
 			self.entryText.config(bg='#e6505f')  # flash red to tell user can't rename
-			self.app.after(400, lambda : self.entryText.config(bg="White"))
+			self.app.after(400, lambda : self.entryText.config(bg='white'))
 
 	# minimizes app
 	def minimize(self, event) -> None:
@@ -285,11 +290,11 @@ class viewer:
 	def imageLoader(self) -> None:
 		curPath = self.files[self.curInd]
 		try:
-			self.temp = Image.open(curPath)  #  open even if in cache to interrupt if user deleted it outside of program
+			self.temp = Image.open(curPath) # open even if in cache to interrupt if user deleted it outside of program
 			self.bitSize: int = getsize(curPath)
 			close: bool = True
 			data = self.cache.get(curPath, None)
-			if data is not None and self.bitSize == data.bits:  # was cached
+			if data is not None and self.bitSize == data.bits: # was cached
 				self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
 			else:
 				self.trueWidth, self.trueHeight = self.temp.size
@@ -340,15 +345,14 @@ class viewer:
 			self.canvas.itemconfig("topb", state='hidden')
 
 	def removeImg(self) -> None:
-		pth = self.files[self.curInd]
-		if pth in self.cache: self.cache.pop(pth)
-		del self.files[self.curInd]
+		# delete image from files array and from cache if present
+		self.cache.pop(self.files.pop(self.curInd), None)
 
 	# remove from list and move to next image
 	def removeAndMove(self) -> None:
 		self.removeImg()
 		size = len(self.files)
-		if not size: self.app.quit()
+		if size == 0: self.exit()
 		if self.curInd >= size: self.curInd = size-1
 		self.imageLoader()
 		if self.drawtop: self.updateTop()
@@ -414,7 +418,7 @@ class viewer:
 
 	# pth: Path object of path to current image 
 	'''def refresh(self, pth) -> None:
-		dir = Path(f'{pth.parent}/')
+		dir = Path(pth.parent)
 		self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=self.sortKey)
 		self.curInd = self.binarySearch(pth.name)
 		self.imageLoader()'''
