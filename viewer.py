@@ -22,6 +22,20 @@ PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 DEFAULTSPEED: int = 90
 GIFSPEED: float = .88
 
+
+nearest, converts = {"1", "P"}, {"LA": "La", "RGBA": "RGBa"}
+# resize PIL image object, modified version of PIL source
+def resize(img: Image, size: tuple[int, int], resample):
+	box = (0, 0)+img.size
+	if img.mode in nearest:
+		resample = 0
+
+	if img.mode in converts and resample != 0:
+		return img.convert(converts[img.mode]).resize(size, resample, (0, 0)+img.size).convert(img.mode)
+
+	img.load()
+	return img._new(img.im.resize(size, resample, box))
+
 # struct for holding cached images
 class cached:
 	__slots__ = ['w', 'h', 'tw', 'th', 'ts', 'im', 'bits']
@@ -56,7 +70,7 @@ class viewer:
 		self.buffer: int = 100
 		# main stuff
 		self.app: Tk = Tk()
-		self.cache: dict = dict()  # cache for already rendered images
+		self.cache: dict[cached] = dict()  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.drawnImage = self.canvas.create_image(0, 0, anchor='nw')  # main image, replaced as necessary
@@ -227,7 +241,9 @@ class viewer:
 
 	def exit(self):
 		self.canvas.delete(self.text)
+		self.app.quit()
 		self.app.destroy()
+		exit(0)
 
 	# START BUTTON FUNCTIONS
 	def hover(self, id, img) -> None:
@@ -293,14 +309,15 @@ class viewer:
 			self.temp = Image.open(curPath) # open even if in cache to interrupt if user deleted it outside of program
 			self.bitSize: int = getsize(curPath)
 			close: bool = True
-			data = self.cache.get(curPath, None)
+			data: cached = self.cache.get(curPath, None)
 			if data is not None and self.bitSize == data.bits: # was cached
-				self.trueWidth, self.trueHeight, self.trueSize, self.conImg, w, h = data.tw, data.th, data.ts, data.im, data.w, data.h
+				self.trueWidth, self.trueHeight, self.trueSize, self.conImg, pw, ph = data.tw, data.th, data.ts, data.im, data.w, data.h
 			else:
 				self.trueWidth, self.trueHeight = self.temp.size
-				intSize: int = round(self.bitSize/1000)
-				self.trueSize = f"{round(intSize/10)/100}mb" if intSize > 999 else f"{intSize}kb"
+				intSize: int = self.bitSize>>10
+				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 				w, h = self.dimensionFinder()
+				pw, ph = (self.appw-w) >> 1, (self.apph-h) >> 1
 				frames: int = getattr(self.temp, 'n_frames', 0)
 				if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
@@ -310,24 +327,19 @@ class viewer:
 					except(KeyError, AttributeError):
 						speed = DEFAULTSPEED
 					self.buffer = int(speed*1.4)
-					self.gifFrames[0] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
+					self.conImg, speed = ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed
+					self.gifFrames[0] = (self.conImg, speed)
 					Thread(target=self.loadFrame, args=(1, w, h, curPath.name), daemon=True).start()
-					self.conImg, speed = self.gifFrames[0]
 					self.gifId = self.app.after(speed+28, self.animate, 1)
-					w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
-					if(self.trueHeight > h): 
-						self.temp.thumbnail(self.maxsize, 1)  # Image.Resampling.LANCZOS = 1
-						self.conImg = ImageTk.PhotoImage(self.temp)
-					else:
-						self.conImg = ImageTk.PhotoImage(self.temp.resize((w, h), 1))
-					w, h = (self.appw-w) >> 1, (self.apph-h) >> 1
-					self.cache[curPath] = cached(w=w, h=h, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=self.bitSize)
+					self.conImg = ImageTk.PhotoImage(resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
+					self.cache[curPath] = cached(w=pw, h=ph, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
-			self.canvas.coords(self.drawnImage, w, h)
+			self.canvas.coords(self.drawnImage, pw, ph)
 			self.app.title(curPath.name)
-			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
+			if close:
+				self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
 		except(FileNotFoundError, UnidentifiedImageError):
 			self.removeAndMove()
 
@@ -352,7 +364,8 @@ class viewer:
 	def removeAndMove(self) -> None:
 		self.removeImg()
 		size = len(self.files)
-		if size == 0: self.exit()
+		if size == 0:
+			self.exit()
 		if self.curInd >= size: self.curInd = size-1
 		self.imageLoader()
 		if self.drawtop: self.updateTop()
@@ -378,6 +391,7 @@ class viewer:
 		self.gifId = self.app.after(speed, self.animate, gifFrame)
 
 	def loadFrame(self, gifFrame: int, w: int, h: int, name):
+		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
 		if name != self.files[self.curInd].name: return
 		try:
 			self.temp.seek(gifFrame)
@@ -387,7 +401,7 @@ class viewer:
 			except(KeyError, AttributeError):
 				speed = DEFAULTSPEED
 			self.buffer = int(speed*1.4)
-			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(self.temp.resize((w, h), 2)), speed)
+			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed)
 			self.loadFrame(gifFrame+1, w, h, name)
 		except Exception:  
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
@@ -405,8 +419,7 @@ class viewer:
 	def toggleDrop(self, event=None) -> None:
 		self.dropDown = not self.dropDown
 		self.hoverOnDrop()
-		if self.dropDown: self.createDropbar()
-		else: self.canvas.itemconfig(self.infod, state='hidden')
+		self.createDropbar() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
 		
 	def createDropbar(self) -> None:
 		draw = ImageDraw.Draw(self.dropbar.copy())  # copy plain window and draw on it
@@ -436,7 +449,7 @@ class viewer:
 
 if __name__ == "__main__":
 	if len(argv) > 1 or DEBUG:
-		pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\meme2.jpg" if DEBUG else argv[1])
+		pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.jpg" if DEBUG else argv[1])
 		if pathToImage.suffix not in FILETYPE: exit(0)
 		windll.shcore.SetProcessDpiAwareness(1)
 		viewer(pathToImage)
