@@ -29,18 +29,16 @@ def resize(img: Image, size: tuple[int, int], resample):
 	if img.mode in nearest:
 		resample = 0
 
-	if img.mode in converts and resample != 0:
-		return img.convert(converts[img.mode]).resize(size, resample, (0, 0)+img.size).convert(img.mode)
-
 	img.load()
+	if img.mode in converts and resample != 0:
+		return img.convert(converts[img.mode])._new(img.im.resize(size, resample, box)).convert(img.mode)
+
 	return img._new(img.im.resize(size, resample, box))
 
 # struct for holding cached images
 class cached:
-	__slots__ = ['w', 'h', 'tw', 'th', 'ts', 'im', 'bits']
-	def __init__(self, w, h, tw, th, ts, im, bits):
-		self.w: int = w
-		self.h: int = h
+	__slots__ = ['tw', 'th', 'ts', 'im', 'bits']
+	def __init__(self, tw, th, ts, im, bits):
 		self.tw: int = tw
 		self.th: int = th
 		self.ts: str = ts  # string rep of file size
@@ -72,13 +70,13 @@ class viewer:
 		self.cache: dict[cached] = dict()  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
-		self.drawnImage = self.canvas.create_image(0, 0, anchor='nw')  # main image, replaced as necessary
 		self.app.attributes('-fullscreen', True)
-		self.app.state('zoomed')
+		a = self.app.state('zoomed')
 		self.app.update()  # updates winfo width and height to the current size, this is necessary
 		self.appw: int = self.app.winfo_width()
 		self.apph: int = self.app.winfo_height()
 		self.maxsize = (self.appw, self.apph)
+		self.drawnImage = self.canvas.create_image(self.appw>>1, 0, anchor='n')  # main image, replaced as necessary
 		self.loadAssests()
 		# draw first img, then get all paths in dir
 		dir = Path(pth.parent)
@@ -311,13 +309,12 @@ class viewer:
 			close: bool = True
 			data: cached = self.cache.get(curPath, None)
 			if data is not None and self.bitSize == data.bits: # was cached
-				self.trueWidth, self.trueHeight, self.trueSize, self.conImg, pw, ph = data.tw, data.th, data.ts, data.im, data.w, data.h
+				self.trueWidth, self.trueHeight, self.trueSize, self.conImg = data.tw, data.th, data.ts, data.im
 			else:
 				self.trueWidth, self.trueHeight = self.temp.size
 				intSize: int = self.bitSize>>10
 				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 				w, h = self.dimensionFinder()
-				pw, ph = (self.appw-w) >> 1, (self.apph-h) >> 1
 				frames: int = getattr(self.temp, 'n_frames', 0)
 				if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
@@ -334,9 +331,8 @@ class viewer:
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					self.conImg = ImageTk.PhotoImage(resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
-					self.cache[curPath] = cached(w=pw, h=ph, tw=self.trueWidth, th=self.trueHeight, ts=self.trueSize, im=self.conImg, bits=self.bitSize)
+					self.cache[curPath] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
-			self.canvas.coords(self.drawnImage, pw, ph)
 			self.app.title(curPath.name)
 			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
 		except(FileNotFoundError, UnidentifiedImageError):
