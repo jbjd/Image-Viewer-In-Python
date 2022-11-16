@@ -71,7 +71,7 @@ class viewer:
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.app.attributes('-fullscreen', True)
-		a = self.app.state('zoomed')
+		self.app.state('zoomed')
 		self.app.update()  # updates winfo width and height to the current size, this is necessary
 		self.appw: int = self.app.winfo_width()
 		self.apph: int = self.app.winfo_height()
