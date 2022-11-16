@@ -18,7 +18,6 @@ FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 DROPDOWNWIDTH: int = 190
 DROPDOWNHEIGHT: int = 110
 FONT: str = 'arial 11'
-PILFNT = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 DEFAULTSPEED: int = 90
 GIFSPEED: float = .88
 
@@ -88,6 +87,7 @@ class viewer:
 		self.imageLoader()
 		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=WKey)
 		self.curInd = self.binarySearch(pth.name)
+		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 		# events based on input
 		
 		self.canvas.bind("<Button-1>", self.clickHandler)
@@ -338,8 +338,7 @@ class viewer:
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.canvas.coords(self.drawnImage, pw, ph)
 			self.app.title(curPath.name)
-			if close:
-				self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
+			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
 		except(FileNotFoundError, UnidentifiedImageError):
 			self.removeAndMove()
 
@@ -364,8 +363,7 @@ class viewer:
 	def removeAndMove(self) -> None:
 		self.removeImg()
 		size = len(self.files)
-		if size == 0:
-			self.exit()
+		if size == 0: self.exit()
 		if self.curInd >= size: self.curInd = size-1
 		self.imageLoader()
 		if self.drawtop: self.updateTop()
@@ -423,8 +421,8 @@ class viewer:
 		
 	def createDropbar(self) -> None:
 		draw = ImageDraw.Draw(self.dropbar.copy())  # copy plain window and draw on it
-		draw.text((10, 25), f"Pixels: {self.trueWidth}x{self.trueHeight}", font=PILFNT, fill="white")
-		draw.text((10, 60), f"Size: {self.trueSize}", font=PILFNT, fill="white")
+		draw.text((10, 25), f"Pixels: {self.trueWidth}x{self.trueHeight}", fill="white")
+		draw.text((10, 60), f"Size: {self.trueSize}", fill="white")
 		self.dropImage = ImageTk.PhotoImage(draw._image)
 		self.canvas.itemconfig(self.infod, image=self.dropImage, state='normal')
 	# END DROPDOWN FUNCTIONS
