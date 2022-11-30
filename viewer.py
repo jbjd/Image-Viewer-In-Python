@@ -1,7 +1,7 @@
-# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
+# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --include-package=simpleThread.py --mingw64 viewer.py
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
-from threading import Thread  # std
+from simpleThread import Thread  # std
 from pathlib import Path  # std
 from os import rename, name  # std
 comparer = lambda a, b: a<b
@@ -13,11 +13,8 @@ from send2trash import send2trash  # 1.8.0
 #from time import perf_counter_ns
 
 # constants
-SPACE: int = 32
 FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
 FONT: str = 'arial 11'
-DEFAULTSPEED: int = 90
-GIFSPEED: float = .88
 
 nearest, converts = {"1", "P"}, {"LA": "La", "RGBA": "RGBa"}
 # resize PIL image object, modified version of PIL source
@@ -52,7 +49,14 @@ class WKey:
 		return comparer(self.pth, b.pth)
 
 class viewer:
-	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'loc', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'DROPDOWNWIDTH', 'DROPDOWNHEIGHT')
+	# class vars
+	DROPDOWNWIDTH: int = 195
+	DROPDOWNHEIGHT: int = 110
+	DEFAULTSPEED: int = 90
+	GIFSPEED: float = .88
+	SPACE: int = 32
+
+	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'loc', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton')
 	def __init__(self, pth):
 		# UI varaibles
 		self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
@@ -75,8 +79,7 @@ class viewer:
 		self.appw: int = self.app.winfo_width()
 		self.apph: int = self.app.winfo_height()
 		self.drawnImage = self.canvas.create_image(self.appw>>1, self.apph>>1, anchor='center')  # main image, replaced as necessary
-		self.DROPDOWNWIDTH: int = 195
-		self.DROPDOWNHEIGHT: int = 110
+		
 		self.loadAssests()
 		# draw first img, then get all paths in dir
 		dir = Path(pth.parent)
@@ -138,15 +141,15 @@ class viewer:
 		ICONHOV: tuple = (95, 92, 88)
 		TOPCOL: tuple = (60, 60, 60, 170)
 		# stuff on topbar
-		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, SPACE), TOPCOL))
+		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, self.SPACE), TOPCOL))
 		self.dropbar = Image.new('RGBA', (self.DROPDOWNWIDTH, self.DROPDOWNHEIGHT), (40, 40, 40, 170))
-		exitb = ImageTk.PhotoImage(Image.new('RGB', (SPACE, SPACE), (190, 40, 40)))
-		draw = ImageDraw.Draw(Image.new('RGB', (SPACE, SPACE), (180, 25, 20))) 
+		exitb = ImageTk.PhotoImage(Image.new('RGB', (self.SPACE, self.SPACE), (190, 40, 40)))
+		draw = ImageDraw.Draw(Image.new('RGB', (self.SPACE, self.SPACE), (180, 25, 20))) 
 		draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
 		draw.line((6, 26, 26, 6), width=2, fill=LINECOL)
 		hoveredExit = ImageTk.PhotoImage(draw._image)
-		loadedImgDef = Image.new('RGB', (SPACE, SPACE), ICONCOL)  # default icon background
-		loadedImgHov = Image.new('RGB', (SPACE, SPACE), ICONHOV)  # hovered icon background
+		loadedImgDef = Image.new('RGB', (self.SPACE, self.SPACE), ICONCOL)  # default icon background
+		loadedImgHov = Image.new('RGB', (self.SPACE, self.SPACE), ICONHOV)  # hovered icon background
 		draw = ImageDraw.Draw(loadedImgDef.copy()) 
 		draw.line((6, 24, 24, 24), width=2, fill=LINECOL)
 		minib = ImageTk.PhotoImage(draw._image)
@@ -185,7 +188,7 @@ class viewer:
 		draw.line((16, 11, 26, 21), width=2, fill=LINECOL)
 		draw.line((16, 11, 16, 11), width=1, fill=LINECOL)
 		self.hoverUp = ImageTk.PhotoImage(draw._image)
-		loadedImg = Image.new('RGBA', (SPACE, SPACE), (0,0,0,0))  # rename button background
+		loadedImg = Image.new('RGBA', (self.SPACE, self.SPACE), (0,0,0,0))  # rename button background
 		draw = ImageDraw.Draw(loadedImg.copy()) 
 		draw.rectangle((7, 10, 25, 22), width=1, outline=LINECOL)
 		draw.line((7, 16, 16, 16), width=3, fill=LINECOL)
@@ -202,7 +205,7 @@ class viewer:
 		self.text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor='nw', font=FONT, tag="topb", state='hidden')
 		self.renameButton: int = self.canvas.create_image(0, 0, image=renameb, anchor='nw', tag='topb', state='hidden')
 		b: int = self.canvas.create_image(self.appw, 0, image=exitb, anchor='ne', tag='topb', state='hidden')
-		b2: int = self.canvas.create_image(self.appw-SPACE, 0, image=minib, anchor='ne', tag='topb', state='hidden')
+		b2: int = self.canvas.create_image(self.appw-self.SPACE, 0, image=minib, anchor='ne', tag='topb', state='hidden')
 		t: int = self.canvas.create_image(0, 0, image=trashb, anchor='nw', tag='topb', state='hidden')
 		self.canvas.tag_bind(b, '<Button-1>', self.exit)
 		self.canvas.tag_bind(b2,'<Button-1>', self.minimize)
@@ -216,13 +219,13 @@ class viewer:
 		self.canvas.tag_bind(t, '<Leave>', lambda e: self.hover(t, trashb))
 		self.canvas.tag_bind(self.renameButton, '<Enter>', lambda e: self.hover(self.renameButton, hoverRename))
 		self.canvas.tag_bind(self.renameButton, '<Leave>', lambda e: self.hover(self.renameButton, renameb))
-		self.dbox: int = self.canvas.create_image(self.appw-SPACE-SPACE, 0, image=self.dropb, anchor='ne', tag='topb', state='hidden') 
+		self.dbox: int = self.canvas.create_image(self.appw-self.SPACE-self.SPACE, 0, image=self.dropb, anchor='ne', tag='topb', state='hidden') 
 		self.inp: int = self.canvas.create_window(0, 0, width=200, height=24, anchor='nw')  # rename window
 		self.canvas.tag_bind(self.dbox, '<Button-1>', self.toggleDrop)
 		self.canvas.tag_bind(self.dbox, '<Enter>', self.hoverOnDrop)
 		self.canvas.tag_bind(self.dbox, '<Leave>', self.removeHoverDrop)
 		# dropbox
-		self.infod: int = self.canvas.create_image(self.appw, SPACE, anchor='ne', tag="topb", state='hidden')
+		self.infod: int = self.canvas.create_image(self.appw, self.SPACE, anchor='ne', tag="topb", state='hidden')
 		# rename window
 		self.entryText: Entry = Entry(self.app, font=FONT)
 		self.entryText.bind('<Return>', self.renameFile)
@@ -311,10 +314,10 @@ class viewer:
 				if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
 					try:
-						speed = int(self.temp.info['duration'] * GIFSPEED)
-						if speed < 2: speed = DEFAULTSPEED
+						speed = int(self.temp.info['duration'] * self.GIFSPEED)
+						if speed < 2: speed = self.DEFAULTSPEED
 					except(KeyError, AttributeError):
-						speed = DEFAULTSPEED
+						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
 					self.conImg, speed = ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed
 					self.gifFrames[0] = (self.conImg, speed)
@@ -337,7 +340,7 @@ class viewer:
 
 	# skip clicks to menu, draws menu if not present
 	def clickHandler(self, e) -> None:
-		if self.drawtop and (e.y <= SPACE or (self.dropDown and e.x > self.appw-self.DROPDOWNWIDTH and e.y < SPACE+self.DROPDOWNHEIGHT)):
+		if self.drawtop and (e.y <= self.SPACE or (self.dropDown and e.x > self.appw-self.DROPDOWNWIDTH and e.y < self.SPACE+self.DROPDOWNHEIGHT)):
 			return
 		self.drawtop = not self.drawtop
 		self.app.focus()
@@ -389,10 +392,10 @@ class viewer:
 		try:
 			self.temp.seek(gifFrame)
 			try:
-				speed = int(self.temp.info['duration'] * GIFSPEED)
-				if speed < 2: speed = DEFAULTSPEED
+				speed = int(self.temp.info['duration'] * self.GIFSPEED)
+				if speed < 2: speed = self.DEFAULTSPEED
 			except(KeyError, AttributeError):
-				speed = DEFAULTSPEED
+				speed = self.DEFAULTSPEED
 			self.buffer = int(speed*1.4)
 			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed)
 			self.loadFrame(gifFrame+1, w, h, name)
