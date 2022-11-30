@@ -14,9 +14,7 @@ class Condition:
 	is created and used as the underlying lock.
 	"""
 
-	def __init__(self, lock=None):
-		if lock is None:
-			lock = RLock()
+	def __init__(self, lock):
 		self._lock = lock
 		# Export the lock's acquire() and release() methods
 		self.acquire = lock.acquire
@@ -86,10 +84,7 @@ class Condition:
 				waiter.acquire()
 				gotit = True
 			else:
-				if timeout > 0:
-					gotit = waiter.acquire(True, timeout)
-				else:
-					gotit = waiter.acquire(False)
+				gotit = waiter.acquire(True, timeout) if timeout > 0 else waiter.acquire(False)
 			return gotit
 		finally:
 			self._acquire_restore(saved_state)
@@ -187,7 +182,7 @@ class RLock:
 		self._owner = None
 		self._count = 0
 
-	def acquire(self, blocking=True, timeout=-1):
+	def acquire(self, blocking=True, timeout:float=-1):
 		"""Acquire a lock, blocking or non-blocking.
 		When invoked without arguments: if this thread already owns the lock,
 		increment the recursion level by one, and return immediately. Otherwise,
@@ -203,20 +198,20 @@ class RLock:
 		call without an argument would block, return false immediately;
 		otherwise, do the same thing as when called without arguments, and
 		return true.
-		When invoked with the floating-point timeout argument set to a positive
+		When invoked with the timeout argument set to a positive
 		value, block for at most the number of seconds specified by timeout
-		and as long as the lock cannot be acquired.  Return true if the lock has
+		and as long as the lock cannot be acquired. Return true if the lock has
 		been acquired, false if the timeout has elapsed.
 		"""
 		me = get_ident()
 		if self._owner == me:
 			self._count += 1
-			return 1
-		rc = self._block.acquire(blocking, timeout)
-		if rc:
+			return True
+		if self._block.acquire(blocking, timeout):
 			self._owner = me
 			self._count = 1
-		return rc
+			return True
+		return False
 
 	__enter__ = acquire
 
@@ -234,8 +229,8 @@ class RLock:
 		"""
 		if self._owner != get_ident():
 			raise RuntimeError("cannot release un-acquired lock")
-		self._count = count = self._count - 1
-		if not count:
+		self._count -= 1
+		if self._count == 0:
 			self._owner = None
 			self._block.release()
 
@@ -251,12 +246,11 @@ class RLock:
 	def _release_save(self):
 		if self._count == 0:
 			raise RuntimeError("cannot release un-acquired lock")
-		count = self._count
+		ret = (self._count, self._owner)
 		self._count = 0
-		owner = self._owner
 		self._owner = None
 		self._block.release()
-		return (count, owner)
+		return ret
 
 	def _is_owned(self):
 		return self._owner == get_ident()
@@ -275,10 +269,6 @@ class Event:
 	def _at_fork_reinit(self):
 		# Private method called by Thread._reset_internal_locks()
 		self._cond._at_fork_reinit()
-
-	def is_set(self):
-		"""Return true if and only if the internal flag is true."""
-		return self._flag
 
 	def set(self):
 		"""Set the internal flag to true.
@@ -384,7 +374,7 @@ class Thread:
 
 	def __repr__(self):
 		status = "initial"
-		if self._started.is_set():
+		if self._started._flag:
 			status = "started"
 		self.is_alive() # easy way to get ._is_stopped set when appropriate
 		if self._is_stopped:
@@ -402,7 +392,7 @@ class Thread:
 		This method will raise a RuntimeError if called more than once on the
 		same thread object.
 		"""
-		if self._started.is_set():
+		if self._started._flag:
 			raise RuntimeError("threads can only be started once")
 
 		with _active_limbo_lock:
@@ -536,7 +526,7 @@ class Thread:
 		thread before it has been started and attempts to do so raises the same
 		exception.
 		"""
-		if not self._started.is_set():
+		if not self._started._flag:
 			raise RuntimeError("cannot join thread before it is started")
 		if self is current_thread():
 			raise RuntimeError("cannot join current thread")
@@ -602,7 +592,7 @@ class Thread:
 		after the run() method terminates. See also the module function
 		enumerate().
 		"""
-		if self._is_stopped or not self._started.is_set():
+		if self._is_stopped or not self._started._flag:
 			return False
 		self._wait_for_tstate_lock(False)
 		return not self._is_stopped
