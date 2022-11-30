@@ -3,8 +3,11 @@ from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
 from threading import Thread  # std
 from pathlib import Path  # std
-from ctypes import windll  # std
-from os import rename  # std
+from os import rename, name  # std
+comparer = lambda a, b: a<b
+if name == 'nt':
+	from ctypes import windll  # std
+	comparer = lambda a, b: windll.shlwapi.StrCmpLogicalW(a, b) < 0	
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.3.0
 from send2trash import send2trash  # 1.8.0
 #from time import time_ns
@@ -49,7 +52,7 @@ class WKey:
 	def __init__(self, pth):
 		self.pth = pth.name
 	def __lt__(self, b):
-		return windll.shlwapi.StrCmpLogicalW(self.pth, b.pth) < 0
+		return comparer(self.pth, b.pth)
 
 class viewer:
 	__slots__ = ['drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'loc', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton']
@@ -367,7 +370,8 @@ class viewer:
 
 	# START GIF FUNCTIONS
 	def animate(self, gifFrame: int) -> None:
-		gifFrame = gifFrame+1 if gifFrame < len(self.gifFrames)-1 else 0
+		gifFrame += 1
+		if gifFrame >= len(self.gifFrames): gifFrame = 0
 
 		try:
 			img, speed = self.gifFrames[gifFrame]
@@ -375,6 +379,7 @@ class viewer:
 		except TypeError:
 			speed = self.buffer
 			gifFrame -= 1
+			self.buffer += 10
 		
 		self.gifId = self.app.after(speed, self.animate, gifFrame)
 
@@ -418,21 +423,14 @@ class viewer:
 	# END DROPDOWN FUNCTIONS
 
 	# pth: Path object of path to current image 
-	'''def refresh(self, pth) -> None:
-		dir = Path(pth.parent)
-		self.files = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=self.sortKey)
-		self.curInd = binarySearch(pth.name)
-		self.imageLoader()'''
-
-	# pth: Path object of path to current image 
 	def binarySearch(self, pth):
 		low, high = 0, len(self.files)-1
 		while low <= high:
 			mid = (low+high)>>1
 			cur = self.files[mid].name
 			if pth == cur: return mid
-			if windll.shlwapi.StrCmpLogicalW(pth, cur) == 1: low = mid+1
-			else: high = mid-1
+			if comparer(pth, cur): high = mid-1
+			else: low = mid+1
 		return low
 
 if __name__ == "__main__":
