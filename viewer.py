@@ -1,4 +1,4 @@
-# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --include-package=simpleThread.py --mingw64 viewer.py
+# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --include-package=simpleThread --mingw64 viewer.py
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
 from simpleThread import Thread  # std
