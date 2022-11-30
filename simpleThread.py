@@ -85,7 +85,6 @@ class Condition:
 				gotit = True
 			else:
 				gotit = waiter.acquire(True, timeout) if timeout > 0 else waiter.acquire(False)
-			return gotit
 		finally:
 			self._acquire_restore(saved_state)
 			if not gotit:
@@ -93,7 +92,8 @@ class Condition:
 					self._waiters.remove(waiter)
 				except ValueError:
 					pass
-
+			return gotit
+			
 	def wait_for(self, predicate, timeout=None):
 		"""Wait until a condition evaluates to True.
 		predicate should be a callable which result will be interpreted as a
@@ -132,8 +132,7 @@ class Condition:
 			except RuntimeError:
 				# gh-92530: The previous call of notify() released the lock,
 				# but was interrupted before removing it from the queue.
-				# It can happen if a signal handler raises an exception,
-				# like CTRL+C which raises KeyboardInterrupt.
+				# It can happen if a signal handler raises an exception, like CTRL+C
 				pass
 			else:
 				n -= 1
@@ -163,18 +162,13 @@ class RLock:
 		self._count = 0
 
 	def __repr__(self):
-		owner = self._owner
-		try:
-			owner = _active[owner].name
-		except KeyError:
-			pass
-		return "<%s %s.%s object owner=%r count=%d at %s>" % (
+		owner = _active[self._owner].name if self._owner in _active else self._owner
+		return "<%s %s.%s object owner=%r count=%d>" % (
 			"locked" if self._block.locked() else "unlocked",
 			self.__class__.__module__,
 			self.__class__.__qualname__,
 			owner,
-			self._count,
-			hex(id(self))
+			self._count
 		)
 
 	def _at_fork_reinit(self):
@@ -287,22 +281,19 @@ class Event:
 		with self._cond:
 			self._flag = False
 
-	def wait(self, timeout=None):
+	def wait(self, timeout:float=None):
 		"""Block until the internal flag is true.
 		If the internal flag is true on entry, return immediately. Otherwise,
 		block until another thread calls set() to set the flag to true, or until
 		the optional timeout occurs.
-		When the timeout argument is present and not None, it should be a
-		floating point number specifying a timeout for the operation in seconds
-		(or fractions thereof).
+		Timeout is a floating point number specifying a timeout in seconds.
 		This method returns the internal flag on exit, so it will always return
 		True except if a timeout is given and the operation times out.
 		"""
 		with self._cond:
-			signaled = self._flag
-			if not signaled:
-				signaled = self._cond.wait(timeout)
-			return signaled
+			if self._flag:
+				return True
+			return self._cond.wait(timeout)
 
 # globals
 threadCount = 0 # incremented for each new thread
@@ -328,22 +319,16 @@ class Thread:
 		*args* is a list or tuple of arguments for the target invocation. Defaults to ().
 		*kwargs* is a dictionary of keyword arguments for the target
 		invocation. Defaults to {}.
-		If a subclass overrides the constructor, it must make sure to invoke
-		the base class constructor (Thread.__init__()) before doing anything
-		else to the thread.
 		"""
 		if kwargs is None:
 			kwargs = {}
-		if name:
-			name = str(name)
-		else:
+		if name is None:
 			global threadCount
 			name = f"Thread-{threadCount}"
 			threadCount += 1
 			if target is not None:
 				try:
-					target_name = target.__name__
-					name += f" ({target_name})"
+					name += f" ({target.__name__})"
 				except AttributeError:
 					pass
 
@@ -351,7 +336,7 @@ class Thread:
 		self._name = name
 		self._args = args
 		self._kwargs = kwargs
-		self._daemonic = daemon if daemon is not None else current_thread().daemon
+		self._daemonic = daemon if daemon is not None else current_thread()._daemonic
 		self._tstate_lock = self._ident = None
 		self._started = Event()
 		self._is_stopped = False
@@ -373,10 +358,8 @@ class Thread:
 			self._tstate_lock = None
 
 	def __repr__(self):
-		status = "initial"
-		if self._started._flag:
-			status = "started"
-		self.is_alive() # easy way to get ._is_stopped set when appropriate
+		status = "started" if self._started._flag else "initial"
+		self.is_alive() # set ._is_stopped
 		if self._is_stopped:
 			status = "stopped"
 		if self._daemonic:
@@ -451,7 +434,7 @@ class Thread:
 		self._tstate_lock = _set_sentinel()
 		self._tstate_lock.acquire()
 
-		if not self.daemon:
+		if not self._daemonic:
 			with _shutdown_locks_lock:
 				_maintain_shutdown_locks()
 				_shutdown_locks.add(self._tstate_lock)
@@ -494,7 +477,7 @@ class Thread:
 			assert not lock.locked()
 		self._is_stopped = True
 		self._tstate_lock = None
-		if not self.daemon:
+		if not self._daemonic:
 			with _shutdown_locks_lock:
 				# Remove our lock and other released locks from _shutdown_locks
 				_maintain_shutdown_locks()
@@ -526,17 +509,9 @@ class Thread:
 		thread before it has been started and attempts to do so raises the same
 		exception.
 		"""
-		if not self._started._flag:
-			raise RuntimeError("cannot join thread before it is started")
-		if self is current_thread():
+		if not self._started._flag or self is current_thread():
 			raise RuntimeError("cannot join current thread")
-
-		if timeout is None:
-			self._wait_for_tstate_lock()
-		else:
-			# the behavior of a negative timeout isn't documented, but
-			# historically .join(timeout=x) for x<0 has acted as if timeout=0
-			self._wait_for_tstate_lock(timeout=max(timeout, 0))
+		self._wait_for_tstate_lock() if timeout is None else self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
 	def _wait_for_tstate_lock(self, block=True, timeout=-1):
 		# Issue #18808: wait for the thread state to be gone.
@@ -560,31 +535,10 @@ class Thread:
 				# bpo-45274: lock.acquire() acquired the lock, but the function
 				# was interrupted with an exception before reaching the
 				# lock.release(). It can happen if a signal handler raises an
-				# exception, like CTRL+C which raises KeyboardInterrupt.
+				# exception, like CTRL+C
 				lock.release()
 				self._stop()
 			raise
-
-	@property
-	def name(self):
-		"""A string used for identification purposes only.
-		It has no semantics. Multiple threads may be given the same name. The
-		initial name is set by the constructor.
-		"""
-		return self._name
-
-	@name.setter
-	def name(self, name):
-		self._name = str(name)
-
-	@property
-	def ident(self):
-		"""Thread identifier of this thread or None if it has not been started.
-		This is a nonzero integer. See the get_ident() function. Thread
-		identifiers may be recycled when a thread exits and another thread is
-		created. The identifier is available even after the thread has exited.
-		"""
-		return self._ident
 
 	def is_alive(self):
 		"""Return whether the thread is alive.
@@ -597,26 +551,13 @@ class Thread:
 		self._wait_for_tstate_lock(False)
 		return not self._is_stopped
 
-	@property
-	def daemon(self):
-		"""A boolean value indicating whether this thread is a daemon thread.
-		This must be set before start() is called, otherwise RuntimeError is
-		raised. Its initial value is inherited from the creating thread; the
-		main thread is not a daemon thread and therefore all threads created in
-		the main thread default to daemon = False.
-		The entire Python program exits when only daemon threads are left.
-		"""
-		return self._daemonic
-
 def current_thread():
 	"""Return the current Thread object, corresponding to the caller's thread of control.
 	If the caller's thread of control was not created through the threading
 	module, a dummy thread object with limited functionality is returned.
 	"""
-	try:
-		return _active[get_ident()]
-	except KeyError:
-		return _DummyThread()
+	id = get_ident()
+	return _active[id] if id in _active else _DummyThread()
 
 class _DummyThread(Thread):
 	def __init__(self):
@@ -657,9 +598,7 @@ def _make_invoke_excepthook():
 			exc.__suppress_context__ = True
 			del exc
 
-			stderr = local_sys.stderr if local_sys is not None and local_sys.stderr is not None else thread._stderr
-
-			local_print("Exception in threading.excepthook:", file=stderr, flush=True)
+			local_print("Exception in threading.excepthook:", file=local_sys.stderr if local_sys is not None and local_sys.stderr is not None else thread._stderr, flush=True)
 
 			sys_excepthook = local_sys.excepthook if local_sys is not None and local_sys.excepthook is not None else old_sys_excepthook
 
