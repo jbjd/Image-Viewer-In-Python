@@ -1,33 +1,18 @@
-# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --include-package=simpleThread --mingw64 viewer.py
+# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry  # std
-from simpleThread import Thread  # std
+from threading import Thread  # std
 from pathlib import Path  # std
 from os import rename, name  # std
-comparer = lambda a, b: a<b
-if name == 'nt':
-	from ctypes import windll  # std
-	comparer = lambda a, b: windll.shlwapi.StrCmpLogicalW(a, b) < 0	
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.3.0
 from send2trash import send2trash  # 1.8.0
 #from time import perf_counter_ns
 
-# constants
-FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}
-FONT: str = 'arial 11'
-
-nearest, converts = {"1", "P"}, {"LA": "La", "RGBA": "RGBa"}
-# resize PIL image object, modified version of PIL source
-def resize(img: Image, size: tuple[int, int], resample: int):
-	box = (0, 0)+img.size
-	if img.mode in nearest:
-		resample = 0
-
-	img.load()
-	if img.mode in converts and resample != 0:
-		return img.convert(converts[img.mode])._new(img.im.resize(size, resample, box)).convert(img.mode)
-
-	return img._new(img.im.resize(size, resample, box))
+if name == 'nt':
+	from ctypes import windll  # std
+	comparer = lambda a, b: windll.shlwapi.StrCmpLogicalW(a, b) < 0
+else:
+	comparer = lambda a, b: a<b
 
 # struct for holding cached images
 class cached:
@@ -55,9 +40,14 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
 	SPACE: int = 32
+	FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}  # valid image types
+	NEAREST, CONVERTS = {"1", "P"}, {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
 	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'loc', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton')
-	def __init__(self, pth):
+	def __init__(self, rawPath):
+		# Make sure user ran with a supported image
+		pth = Path(rawPath)
+		if pth.suffix not in self.FILETYPE: exit(0)
 		# UI varaibles
 		self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
 		self.dropImage = None  # acts as refrences to items on screen
@@ -70,7 +60,7 @@ class viewer:
 		self.buffer: int = 100
 		# main stuff
 		self.app: Tk = Tk()
-		self.cache: dict[cached] = {}  # cache for already rendered images
+		self.cache: dict[Path, cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.app.attributes('-fullscreen', True)
@@ -85,7 +75,7 @@ class viewer:
 		dir = Path(pth.parent)
 		self.files = [pth]
 		self.imageLoader()
-		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in FILETYPE], key=WKey)
+		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in self.FILETYPE], key=WKey)
 		self.curInd = self.binarySearch(pth.name)
 		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = "L"  # antialiasing
@@ -140,6 +130,7 @@ class viewer:
 		ICONCOL: tuple = (100, 104, 102)
 		ICONHOV: tuple = (95, 92, 88)
 		TOPCOL: tuple = (60, 60, 60, 170)
+		FONT: str = 'arial 11'
 		# stuff on topbar
 		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, self.SPACE), TOPCOL))
 		self.dropbar = Image.new('RGBA', (self.DROPDOWNWIDTH, self.DROPDOWNHEIGHT), (40, 40, 40, 170))
@@ -319,13 +310,13 @@ class viewer:
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
-					self.conImg, speed = ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed
+					self.conImg, speed = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed
 					self.gifFrames[0] = (self.conImg, speed)
 					Thread(target=self.loadFrame, args=(1, w, h, curPath.name), daemon=True).start()
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
-					self.conImg = ImageTk.PhotoImage(resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
+					self.conImg = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
 					self.cache[curPath] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
@@ -337,6 +328,18 @@ class viewer:
 	def imageLoaderSafe(self):
 		self.clearGif()
 		self.imageLoader()
+
+	# resize PIL image object, modified version of PIL source
+	def resize(self, img: Image.Image, size: tuple[int, int], resample: int):
+		box = (0, 0)+img.size
+		if img.mode in self.NEAREST:
+			resample = 0
+
+		img.load()
+		if img.mode in self.CONVERTS and resample != 0:
+			return img.convert(self.CONVERTS[img.mode])._new(img.im.resize(size, resample, box)).convert(img.mode)
+
+		return img._new(img.im.resize(size, resample, box))
 
 	# skip clicks to menu, draws menu if not present
 	def clickHandler(self, e) -> None:
@@ -397,7 +400,7 @@ class viewer:
 			except(KeyError, AttributeError):
 				speed = self.DEFAULTSPEED
 			self.buffer = int(speed*1.4)
-			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(resize(self.temp, (w, h), 2)), speed)
+			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed)
 			self.loadFrame(gifFrame+1, w, h, name)
 		except Exception:  
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
@@ -439,6 +442,4 @@ class viewer:
 if __name__ == "__main__":
 	DEBUG: bool = False
 	if len(argv) > 1 or DEBUG:
-		pathToImage = Path(r"C:\Users\jimde\OneDrive\Pictures\test.jpg" if DEBUG else argv[1])
-		if pathToImage.suffix not in FILETYPE: exit(0)
-		viewer(pathToImage)
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\test.jpg" if DEBUG else argv[1])
