@@ -1,6 +1,6 @@
 # python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
 from sys import argv  # std
-from tkinter import Tk, Canvas, Entry  # std
+from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
 from pathlib import Path  # std
 from os import rename, name  # std
@@ -27,9 +27,9 @@ class cached:
 
 # key for sorting on windows
 class WKey:
-	__slots__ = ['pth']
-	def __init__(self, pth):
-		self.pth = pth.name
+	__slots__ = ('pth')
+	def __init__(self, pth: Path):
+		self.pth: str = pth.name
 	def __lt__(self, b):
 		return comparer(self.pth, b.pth)
 
@@ -40,19 +40,28 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
 	SPACE: int = 32
-	FILETYPE: set = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}  # valid image types
-	NEAREST, CONVERTS = {"1", "P"}, {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
+	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}  # valid image types
+	NEAREST: set[str] = {"1", "P"}  # used for image resizing
+	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
-	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'loc', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton')
-	def __init__(self, rawPath):
+	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING')
+	def __init__(self, rawPath: str):
 		# Make sure user ran with a supported image
-		pth = Path(rawPath)
+		pth: Path = Path(rawPath)
 		if pth.suffix not in self.FILETYPE: exit(0)
 		# UI varaibles
+		self.drawtop: bool
+		self.dropDown: bool
+		self.needRedraw: bool
 		self.drawtop = self.dropDown = self.needRedraw = False  # if topbar/dropdown drawn
 		self.dropImage = None  # acts as refrences to items on screen
 		# data on current image
-		self.trueWidth = self.trueHeigh = self.loc = self.bitSize = self.curInd = 0  # loc is x location of rename window, found dynamically
+		self.trueWidth: int
+		self.trueHeigh: int
+		self.renameWindowLocation: int
+		self.bitSize: int
+		self.curInd: int
+		self.trueWidth = self.trueHeigh = self.renameWindowLocation = self.bitSize = self.curInd = 0  # loc is x location of rename window, found dynamically
 		self.trueSize: str = ''
 		# gif support
 		self.gifFrames: list = []
@@ -72,40 +81,40 @@ class viewer:
 		
 		self.loadAssests()
 		# draw first img, then get all paths in dir
-		dir = Path(pth.parent)
+		dir: Path = Path(pth.parent)
 		self.files = [pth]
 		self.imageLoader()
-		self.files: list[Path] = sorted([p for p in dir.glob("*") if p.suffix in self.FILETYPE], key=WKey)
+		self.app.update()
+		self.files: list[Path] = sorted([p for p in dir.glob('*') if p.suffix in self.FILETYPE], key=WKey)
 		self.curInd = self.binarySearch(pth.name)
-		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", 22)  # font for drawing on images
-		ImageDraw.ImageDraw.fontmode = "L"  # antialiasing
+		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22)  # font for drawing on images
+		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
-		
-		self.canvas.bind("<Button-1>", self.clickHandler)
-		self.app.bind("<FocusIn>", self.redraw)
-		self.app.bind("<Left>", self.arrow)
-		self.app.bind("<Right>", self.arrow)
-		self.app.bind("<MouseWheel>", self.scroll)
-		self.app.bind("<KeyRelease>", self.keyBinds)
+		self.KEY_MAPPING = {'r': self.renameWindow, 'Left': self.arrow, 'Right': self.arrow}
+		self.canvas.bind('<Button-1>', self.clickHandler)
+		self.app.bind('<FocusIn>', self.redraw)
+		self.app.bind('<MouseWheel>', self.scroll)
+		self.app.bind('<Escape>', self.escButton)
+		self.app.bind('<KeyRelease>', self.keyBinds)	
 		self.app.mainloop()
 
-	def keyBinds(self, e):
-		if e.keycode == 27:  # Esc
-			self.exit()
+	def keyBinds(self, e: Event) -> None:
 		if e.widget is not self.app:
 			return
+		if e.keysym in self.KEY_MAPPING:
+			self.KEY_MAPPING[e.keysym](e)
 
-	def arrow(self, e):
+	def arrow(self, e: Event = None) -> None:
 		# only move images if user not in entry
 		if e.widget is self.app:
-			self.move(e, 1 if e.keysym == 'Right' else -1)
+			self.move(1 if e.keysym == 'Right' else -1)
 
-	def scroll(self, e):
-		self.move(e, -1 if e.delta > 0 else 1)
+	def scroll(self, e: Event = None) -> None:
+		self.move(-1 if e.delta > 0 else 1)
 		self.app.focus()
 
 	# move to next image, dir shoud be either -1 or 1 to move left or right
-	def move(self, e, dir):
+	def move(self, dir: int) -> None:
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.curInd += dir
 		if self.curInd < 0:
@@ -115,8 +124,8 @@ class viewer:
 		self.imageLoaderSafe()
 		if self.drawtop: self.updateTop()
 
-	def redraw(self, event):
-		if event.widget is not self.app or not self.needRedraw:
+	def redraw(self, e: Event) -> None:
+		if (e.widget is not self.app) or (not self.needRedraw):
 			return
 		self.needRedraw = False
 		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
@@ -124,7 +133,7 @@ class viewer:
 			return
 		self.imageLoaderSafe()
 
-	def loadAssests(self):
+	def loadAssests(self) -> None:
 		# consts
 		LINECOL: tuple = (170, 170, 170)
 		ICONCOL: tuple = (100, 104, 102)
@@ -222,41 +231,52 @@ class viewer:
 		self.entryText.bind('<Return>', self.renameFile)
 		self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
 
-	def exit(self, e=None):
+	# wrapper for exit function to close rename window first if its open
+	def escButton(self, e: Event = None) -> None:
+		if self.canvas.itemcget(self.inp,'state') == 'normal':
+			self.canvas.itemconfig(self.inp, state='hidden')
+			self.app.focus()
+			return
+		self.exit()
+
+	# properly exit program
+	def exit(self, e: Event = None) -> None:
 		self.canvas.delete(self.text)
 		self.app.quit()
 		self.app.destroy()
 		exit(0)
 
 	# START BUTTON FUNCTIONS
-	def hover(self, id, img) -> None:
+	def hover(self, id: str, img: ImageTk.PhotoImage) -> None:
 		self.canvas.itemconfig(id, image=img)
 
-	def removeHoverDrop(self, event=None) -> None:
+	def removeHoverDrop(self, e: Event = None) -> None:
 		self.canvas.itemconfig(self.dbox, image=self.upb if self.dropDown else self.dropb)
 
-	def hoverOnDrop(self, event=None) -> None:
+	def hoverOnDrop(self, e: Event = None) -> None:
 		self.canvas.itemconfig(self.dbox, image=self.hoverUp if self.dropDown else self.hoverDrop)
 
 	# delete image
-	def trashFile(self, event=None) -> None:
+	def trashFile(self, e: Event = None) -> None:
 		self.clearGif()
 		send2trash(self.files[self.curInd])
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.removeAndMove()
 
 	# opens tkinter entry to accept user input
-	def renameWindow(self, event) -> None:
+	def renameWindow(self, e: Event = None) -> None:
+		if self.canvas.itemcget("topb",'state') == 'hidden':
+			return
 		if self.canvas.itemcget(self.inp,'state') == 'hidden':
 			self.canvas.itemconfig(self.inp, state='normal')
-			self.canvas.coords(self.inp, self.loc+40, 4)
+			self.canvas.coords(self.inp, self.renameWindowLocation+40, 4)
 			self.entryText.focus()
 			return
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.app.focus()
 
 	# asks os to rename file and changes position in list to new location
-	def renameFile(self, event) -> None:
+	def renameFile(self, e: Event = None) -> None:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
 		newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
 		try:
@@ -273,7 +293,7 @@ class viewer:
 			self.app.after(400, lambda : self.entryText.config(bg='white'))
 
 	# minimizes app
-	def minimize(self, event) -> None:
+	def minimize(self, e: Event) -> None:
 		self.needRedraw = True
 		self.app.iconify()
 
@@ -325,7 +345,7 @@ class viewer:
 			self.removeAndMove()
 
 	# wrapper for image loader that clears gifs before loading new image
-	def imageLoaderSafe(self):
+	def imageLoaderSafe(self) -> None:
 		self.clearGif()
 		self.imageLoader()
 
@@ -342,7 +362,7 @@ class viewer:
 		return img._new(img.im.resize(size, resample, box))
 
 	# skip clicks to menu, draws menu if not present
-	def clickHandler(self, e) -> None:
+	def clickHandler(self, e: Event) -> None:
 		if self.drawtop and (e.y <= self.SPACE or (self.dropDown and e.x > self.appw-self.DROPDOWNWIDTH and e.y < self.SPACE+self.DROPDOWNHEIGHT)):
 			return
 		self.drawtop = not self.drawtop
@@ -369,9 +389,9 @@ class viewer:
 
 	def updateTop(self) -> None:
 		self.canvas.itemconfig(self.text, text=self.files[self.curInd].name)
-		self.loc = self.canvas.bbox(self.text)[2]
-		self.canvas.coords(self.renameButton, self.loc, 0)
-		if self.dropDown: self.createDropbar()
+		self.renameWindowLocation = self.canvas.bbox(self.text)[2]
+		self.canvas.coords(self.renameButton, self.renameWindowLocation, 0)
+		self.createDropbar() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
 	# END MAIN IMAGE FUNCTIONS
 
 	# START GIF FUNCTIONS
@@ -389,7 +409,7 @@ class viewer:
 		
 		self.gifId = self.app.after(speed, self.animate, gifFrame)
 
-	def loadFrame(self, gifFrame: int, w: int, h: int, name):
+	def loadFrame(self, gifFrame: int, w: int, h: int, name: str) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
 		if name != self.files[self.curInd].name: return
 		try:
@@ -415,7 +435,7 @@ class viewer:
 	# END GIF FUNCTIONS  
 
 	# START DROPDOWN FUNCTIONS
-	def toggleDrop(self, event=None) -> None:
+	def toggleDrop(self, e: Event) -> None:
 		self.dropDown = not self.dropDown
 		self.hoverOnDrop()
 		self.createDropbar() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
@@ -428,8 +448,8 @@ class viewer:
 		self.canvas.itemconfig(self.infod, image=self.dropImage, state='normal')
 	# END DROPDOWN FUNCTIONS
 
-	# pth: Path object of path to current image 
-	def binarySearch(self, pth):
+	# pth: string of file name
+	def binarySearch(self, pth: str) -> int:
 		low, high = 0, len(self.files)-1
 		while low <= high:
 			mid = (low+high)>>1
@@ -443,3 +463,5 @@ if __name__ == "__main__":
 	DEBUG: bool = False
 	if len(argv) > 1 or DEBUG:
 		viewer(r"C:\Users\jimde\OneDrive\Pictures\test.jpg" if DEBUG else argv[1])
+	else:
+		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
