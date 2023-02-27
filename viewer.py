@@ -28,7 +28,7 @@ class cached:
 class WKey:
 	__slots__ = ('path')
 	def __init__(self, path: str):
-		self.path: str = path.full
+		self.path: str = path.name
 	def __lt__(self, b):
 		return comparer(self.path, b.path)
 
@@ -47,7 +47,7 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
 	SPACE: int = 32
-	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif"}  # valid image types
+	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif"}  # valid image types
 	NEAREST: set[str] = {"1", "P"}  # used for image resizing
 	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
