@@ -2,9 +2,8 @@
 from sys import argv  # std
 from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
-from pathlib import Path  # std
 import os  # std
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.3.0
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.4.0
 from send2trash import send2trash  # 1.8.0
 #from time import perf_counter_ns
 
@@ -27,11 +26,20 @@ class cached:
 
 # key for sorting on windows
 class WKey:
-	__slots__ = ('pth')
-	def __init__(self, pth: Path):
-		self.pth: str = pth.name
+	__slots__ = ('path')
+	def __init__(self, path: str):
+		self.path: str = path.full
 	def __lt__(self, b):
-		return comparer(self.pth, b.pth)
+		return comparer(self.path, b.path)
+
+class ImagePath():
+	__slots__ = ('full', 'suffix', 'name')
+	def __init__(self, path: str):
+		self.full = path
+		nameStart = path.rfind('/')+1
+		extStart = path.rfind('.', nameStart)
+		self.suffix = path[extStart:] if extStart > 0 else ''
+		self.name = path[nameStart:] if nameStart > 0 else self.full
 
 class viewer:
 	# class vars
@@ -43,11 +51,13 @@ class viewer:
 	NEAREST: set[str] = {"1", "P"}  # used for image resizing
 	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
-	__slots__ = ('drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING')
+	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING')
 	def __init__(self, rawPath: str):
+		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
-		pth: Path = Path(rawPath)
-		if pth.suffix not in self.FILETYPE: exit(0)
+		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.FILETYPE: exit(0)
+		self.dir: str = rawPath[:rawPath.rfind('/')+1]
+		pth = ImagePath(rawPath)
 		# UI varaibles
 		self.drawtop: bool
 		self.dropDown: bool
@@ -68,7 +78,7 @@ class viewer:
 		self.buffer: int = 100
 		# main stuff
 		self.app: Tk = Tk()
-		self.cache: dict[Path, cached] = {}  # cache for already rendered images
+		self.cache: dict[str, cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.app.attributes('-fullscreen', True)
@@ -80,11 +90,10 @@ class viewer:
 		
 		self.loadAssests()
 		# draw first img, then get all paths in dir
-		dir: Path = Path(pth.parent)
 		self.files = [pth]
 		self.imageLoader()
 		self.app.update()
-		self.files: list[Path] = sorted([p for p in dir.glob('*') if p.suffix in self.FILETYPE], key=WKey)
+		self.files: list[ImagePath] = sorted([ImagePath(self.dir + p) for p in next(os.walk(self.dir), (None, None, []))[2]], key=WKey)
 		self.curInd = self.binarySearch(pth.name)
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
@@ -278,13 +287,13 @@ class viewer:
 	# asks os to rename file and changes position in list to new location
 	def renameFile(self, e: Event = None) -> None:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
-		newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
+		newname = f'{self.dir}{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
 		try:
 			if os.path.isfile(newname) or os.path.isdir(newname):
 				raise FileExistsError()
 			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
-			os.rename(self.files[self.curInd], newname) 
-			newname = Path(newname)
+			os.rename(self.files[self.curInd].full, newname) 
+			newname = ImagePath(newname)
 			self.removeImg()
 			self.files.insert(self.binarySearch(newname.name), newname)
 			self.canvas.itemconfig(self.inp, state='hidden')
@@ -313,8 +322,8 @@ class viewer:
 	def imageLoader(self) -> None:
 		curPath = self.files[self.curInd]
 		try:
-			self.temp = Image.open(curPath) # open even if in cache to interrupt if user deleted it outside of program
-			self.bitSize: int = curPath.stat().st_size
+			self.temp = Image.open(curPath.full) # open even if in cache to interrupt if user deleted it outside of program
+			self.bitSize: int = os.stat(curPath.full).st_size
 			close: bool = True
 			data: cached = self.cache.get(curPath, None)
 			if data is not None and self.bitSize == data.bits: # was cached
@@ -340,7 +349,7 @@ class viewer:
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					self.conImg = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
-					self.cache[curPath] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
+					self.cache[curPath.name] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
 			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
@@ -468,6 +477,6 @@ if __name__ == "__main__":
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\meme4.png")
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\meme3.png")
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
