@@ -3,18 +3,18 @@ from sys import argv  # std
 from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
 from pathlib import Path  # std
-from os import rename, name  # std
+import os  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.3.0
 from send2trash import send2trash  # 1.8.0
 #from time import perf_counter_ns
 
-if name == 'nt':
+if os.name == 'nt':
 	from ctypes import windll  # std
 	comparer = lambda a, b: windll.shlwapi.StrCmpLogicalW(a, b) < 0
 else:
 	comparer = lambda a, b: a<b
 
-# struct for holding cached images
+# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
 class cached:
 	# width, height, bit size string, PhotoImage, bits size int
 	__slots__ = ('tw', 'th', 'ts', 'im', 'bits')
@@ -95,7 +95,9 @@ class viewer:
 		self.app.bind('<FocusIn>', self.redraw)
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escButton)
-		self.app.bind('<KeyRelease>', self.keyBinds)	
+		self.app.bind('<KeyRelease>', self.keyBinds)
+		if os.path.isfile("icon/icon.ico"):
+			self.app.iconbitmap("icon/icon.ico")
 		self.app.mainloop()
 
 	def keyBinds(self, e: Event) -> None:
@@ -104,12 +106,12 @@ class viewer:
 		if e.keysym in self.KEY_MAPPING:
 			self.KEY_MAPPING[e.keysym](e)
 
-	def arrow(self, e: Event = None) -> None:
+	def arrow(self, e: Event) -> None:
 		# only move images if user not in entry
 		if e.widget is self.app:
 			self.move(1 if e.keysym == 'Right' else -1)
 
-	def scroll(self, e: Event = None) -> None:
+	def scroll(self, e: Event) -> None:
 		self.move(-1 if e.delta > 0 else 1)
 		self.app.focus()
 
@@ -280,7 +282,7 @@ class viewer:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
 		newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
 		try:
-			rename(self.files[self.curInd], newname) 
+			os.rename(self.files[self.curInd], newname) 
 			newname = Path(newname)
 			self.removeImg()
 			self.files.insert(self.binarySearch(newname.name), newname)
@@ -319,7 +321,7 @@ class viewer:
 			else:
 				self.trueWidth, self.trueHeight = self.temp.size
 				intSize: int = self.bitSize>>10
-				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 1023 else f"{intSize}kb"
+				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 				w, h = self.dimensionFinder()
 				frames: int = getattr(self.temp, 'n_frames', 0)
 				if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
@@ -350,7 +352,7 @@ class viewer:
 		self.imageLoader()
 
 	# resize PIL image object, modified version of PIL source
-	def resize(self, img: Image.Image, size: tuple[int, int], resample: int):
+	def resize(self, img: Image.Image, size: tuple[int, int], resample: int) -> Image.Image:
 		box = (0, 0)+img.size
 		if img.mode in self.NEAREST:
 			resample = 0
@@ -422,7 +424,7 @@ class viewer:
 			self.buffer = int(speed*1.4)
 			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed)
 			self.loadFrame(gifFrame+1, w, h, name)
-		except Exception:  
+		except Exception:
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
 			if name == self.files[self.curInd].name: self.temp.close()
 
@@ -460,8 +462,10 @@ class viewer:
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = False
-	if len(argv) > 1 or DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\test.jpg" if DEBUG else argv[1])
+	DEBUG: bool = True
+	if len(argv) > 1:
+		viewer(argv[1])
+	elif DEBUG:
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\meme4.png")
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
