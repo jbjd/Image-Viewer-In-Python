@@ -462,7 +462,7 @@ class viewer:
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
