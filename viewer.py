@@ -35,7 +35,6 @@ class WKey:
 
 class viewer:
 	# class vars
-	DROPDOWNWIDTH: int = 195
 	DROPDOWNHEIGHT: int = 110
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
@@ -144,7 +143,6 @@ class viewer:
 		FONT: str = 'arial 11'
 		# stuff on topbar
 		self.topbar  = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, self.SPACE), TOPCOL))
-		self.dropbar = Image.new('RGBA', (self.DROPDOWNWIDTH, self.DROPDOWNHEIGHT), (40, 40, 40, 170))
 		exitb = ImageTk.PhotoImage(Image.new('RGB', (self.SPACE, self.SPACE), (190, 40, 40)))
 		draw = ImageDraw.Draw(Image.new('RGB', (self.SPACE, self.SPACE), (180, 25, 20))) 
 		draw.line((6, 6, 26, 26), width=2, fill=LINECOL)
@@ -443,8 +441,9 @@ class viewer:
 		self.createDropbar() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
 		
 	def createDropbar(self) -> None:
-		draw = ImageDraw.Draw(self.dropbar.copy())  # copy plain window and draw on it
-		draw.text((10, 25), f"Pixels: {self.trueWidth}x{self.trueHeight}", fill="white")
+		dimText: str = f"Pixels: {self.trueWidth}x{self.trueHeight}"
+		draw = ImageDraw.Draw(Image.new('RGBA', (int(ImageDraw.ImageDraw.font.getlength(dimText))+20, self.DROPDOWNHEIGHT), (40, 40, 40, 170)))  # copy plain window and draw on it
+		draw.text((10, 25), dimText, fill="white")
 		draw.text((10, 60), f"Size: {self.trueSize}", fill="white")
 		self.dropImage = ImageTk.PhotoImage(draw._image)
 		self.canvas.itemconfig(self.infod, image=self.dropImage, state='normal')
