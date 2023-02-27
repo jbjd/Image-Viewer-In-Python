@@ -325,7 +325,7 @@ class viewer:
 			self.temp = Image.open(curPath.full) # open even if in cache to interrupt if user deleted it outside of program
 			self.bitSize: int = os.stat(curPath.full).st_size
 			close: bool = True
-			data: cached = self.cache.get(curPath, None)
+			data: cached = self.cache.get(curPath.name, None)
 			if data is not None and self.bitSize == data.bits: # was cached
 				self.trueWidth, self.trueHeight, self.trueSize, self.conImg = data.tw, data.th, data.ts, data.im
 			else:
