@@ -1,3 +1,1 @@
-cropping
-
-rename gif while loading
+cropping images with preview

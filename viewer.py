@@ -280,6 +280,9 @@ class viewer:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
 		newname = f'{self.files[self.curInd].parent}/{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
 		try:
+			if os.path.isfile(newname) or os.path.isdir(newname):
+				raise FileExistsError()
+			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
 			os.rename(self.files[self.curInd], newname) 
 			newname = Path(newname)
 			self.removeImg()
