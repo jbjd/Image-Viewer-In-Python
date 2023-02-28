@@ -274,7 +274,7 @@ class viewer:
 	# delete image
 	def trashFile(self, e: Event = None) -> None:
 		self.clearGif()
-		send2trash(self.files[self.curInd])
+		send2trash(self.files[self.curInd].full)
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.removeAndMove()
 
