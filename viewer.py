@@ -86,6 +86,7 @@ class viewer:
 		self.app.update()  # updates winfo width and height to the current size, this is necessary
 		self.appw: int = self.app.winfo_width()
 		self.apph: int = self.app.winfo_height()
+		background = self.canvas.create_rectangle(0,0,self.appw,self.apph,fill='black')
 		self.drawnImage = self.canvas.create_image(self.appw>>1, self.apph>>1, anchor='center')  # main image, replaced as necessary
 		
 		self.loadAssests()
@@ -102,7 +103,8 @@ class viewer:
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
 		self.KEY_MAPPING = {'r': self.renameWindow, 'Left': self.arrow, 'Right': self.arrow}
-		self.canvas.bind('<Button-1>', self.clickHandler)
+		self.canvas.tag_bind(background, '<Button-1>', self.clickHandler)
+		self.canvas.tag_bind(self.drawnImage, '<Button-1>', self.clickHandler)
 		self.app.bind('<FocusIn>', self.redraw)
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escButton)
@@ -142,7 +144,7 @@ class viewer:
 			return
 		self.needRedraw = False
 		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
-		if(self.files[self.curInd].stat().st_size == self.bitSize):
+		if(os.stat(self.files[self.curInd].full).st_size == self.bitSize):
 			return
 		self.imageLoaderSafe()
 
@@ -378,8 +380,6 @@ class viewer:
 
 	# skip clicks to menu, draws menu if not present
 	def clickHandler(self, e: Event) -> None:
-		if self.drawtop and (e.y <= self.SPACE or (self.dropDown and e.x > self.appw-self.DROPDOWNWIDTH and e.y < self.SPACE+self.DROPDOWNHEIGHT)):
-			return
 		self.drawtop = not self.drawtop
 		self.app.focus()
 		if self.drawtop: 
