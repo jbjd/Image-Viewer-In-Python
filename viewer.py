@@ -36,7 +36,7 @@ class ImagePath():
 	__slots__ = ('full', 'suffix', 'name')
 	def __init__(self, path: str):
 		self.full = path
-		nameStart = path.rfind('\\')+1
+		nameStart = path.rfind('/')+1
 		extStart = path.rfind('.', nameStart)
 		self.suffix = path[extStart:] if extStart > 0 else ''
 		self.name = path[nameStart:] if nameStart > 0 else self.full
@@ -53,10 +53,10 @@ class viewer:
 
 	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING')
 	def __init__(self, rawPath: str):
-		rawPath = rawPath.replace('/', '\\')
+		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
 		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.FILETYPE: exit(0)
-		self.dir: str = rawPath[:rawPath.rfind('\\')+1]
+		self.dir: str = rawPath[:rawPath.rfind('/')+1]
 		pth = ImagePath(rawPath)
 		# UI varaibles
 		self.drawtop: bool
@@ -274,7 +274,7 @@ class viewer:
 	# delete image
 	def trashFile(self, e: Event = None) -> None:
 		self.clearGif()
-		send2trash(self.files[self.curInd].full)
+		send2trash(os.path.abspath(self.files[self.curInd].full))
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.removeAndMove()
 
