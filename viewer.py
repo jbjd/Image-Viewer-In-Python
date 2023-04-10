@@ -97,7 +97,7 @@ class viewer:
 		self.files: list[ImagePath] = []
 		for p in next(os.walk(self.dir), (None, None, []))[2]:
 			fp = ImagePath(self.dir+p)
-			if fp.suffix in self.FILETYPE: self.files.append(fp)
+			if fp.suffix.lower() in self.FILETYPE: self.files.append(fp)
 		self.files.sort(key=IKey)
 		self.curInd = self.binarySearch(pth.name)
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22)  # font for drawing on images
