@@ -47,7 +47,7 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
 	SPACE: int = 32
-	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif"}  # valid image types
+	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif", ".bmp"}  # valid image types
 	NEAREST: set[str] = {"1", "P"}  # used for image resizing
 	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
