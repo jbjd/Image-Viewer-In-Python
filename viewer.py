@@ -51,7 +51,7 @@ class viewer:
 	NEAREST: set[str] = {"1", "P"}  # used for image resizing
 	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
-	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING')
+	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
@@ -103,22 +103,29 @@ class viewer:
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
-		self.KEY_MAPPING = {'r': self.renameWindow, 'Left': self.arrow, 'Right': self.arrow}
+		self.KEY_MAPPING = {'r': self.renameWindow, 'Left': self.arrow, 'Right': self.arrow}  # allowed only in main app
+		self.KEY_MAPPING_LIMITED = {'F2': self.renameWindow, 'Up': self.hideWrapper, 'Down': self.showWrapper}  # allowed in entry or main app
 		self.canvas.tag_bind(background, '<Button-1>', self.clickHandler)
 		self.canvas.tag_bind(self.drawnImage, '<Button-1>', self.clickHandler)
 		self.app.bind('<FocusIn>', self.redraw)
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escButton)
 		self.app.bind('<KeyRelease>', self.keyBinds)
+		self.entryText.bind('<KeyRelease>', self.keyBindsLimited)
 		if os.path.isfile("icon/icon.ico"):
 			self.app.iconbitmap("icon/icon.ico")
 		self.app.mainloop()
 
 	def keyBinds(self, e: Event) -> None:
-		if e.widget is not self.app:
-			return
-		if e.keysym in self.KEY_MAPPING:
-			self.KEY_MAPPING[e.keysym](e)
+		if e.widget is self.app:
+			if e.keysym in self.KEY_MAPPING:
+				self.KEY_MAPPING[e.keysym](e)
+			else:
+				self.keyBindsLimited(e)
+		
+	def keyBindsLimited(self, e: Event) -> None:
+		if e.keysym in self.KEY_MAPPING_LIMITED:
+			self.KEY_MAPPING_LIMITED[e.keysym](e)
 
 	def arrow(self, e: Event) -> None:
 		# only move images if user not in entry
@@ -282,7 +289,7 @@ class viewer:
 	# opens tkinter entry to accept user input
 	def renameWindow(self, e: Event = None) -> None:
 		if self.canvas.itemcget("topb",'state') == 'hidden':
-			return
+			self.showWrapper()
 		if self.canvas.itemcget(self.inp,'state') == 'hidden':
 			self.canvas.itemconfig(self.inp, state='normal')
 			self.canvas.coords(self.inp, self.renameWindowLocation+40, 4)
@@ -380,16 +387,33 @@ class viewer:
 
 		return img._new(img.im.resize(size, resample, box))
 
+	def showTopbar(self) -> None:
+		self.canvas.itemconfig("topb", state='normal')
+		self.updateTop()
+
+	# wraps showTopbar and sets flag that topbar has been drawn
+	def showWrapper(self, e: Event = None) -> None:
+		self.drawtop = True
+		self.showTopbar()
+
+	def hideTopbar(self, e: Event = None) -> None:
+		self.canvas.itemconfig("topb", state='hidden')
+		self.canvas.itemconfig(self.inp, state='hidden')
+
+	# wraps hideTopbar and sets flag that topbar has not been drawn
+	def hideWrapper(self, e: Event = None) -> None:
+		self.drawtop = False
+		self.app.focus()
+		self.hideTopbar()
+
 	# skip clicks to menu, draws menu if not present
 	def clickHandler(self, e: Event) -> None:
 		self.drawtop = not self.drawtop
 		self.app.focus()
 		if self.drawtop: 
-			self.canvas.itemconfig("topb", state='normal')
-			self.updateTop()
+			self.showTopbar()
 		else: 
-			self.canvas.itemconfig("topb", state='hidden')
-			self.canvas.itemconfig(self.inp, state='hidden')
+			self.hideTopbar()
 
 	def removeImg(self) -> None:
 		# delete image from files array and from cache if present
