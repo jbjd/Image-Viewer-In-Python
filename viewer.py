@@ -3,9 +3,9 @@ from sys import argv  # std
 from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
 import os  # std
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.4.0
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.5.0
 from send2trash import send2trash  # 1.8.0
-#from time import perf_counter_ns
+#from time import perf_counter_ns, sleep
 
 if os.name == 'nt':
 	from ctypes import windll  # std
