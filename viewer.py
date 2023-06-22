@@ -5,6 +5,7 @@ from threading import Thread  # std
 import os  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.5.0
 from send2trash import send2trash  # 1.8.0
+import cv2  # 4.7.0.72
 #from time import perf_counter_ns, sleep
 
 if os.name == 'nt':
@@ -362,7 +363,11 @@ class viewer:
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
-					self.conImg = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 1) if h != self.trueHeight else self.temp)
+					if self.trueHeight > self.apph:
+						self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(cv2.imread(curPath.full), (w, h), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB)))
+					else:
+						self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(cv2.cvtColor(cv2.imread(curPath.full), cv2.COLOR_BGR2RGB), (w, h), interpolation=cv2.INTER_CUBIC)))
+
 					self.cache[curPath.name] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
