@@ -7,7 +7,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 
 from send2trash import send2trash  # 1.8.0
 import cv2  # 4.7.0.72
 from numpy import asarray
-from time import perf_counter_ns, sleep
+#from time import perf_counter_ns, sleep
 
 if os.name == 'nt':
 	from ctypes import windll  # std
@@ -50,8 +50,6 @@ class viewer:
 	GIFSPEED: float = .88
 	SPACE: int = 32
 	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif", ".bmp"}  # valid image types
-	NEAREST: set[str] = {"1", "P"}  # used for image resizing
-	CONVERTS: dict[str, str] = {"LA": "La", "RGBA": "RGBa"}  # used for image resizing
 
 	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
@@ -359,17 +357,13 @@ class viewer:
 						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
 					gifInterp = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
-					self.conImg, speed = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed
+					self.conImg, speed = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp.convert('RGBA')), (w, h), interpolation=gifInterp))), speed
 					self.gifFrames[0] = (self.conImg, speed)
 					Thread(target=self.loadFrame, args=(1, w, h, curPath.name, gifInterp), daemon=True).start()
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
-					if self.trueHeight > self.apph:
-						self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(cv2.imread(curPath.full), (w, h), interpolation=cv2.INTER_AREA), cv2.COLOR_BGR2RGB)))
-					else:
-						self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(cv2.cvtColor(cv2.imread(curPath.full), cv2.COLOR_BGR2RGB), (w, h), interpolation=cv2.INTER_CUBIC)))
-
+					self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp), (w, h), interpolation=cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC)))
 					self.cache[curPath.name] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
@@ -381,18 +375,6 @@ class viewer:
 	def imageLoaderSafe(self) -> None:
 		self.clearGif()
 		self.imageLoader()
-
-	# resize PIL image object, modified version of PIL source
-	def resize(self, img: Image.Image, size: tuple[int, int], resample: int) -> Image.Image:
-		box = (0, 0)+img.size
-		if img.mode in self.NEAREST:
-			resample = 0
-
-		img.load()
-		if img.mode in self.CONVERTS and resample != 0:
-			return img.convert(self.CONVERTS[img.mode])._new(img.im.resize(size, resample, box)).convert(img.mode)
-
-		return img._new(img.im.resize(size, resample, box))
 
 	def showTopbar(self) -> None:
 		self.canvas.itemconfig("topb", state='normal')
