@@ -6,7 +6,8 @@ import os  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.5.0
 from send2trash import send2trash  # 1.8.0
 import cv2  # 4.7.0.72
-#from time import perf_counter_ns, sleep
+from numpy import asarray
+from time import perf_counter_ns, sleep
 
 if os.name == 'nt':
 	from ctypes import windll  # std
@@ -357,9 +358,10 @@ class viewer:
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
+					gifInterp = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
 					self.conImg, speed = ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed
 					self.gifFrames[0] = (self.conImg, speed)
-					Thread(target=self.loadFrame, args=(1, w, h, curPath.name), daemon=True).start()
+					Thread(target=self.loadFrame, args=(1, w, h, curPath.name, gifInterp), daemon=True).start()
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
@@ -455,7 +457,7 @@ class viewer:
 		
 		self.gifId = self.app.after(speed, self.animate, gifFrame)
 
-	def loadFrame(self, gifFrame: int, w: int, h: int, name: str) -> None:
+	def loadFrame(self, gifFrame: int, w: int, h: int, name: str, interpolation: int) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
 		if name != self.files[self.curInd].name: return
 		try:
@@ -466,8 +468,8 @@ class viewer:
 			except(KeyError, AttributeError):
 				speed = self.DEFAULTSPEED
 			self.buffer = int(speed*1.4)
-			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(self.resize(self.temp, (w, h), 2)), speed)
-			self.loadFrame(gifFrame+1, w, h, name)
+			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp), (w, h), interpolation=interpolation))), speed)
+			self.loadFrame(gifFrame+1, w, h, name, interpolation)
 		except Exception:
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
 			if name == self.files[self.curInd].name: self.temp.close()
