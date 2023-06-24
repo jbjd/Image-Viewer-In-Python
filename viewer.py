@@ -100,7 +100,7 @@ class viewer:
 			if fp.suffix.lower() in self.FILETYPE: self.files.append(fp)
 		self.files.sort(key=IKey)
 		self.curInd = self.binarySearch(pth.name)
-		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22)  # font for drawing on images
+		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22*self.apph//1080)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
 		self.KEY_MAPPING = {'r': self.renameWindow, 'Left': self.arrow, 'Right': self.arrow}  # allowed only in main app
