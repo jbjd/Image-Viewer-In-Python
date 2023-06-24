@@ -35,13 +35,12 @@ class IKey:
 		return comparer(self.path, b.path)
 
 class ImagePath():
-	__slots__ = ('full', 'suffix', 'name')
+	__slots__ = ('suffix', 'name')
 	def __init__(self, path: str):
-		self.full = path
 		nameStart = path.rfind('/')+1
 		extStart = path.rfind('.', nameStart)
 		self.suffix = path[extStart:] if extStart > 0 else ''
-		self.name = path[nameStart:] if nameStart > 0 else self.full
+		self.name = path[nameStart:] if nameStart > 0 else path
 
 class viewer:
 	# class vars
@@ -51,7 +50,7 @@ class viewer:
 	SPACE: int = 32
 	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif", ".bmp"}  # valid image types
 
-	__slots__ = ('dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
+	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
@@ -100,6 +99,7 @@ class viewer:
 			if fp.suffix.lower() in self.FILETYPE: self.files.append(fp)
 		self.files.sort(key=IKey)
 		self.curInd = self.binarySearch(pth.name)
+		self.fullname = f'{self.dir}{self.files[self.curInd].name}'
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22*self.apph//1080)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
@@ -152,7 +152,7 @@ class viewer:
 			return
 		self.needRedraw = False
 		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
-		if(os.stat(self.files[self.curInd].full).st_size == self.bitSize):
+		if(os.stat(self.fullname).st_size == self.bitSize):
 			return
 		self.imageLoaderSafe()
 
@@ -282,7 +282,7 @@ class viewer:
 	def trashFile(self, e: Event = None) -> None:
 		self.clearGif()
 		self.temp.close()
-		send2trash(os.path.abspath(self.files[self.curInd].full))
+		send2trash(os.path.abspath(self.fullname))
 		self.canvas.itemconfig(self.inp, state='hidden')
 		self.removeAndMove()
 
@@ -306,7 +306,7 @@ class viewer:
 			if os.path.isfile(newname) or os.path.isdir(newname):
 				raise FileExistsError()
 			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
-			os.rename(self.files[self.curInd].full, newname) 
+			os.rename(self.fullname, newname) 
 			newname = ImagePath(newname)
 			self.removeImg()
 			self.files.insert(self.binarySearch(newname.name), newname)
@@ -336,8 +336,9 @@ class viewer:
 	def imageLoader(self) -> None:
 		curPath = self.files[self.curInd]
 		try:
-			self.temp = Image.open(curPath.full) # open even if in cache to interrupt if user deleted it outside of program
-			self.bitSize: int = os.stat(curPath.full).st_size
+			self.fullname = f'{self.dir}{self.files[self.curInd].name}'
+			self.temp = Image.open(self.fullname) # open even if in cache to interrupt if user deleted it outside of program
+			self.bitSize: int = os.stat(self.fullname).st_size
 			close: bool = True
 			data: cached = self.cache.get(curPath.name, None)
 			if data is not None and self.bitSize == data.bits: # was cached
