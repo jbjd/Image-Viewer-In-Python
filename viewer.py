@@ -19,7 +19,7 @@ class DefaultUtil():
 if os.name == 'nt':
 	from ctypes import WinDLL
 	# this var can be global if ever needed elsewhere
-	exePath = __file__.replace('\\', '/')
+	exePath = argv[0].replace('\\', '/')
 	exePath = exePath[:exePath.rfind('/')+1]
 	utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
 else:
