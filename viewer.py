@@ -364,7 +364,8 @@ class viewer:
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
-					self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp), (w, h), interpolation=cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC)))
+					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
+					self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), (w, h), interpolation=cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC)))
 					self.cache[curPath.name] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
