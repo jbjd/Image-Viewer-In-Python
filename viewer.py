@@ -3,10 +3,10 @@ from sys import argv  # std
 from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
 import os  # std
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 9.5.0
-from send2trash import send2trash  # 1.8.0
-import cv2  # 4.7.0.72
-from numpy import asarray
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
+from send2trash import send2trash  # 1.8.2
+import cv2  # 4.8.0.74
+from numpy import asarray  # 1.25.0
 #from time import perf_counter_ns, sleep
 
 # default functions if can't use custom dll
