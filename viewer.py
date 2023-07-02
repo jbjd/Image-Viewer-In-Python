@@ -9,38 +9,21 @@ import cv2  # 4.7.0.72
 from numpy import asarray
 #from time import perf_counter_ns, sleep
 
+# default functions if can't use custom dll
+class DefaultUtil():
+	def myCmpW(a, b):
+		if a == b: return 0
+		return 1 if a > b else -1
+
+# holds util functions, dll for windows and defaults for others since I only have another system
 if os.name == 'nt':
-	from ctypes import windll  # std
-	comparer = lambda a, b: windll.shlwapi.StrCmpLogicalW(a, b) < 0
+	from ctypes import WinDLL
+	# this var can be global if ever needed elsewhere
+	exePath = __file__.replace('\\', '/')
+	exePath = exePath[:exePath.rfind('/')+1]
+	utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
 else:
-	comparer = lambda a, b: a<b
-
-# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
-class cached:
-	# width, height, bit size string, PhotoImage, bits size int
-	__slots__ = ('tw', 'th', 'ts', 'im', 'bits')
-	def __init__(self, tw, th, ts, im, bits):
-		self.tw: int = tw
-		self.th: int = th
-		self.ts: str = ts
-		self.im: ImageTk.PhotoImage = im
-		self.bits: int = bits
-
-# key for sorting
-class IKey:
-	__slots__ = ('path')
-	def __init__(self, path: str):
-		self.path: str = path.name
-	def __lt__(self, b):
-		return comparer(self.path, b.path)
-
-class ImagePath():
-	__slots__ = ('suffix', 'name')
-	def __init__(self, path: str):
-		nameStart = path.rfind('/')+1
-		extStart = path.rfind('.', nameStart)
-		self.suffix = path[extStart:] if extStart > 0 else ''
-		self.name = path[nameStart:] if nameStart > 0 else path
+	utilHelper = DefaultUtil()
 
 class viewer:
 	# class vars
@@ -50,13 +33,40 @@ class viewer:
 	SPACE: int = 32
 	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif", ".bmp"}  # valid image types
 
+	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
+	class cached:
+		# width, height, bit size string, PhotoImage, bits size int
+		__slots__ = ('tw', 'th', 'ts', 'im', 'bits')
+		def __init__(self, tw, th, ts, im, bits):
+			self.tw: int = tw
+			self.th: int = th
+			self.ts: str = ts
+			self.im: ImageTk.PhotoImage = im
+			self.bits: int = bits
+
+	class ImagePath():
+		__slots__ = ('suffix', 'name')
+		def __init__(self, path: str):
+			nameStart = path.rfind('/')+1
+			extStart = path.rfind('.', nameStart)
+			self.suffix = path[extStart:] if extStart > 0 else ''
+			self.name = path[nameStart:] if nameStart > 0 else path
+
+	# key for sorting
+	class IKey:
+		__slots__ = ('path')
+		def __init__(self, path: str):
+			self.path: str = path.name
+		def __lt__(self, b):
+			return utilHelper.myCmpW(self.path, b.path) < 0
+
 	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
 		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.FILETYPE: exit(0)
 		self.dir: str = rawPath[:rawPath.rfind('/')+1]
-		pth = ImagePath(rawPath)
+		pth = self.ImagePath(rawPath)
 		# UI varaibles
 		self.drawtop: bool
 		self.dropDown: bool
@@ -77,7 +87,7 @@ class viewer:
 		self.buffer: int = 100
 		# main stuff
 		self.app: Tk = Tk()
-		self.cache: dict[str, cached] = {}  # cache for already rendered images
+		self.cache: dict[str, self.cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.app.attributes('-fullscreen', True)
@@ -93,11 +103,11 @@ class viewer:
 		self.files = [pth]
 		self.imageLoader()
 		self.app.update()
-		self.files: list[ImagePath] = []
+		self.files: list[self.ImagePath] = []
 		for p in next(os.walk(self.dir), (None, None, []))[2]:
-			fp = ImagePath(self.dir+p)
+			fp = self.ImagePath(self.dir+p)
 			if fp.suffix.lower() in self.FILETYPE: self.files.append(fp)
-		self.files.sort(key=IKey)
+		self.files.sort(key=self.IKey)
 		self.curInd = self.binarySearch(pth.name)
 		self.fullname = f'{self.dir}{self.files[self.curInd].name}'
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22*self.apph//1080)  # font for drawing on images
@@ -307,7 +317,7 @@ class viewer:
 				raise FileExistsError()
 			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
 			os.rename(self.fullname, newname) 
-			newname = ImagePath(newname)
+			newname = self.ImagePath(newname)
 			self.removeImg()
 			self.files.insert(self.binarySearch(newname.name), newname)
 			self.canvas.itemconfig(self.inp, state='hidden')
@@ -340,7 +350,7 @@ class viewer:
 			self.temp = Image.open(self.fullname) # open even if in cache to interrupt if user deleted it outside of program
 			self.bitSize: int = os.stat(self.fullname).st_size
 			close: bool = True
-			data: cached = self.cache.get(curPath.name, None)
+			data: self.cached = self.cache.get(curPath.name, None)
 			if data is not None and self.bitSize == data.bits: # was cached
 				self.trueWidth, self.trueHeight, self.trueSize, self.conImg = data.tw, data.th, data.ts, data.im
 			else:
@@ -366,7 +376,7 @@ class viewer:
 				else:  # any image thats not cached or animated
 					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
 					self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), (w, h), interpolation=cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC)))
-					self.cache[curPath.name] = cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
+					self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
 			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
@@ -488,7 +498,7 @@ class viewer:
 			mid = (low+high)>>1
 			cur = self.files[mid].name
 			if pth == cur: return mid
-			if comparer(pth, cur): high = mid-1
+			if utilHelper.myCmpW(pth, cur) < 0: high = mid-1
 			else: low = mid+1
 		return low
 
@@ -496,7 +506,6 @@ if __name__ == "__main__":
 	DEBUG: bool = False
 	if len(argv) > 1:
 		viewer(argv[1])
-	elif DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\meme3.png")
+	elif DEBUG: viewer(r"C:\Users\jimde\OneDrive\Pictures\meme12.png")
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
