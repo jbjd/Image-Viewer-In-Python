@@ -2,7 +2,7 @@
 a Lightweight Image Viewer written in Python 3.11
 
 An image viewer with the intent of being fast and simple; Images are fit to your screen in the best quality. Currently includes a button for deletion, renaming a file,
-and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click, so nothing clutters the screen. Supports png, jpegs, webp, gifs, and bitmaps. Animated files are supported expect for pngs, however animated pngs are quite rare.
+and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click, so nothing clutters the screen. Supports png, jpegs, webp, gifs, and bitmaps. Animated files are supported for png, webp, and gifs.
 
 Other features/plans:
 - More data on file info tab

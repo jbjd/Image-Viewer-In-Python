@@ -334,6 +334,9 @@ class viewer:
 		self.app.iconify()
 
 	# START MAIN IMAGE FUNCTIONS
+	def resizeImg(self, interpolation, w, h):
+		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), (w, h), interpolation=interpolation)))
+	
 	''' w, h: width and height of image before resize
 		returns tuple of what dimensions to resize too
 	'''
@@ -359,7 +362,8 @@ class viewer:
 				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 				w, h = self.dimensionFinder()
 				frames: int = getattr(self.temp, 'n_frames', 0)
-				if(frames > 1 and curPath.suffix != '.png'):  # any non-png animated file, animated png don't work in tkinter it seems
+				interpolation = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
+				if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
 					try:
 						speed = int(self.temp.info['duration'] * self.GIFSPEED)
@@ -367,15 +371,14 @@ class viewer:
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
-					gifInterp = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
-					self.conImg, speed = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp.convert('RGBA')), (w, h), interpolation=gifInterp))), speed
+					self.conImg, speed = self.resizeImg(interpolation, w, h), speed
 					self.gifFrames[0] = (self.conImg, speed)
-					Thread(target=self.loadFrame, args=(1, w, h, curPath.name, gifInterp), daemon=True).start()
+					Thread(target=self.loadFrame, args=(1, w, h, curPath.name, interpolation), daemon=True).start()
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
-					self.conImg = ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), (w, h), interpolation=cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC)))
+					self.conImg = self.resizeImg(interpolation, w, h)
 					self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
@@ -506,6 +509,7 @@ if __name__ == "__main__":
 	DEBUG: bool = False
 	if len(argv) > 1:
 		viewer(argv[1])
-	elif DEBUG: viewer(r"C:\Users\jimde\OneDrive\Pictures\meme12.png")
+	elif DEBUG: 
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\animated_png.png")
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
