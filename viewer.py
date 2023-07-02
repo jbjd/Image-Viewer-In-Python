@@ -334,8 +334,8 @@ class viewer:
 		self.app.iconify()
 
 	# START MAIN IMAGE FUNCTIONS
-	def resizeImg(self, interpolation, w, h):
-		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), (w, h), interpolation=interpolation)))
+	def resizeImg(self, interpolation: int, wh: tuple[int, int]) -> ImageTk.PhotoImage:
+		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB')), wh, interpolation=interpolation)))
 	
 	''' w, h: width and height of image before resize
 		returns tuple of what dimensions to resize too
@@ -360,7 +360,7 @@ class viewer:
 				self.trueWidth, self.trueHeight = self.temp.size
 				intSize: int = self.bitSize>>10
 				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
-				w, h = self.dimensionFinder()
+				wh = self.dimensionFinder()
 				frames: int = getattr(self.temp, 'n_frames', 0)
 				interpolation = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
 				if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
@@ -371,14 +371,14 @@ class viewer:
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
 					self.buffer = int(speed*1.4)
-					self.conImg, speed = self.resizeImg(interpolation, w, h), speed
+					self.conImg, speed = self.resizeImg(interpolation, wh), speed
 					self.gifFrames[0] = (self.conImg, speed)
-					Thread(target=self.loadFrame, args=(1, w, h, curPath.name, interpolation), daemon=True).start()
+					Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
 					self.gifId = self.app.after(speed+28, self.animate, 1)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
-					self.conImg = self.resizeImg(interpolation, w, h)
+					self.conImg = self.resizeImg(interpolation, wh)
 					self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
@@ -454,7 +454,7 @@ class viewer:
 		
 		self.gifId = self.app.after(speed, self.animate, gifFrame)
 
-	def loadFrame(self, gifFrame: int, w: int, h: int, name: str, interpolation: int) -> None:
+	def loadFrame(self, gifFrame: int, wh: tuple[int, int], name: str, interpolation: int) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
 		if name != self.files[self.curInd].name: return
 		try:
@@ -465,8 +465,8 @@ class viewer:
 			except(KeyError, AttributeError):
 				speed = self.DEFAULTSPEED
 			self.buffer = int(speed*1.4)
-			self.gifFrames[gifFrame] = (ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp), (w, h), interpolation=interpolation))), speed)
-			self.loadFrame(gifFrame+1, w, h, name, interpolation)
+			self.gifFrames[gifFrame] = (self.resizeImg(interpolation, wh), speed)
+			self.loadFrame(gifFrame+1, wh, name, interpolation)
 		except Exception:
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
 			if name == self.files[self.curInd].name: self.temp.close()
@@ -506,7 +506,7 @@ class viewer:
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG: 
