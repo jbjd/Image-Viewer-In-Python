@@ -1,3 +1,0 @@
-cython --embed viewerC.pyx
-
-gcc viewerC.c -L"C:/Program Files/Python39/libs" -I"C:/Program Files/Python39/include" -lpython39 -DMS_WIN64 -municode
