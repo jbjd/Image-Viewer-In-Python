@@ -4,7 +4,7 @@ from shutil import rmtree
 
 # only works for windows currently
 if os.name != 'nt':
-	raise Exception("Support for compiling on Linux/Mac not currently supported")
+	raise Exception("Compiling on Linux/Mac not currently supported")
 
 WORKING_DIR = __file__.replace('\\', '/')
 WORKING_DIR = WORKING_DIR[:WORKING_DIR.rfind('/')+1]
