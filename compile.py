@@ -3,6 +3,8 @@ import os
 from shutil import rmtree
 
 # only works for windows currently
+if os.name != 'nt':
+	raise Exception("Support for compiling on Linux/Mac not currently supported")
 
 WORKING_DIR = __file__.replace('\\', '/')
 WORKING_DIR = WORKING_DIR[:WORKING_DIR.rfind('/')+1]
@@ -15,6 +17,9 @@ cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:
+	if not os.path.exists("C:/Program Files/Personal Image Viewer/"):
+		os.makedirs("C:/Program Files/Personal Image Viewer/")
+
 	if(os.path.isfile('C:/Program Files/Personal Image Viewer/viewer2.exe')):
 		os.remove('C:/Program Files/Personal Image Viewer/viewer2.exe')
 
