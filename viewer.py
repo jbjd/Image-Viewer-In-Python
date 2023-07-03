@@ -365,15 +365,16 @@ class viewer:
 				self.conImg = self.resizeImg(interpolation, wh)
 				if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
+					self.gifFrames[0] = self.conImg
+					Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
+					# find animation frame speed
 					try:
 						speed = int(self.temp.info['duration'] * self.GIFSPEED)
 						if speed < 2: speed = self.DEFAULTSPEED
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
-					buffer = int(speed*1.4)
-					self.gifFrames[0] = (self.conImg, speed)
-					Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
-					self.gifId = self.app.after(speed+28, self.animate, 1, buffer)
+					
+					self.gifId = self.app.after(speed+20, self.animate, 1, speed, speed+10)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
@@ -438,31 +439,32 @@ class viewer:
 	# END MAIN IMAGE FUNCTIONS
 
 	# START GIF FUNCTIONS
-	def animate(self, gifFrame: int, buffer: int) -> None:
+	''' gifFrame: int representing current frame
+		orgSpeed: speed in ms until next frame
+		buffer: orgSpeed with delay, used if gif is taking too long to load -> add additional time between trying to dispaly next frame
+	'''
+	def animate(self, gifFrame: int, orgSpeed: int, buffer: int) -> None:
 		gifFrame += 1
 		if gifFrame >= len(self.gifFrames): gifFrame = 0
 
-		try:
-			img, speed = self.gifFrames[gifFrame]
-			self.canvas.itemconfig(self.drawnImage, image=img)
-		except TypeError:
+		speed = orgSpeed  # speed after which to try and show next frame
+		img = self.gifFrames[gifFrame]
+		# tried to show next frame before it is loaded, reset to current frame and try again after delay
+		if img is None:
 			speed = buffer
 			gifFrame -= 1
 			buffer += 10
-		
-		self.gifId = self.app.after(speed, self.animate, gifFrame, buffer)
+		else:
+			self.canvas.itemconfig(self.drawnImage, image=img)	
+
+		self.gifId = self.app.after(speed, self.animate, gifFrame, orgSpeed, buffer)
 
 	def loadFrame(self, gifFrame: int, wh: tuple[int, int], name: str, interpolation: int) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
 		if name != self.files[self.curInd].name: return
 		try:
 			self.temp.seek(gifFrame)
-			try:
-				speed = int(self.temp.info['duration'] * self.GIFSPEED)
-				if speed < 2: speed = self.DEFAULTSPEED
-			except(KeyError, AttributeError):
-				speed = self.DEFAULTSPEED
-			self.gifFrames[gifFrame] = (self.resizeImg(interpolation, wh), speed)
+			self.gifFrames[gifFrame] = self.resizeImg(interpolation, wh)
 			self.loadFrame(gifFrame+1, wh, name, interpolation)
 		except Exception:
 			# scroll, recursion ending, etc. get variety of errors. Catch and close if thread is for current GIF
@@ -506,7 +508,7 @@ if __name__ == "__main__":
 	DEBUG: bool = False
 	if len(argv) > 1:
 		viewer(argv[1])
-	elif DEBUG: 
+	elif DEBUG:
 		viewer(r"C:\Users\jimde\OneDrive\Pictures\animated_png.png")
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
