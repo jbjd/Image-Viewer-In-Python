@@ -12,20 +12,13 @@ WORKING_DIR = WORKING_DIR[:WORKING_DIR.rfind('/')+1]
 if not WORKING_DIR:
 	raise Exception("Failed to find this file's directory")
 
-
-skip_DEBUG_if = False
 with open(f"{WORKING_DIR}viewer.py", "r") as f:
 	lines = f.readlines()
 # skip comments and lines used for debug purposes 
 with open(f"{WORKING_DIR}temp.py", "w") as f:
 	for line in lines:
-		if 'DEBUG' not in line:
-			if 'else' in line:
-				skip_DEBUG_if = False
-			if not skip_DEBUG_if and line.lstrip() != '' and line.lstrip()[0] != '#':
-				f.write(line)
-		elif 'if DEBUG' in line:
-			skip_DEBUG_if = True
+		if 'DEBUG' not in line and line.lstrip() != '' and line.lstrip()[0] != '#':
+			f.write(line)
 
 print('Starting up nuitka')
 cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 {WORKING_DIR}temp.py'

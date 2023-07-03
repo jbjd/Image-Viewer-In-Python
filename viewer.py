@@ -513,6 +513,6 @@ if __name__ == "__main__":
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\animated_png.png")
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\animated_png.png") # DEBUG
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
