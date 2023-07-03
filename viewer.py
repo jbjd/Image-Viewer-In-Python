@@ -347,43 +347,45 @@ class viewer:
 	# loads image path
 	def imageLoader(self) -> None:
 		curPath = self.files[self.curInd]
+		self.fullname = f'{self.dir}{self.files[self.curInd].name}'
 		try:
-			self.fullname = f'{self.dir}{self.files[self.curInd].name}'
 			self.temp = Image.open(self.fullname) # open even if in cache to interrupt if user deleted it outside of program
-			self.bitSize: int = os.stat(self.fullname).st_size
-			close: bool = True
-			data: self.cached = self.cache.get(curPath.name, None)
-			if data is not None and self.bitSize == data.bits: # was cached
-				self.trueWidth, self.trueHeight, self.trueSize, self.conImg = data.tw, data.th, data.ts, data.im
-			else:
-				self.trueWidth, self.trueHeight = self.temp.size
-				intSize: int = self.bitSize>>10
-				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
-				wh = self.dimensionFinder()
-				frames: int = getattr(self.temp, 'n_frames', 0)
-				interpolation: int = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
-				self.conImg = self.resizeImg(interpolation, wh)
-				if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
-					self.gifFrames = [None] * frames
-					self.gifFrames[0] = self.conImg
-					Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
-					# find animation frame speed
-					try:
-						speed = int(self.temp.info['duration'] * self.GIFSPEED)
-						if speed < 2: speed = self.DEFAULTSPEED
-					except(KeyError, AttributeError):
-						speed = self.DEFAULTSPEED
-					
-					self.gifId = self.app.after(speed+20, self.animate, 1, speed, speed+10)
-					close = False  # keep open since this is an animation and we need to wait thead to load frames
-				else:  # any image thats not cached or animated
-					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
-					self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
-			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
-			self.app.title(curPath.name)
-			if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
 		except(FileNotFoundError, UnidentifiedImageError):
 			self.removeAndMove()
+			return
+		self.bitSize: int = os.stat(self.fullname).st_size
+		close: bool = True
+		data: self.cached = self.cache.get(curPath.name, None)
+		if data is not None and self.bitSize == data.bits: # was cached
+			self.trueWidth, self.trueHeight, self.trueSize, self.conImg = data.tw, data.th, data.ts, data.im
+		else:
+			self.trueWidth, self.trueHeight = self.temp.size
+			intSize: int = self.bitSize>>10
+			self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
+			wh = self.dimensionFinder()
+			frames: int = getattr(self.temp, 'n_frames', 0)
+			interpolation: int = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
+			self.conImg = self.resizeImg(interpolation, wh)
+			if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
+				self.gifFrames = [None] * frames
+				self.gifFrames[0] = self.conImg
+				Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
+				# find animation frame speed
+				try:
+					speed = int(self.temp.info['duration'] * self.GIFSPEED)
+					if speed < 2: speed = self.DEFAULTSPEED
+				except(KeyError, AttributeError):
+					speed = self.DEFAULTSPEED
+				
+				self.gifId = self.app.after(speed+20, self.animate, 1, speed, speed+10)
+				close = False  # keep open since this is an animation and we need to wait thead to load frames
+			else:  # any image thats not cached or animated
+				# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
+				self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
+		self.canvas.itemconfig(self.drawnImage, image=self.conImg)
+		self.app.title(curPath.name)
+		if close: self.temp.close()  # closes in clearGIF function or at end of loading frames if animated, closes here otherwise
+		
 
 	# wrapper for image loader that clears gifs before loading new image
 	def imageLoaderSafe(self) -> None:
