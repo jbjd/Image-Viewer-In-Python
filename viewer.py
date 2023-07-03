@@ -16,11 +16,11 @@ class DefaultUtil():
 		return 1 if a > b else -1
 
 # holds util functions, dll for windows and defaults for others since I only have another system
+exePath = argv[0].replace('\\', '/')
+exePath = exePath[:exePath.rfind('/')+1]
 if os.name == 'nt':
 	from ctypes import WinDLL
 	# this var can be global if ever needed elsewhere
-	exePath = argv[0].replace('\\', '/')
-	exePath = exePath[:exePath.rfind('/')+1]
 	utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
 else:
 	utilHelper = DefaultUtil()
@@ -86,6 +86,8 @@ class viewer:
 		self.gifId: str = ''  # id for gif animiation
 		# main stuff
 		self.app: Tk = Tk()
+		if os.name == 'nt':
+			self.app.iconbitmap(default=f'{exePath}icon/icon.ico')
 		self.cache: dict[str, self.cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
