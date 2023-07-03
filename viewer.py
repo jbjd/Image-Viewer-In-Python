@@ -60,7 +60,7 @@ class viewer:
 		def __lt__(self, b):
 			return utilHelper.myCmpW(self.path, b.path) < 0
 
-	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'buffer', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
+	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
@@ -84,7 +84,6 @@ class viewer:
 		# gif support
 		self.gifFrames: list = []
 		self.gifId: str = ''  # id for gif animiation
-		self.buffer: int = 100
 		# main stuff
 		self.app: Tk = Tk()
 		self.cache: dict[str, self.cached] = {}  # cache for already rendered images
@@ -362,7 +361,8 @@ class viewer:
 				self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 				wh = self.dimensionFinder()
 				frames: int = getattr(self.temp, 'n_frames', 0)
-				interpolation = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
+				interpolation: int = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
+				self.conImg = self.resizeImg(interpolation, wh)
 				if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
 					self.gifFrames = [None] * frames
 					try:
@@ -370,15 +370,13 @@ class viewer:
 						if speed < 2: speed = self.DEFAULTSPEED
 					except(KeyError, AttributeError):
 						speed = self.DEFAULTSPEED
-					self.buffer = int(speed*1.4)
-					self.conImg, speed = self.resizeImg(interpolation, wh), speed
+					buffer = int(speed*1.4)
 					self.gifFrames[0] = (self.conImg, speed)
 					Thread(target=self.loadFrame, args=(1, wh, curPath.name, interpolation), daemon=True).start()
-					self.gifId = self.app.after(speed+28, self.animate, 1)
+					self.gifId = self.app.after(speed+28, self.animate, 1, buffer)
 					close = False  # keep open since this is an animation and we need to wait thead to load frames
 				else:  # any image thats not cached or animated
 					# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
-					self.conImg = self.resizeImg(interpolation, wh)
 					self.cache[curPath.name] = self.cached(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
 			self.canvas.itemconfig(self.drawnImage, image=self.conImg)
 			self.app.title(curPath.name)
@@ -440,7 +438,7 @@ class viewer:
 	# END MAIN IMAGE FUNCTIONS
 
 	# START GIF FUNCTIONS
-	def animate(self, gifFrame: int) -> None:
+	def animate(self, gifFrame: int, buffer: int) -> None:
 		gifFrame += 1
 		if gifFrame >= len(self.gifFrames): gifFrame = 0
 
@@ -448,11 +446,11 @@ class viewer:
 			img, speed = self.gifFrames[gifFrame]
 			self.canvas.itemconfig(self.drawnImage, image=img)
 		except TypeError:
-			speed = self.buffer
+			speed = buffer
 			gifFrame -= 1
-			self.buffer += 10
+			buffer += 10
 		
-		self.gifId = self.app.after(speed, self.animate, gifFrame)
+		self.gifId = self.app.after(speed, self.animate, gifFrame, buffer)
 
 	def loadFrame(self, gifFrame: int, wh: tuple[int, int], name: str, interpolation: int) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
@@ -464,7 +462,6 @@ class viewer:
 				if speed < 2: speed = self.DEFAULTSPEED
 			except(KeyError, AttributeError):
 				speed = self.DEFAULTSPEED
-			self.buffer = int(speed*1.4)
 			self.gifFrames[gifFrame] = (self.resizeImg(interpolation, wh), speed)
 			self.loadFrame(gifFrame+1, wh, name, interpolation)
 		except Exception:
