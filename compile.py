@@ -1,6 +1,17 @@
 import subprocess
 import os
 from shutil import rmtree
+import re
+
+# returns tabs on left side of string
+def countTabLevel(line: str):
+	tabs = 0
+	for char in line.rstrip():
+		if char == '	':
+			tabs += 1
+		else:
+			break
+	return tabs
 
 # only works for windows currently
 if os.name != 'nt':
@@ -14,10 +25,35 @@ if not WORKING_DIR:
 
 with open(f"{WORKING_DIR}viewer.py", "r") as f:
 	lines = f.readlines()
+lines_without_debug = []
 # skip comments and lines used for debug purposes 
-with open(f"{WORKING_DIR}temp.py", "w") as f:
-	for line in lines:
-		if 'DEBUG' not in line and line.lstrip() != '' and line.lstrip()[0] != '#':
+for line in lines:
+	if 'DEBUG' not in line and line.lstrip() != '' and line.lstrip()[0] != '#':
+		lines_without_debug.append(line.replace('    ', '	'))  # also replaces all 4 spaces with tabs for consistency
+lines.clear()
+# make new temp py file to compile with that discards lines of code that only run on other operating systems
+if os.name == 'nt':
+	with open(f"{WORKING_DIR}temp.py", "w") as f:
+		i = 0
+		while i < len(lines_without_debug):
+			line = lines_without_debug[i]
+			if re.search("if[ 	(]+os.name[ 	]*==[ 	]*('nt'|\"nt\")", line):
+				tabLevel = countTabLevel(line)
+				i += 1
+				while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
+					f.write(lines_without_debug[i][1:])
+					i += 1
+				if lines_without_debug[i].lstrip()[:4] == 'else':
+					tabLevel = countTabLevel(lines_without_debug[i])
+					i += 1
+					while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
+						i += 1
+			else:
+				f.write(line)
+				i += 1
+else:
+	with open(f"{WORKING_DIR}temp.py", "w") as f:
+		for line in lines_without_debug:
 			f.write(line)
 
 print('Starting up nuitka')
