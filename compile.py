@@ -43,4 +43,6 @@ try:
 	
 except Exception as e:
 	print(e)
-	print("No root privileges")
+	print("No root privileges, please run as admin")
+	process.kill()
+	exit(0)
