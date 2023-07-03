@@ -12,19 +12,39 @@ WORKING_DIR = WORKING_DIR[:WORKING_DIR.rfind('/')+1]
 if not WORKING_DIR:
 	raise Exception("Failed to find this file's directory")
 
+
+skip_DEBUG_if = False
+with open(f"{WORKING_DIR}viewer.py", "r") as f:
+	lines = f.readlines()
+# skip comments and lines used for debug purposes 
+with open(f"{WORKING_DIR}temp.py", "w") as f:
+	for line in lines:
+		if 'DEBUG' not in line:
+			if 'else' in line:
+				skip_DEBUG_if = False
+			if not skip_DEBUG_if and line.lstrip() != '' and line.lstrip()[0] != '#':
+				f.write(line)
+		elif 'if DEBUG' in line:
+			skip_DEBUG_if = True
+
 print('Starting up nuitka')
-cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 {WORKING_DIR}viewer.py'
+cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 {WORKING_DIR}temp.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:
-	if not os.path.exists("C:/Program Files/Personal Image Viewer/"):
-		os.makedirs("C:/Program Files/Personal Image Viewer/")
+	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
+		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
 
 	if(os.path.isfile('C:/Program Files/Personal Image Viewer/viewer2.exe')):
 		os.remove('C:/Program Files/Personal Image Viewer/viewer2.exe')
 
 	if(os.path.isfile('C:/Program Files/Personal Image Viewer/viewer.exe')):
 		os.rename('C:/Program Files/Personal Image Viewer/viewer.exe', 'C:/Program Files/Personal Image Viewer/viewer2.exe')
+
+	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
+		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
+
+	os.system(f'copy "{os.path.abspath(WORKING_DIR+"icon/icon.ico")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/icon/icon.ico")}"')
 
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/util/Win/"):
 		print('Made dir for dll')
@@ -37,9 +57,10 @@ try:
 
 	print('Waiting for nuitka compilation')
 	process.wait()
-	rmtree(WORKING_DIR+'viewer.build')
-	os.remove(WORKING_DIR+'viewer.cmd')
-	os.rename(WORKING_DIR+'viewer.exe', 'C:/Program Files/Personal Image Viewer/viewer.exe')
+	os.remove(f'{WORKING_DIR}temp.py')
+	rmtree(WORKING_DIR+'temp.build')
+	os.remove(WORKING_DIR+'temp.cmd')
+	os.rename(WORKING_DIR+'temp.exe', 'C:/Program Files/Personal Image Viewer/viewer.exe')
 	
 except Exception as e:
 	print(e)
