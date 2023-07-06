@@ -9,20 +9,25 @@ import cv2  # 4.8.0.74
 from numpy import asarray  # 1.25.0
 #from time import perf_counter_ns, sleep
 
-# default functions if can't use custom dll
-class DefaultUtil():
-	def myCmpW(a, b):
-		if a == b: return 0
-		return 1 if a > b else -1
-
 # holds util functions, dll for windows and defaults for others since I only have another system
 exePath = argv[0].replace('\\', '/')
 exePath = exePath[:exePath.rfind('/')+1]
 if os.name == 'nt':
-	from ctypes import WinDLL
-	# this var can be global if ever needed elsewhere
-	utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
+	#from ctypes import WinDLL
+	from ctypes import windll
+	class WinUtil():
+		__slots__ = ()
+		def myCmpW(self, a, b):
+			return windll.shlwapi.StrCmpLogicalW(a, b) < 0
+	utilHelper = WinUtil()
+	#utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
 else:
+	# default functions if can't use custom dll
+	class DefaultUtil():
+		__slots__ = ()
+		def myCmpW(self, a, b):
+			if a == b: return 0
+			return a < b
 	utilHelper = DefaultUtil()
 
 class viewer:
@@ -58,7 +63,7 @@ class viewer:
 		def __init__(self, path: str):
 			self.path: str = path.name
 		def __lt__(self, b):
-			return utilHelper.myCmpW(self.path, b.path) < 0
+			return utilHelper.myCmpW(self.path, b.path)
 
 	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
@@ -504,12 +509,12 @@ class viewer:
 			mid = (low+high)>>1
 			cur = self.files[mid].name
 			if pth == cur: return mid
-			if utilHelper.myCmpW(pth, cur) < 0: high = mid-1
+			if utilHelper.myCmpW(pth, cur): high = mid-1
 			else: low = mid+1
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
