@@ -75,15 +75,6 @@ try:
 
 	os.system(f'copy "{os.path.abspath(WORKING_DIR+"icon/icon.ico")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/icon/icon.ico")}"')
 
-	if not os.path.exists("C:/Program Files/Personal Image Viewer/util/Win/"):
-		print('Made dir for dll')
-		os.makedirs("C:/Program Files/Personal Image Viewer/util/Win/")
-	elif os.path.exists("C:/Program Files/Personal Image Viewer/util/Win/util.dll"):
-		print('Deleting old dll')
-		os.remove("C:/Program Files/Personal Image Viewer/util/Win/util.dll")
-	os.system(f'copy "{os.path.abspath(WORKING_DIR+"util/Win/util.dll")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/util/Win/util.dll")}"')
-	print('dll updated')
-
 	print('Waiting for nuitka compilation')
 	process.wait()
 	os.remove(f'{WORKING_DIR}temp.py')

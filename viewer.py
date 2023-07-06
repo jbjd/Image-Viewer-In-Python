@@ -13,14 +13,12 @@ from numpy import asarray  # 1.25.0
 exePath = argv[0].replace('\\', '/')
 exePath = exePath[:exePath.rfind('/')+1]
 if os.name == 'nt':
-	#from ctypes import WinDLL
 	from ctypes import windll
 	class WinUtil():
 		__slots__ = ()
 		def myCmpW(self, a, b):
 			return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 	utilHelper = WinUtil()
-	#utilHelper = WinDLL(f"{exePath}util/Win/util.dll")
 else:
 	# default functions if can't use custom dll
 	class DefaultUtil():
