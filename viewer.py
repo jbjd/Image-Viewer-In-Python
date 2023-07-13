@@ -6,7 +6,8 @@ import os  # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.74
-from numpy import array  # 1.25.0
+from numpy import asarray  # 1.25.0
+import simplejpeg
 #from time import perf_counter_ns, sleep
 
 exePath: str = argv[0].replace('\\', '/')
@@ -338,7 +339,11 @@ class viewer:
 
 	# START MAIN IMAGE FUNCTIONS
 	def resizeImg(self, interpolation: int, wh: tuple[int, int]) -> ImageTk.PhotoImage:
-		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(array(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB'), order='C'), wh, interpolation=interpolation)))
+		# simpkejpeg is faster way of decoding to numpy array
+		if self.temp.format == 'JPEG':
+			with open(self.fullname, "rb") as im:
+				return ImageTk.PhotoImage(Image.fromarray(cv2.resize(simplejpeg.decode_jpeg(im.read()), wh, interpolation=interpolation)))
+		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB'), order='C'), wh, interpolation=interpolation)))
 	
 	''' w, h: width and height of image before resize
 		returns tuple of what dimensions to resize too
@@ -515,6 +520,6 @@ if __name__ == "__main__":
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\animated_png.png") # DEBUG
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\test.jpg") # DEBUG
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
