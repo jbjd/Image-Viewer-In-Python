@@ -7,7 +7,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.74
 from numpy import asarray  # 1.25.0
-import simplejpeg
+import simplejpeg  # 1.6.6
 #from time import perf_counter_ns, sleep
 
 exePath: str = argv[0].replace('\\', '/')
