@@ -161,15 +161,18 @@ class viewer:
 		self.imageLoaderSafe()
 		if self.drawtop: self.updateTop()
 
+	# redraws image if bitsize of cached image is different than file that currently has that name
+	# This happens if user perhaps deleted image and named a new file with the same name
 	def redraw(self, e: Event) -> None:
-		if (e.widget is not self.app) or (not self.needRedraw):
+		if e.widget is not self.app or not self.needRedraw:
 			return
 		self.needRedraw = False
 		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
-		if(os.stat(self.fullname).st_size == self.bitSize):
+		if(os.path.getsize(self.fullname) == self.bitSize):
 			return
 		self.imageLoaderSafe()
 
+	# The only massive function, draws all icons on header
 	def loadAssests(self) -> None:
 		# consts
 		LINECOL: tuple = (170, 170, 170)
@@ -339,7 +342,7 @@ class viewer:
 
 	# START MAIN IMAGE FUNCTIONS
 	def resizeImg(self, interpolation: int, wh: tuple[int, int]) -> ImageTk.PhotoImage:
-		# simpkejpeg is faster way of decoding to numpy array
+		# simplejpeg is faster way of decoding to numpy array
 		if self.temp.format == 'JPEG':
 			with open(self.fullname, "rb") as im:
 				return ImageTk.PhotoImage(Image.fromarray(cv2.resize(simplejpeg.decode_jpeg(im.read()), wh, interpolation=interpolation)))
@@ -362,7 +365,7 @@ class viewer:
 		except(FileNotFoundError, UnidentifiedImageError):
 			self.removeAndMove()
 			return
-		self.bitSize: int = os.stat(self.fullname).st_size
+		self.bitSize: int = os.path.getsize(self.fullname)
 		close: bool = True
 		data: self.cached = self.cache.get(curPath.name, None)
 		if data is not None and self.bitSize == data.bits: # was cached
