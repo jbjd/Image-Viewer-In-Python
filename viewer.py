@@ -88,12 +88,13 @@ class viewer:
 		# gif support
 		self.gifFrames: list = []
 		self.gifId: str = ''  # id for gif animiation
-		self.illegalChar: str = '[/]' # used to remove illegal characters in rename function, fslash illegal in linux/windows, add more illegal chars for windows in init
 		# main stuff
 		self.app: Tk = Tk()
 		if os.name == 'nt':
 			self.app.iconbitmap(default=f'{exePath}icon/icon.ico')
-			#self.illegalChar += '\\<>:"|?*'
+			self.illegalChar: str = '[\\\\/<>:"|?*]'
+		else:
+			self.illegalChar: str = '[/]'
 		self.cache: dict[str, self.cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
