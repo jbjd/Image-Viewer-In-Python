@@ -3,6 +3,7 @@ from sys import argv  # std
 from tkinter import Tk, Canvas, Entry, Event  # std
 from threading import Thread  # std
 import os  # std
+from re import sub # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.74
@@ -63,7 +64,7 @@ class viewer:
 		def __lt__(self, b):
 			return utilHelper.myCmpW(self.path, b.path)
 
-	__slots__ = ('fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
+	__slots__ = ('illegalChar', 'fullname', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
@@ -87,10 +88,12 @@ class viewer:
 		# gif support
 		self.gifFrames: list = []
 		self.gifId: str = ''  # id for gif animiation
+		self.illegalChar: str = '[/]' # used to remove illegal characters in rename function, fslash illegal in linux/windows, add more illegal chars for windows in init
 		# main stuff
 		self.app: Tk = Tk()
 		if os.name == 'nt':
 			self.app.iconbitmap(default=f'{exePath}icon/icon.ico')
+			#self.illegalChar += '\\<>:"|?*'
 		self.cache: dict[str, self.cached] = {}  # cache for already rendered images
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
@@ -318,7 +321,8 @@ class viewer:
 	# asks os to rename file and changes position in list to new location
 	def renameFile(self, e: Event = None) -> None:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
-		newname = f'{self.dir}{self.entryText.get().strip()}{self.files[self.curInd].suffix}'
+		# make a new name removing illegal char
+		newname = self.dir + sub(self.illegalChar, "", self.entryText.get().strip()) + self.files[self.curInd].suffix
 		try:
 			if os.path.isfile(newname) or os.path.isdir(newname):
 				raise FileExistsError()
