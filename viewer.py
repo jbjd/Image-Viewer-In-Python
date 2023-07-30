@@ -7,7 +7,7 @@ from re import sub # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.74
-from numpy import asarray  # 1.25.0
+from numpy import asarray  # 1.25.1
 import simplejpeg  # 1.6.6
 #from time import perf_counter_ns, sleep
 
@@ -21,7 +21,7 @@ if os.name == 'nt':
 			return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 	utilHelper = WinUtil()
 else:
-	# default functions if can't use custom dll
+	# default functions, currently only support windows
 	class DefaultUtil():
 		__slots__ = ()
 		def myCmpW(self, a, b):
@@ -35,7 +35,7 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .88
 	SPACE: int = 32
-	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".jfif", ".jif", ".bmp"}  # valid image types
+	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}  # valid image types
 
 	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
 	class cached:
@@ -152,11 +152,14 @@ class viewer:
 
 	def scroll(self, e: Event) -> None:
 		self.move(-1 if e.delta > 0 else 1)
+
+	def hideRenameWindow(self) -> None:
+		self.canvas.itemconfig(self.inp, state='hidden')
 		self.app.focus()
 
 	# move to next image, dir shoud be either -1 or 1 to move left or right
 	def move(self, dir: int) -> None:
-		self.canvas.itemconfig(self.inp, state='hidden')
+		self.hideRenameWindow()
 		self.curInd += dir
 		if self.curInd < 0:
 			self.curInd = len(self.files)-1
@@ -271,14 +274,13 @@ class viewer:
 		self.infod: int = self.canvas.create_image(self.appw, self.SPACE, anchor='ne', tag="topb", state='hidden')
 		# rename window
 		self.entryText: Entry = Entry(self.app, font=FONT)
-		self.entryText.bind('<Return>', self.renameFile)
+		self.entryText.bind('<Return>', self.tryRenameFile)
 		self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
 
 	# wrapper for exit function to close rename window first if its open
 	def escButton(self, e: Event = None) -> None:
 		if self.canvas.itemcget(self.inp,'state') == 'normal':
-			self.canvas.itemconfig(self.inp, state='hidden')
-			self.app.focus()
+			self.hideRenameWindow()
 			return
 		self.exit()
 
@@ -302,9 +304,8 @@ class viewer:
 	# delete image
 	def trashFile(self, e: Event = None) -> None:
 		self.clearGif()
-		self.temp.close()
-		send2trash(os.path.abspath(self.fullname))
-		self.canvas.itemconfig(self.inp, state='hidden')
+		send2trash(os.path.abspath(self.fullname))  # had errors in windows without abspath
+		self.hideRenameWindow()
 		self.removeAndMove()
 
 	# opens tkinter entry to accept user input
@@ -316,29 +317,57 @@ class viewer:
 			self.canvas.coords(self.inp, self.renameWindowLocation+40, 4)
 			self.entryText.focus()
 			return
-		self.canvas.itemconfig(self.inp, state='hidden')
-		self.app.focus()
+		self.hideRenameWindow()
 
 	# asks os to rename file and changes position in list to new location
-	def renameFile(self, e: Event = None) -> None:
-		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
-		# make a new name removing illegal char
-		newname = self.dir + sub(self.illegalChar, "", self.entryText.get().strip()) + self.files[self.curInd].suffix
+	def performOSrename(self, newname: str) -> None:
 		try:
 			if os.path.isfile(newname) or os.path.isdir(newname):
 				raise FileExistsError()
 			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
-			os.rename(self.fullname, newname) 
-			newname = self.ImagePath(newname)
-			self.removeImg()
-			self.files.insert(self.binarySearch(newname.name), newname)
-			self.canvas.itemconfig(self.inp, state='hidden')
-			self.app.focus()
-			self.imageLoaderSafe()
-			self.updateTop()
+			os.rename(self.fullname, newname)
 		except Exception:
 			self.entryText.config(bg='#e6505f')  # flash red to tell user can't rename
 			self.app.after(400, lambda : self.entryText.config(bg='white'))
+			return
+		newnameObj = self.ImagePath(newname)
+		self.removeImg()
+		self.files.insert(self.binarySearch(newnameObj.name), newnameObj)
+		self.hideRenameWindow()
+		self.imageLoaderSafe()
+		self.updateTop()
+
+	# try to understand if user wants to rename file or convert it
+	def tryRenameFile(self, e: Event = None) -> None:
+		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
+		# make a new name removing illegal char for current OS
+		newname = self.dir + sub(self.illegalChar, "", self.entryText.get().strip())  # technically windows allows spaces at end of name but thats a bit silly
+		# try to parse an extension
+		imageExt = newname[newname.rfind('.', -5):]
+		# if ext is different from current, try to convert
+		if imageExt != self.files[self.curInd].suffix and imageExt not in self.FILETYPE:
+			newname += self.files[self.curInd].suffix
+		elif imageExt != self.files[self.curInd].suffix:
+			print('match')
+			match imageExt:
+				case '.jpg'|'.jpeg'|'.jif'|'.jfif'|'.jpe':
+					if self.files[self.curInd].suffix[1] != 'j':
+						# add popup with question about quality?
+						#return
+						pass
+				case '.webp':
+					# add popup with question about quality?
+					#return
+					pass
+				case '.png':
+					# add popup with question about quality?
+					#return
+					pass
+				# for not implemented, just append old ext and rename, maybe show warning in future?
+				case _:
+					newname += self.files[self.curInd].suffix
+		
+		self.performOSrename(newname)
 
 	# minimizes app
 	def minimize(self, e: Event) -> None:
@@ -420,7 +449,7 @@ class viewer:
 
 	def hideTopbar(self, e: Event = None) -> None:
 		self.canvas.itemconfig("topb", state='hidden')
-		self.canvas.itemconfig(self.inp, state='hidden')
+		self.hideRenameWindow()
 
 	# wraps hideTopbar and sets flag that topbar has not been drawn
 	def hideWrapper(self, e: Event = None) -> None:
@@ -512,7 +541,8 @@ class viewer:
 		self.canvas.itemconfig(self.infod, image=self.dropImage, state='normal')
 	# END DROPDOWN FUNCTIONS
 
-	# pth: string of file name
+	# find index of image in the sorted list of all images in directory
+	# pth: name of image file to find
 	def binarySearch(self, pth: str) -> int:
 		low, high = 0, len(self.files)-1
 		while low <= high:
