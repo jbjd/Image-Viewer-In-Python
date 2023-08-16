@@ -6,9 +6,9 @@ import os  # std
 from re import sub # std
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
-import cv2  # 4.8.0.74
-from numpy import asarray  # 1.25.1
-import simplejpeg  # 1.6.6
+import cv2  # 4.8.0.76
+from numpy import asarray  # 1.25.2
+import simplejpeg  # 1.7.1
 #from time import perf_counter_ns, sleep
 
 exePath: str = argv[0].replace('\\', '/')
@@ -33,7 +33,7 @@ class viewer:
 	# class vars
 	DROPDOWNHEIGHT: int = 110
 	DEFAULTSPEED: int = 90
-	GIFSPEED: float = .88
+	GIFSPEED: float = .75
 	SPACE: int = 32
 	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}  # valid image types
 
@@ -50,11 +50,10 @@ class viewer:
 
 	class ImagePath():
 		__slots__ = ('suffix', 'name')
-		def __init__(self, path: str):
-			nameStart = path.rfind('/')+1
-			extStart = path.rfind('.', nameStart)
-			self.suffix = path[extStart:] if extStart > 0 else ''
-			self.name = path[nameStart:] if nameStart > 0 else path
+		def __init__(self, name: str):
+			extStart = name.rfind('.')
+			self.suffix = name[extStart:].lower() if extStart > 0 else ''
+			self.name = name
 
 	# key for sorting
 	class IKey:
@@ -70,7 +69,7 @@ class viewer:
 		# Make sure user ran with a supported image
 		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.FILETYPE: exit(0)
 		self.dir: str = rawPath[:rawPath.rfind('/')+1]
-		pth = self.ImagePath(rawPath)
+		pth = self.ImagePath(rawPath[rawPath.rfind('/')+1:])
 		# UI varaibles
 		self.drawtop: bool
 		self.dropDown: bool
@@ -113,8 +112,8 @@ class viewer:
 		self.app.update()
 		self.files: list[self.ImagePath] = []
 		for p in next(os.walk(self.dir), (None, None, []))[2]:
-			fp = self.ImagePath(self.dir+p)
-			if fp.suffix.lower() in self.FILETYPE: self.files.append(fp)
+			fp = self.ImagePath(p)
+			if fp.suffix in self.FILETYPE: self.files.append(fp)
 		self.files.sort(key=self.IKey)
 		self.curInd = self.binarySearch(pth.name)
 		self.fullname = f'{self.dir}{self.files[self.curInd].name}'
@@ -554,7 +553,7 @@ class viewer:
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
