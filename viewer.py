@@ -1,15 +1,18 @@
 # python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
-from sys import argv  # std
-from tkinter import Tk, Canvas, Entry, Event  # std
-from threading import Thread  # std
-import os  # std
-from re import sub # std
+# std librarys
+from sys import argv
+from tkinter import Tk, Canvas, Entry, Event
+from tkinter.messagebox import askyesno
+from threading import Thread
+import os
+from re import sub
+# non-std librarys
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
 import simplejpeg  # 1.7.1
-#from time import perf_counter_ns, sleep
+import pyperclip  # 1.8.2
 
 exePath: str = argv[0].replace('\\', '/')
 exePath = exePath[:exePath.rfind('/')+1]
@@ -35,7 +38,7 @@ class viewer:
 	DEFAULTSPEED: int = 90
 	GIFSPEED: float = .75
 	SPACE: int = 32
-	FILETYPE: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}  # valid image types
+	VALID_FILE_TYPES: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}  # valid image types
 
 	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
 	class cached:
@@ -67,7 +70,7 @@ class viewer:
 	def __init__(self, rawPath: str):
 		rawPath = rawPath.replace('\\', '/')
 		# Make sure user ran with a supported image
-		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.FILETYPE: exit(0)
+		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.VALID_FILE_TYPES: exit(0)
 		self.dir: str = rawPath[:rawPath.rfind('/')+1]
 		pth = self.ImagePath(rawPath[rawPath.rfind('/')+1:])
 		# UI varaibles
@@ -113,7 +116,7 @@ class viewer:
 		self.files: list[self.ImagePath] = []
 		for p in next(os.walk(self.dir), (None, None, []))[2]:
 			fp = self.ImagePath(p)
-			if fp.suffix in self.FILETYPE: self.files.append(fp)
+			if fp.suffix in self.VALID_FILE_TYPES: self.files.append(fp)
 		self.files.sort(key=self.IKey)
 		self.curInd = self.binarySearch(pth.name)
 		self.fullname = f'{self.dir}{self.files[self.curInd].name}'
@@ -128,7 +131,6 @@ class viewer:
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escButton)
 		self.app.bind('<KeyRelease>', self.keyBinds)
-		self.entryText.bind('<KeyRelease>', self.keyBindsLimited)
 		if os.path.isfile("icon/icon.ico"):
 			self.app.iconbitmap("icon/icon.ico")
 		self.app.mainloop()
@@ -174,7 +176,7 @@ class viewer:
 			return
 		self.needRedraw = False
 		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
-		if(os.path.getsize(self.fullname) == self.bitSize):
+		if(os.path.isfile(self.fullname) and os.path.getsize(self.fullname) == self.bitSize):
 			return
 		self.imageLoaderSafe()
 
@@ -274,7 +276,14 @@ class viewer:
 		# rename window
 		self.entryText: Entry = Entry(self.app, font=FONT)
 		self.entryText.bind('<Return>', self.tryRenameFile)
+		self.entryText.bind('<KeyRelease>', self.keyBindsLimited)
+		self.entryText.bind('<Control-c>', self.copyText)
 		self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
+
+	def copyText(self, e: Event = None) -> None:
+		if self.canvas.itemcget(self.inp,'state') == 'hidden' or not self.entryText.select_present():
+			return
+		pyperclip.copy(self.entryText.selection_get())
 
 	# wrapper for exit function to close rename window first if its open
 	def escButton(self, e: Event = None) -> None:
@@ -318,56 +327,77 @@ class viewer:
 			return
 		self.hideRenameWindow()
 
-	# asks os to rename file and changes position in list to new location
-	def performOSrename(self, newname: str) -> None:
-		try:
-			if os.path.isfile(newname) or os.path.isdir(newname):
-				raise FileExistsError()
-			self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
-			os.rename(self.fullname, newname)
-		except Exception:
-			self.entryText.config(bg='#e6505f')  # flash red to tell user can't rename
-			self.app.after(400, lambda : self.entryText.config(bg='white'))
-			return
+	def FileRenameCleanUp(self, newname: str) -> None:
 		newnameObj = self.ImagePath(newname)
-		self.removeImg()
 		self.files.insert(self.binarySearch(newnameObj.name), newnameObj)
 		self.hideRenameWindow()
 		self.imageLoaderSafe()
 		self.updateTop()
 
-	# try to understand if user wants to rename file or convert it
+	# asks os to rename file and changes position in list to new location
+	def performOSrename(self, newname: str, newPath: str) -> None:
+		if os.path.isfile(newPath) or os.path.isdir(newPath):
+			raise FileExistsError()
+		
+		self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
+		os.rename(self.fullname, newPath)
+		self.removeImg()
+		self.FileRenameCleanUp(newname, True)
+
+	# returns bool of successful conversion
+	def convertFiletype(self, newname: str, newPath: str, imageExtension: str) -> bool:
+		if os.path.isfile(newPath) or os.path.isdir(newPath):
+			raise FileExistsError()
+		
+		with open(self.fullname, mode='rb') as fp:
+			with Image.open(fp) as temp_img:
+				# refuse to convert animations for now
+				if(getattr(temp_img, 'n_frames', 1) > 1):
+					return False
+				
+				match imageExtension:
+					case '.webp':
+						temp_img.save(newPath, 'WebP', quality=100, method=6)
+					case '.png':
+						temp_img.save(newPath, 'PNG', optimize=True)
+					case '.bmp':
+						temp_img.save(newPath, 'BMP')
+					case '.jpg'|'.jpeg'|'.jif'|'.jfif'|'.jpe':
+						if self.files[self.curInd].name[0] == 'j':
+							return False
+						temp_img.save(newPath, 'JPEG', optimize=True, quality=100)
+					case _:
+						return False
+					
+				fp.flush()
+			
+		if askyesno("Confirm deletion", f"Converted file to {imageExtension}, delete old file?"):
+			self.trashFile()
+		self.FileRenameCleanUp(newname)
+		return True
+				
+
+	# trys to rename or convert current file after new name input
 	def tryRenameFile(self, e: Event = None) -> None:
 		if self.canvas.itemcget(self.inp,'state') == 'hidden': return
 		# make a new name removing illegal char for current OS
-		newname = self.dir + sub(self.illegalChar, "", self.entryText.get().strip())  # technically windows allows spaces at end of name but thats a bit silly
-		# try to parse an extension
-		imageExt = newname[newname.rfind('.', -5):]
-		# if ext is different from current, try to convert
-		if imageExt != self.files[self.curInd].suffix and imageExt not in self.FILETYPE:
-			newname += self.files[self.curInd].suffix
-		elif imageExt != self.files[self.curInd].suffix:
-			print('match')
-			match imageExt:
-				case '.jpg'|'.jpeg'|'.jif'|'.jfif'|'.jpe':
-					if self.files[self.curInd].suffix[1] != 'j':
-						# add popup with question about quality?
-						#return
-						pass
-				case '.webp':
-					# add popup with question about quality?
-					#return
-					pass
-				case '.png':
-					# add popup with question about quality?
-					#return
-					pass
-				# for not implemented, just append old ext and rename, maybe show warning in future?
-				case _:
-					newname += self.files[self.curInd].suffix
-		
-		self.performOSrename(newname)
+		newname = sub(self.illegalChar, "", self.entryText.get().strip())  # technically windows allows spaces at end of name but thats a bit silly
 
+		imageExtension = newname[newname.rfind('.', -5):]
+
+		# if valid, try convert
+		# else use old extension and rename
+		try:
+			if imageExtension != self.files[self.curInd].suffix:
+				if imageExtension in self.VALID_FILE_TYPES and self.convertFiletype(newname, f'{self.dir}{newname}', imageExtension):
+					return
+				newname += self.files[self.curInd].suffix
+			self.performOSrename(newname, f'{self.dir}{newname}')
+		except Exception as e:
+			print(e)
+			self.entryText.config(bg='#e6505f')  # flash red to tell user can't rename
+			self.app.after(400, lambda : self.entryText.config(bg='white'))
+		
 	# minimizes app
 	def minimize(self, e: Event) -> None:
 		self.needRedraw = True
@@ -408,7 +438,7 @@ class viewer:
 			intSize: int = self.bitSize>>10
 			self.trueSize = f"{round(intSize/10.24)/100}mb" if intSize > 999 else f"{intSize}kb"
 			wh = self.dimensionFinder()
-			frames: int = getattr(self.temp, 'n_frames', 0)
+			frames: int = getattr(self.temp, 'n_frames', 1)
 			interpolation: int = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
 			self.conImg = self.resizeImg(interpolation, wh)
 			if(frames > 1):  # any non-png animated file, animated png don't work in tkinter it seems
@@ -553,10 +583,11 @@ class viewer:
 		return low
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		viewer(argv[1])
 	elif DEBUG:
-		viewer(r"C:\Users\jimde\OneDrive\Pictures\test.jpg") # DEBUG
+		from time import perf_counter_ns, sleep # DEBUG
+		viewer(r"C:\Users\jimde\OneDrive\Pictures\myself.jpg") # DEBUG
 	else:
 		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
