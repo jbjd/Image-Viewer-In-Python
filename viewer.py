@@ -11,7 +11,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
-import simplejpeg  # 1.7.1
+import simplejpeg  # 1.7.2
 import pyperclip  # 1.8.2
 
 exePath: str = argv[0].replace('\\', '/')
@@ -342,7 +342,7 @@ class viewer:
 		self.temp.close()  # needs to be closed to rename, gif in the middle of loading wouldn't be closed
 		os.rename(self.fullname, newPath)
 		self.removeImg()
-		self.FileRenameCleanUp(newname, True)
+		self.FileRenameCleanUp(newname)
 
 	# returns bool of successful conversion
 	def convertFiletype(self, newname: str, newPath: str, imageExtension: str) -> bool:
