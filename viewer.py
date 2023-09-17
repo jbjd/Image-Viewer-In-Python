@@ -54,8 +54,7 @@ class viewer:
 	class ImagePath():
 		__slots__ = ('suffix', 'name')
 		def __init__(self, name: str):
-			extStart = name.rfind('.')
-			self.suffix = name[extStart:].lower() if extStart > 0 else ''
+			self.suffix = name[name.rfind('.'):].lower()
 			self.name = name
 
 	# key for sorting
