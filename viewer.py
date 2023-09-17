@@ -451,7 +451,7 @@ class viewer:
 				except(KeyError, AttributeError):
 					speed = self.DEFAULTSPEED
 				
-				self.gifId = self.app.after(speed+20, self.animate, 1, speed, speed+10)
+				self.gifId = self.app.after(speed+20, self.animate, 1, speed)
 				close = False  # keep open since this is an animation and we need to wait thead to load frames
 			else:  # any image thats not cached or animated
 				# This cv2 resize is faster than PIL, but convert from P to rgb then resize is slower HOWEVER PIL resize for P mode images looks very bad so still use cv2
@@ -516,24 +516,23 @@ class viewer:
 
 	# START GIF FUNCTIONS
 	''' gifFrame: int representing current frame
-		orgSpeed: speed in ms until next frame
+		speed: speed in ms until next frame
 		buffer: orgSpeed with delay, used if gif is taking too long to load -> add additional time between trying to dispaly next frame
 	'''
-	def animate(self, gifFrame: int, orgSpeed: int, buffer: int) -> None:
+	def animate(self, gifFrame: int, speed: int) -> None:
 		gifFrame += 1
 		if gifFrame >= len(self.gifFrames): gifFrame = 0
 
-		speed = orgSpeed  # speed after which to try and show next frame
+		untilNextFrame = speed
 		img = self.gifFrames[gifFrame]
-		# tried to show next frame before it is loaded, reset to current frame and try again after delay
+		# if tried to show next frame before it is loaded, reset to current frame and try again after delay
 		if img is None:
-			speed = buffer
 			gifFrame -= 1
-			buffer += 10
+			untilNextFrame += 10
 		else:
 			self.canvas.itemconfig(self.drawnImage, image=img)	
 
-		self.gifId = self.app.after(speed, self.animate, gifFrame, orgSpeed, buffer)
+		self.gifId = self.app.after(untilNextFrame, self.animate, gifFrame, speed)
 
 	def loadFrame(self, gifFrame: int, wh: tuple[int, int], name: str, interpolation: int) -> None:
 		# move function would have already closed old gif, so if new gif on screen, don't keep loading previous gif
