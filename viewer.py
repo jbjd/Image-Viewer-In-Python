@@ -66,28 +66,31 @@ class Viewer:
 
 	# key for sorting
 	class IKey:
-		__slots__ = ('path')
+		__slots__ = ('name')
 
-		def __init__(self, path: str):
-			self.path: str = path.name
+		def __init__(self, image: str):
+			self.name: str = image.name
 
 		def __lt__(self, b):
-			return utilHelper.my_cmp_w(self.path, b.path)
+			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ('illegalChar', 'full_path', 'dir', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'gifFrames', 'gifId', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
+	__slots__ = ('OS_illegal_char', 'full_path', 'image_directory', 'drawtop', 'dropDown', 'needRedraw', 'dropImage', 'trueWidth', 'trueHeigh', 'renameWindowLocation', 'bitSize', 'trueSize', 'aniamtion_frames', 'animation_id', 'app', 'cache', 'canvas', 'appw', 'apph', 'drawnImage', 'files', 'curInd', 'topbar', 'dropbar', 'text', 'dropb', 'hoverDrop', 'upb', 'hoverUp', 'inp', 'infod', 'entryText', 'temp', 'trueHeight', 'trueWidth', 'conImg', 'dbox', 'renameButton', 'KEY_MAPPING', 'KEY_MAPPING_LIMITED')
 
-	def __init__(self, rawPath: str):
-		rawPath = rawPath.replace('\\', '/')
+	def __init__(self, image_path_raw: str):
+		image_path_raw = image_path_raw.replace('\\', '/')
+		if not os.path.isfile(image_path_raw) or image_path_raw[image_path_raw.rfind('.'):] not in self.VALID_FILE_TYPES:
+			exit(1)
 
-		if not os.path.isfile(rawPath) or rawPath[rawPath.rfind('.'):] not in self.VALID_FILE_TYPES:
-			exit(0)
-		self.dir: str = rawPath[:rawPath.rfind('/')+1]
-		pth = self.ImagePath(rawPath[rawPath.rfind('/')+1:])
+		self.image_directory: str = image_path_raw[:image_path_raw.rfind('/')+1]
+		if not os.access(self.image_directory, os.W_OK):
+			exit(1)
+
 		# UI varaibles
 		self.drawtop: bool = False
 		self.dropDown: bool = False
 		self.needRedraw: bool = False
 		self.dropImage = None  # acts as refrences to items on screen
+
 		# data on current image
 		self.trueWidth: int
 		self.trueHeigh: int
@@ -96,17 +99,20 @@ class Viewer:
 		self.curInd: int
 		self.trueWidth = self.trueHeigh = self.renameWindowLocation = self.bitSize = self.curInd = 0  # loc is x location of rename window, found dynamically
 		self.trueSize: str = ''
-		# gif support
-		self.gifFrames: list = []
-		self.gifId: str = ''  # id for gif animiation
-		# main stuff
+
+		# variables used for animations, empty when no animation playing
+		self.aniamtion_frames: list = []
+		self.animation_id: str = ''
+
+		# application and canvas
 		self.app: Tk = Tk()
 		if os.name == 'nt':
 			self.app.iconbitmap(default=f'{exePath}icon/icon.ico')
-			self.illegalChar: str = '[\\\\/<>:"|?*]'
+			self.OS_illegal_char: str = '[\\\\/<>:"|?*]'
 		else:
-			self.illegalChar: str = '[/]'
-		self.cache: dict[str, self.CachedImage] = {}  # cache for already rendered images
+			self.OS_illegal_char: str = '[/]'
+
+		self.cache: dict[str, self.CachedImage] = {}
 		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
 		self.canvas.pack(anchor='nw', fill='both', expand=1)
 		self.app.attributes('-fullscreen', True)
@@ -119,17 +125,18 @@ class Viewer:
 
 		self.load_assests()
 		# draw first img, then get all paths in dir
-		self.files = [pth]
+		current_image = self.ImagePath(image_path_raw[image_path_raw.rfind('/')+1:])
+		self.files = [current_image]
 		self.image_loader()
 		self.app.update()
 		self.files: list[self.ImagePath] = []
-		for p in next(os.walk(self.dir), (None, None, []))[2]:
+		for p in next(os.walk(self.image_directory), (None, None, []))[2]:
 			fp = self.ImagePath(p)
 			if fp.suffix in self.VALID_FILE_TYPES:
 				self.files.append(fp)
 		self.files.sort(key=self.IKey)
-		self.curInd = self.binary_search(pth.name)
-		self.full_path = f'{self.dir}{self.files[self.curInd].name}'
+		self.curInd = self.binary_search(current_image.name)
+		self.full_path = f'{self.image_directory}{self.files[self.curInd].name}'
 		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22*self.apph//1080)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 		# events based on input
@@ -141,8 +148,6 @@ class Viewer:
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escape_button)
 		self.app.bind('<KeyRelease>', self.handle_all_keybinds)
-		if os.path.isfile("icon/icon.ico"):
-			self.app.iconbitmap("icon/icon.ico")
 		self.app.mainloop()
 
 	def handle_all_keybinds(self, event: Event) -> None:
@@ -393,7 +398,7 @@ class Viewer:
 
 		# make a new name removing illegal char for current OS
 		# technically windows allows spaces at end of name but thats a bit silly so strip anyway
-		new_name: str = sub(self.illegalChar, "", self.entryText.get().strip())
+		new_name: str = sub(self.OS_illegal_char, "", self.entryText.get().strip())
 
 		new_image_extension: str = new_name[new_name.rfind('.', -5):]
 
@@ -401,10 +406,10 @@ class Viewer:
 		# otherwise use old extension and rename the file
 		try:
 			if new_image_extension != self.files[self.curInd].suffix:
-				if new_image_extension in self.VALID_FILE_TYPES and self.convert_file_and_save_new(new_name, f'{self.dir}{new_name}', new_image_extension):
+				if new_image_extension in self.VALID_FILE_TYPES and self.convert_file_and_save_new(new_name, f'{self.image_directory}{new_name}', new_image_extension):
 					return
 				new_name += self.files[self.curInd].suffix
-			self.rename_image(new_name, f'{self.dir}{new_name}')
+			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
 			self.entryText.config(bg='#e6505f')  # flash red to tell user program couldn't rename
 			self.app.after(400, lambda: self.entryText.config(bg='white'))
@@ -430,7 +435,7 @@ class Viewer:
 	# loads and displays an image
 	def image_loader(self) -> None:
 		current_img = self.files[self.curInd]
-		self.full_path = f'{self.dir}{self.files[self.curInd].name}'
+		self.full_path = f'{self.image_directory}{self.files[self.curInd].name}'
 
 		try:
 			# open even if in cache to throw error if user deleted it outside of program
@@ -457,8 +462,8 @@ class Viewer:
 
 			# special case, file is animated
 			if frame_count > 1:
-				self.gifFrames = [None] * frame_count
-				self.gifFrames[0] = self.conImg
+				self.aniamtion_frames = [None] * frame_count
+				self.aniamtion_frames[0] = self.conImg
 				Thread(target=self.load_frame, args=(1, dimensions, current_img.name, interpolation), daemon=True).start()
 				# find animation frame speed
 				try:
@@ -468,7 +473,7 @@ class Viewer:
 				except (KeyError, AttributeError):
 					speed = self.DEFAULTSPEED
 
-				self.gifId = self.app.after(speed+20, self.animate, 1, speed)
+				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
 				# cache non-animated images
 				self.cache[current_img.name] = self.CachedImage(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
@@ -527,11 +532,11 @@ class Viewer:
 	'''
 	def animate(self, frame_index: int, speed: int) -> None:
 		frame_index += 1
-		if frame_index >= len(self.gifFrames):
+		if frame_index >= len(self.aniamtion_frames):
 			frame_index = 0
 
 		ms_until_next_frame: int = speed
-		current_frame: ImageTk.PhotoImage = self.gifFrames[frame_index]
+		current_frame: ImageTk.PhotoImage = self.aniamtion_frames[frame_index]
 		# if tried to show next frame before it is loaded, reset to current frame and try again after delay
 		if current_frame is None:
 			frame_index -= 1
@@ -539,7 +544,7 @@ class Viewer:
 		else:
 			self.canvas.itemconfig(self.drawnImage, image=current_frame)
 
-		self.gifId = self.app.after(ms_until_next_frame, self.animate, frame_index, speed)
+		self.animation_id = self.app.after(ms_until_next_frame, self.animate, frame_index, speed)
 
 	def load_frame(self, frame_index: int, dimensions: tuple[int, int], file_name: str, interpolation: int) -> None:
 		# if moved to new image, don't keep loading previous animated image
@@ -547,7 +552,7 @@ class Viewer:
 			return
 		try:
 			self.temp.seek(frame_index)
-			self.gifFrames[frame_index] = self.get_image_fit_to_screen(interpolation, dimensions)
+			self.aniamtion_frames[frame_index] = self.get_image_fit_to_screen(interpolation, dimensions)
 			self.load_frame(frame_index+1, dimensions, file_name, interpolation)
 		except Exception:
 			# scrolling, recursion ending, etc cause variety of errors. Catch and close if thread was for current animation
@@ -556,12 +561,12 @@ class Viewer:
 
 	# cleans up after an animated file was opened
 	def clear_animation_variables(self) -> None:
-		if self.gifId == '':
+		if self.animation_id == '':
 			return
 
-		self.app.after_cancel(self.gifId)
-		self.gifId = ''
-		self.gifFrames.clear()
+		self.app.after_cancel(self.animation_id)
+		self.animation_id = ''
+		self.aniamtion_frames.clear()
 		self.temp.close()
 
 	def toggle_details_dropdown(self, event: Event) -> None:
@@ -597,7 +602,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
