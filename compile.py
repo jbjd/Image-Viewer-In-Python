@@ -21,7 +21,7 @@ def countTabLevel(line: str):
 
 
 # only works for windows currently
-if os.name != 'nt':
+if os.name != "nt":
 	raise Exception("Compiling on Linux/Mac not currently supported")
 
 WORKING_DIR = __file__.replace('\\', '/')
@@ -35,11 +35,11 @@ with open(f"{WORKING_DIR}viewer.py", "r") as f:
 lines_without_debug = []
 # skip comments and lines used for debug purposes
 for line in lines:
-	if 'DEBUG' not in line and line.lstrip() != '' and line.lstrip()[0] != '#':
-		lines_without_debug.append(line.replace('    ', '	'))  # also replaces all 4 spaces with tabs for consistency
+	if "DEBUG" not in line and line.lstrip() != "" and line.lstrip()[0] != '#':
+		lines_without_debug.append(line.replace("    ", "	"))  # also replaces all 4 spaces with tabs for consistency
 lines.clear()
 # make new temp py file to compile with that discards lines of code that only run on other operating systems
-if os.name == 'nt':
+if os.name == "nt":
 	with open(f"{WORKING_DIR}temp.py", "w") as f:
 		i = 0
 		while i < len(lines_without_debug):
@@ -50,7 +50,7 @@ if os.name == 'nt':
 				while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
 					f.write(lines_without_debug[i][1:])
 					i += 1
-				if lines_without_debug[i].lstrip()[:4] == 'else':
+				if lines_without_debug[i].lstrip()[:4] == "else":
 					tabLevel = countTabLevel(lines_without_debug[i])
 					i += 1
 					while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
@@ -63,7 +63,7 @@ else:
 		for line in lines_without_debug:
 			f.write(line)
 
-print('Starting up nuitka')
+print("Starting up nuitka")
 cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 {WORKING_DIR}temp.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
@@ -71,23 +71,23 @@ try:
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
 		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
 
-	if os.path.isfile('C:/Program Files/Personal Image Viewer/viewer2.exe'):
-		os.remove('C:/Program Files/Personal Image Viewer/viewer2.exe')
+	if os.path.isfile("C:/Program Files/Personal Image Viewer/viewer2.exe"):
+		os.remove("C:/Program Files/Personal Image Viewer/viewer2.exe")
 
-	if os.path.isfile('C:/Program Files/Personal Image Viewer/viewer.exe'):
-		os.rename('C:/Program Files/Personal Image Viewer/viewer.exe', 'C:/Program Files/Personal Image Viewer/viewer2.exe')
+	if os.path.isfile("C:/Program Files/Personal Image Viewer/viewer.exe"):
+		os.rename("C:/Program Files/Personal Image Viewer/viewer.exe", "C:/Program Files/Personal Image Viewer/viewer2.exe")
 
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
 		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
 
 	os.system(f'copy "{os.path.abspath(WORKING_DIR+"icon/icon.ico")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/icon/icon.ico")}"')
 
-	print('Waiting for nuitka compilation')
+	print("Waiting for nuitka compilation")
 	process.wait()
-	os.remove(f'{WORKING_DIR}temp.py')
-	rmtree(WORKING_DIR+'temp.build')
-	os.remove(WORKING_DIR+'temp.cmd')
-	os.rename(WORKING_DIR+'temp.exe', 'C:/Program Files/Personal Image Viewer/viewer.exe')
+	os.remove(f"{WORKING_DIR}temp.py")
+	rmtree(WORKING_DIR+"temp.build")
+	os.remove(WORKING_DIR+"temp.cmd")
+	os.rename(WORKING_DIR+"temp.exe", "C:/Program Files/Personal Image Viewer/viewer.exe")
 
 except Exception as e:
 	print(e)

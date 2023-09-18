@@ -14,9 +14,9 @@ from numpy import asarray  # 1.25.2
 import simplejpeg  # 1.7.2
 import pyperclip  # 1.8.2
 
-exePath: str = argv[0].replace('\\', '/')
-exePath = exePath[:exePath.rfind('/')+1]
-if os.name == 'nt':
+path_to_exe: str = argv[0].replace('\\', '/')
+path_to_exe = path_to_exe[:path_to_exe.rfind('/')+1]
+if os.name == "nt":
 	from ctypes import windll
 
 	class WinUtil():
@@ -39,26 +39,23 @@ else:
 
 class Viewer:
 	# class vars
-	DROPDOWNHEIGHT: int = 110
-	DEFAULTSPEED: int = 90
-	GIFSPEED: float = .75
-	SPACE: int = 32
-	VALID_FILE_TYPES: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}  # valid image types
+	DEFAULT_SPEED: int = 100
+	ANIMATION_SPEED_FACTOR: float = .75
+	VALID_FILE_TYPES: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}
 
 	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
 	class CachedImage:
-		# width, height, bit size string, PhotoImage, bits size int
 		__slots__ = ('tw', 'th', 'ts', 'im', 'bits')
 
-		def __init__(self, tw, th, ts, im, bits):
-			self.tw: int = tw
-			self.th: int = th
-			self.ts: str = ts
-			self.im: ImageTk.PhotoImage = im
-			self.bits: int = bits
+		def __init__(self, width, height, size_as_text, image, bit_size):
+			self.tw: int = width
+			self.th: int = height
+			self.ts: str = size_as_text
+			self.im: ImageTk.PhotoImage = image
+			self.bits: int = bit_size
 
 	class ImagePath():
-		__slots__ = ('suffix', 'name')
+		__slots__ = ("suffix", "name")
 
 		def __init__(self, name: str):
 			self.suffix = name[name.rfind('.'):].lower()
@@ -66,7 +63,7 @@ class Viewer:
 
 	# key for sorting
 	class IKey:
-		__slots__ = ('name')
+		__slots__ = ("name")
 
 		def __init__(self, image: str):
 			self.name: str = image.name
@@ -92,38 +89,37 @@ class Viewer:
 		self.dropImage = None  # acts as refrences to items on screen
 
 		# data on current image
-		self.trueWidth: int
-		self.trueHeigh: int
-		self.renameWindowLocation: int
-		self.bitSize: int
-		self.curInd: int
-		self.trueWidth = self.trueHeigh = self.renameWindowLocation = self.bitSize = self.curInd = 0  # loc is x location of rename window, found dynamically
-		self.trueSize: str = ''
+		self.trueWidth: int = 0
+		self.trueHeigh: int = 0
+		self.renameWindowLocation: int = 0
+		self.bitSize: int = 0
+		self.curInd: int = 0
+		self.trueSize: str = ""
 
 		# variables used for animations, empty when no animation playing
 		self.aniamtion_frames: list = []
-		self.animation_id: str = ''
+		self.animation_id: str = ""
 
 		# application and canvas
 		self.app: Tk = Tk()
 		if os.name == 'nt':
-			self.app.iconbitmap(default=f'{exePath}icon/icon.ico')
+			self.app.iconbitmap(default=f"{path_to_exe}icon/icon.ico")
 			self.OS_illegal_char: str = '[\\\\/<>:"|?*]'
 		else:
 			self.OS_illegal_char: str = '[/]'
 
 		self.cache: dict[str, self.CachedImage] = {}
-		self.canvas: Canvas = Canvas(self.app, bg='black', highlightthickness=0)
-		self.canvas.pack(anchor='nw', fill='both', expand=1)
-		self.app.attributes('-fullscreen', True)
-		self.app.state('zoomed')
+		self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
+		self.canvas.pack(anchor="nw", fill="both", expand=1)
+		self.app.attributes("-fullscreen", True)
+		self.app.state("zoomed")
 		self.app.update()  # updates winfo width and height to the current size, this is necessary
 		self.appw: int = self.app.winfo_width()
 		self.apph: int = self.app.winfo_height()
-		background = self.canvas.create_rectangle(0, 0, self.appw, self.apph, fill='black')
-		self.drawnImage = self.canvas.create_image(self.appw >> 1, self.apph >> 1, anchor='center')  # main image, replaced as necessary
+		background = self.canvas.create_rectangle(0, 0, self.appw, self.apph, fill="black")
+		self.drawnImage = self.canvas.create_image(self.appw >> 1, self.apph >> 1, anchor="center")
+		self.load_assests(32)  # hard coded for now, should relative to 32 pixels of 1080 pixel height screen
 
-		self.load_assests()
 		# draw first img, then get all paths in dir
 		current_image = self.ImagePath(image_path_raw[image_path_raw.rfind('/')+1:])
 		self.files = [current_image]
@@ -137,14 +133,14 @@ class Viewer:
 		self.files.sort(key=self.IKey)
 		self.curInd = self.binary_search(current_image.name)
 		self.full_path = f'{self.image_directory}{self.files[self.curInd].name}'
-		ImageDraw.ImageDraw.font = ImageFont.truetype('arial.ttf', 22*self.apph//1080)  # font for drawing on images
+		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", 22*self.apph//1080)  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 
 		# events based on input
-		self.KEY_MAPPING = {'r': self.toggle_show_rename_window, 'Left': self.arrow, 'Right': self.arrow}  # allowed only in main app
-		self.KEY_MAPPING_LIMITED = {'F2': self.toggle_show_rename_window, 'Up': self.hide_topbar, 'Down': self.show_topbar}  # allowed in entry or main app
-		self.canvas.tag_bind(background, '<Button-1>', self.handle_click)
-		self.canvas.tag_bind(self.drawnImage, '<Button-1>', self.handle_click)
+		self.KEY_MAPPING = {'r': self.toggle_show_rename_window, "Left": self.arrow, "Right": self.arrow}  # allowed only in main app
+		self.KEY_MAPPING_LIMITED = {"F2": self.toggle_show_rename_window, "Up": self.hide_topbar, "Down": self.show_topbar}  # allowed in entry or main app
+		self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
+		self.canvas.tag_bind(self.drawnImage, "<Button-1>", self.handle_click)
 		self.app.bind('<FocusIn>', self.redraw)
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escape_button)
@@ -166,13 +162,13 @@ class Viewer:
 	def arrow(self, event: Event) -> None:
 		# only move images if user not in entry
 		if event.widget is self.app:
-			self.move(1 if event.keysym == 'Right' else -1)
+			self.move(1 if event.keysym == "Right" else -1)
 
 	def scroll(self, event: Event) -> None:
 		self.move(-1 if event.delta > 0 else 1)
 
 	def hide_rename_window(self) -> None:
-		self.canvas.itemconfig(self.inp, state='hidden')
+		self.canvas.itemconfig(self.inp, state="hidden")
 		self.app.focus()
 
 	# move to next image, dir shoud be either -1 or 1 to move left or right
@@ -199,7 +195,7 @@ class Viewer:
 		self.image_loader_safe()
 
 	# The only massive function, draws all icons on header
-	def load_assests(self) -> None:
+	def load_assests(self, topbar_height) -> None:
 		# color constants
 		LINE_RGB: tuple = (170, 170, 170)
 		ICON_RGB: tuple = (100, 104, 102)
@@ -208,14 +204,14 @@ class Viewer:
 		FONT: str = 'arial 11'
 
 		# create stuff on topbar
-		self.topbar = ImageTk.PhotoImage(Image.new('RGBA', (self.appw, self.SPACE), TOPBAR_RGBA))
-		exitb = ImageTk.PhotoImage(Image.new('RGB', (self.SPACE, self.SPACE), (190, 40, 40)))
-		draw = ImageDraw.Draw(Image.new('RGB', (self.SPACE, self.SPACE), (180, 25, 20)))
+		self.topbar = ImageTk.PhotoImage(Image.new("RGBA", (self.appw, topbar_height), TOPBAR_RGBA))
+		exitb = ImageTk.PhotoImage(Image.new("RGB", (topbar_height, topbar_height), (190, 40, 40)))
+		draw = ImageDraw.Draw(Image.new("RGB", (topbar_height, topbar_height), (180, 25, 20)))
 		draw.line((6, 6, 26, 26), width=2, fill=LINE_RGB)
 		draw.line((6, 26, 26, 6), width=2, fill=LINE_RGB)
 		hoveredExit = ImageTk.PhotoImage(draw._image)
-		loadedImgDef = Image.new('RGB', (self.SPACE, self.SPACE), ICON_RGB)  # default icon background
-		loadedImgHov = Image.new('RGB', (self.SPACE, self.SPACE), ICON_HOVERED_RGB)  # hovered icon background
+		loadedImgDef = Image.new("RGB", (topbar_height, topbar_height), ICON_RGB)  # default icon background
+		loadedImgHov = Image.new("RGB", (topbar_height, topbar_height), ICON_HOVERED_RGB)  # hovered icon background
 		draw = ImageDraw.Draw(loadedImgDef.copy())
 		draw.line((6, 24, 24, 24), width=2, fill=LINE_RGB)
 		minib = ImageTk.PhotoImage(draw._image)
@@ -254,7 +250,7 @@ class Viewer:
 		draw.line((16, 11, 26, 21), width=2, fill=LINE_RGB)
 		draw.line((16, 11, 16, 11), width=1, fill=LINE_RGB)
 		self.hoverUp = ImageTk.PhotoImage(draw._image)
-		base_RGBA_image: Image = Image.new('RGBA', (self.SPACE, self.SPACE), (0, 0, 0, 0))  # rename button background
+		base_RGBA_image: Image = Image.new("RGBA", (topbar_height, topbar_height), (0, 0, 0, 0))  # rename button background
 		draw = ImageDraw.Draw(base_RGBA_image.copy())
 		draw.rectangle((7, 10, 25, 22), width=1, outline=LINE_RGB)
 		draw.line((7, 16, 16, 16), width=3, fill=LINE_RGB)
@@ -268,50 +264,50 @@ class Viewer:
 		hoverRename = ImageTk.PhotoImage(draw._image)
 
 		# create the topbar
-		self.canvas.create_image(0, 0, image=self.topbar, anchor='nw', tag="topb", state='hidden')
-		self.file_name_display_text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor='nw', font=FONT, tag="topb", state='hidden')
-		self.rename_button: int = self.canvas.create_image(0, 0, image=rename_button_image, anchor='nw', tag='topb', state='hidden')
-		exit_button_id: int = self.canvas.create_image(self.appw, 0, image=exitb, anchor='ne', tag='topb', state='hidden')
-		minimize_button_id: int = self.canvas.create_image(self.appw-self.SPACE, 0, image=minib, anchor='ne', tag='topb', state='hidden')
-		trash_button_id: int = self.canvas.create_image(0, 0, image=trashb, anchor='nw', tag='topb', state='hidden')
+		self.canvas.create_image(0, 0, image=self.topbar, anchor="nw", tag="topb", state="hidden")
+		self.file_name_display_text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topb", state="hidden")
+		self.rename_button: int = self.canvas.create_image(0, 0, image=rename_button_image, anchor="nw", tag="topb", state="hidden")
+		exit_button_id: int = self.canvas.create_image(self.appw, 0, image=exitb, anchor="ne", tag="topb", state="hidden")
+		minimize_button_id: int = self.canvas.create_image(self.appw-topbar_height, 0, image=minib, anchor="ne", tag="topb", state="hidden")
+		trash_button_id: int = self.canvas.create_image(0, 0, image=trashb, anchor="nw", tag="topb", state="hidden")
 
-		self.canvas.tag_bind(exit_button_id, '<Button-1>', self.exit)
-		self.canvas.tag_bind(minimize_button_id, '<Button-1>', self.minimize)
-		self.canvas.tag_bind(trash_button_id, '<Button-1>', self.trash_image)
-		self.canvas.tag_bind(self.rename_button, '<Button-1>', self.toggle_show_rename_window)
-		self.canvas.tag_bind(exit_button_id, '<Enter>', lambda e: self.hover(exit_button_id, hoveredExit))
-		self.canvas.tag_bind(exit_button_id, '<Leave>', lambda e: self.hover(exit_button_id, exitb))
-		self.canvas.tag_bind(minimize_button_id, '<Enter>', lambda e: self.hover(minimize_button_id, hoveredMini))
-		self.canvas.tag_bind(minimize_button_id, '<Leave>', lambda e: self.hover(minimize_button_id, minib))
-		self.canvas.tag_bind(trash_button_id, '<Enter>', lambda e: self.hover(trash_button_id, hoverTrash))
-		self.canvas.tag_bind(trash_button_id, '<Leave>', lambda e: self.hover(trash_button_id, trashb))
-		self.canvas.tag_bind(self.rename_button, '<Enter>', lambda e: self.hover(self.rename_button, hoverRename))
-		self.canvas.tag_bind(self.rename_button, '<Leave>', lambda e: self.hover(self.rename_button, rename_button_image))
+		self.canvas.tag_bind(exit_button_id, "<Button-1>", self.exit)
+		self.canvas.tag_bind(minimize_button_id, "<Button-1>", self.minimize)
+		self.canvas.tag_bind(trash_button_id, "<Button-1>", self.trash_image)
+		self.canvas.tag_bind(self.rename_button, "<Button-1>", self.toggle_show_rename_window)
+		self.canvas.tag_bind(exit_button_id, "<Enter>", lambda e: self.hover(exit_button_id, hoveredExit))
+		self.canvas.tag_bind(exit_button_id, "<Leave>", lambda e: self.hover(exit_button_id, exitb))
+		self.canvas.tag_bind(minimize_button_id, "<Enter>", lambda e: self.hover(minimize_button_id, hoveredMini))
+		self.canvas.tag_bind(minimize_button_id, "<Leave>", lambda e: self.hover(minimize_button_id, minib))
+		self.canvas.tag_bind(trash_button_id, "<Enter>", lambda e: self.hover(trash_button_id, hoverTrash))
+		self.canvas.tag_bind(trash_button_id, "<Leave>", lambda e: self.hover(trash_button_id, trashb))
+		self.canvas.tag_bind(self.rename_button, "<Enter>", lambda e: self.hover(self.rename_button, hoverRename))
+		self.canvas.tag_bind(self.rename_button, "<Leave>", lambda e: self.hover(self.rename_button, rename_button_image))
 
 		# details dropdown
-		self.dbox: int = self.canvas.create_image(self.appw-self.SPACE-self.SPACE, 0, image=self.dropb, anchor='ne', tag='topb', state='hidden')
-		self.canvas.tag_bind(self.dbox, '<Button-1>', self.toggle_details_dropdown)
-		self.canvas.tag_bind(self.dbox, '<Enter>', self.hover_dropdown_toggle)
-		self.canvas.tag_bind(self.dbox, '<Leave>', self.leave_hover_dropdown_toggle)
-		self.infod: int = self.canvas.create_image(self.appw, self.SPACE, anchor='ne', tag="topb", state='hidden')
+		self.dbox: int = self.canvas.create_image(self.appw-topbar_height-topbar_height, 0, image=self.dropb, anchor="ne", tag="topb", state="hidden")
+		self.canvas.tag_bind(self.dbox, "<Button-1>", self.toggle_details_dropdown)
+		self.canvas.tag_bind(self.dbox, "<Enter>", self.hover_dropdown_toggle)
+		self.canvas.tag_bind(self.dbox, "<Leave>", self.leave_hover_dropdown_toggle)
+		self.infod: int = self.canvas.create_image(self.appw, topbar_height, anchor="ne", tag="topb", state="hidden")
 
 		# rename window
-		self.inp: int = self.canvas.create_window(0, 0, width=200, height=24, anchor='nw')
+		self.inp: int = self.canvas.create_window(0, 0, width=200, height=24, anchor="nw")
 		self.entryText: Entry = Entry(self.app, font=FONT)
-		self.entryText.bind('<Return>', self.try_rename_or_convert)
-		self.entryText.bind('<KeyRelease>', self.handle_limited_keybinds)
-		self.entryText.bind('<Control-c>', self.copy_to_clipboard)
-		self.canvas.itemconfig(self.inp, state='hidden', window=self.entryText)
+		self.entryText.bind("<Return>", self.try_rename_or_convert)
+		self.entryText.bind("<KeyRelease>", self.handle_limited_keybinds)
+		self.entryText.bind("<Control-c>", self.copy_to_clipboard)
+		self.canvas.itemconfig(self.inp, state="hidden", window=self.entryText)
 
 	# tkinter's entry seems broken and ctrl+c doesn't work so I have to implement it myself
 	def copy_to_clipboard(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, 'state') == 'hidden' or not self.entryText.select_present():
+		if self.canvas.itemcget(self.inp, "state") == "hidden" or not self.entryText.select_present():
 			return
 		pyperclip.copy(self.entryText.selection_get())
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, 'state') == 'normal':
+		if self.canvas.itemcget(self.inp, "state") == "normal":
 			self.hide_rename_window()
 			return
 		self.exit()
@@ -339,13 +335,13 @@ class Viewer:
 		self.remove_image_and_move_to_next()
 
 	def toggle_show_rename_window(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, 'state') == 'normal':
+		if self.canvas.itemcget(self.inp, "state") == "normal":
 			self.hide_rename_window()
 			return
 
-		if self.canvas.itemcget("topb", 'state') == 'hidden':
+		if self.canvas.itemcget("topb", "state") == "hidden":
 			self.show_topbar()
-		self.canvas.itemconfig(self.inp, state='normal')
+		self.canvas.itemconfig(self.inp, state="normal")
 		self.canvas.coords(self.inp, self.renameWindowLocation+40, 4)
 		self.entryText.focus()
 
@@ -372,23 +368,23 @@ class Viewer:
 		if os.path.isfile(newPath) or os.path.isdir(newPath):
 			raise FileExistsError()
 
-		with open(self.full_path, mode='rb') as fp:
+		with open(self.full_path, mode="rb") as fp:
 			with Image.open(fp) as temp_img:
 				# refuse to convert animations for now
-				if (getattr(temp_img, 'n_frames', 1) > 1):
+				if (getattr(temp_img, "n_frames", 1) > 1):
 					return False
 
 				match imageExtension:
-					case '.webp':
-						temp_img.save(newPath, 'WebP', quality=100, method=6)
-					case '.png':
-						temp_img.save(newPath, 'PNG', optimize=True)
-					case '.bmp':
-						temp_img.save(newPath, 'BMP')
-					case '.jpg' | '.jpeg' | '.jif' | '.jfif' | '.jpe':  # any JPEG variation
+					case ".webp":
+						temp_img.save(newPath, "WebP", quality=100, method=6)
+					case ".png":
+						temp_img.save(newPath, "PNG", optimize=True)
+					case ".bmp":
+						temp_img.save(newPath, "BMP")
+					case ".jpg" | ".jpeg" | ".jif" | ".jfif" | ".jpe":  # any JPEG variation
 						if self.files[self.curInd].name[0] == 'j':
 							return False
-						temp_img.save(newPath, 'JPEG', optimize=True, quality=100)
+						temp_img.save(newPath, "JPEG", optimize=True, quality=100)
 					case _:
 						return False
 
@@ -400,7 +396,7 @@ class Viewer:
 		return True
 
 	def try_rename_or_convert(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, 'state') == 'hidden':
+		if self.canvas.itemcget(self.inp, "state") == "hidden":
 			return
 
 		# make a new name removing illegal char for current OS
@@ -418,8 +414,8 @@ class Viewer:
 				new_name += self.files[self.curInd].suffix
 			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
-			self.entryText.config(bg='#e6505f')  # flash red to tell user program couldn't rename
-			self.app.after(400, lambda: self.entryText.config(bg='white'))
+			self.entryText.config(bg="#e6505f")  # flash red to tell user program couldn't rename
+			self.app.after(400, lambda: self.entryText.config(bg="white"))
 
 	def minimize(self, event: Event) -> None:
 		self.needRedraw = True
@@ -427,11 +423,11 @@ class Viewer:
 
 	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int]) -> ImageTk.PhotoImage:
 		# simplejpeg is faster way of decoding to numpy array
-		if self.temp.format == 'JPEG':
+		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
 				return ImageTk.PhotoImage(Image.fromarray(cv2.resize(simplejpeg.decode_jpeg(im.read()), dimensions, interpolation=interpolation)))
 		# This cv2 resize is faster than PIL, but convert from mode P to RGB then resize is slower. Yet, PIL resize for P mode images looks very bad so still use cv2
-		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert('RGB'), order='C'), dimensions, interpolation=interpolation)))
+		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C'), dimensions, interpolation=interpolation)))
 
 	def dimension_finder(self) -> tuple[int, int]:
 		width: int = round(self.trueWidth * (self.apph/self.trueHeight))
@@ -442,7 +438,7 @@ class Viewer:
 	# loads and displays an image
 	def image_loader(self) -> None:
 		current_img = self.files[self.curInd]
-		self.full_path = f'{self.image_directory}{self.files[self.curInd].name}'
+		self.full_path = f"{self.image_directory}{self.files[self.curInd].name}"
 
 		try:
 			# open even if in cache to throw error if user deleted it outside of program
@@ -463,7 +459,7 @@ class Viewer:
 			size_kb: int = self.bitSize >> 10
 			self.trueSize = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
 			dimensions = self.dimension_finder()
-			frame_count: int = getattr(self.temp, 'n_frames', 1)
+			frame_count: int = getattr(self.temp, "n_frames", 1)
 			interpolation: int = cv2.INTER_AREA if self.trueHeight > self.apph else cv2.INTER_CUBIC
 			self.conImg = self.get_image_fit_to_screen(interpolation, dimensions)
 
@@ -474,11 +470,11 @@ class Viewer:
 				Thread(target=self.load_frame, args=(1, dimensions, current_img.name, interpolation), daemon=True).start()
 				# find animation frame speed
 				try:
-					speed = int(self.temp.info['duration'] * self.GIFSPEED)
+					speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
 					if speed < 2:
-						speed = self.DEFAULTSPEED
+						speed = self.DEFAULT_SPEED
 				except (KeyError, AttributeError):
-					speed = self.DEFAULTSPEED
+					speed = self.DEFAULT_SPEED
 
 				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
@@ -495,13 +491,13 @@ class Viewer:
 
 	def show_topbar(self, event: Event = None) -> None:
 		self.drawtop = True
-		self.canvas.itemconfig("topb", state='normal')
+		self.canvas.itemconfig("topb", state="normal")
 		self.refresh_topbar()
 
 	def hide_topbar(self, event: Event = None) -> None:
 		self.app.focus()
 		self.drawtop = False
-		self.canvas.itemconfig("topb", state='hidden')
+		self.canvas.itemconfig("topb", state="hidden")
 		self.hide_rename_window()
 
 	def handle_click(self, event: Event) -> None:
@@ -531,7 +527,7 @@ class Viewer:
 		self.canvas.itemconfig(self.file_name_display_text, text=self.files[self.curInd].name)
 		self.renameWindowLocation = self.canvas.bbox(self.file_name_display_text)[2]
 		self.canvas.coords(self.rename_button, self.renameWindowLocation, 0)
-		self.create_details_dropdown() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
+		self.create_details_dropdown() if self.dropDown else self.canvas.itemconfig(self.infod, state="hidden")
 
 	''' displays a frame on screen and recursively calls itself on next frame
 		frame_index: index of current frame to be displayed
@@ -568,28 +564,30 @@ class Viewer:
 
 	# cleans up after an animated file was opened
 	def clear_animation_variables(self) -> None:
-		if self.animation_id == '':
+		if self.animation_id == "":
 			return
 
 		self.app.after_cancel(self.animation_id)
-		self.animation_id = ''
+		self.animation_id = ""
 		self.aniamtion_frames.clear()
 		self.temp.close()
 
 	def toggle_details_dropdown(self, event: Event) -> None:
 		self.dropDown = not self.dropDown
 		self.hover_dropdown_toggle()  # fake mouse hover
-		self.create_details_dropdown() if self.dropDown else self.canvas.itemconfig(self.infod, state='hidden')
+		self.create_details_dropdown() if self.dropDown else self.canvas.itemconfig(self.infod, state="hidden")
 
 	def create_details_dropdown(self) -> None:
 		image_dimension_text: str = f"Pixels: {self.trueWidth}x{self.trueHeight}"
 
-		box_to_draw_on: ImageDraw = ImageDraw.Draw(Image.new('RGBA', (int(ImageDraw.ImageDraw.font.getlength(image_dimension_text))+20, self.DROPDOWNHEIGHT), (40, 40, 40, 170)))
-		box_to_draw_on.text((10, 25), image_dimension_text, fill="white")
-		box_to_draw_on.text((10, 60), f"Size: {self.trueSize}", fill="white")
+		text_bbox: tuple = ImageDraw.ImageDraw.font.getbbox(image_dimension_text)
+
+		box_to_draw_on: ImageDraw = ImageDraw.Draw(Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)))
+		box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
+		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.trueSize}", fill="white")
 
 		self.dropImage: ImageTk.PhotoImage = ImageTk.PhotoImage(box_to_draw_on._image)
-		self.canvas.itemconfig(self.infod, image=self.dropImage, state='normal')
+		self.canvas.itemconfig(self.infod, image=self.dropImage, state="normal")
 
 	''' find index of image in the sorted list of all images in the directory
 	target_image: name of image file to find
@@ -616,4 +614,4 @@ if __name__ == "__main__":
 		from time import perf_counter_ns, sleep  # noqa: F401 DEBUG
 		Viewer(r"C:\Users\jimde\OneDrive\Pictures\myself.jpg")  # DEBUG
 	else:
-		print('An Image Viewer written in Python\nRun with \'python -m viewer "C:/path/to/an/image"\' or convert to an exe and select "open with" on your image')
+		print("An Image Viewer written in Python\nRun with 'python -m viewer \"C:/path/to/an/image\"' or convert to an exe and select \"open with\" on your image")
