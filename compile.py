@@ -3,15 +3,22 @@ import os
 from shutil import rmtree
 import re
 
+try:
+	import nuitka  # noqa: F401
+except ImportError:
+	raise ImportError("Nuitka is not installed on your system, it must be installed to compile")
+
+
 # returns tabs on left side of string
 def countTabLevel(line: str):
 	tabs = 0
 	for char in line.rstrip():
-		if char == '	':
+		if char == '\t':
 			tabs += 1
 		else:
 			break
 	return tabs
+
 
 # only works for windows currently
 if os.name != 'nt':
@@ -26,7 +33,7 @@ if not WORKING_DIR:
 with open(f"{WORKING_DIR}viewer.py", "r") as f:
 	lines = f.readlines()
 lines_without_debug = []
-# skip comments and lines used for debug purposes 
+# skip comments and lines used for debug purposes
 for line in lines:
 	if 'DEBUG' not in line and line.lstrip() != '' and line.lstrip()[0] != '#':
 		lines_without_debug.append(line.replace('    ', '	'))  # also replaces all 4 spaces with tabs for consistency
@@ -64,10 +71,10 @@ try:
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
 		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
 
-	if(os.path.isfile('C:/Program Files/Personal Image Viewer/viewer2.exe')):
+	if os.path.isfile('C:/Program Files/Personal Image Viewer/viewer2.exe'):
 		os.remove('C:/Program Files/Personal Image Viewer/viewer2.exe')
 
-	if(os.path.isfile('C:/Program Files/Personal Image Viewer/viewer.exe')):
+	if os.path.isfile('C:/Program Files/Personal Image Viewer/viewer.exe'):
 		os.rename('C:/Program Files/Personal Image Viewer/viewer.exe', 'C:/Program Files/Personal Image Viewer/viewer2.exe')
 
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
@@ -81,7 +88,7 @@ try:
 	rmtree(WORKING_DIR+'temp.build')
 	os.remove(WORKING_DIR+'temp.cmd')
 	os.rename(WORKING_DIR+'temp.exe', 'C:/Program Files/Personal Image Viewer/viewer.exe')
-	
+
 except Exception as e:
 	print(e)
 	print("No root privileges, please run as admin")
