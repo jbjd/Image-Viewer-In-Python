@@ -610,7 +610,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
