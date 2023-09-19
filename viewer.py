@@ -71,7 +71,7 @@ class Viewer:
 		def __lt__(self, b) -> bool:
 			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_icon", "dropdown_hovered_icon", "dropdown_showing_icon", "dropdown_showing_hovered_icon", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "conImg", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_icon", "dropdown_hovered_icon", "dropdown_showing_icon", "dropdown_showing_hovered_icon", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
@@ -454,7 +454,7 @@ class Viewer:
 		# check if was cached and not changed outside of program
 		cached_img_data = self.cache.get(current_img.name, None)
 		if cached_img_data is not None and self.bit_size == cached_img_data.bit_size:
-			self.image_width, self.image_height, self.image_size, self.conImg = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
+			self.image_width, self.image_height, self.image_size, self.current_img = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
 			self.temp.close()
 		else:
 			self.image_width, self.image_height = self.temp.size
@@ -463,12 +463,12 @@ class Viewer:
 			dimensions = self.dimension_finder()
 			frame_count: int = getattr(self.temp, "n_frames", 1)
 			interpolation: int = cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
-			self.conImg = self.get_image_fit_to_screen(interpolation, dimensions)
+			self.current_img = self.get_image_fit_to_screen(interpolation, dimensions)
 
 			# special case, file is animated
 			if frame_count > 1:
 				self.aniamtion_frames = [None] * frame_count
-				self.aniamtion_frames[0] = self.conImg
+				self.aniamtion_frames[0] = self.current_img
 				Thread(target=self.load_frame, args=(1, dimensions, current_img.name, interpolation), daemon=True).start()
 				# find animation frame speed
 				try:
@@ -481,9 +481,9 @@ class Viewer:
 				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
 				# cache non-animated images
-				self.cache[current_img.name] = self.CachedImage(self.image_width, self.image_height, self.image_size, self.conImg, self.bit_size)
+				self.cache[current_img.name] = self.CachedImage(self.image_width, self.image_height, self.image_size, self.current_img, self.bit_size)
 				self.temp.close()
-		self.canvas.itemconfig(self.image_display, image=self.conImg)
+		self.canvas.itemconfig(self.image_display, image=self.current_img)
 		self.app.title(current_img.name)
 
 	# call this when an animation might have been playing before you need to load a new image
@@ -609,7 +609,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
