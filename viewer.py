@@ -45,14 +45,14 @@ class Viewer:
 
 	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
 	class CachedImage:
-		__slots__ = ('tw', 'th', 'ts', 'im', 'bits')
+		__slots__ = ("width", "height", "size_as_text", "image", "bit_size")
 
 		def __init__(self, width, height, size_as_text, image, bit_size) -> None:
-			self.tw: int = width
-			self.th: int = height
-			self.ts: str = size_as_text
-			self.im: ImageTk.PhotoImage = image
-			self.bits: int = bit_size
+			self.width: int = width
+			self.height: int = height
+			self.size_as_text: str = size_as_text
+			self.image: ImageTk.PhotoImage = image
+			self.bit_size: int = bit_size
 
 	class ImagePath():
 		__slots__ = ("suffix", "name")
@@ -71,7 +71,7 @@ class Viewer:
 		def __lt__(self, b) -> bool:
 			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropImage", "trueWidth", "trueHeigh", "renameWindowLocation", "bitSize", "trueSize", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "drawnImage", "files", "cur_index", "topbar", "dropbar", "file_name_display_text", "dropb", "hoverDrop", "upb", "hoverUp", "inp", "infod", "rename_entry", "temp", "trueHeight", "trueWidth", "conImg", "dbox", "rename_button", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "trueWidth", "trueHeigh", "rename_window_x_offset", "bit_size", "trueSize", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "dropbar", "file_name_display_text", "dropb", "hoverDrop", "upb", "hoverUp", "inp", "infod", "rename_entry", "temp", "trueHeight", "trueWidth", "conImg", "dbox", "rename_button", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
@@ -86,13 +86,12 @@ class Viewer:
 		self.topbar_shown: bool = False
 		self.dropdown_shown: bool = False
 		self.redraw_screen: bool = False
-		self.dropImage = None  # acts as refrences to items on screen
 
 		# data on current image
 		self.trueWidth: int = 0
 		self.trueHeigh: int = 0
-		self.renameWindowLocation: int = 0
-		self.bitSize: int = 0
+		self.rename_window_x_offset: int = 0
+		self.bit_size: int = 0
 		self.cur_index: int = 0
 		self.trueSize: str = ""
 
@@ -117,7 +116,7 @@ class Viewer:
 		self.screen_w: int = self.app.winfo_width()
 		self.screen_h: int = self.app.winfo_height()
 		background = self.canvas.create_rectangle(0, 0, self.screen_w, self.screen_h, fill="black")
-		self.drawnImage = self.canvas.create_image(self.screen_w >> 1, self.screen_h >> 1, anchor="center")
+		self.image_display = self.canvas.create_image(self.screen_w >> 1, self.screen_h >> 1, anchor="center")
 		self.load_assests(32)  # hard coded for now, should relative to 32 pixels of 1080 pixel height screen
 
 		# draw first img, then get all paths in dir
@@ -133,20 +132,24 @@ class Viewer:
 		self.files.sort(key=self.IKey)
 		self.cur_index = self.binary_search(current_image.name)
 		self.full_path = f'{self.image_directory}{self.files[self.cur_index].name}'
-		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", 22*self.screen_h//1080)  # font for drawing on images
+		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", self.scale_pixels_to_screen(22))  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 
 		# events based on input
 		self.KEY_MAPPING = {'r': self.toggle_show_rename_window, "Left": self.arrow, "Right": self.arrow}  # allowed only in main app
 		self.KEY_MAPPING_LIMITED = {"F2": self.toggle_show_rename_window, "Up": self.hide_topbar, "Down": self.show_topbar}  # allowed in entry or main app
 		self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
-		self.canvas.tag_bind(self.drawnImage, "<Button-1>", self.handle_click)
+		self.canvas.tag_bind(self.image_display, "<Button-1>", self.handle_click)
 		self.app.bind('<FocusIn>', self.redraw)
 		self.app.bind('<MouseWheel>', self.scroll)
 		self.app.bind('<Escape>', self.escape_button)
 		self.app.bind('<KeyRelease>', self.handle_all_keybinds)
 
 		self.app.mainloop()
+
+	# Normalize all pixels relative to a 1080 pixel tall screen
+	def scale_pixels_to_screen(self, original_pixels: int) -> int:
+		return original_pixels*self.screen_h//1080
 
 	def handle_all_keybinds(self, event: Event) -> None:
 		if event.widget is self.app:
@@ -183,14 +186,13 @@ class Viewer:
 		if self.topbar_shown:
 			self.refresh_topbar()
 
-	# redraws image if bitsize of cached image is different than file that currently has that name
+	# redraws image if bit size of cached image is different than file that currently has that name
 	# This happens if user perhaps deleted image and named a new file with the same name
 	def redraw(self, event: Event) -> None:
 		if event.widget is not self.app or not self.redraw_screen:
 			return
 		self.redraw_screen = False
-		# if size of image is differnt, new image must have replace old one outside of program, so redraw screen
-		if os.path.isfile(self.full_path) and os.path.getsize(self.full_path) == self.bitSize:
+		if os.path.isfile(self.full_path) and os.path.getsize(self.full_path) == self.bit_size:
 			return
 		self.image_loader_safe()
 
@@ -342,7 +344,7 @@ class Viewer:
 		if self.canvas.itemcget("topbar", "state") == "hidden":
 			self.show_topbar()
 		self.canvas.itemconfig(self.inp, state="normal")
-		self.canvas.coords(self.inp, self.renameWindowLocation+40, 4)
+		self.canvas.coords(self.inp, self.rename_window_x_offset+40, 4)
 		self.rename_entry.focus()
 
 	def cleanup_after_rename(self, newname: str) -> None:
@@ -447,16 +449,16 @@ class Viewer:
 			self.remove_image_and_move_to_next()
 			return
 
-		self.bitSize: int = os.path.getsize(self.full_path)
+		self.bit_size: int = os.path.getsize(self.full_path)
 
 		# check if was cached and not changed outside of program
 		cached_img_data = self.cache.get(current_img.name, None)
-		if cached_img_data is not None and self.bitSize == cached_img_data.bits:
-			self.trueWidth, self.trueHeight, self.trueSize, self.conImg = cached_img_data.tw, cached_img_data.th, cached_img_data.ts, cached_img_data.im
+		if cached_img_data is not None and self.bit_size == cached_img_data.bit_size:
+			self.trueWidth, self.trueHeight, self.trueSize, self.conImg = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
 			self.temp.close()
 		else:
 			self.trueWidth, self.trueHeight = self.temp.size
-			size_kb: int = self.bitSize >> 10
+			size_kb: int = self.bit_size >> 10
 			self.trueSize = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
 			dimensions = self.dimension_finder()
 			frame_count: int = getattr(self.temp, "n_frames", 1)
@@ -479,9 +481,9 @@ class Viewer:
 				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
 				# cache non-animated images
-				self.cache[current_img.name] = self.CachedImage(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bitSize)
+				self.cache[current_img.name] = self.CachedImage(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bit_size)
 				self.temp.close()
-		self.canvas.itemconfig(self.drawnImage, image=self.conImg)
+		self.canvas.itemconfig(self.image_display, image=self.conImg)
 		self.app.title(current_img.name)
 
 	# call this when an animation might have been playing before you need to load a new image
@@ -525,8 +527,8 @@ class Viewer:
 
 	def refresh_topbar(self) -> None:
 		self.canvas.itemconfig(self.file_name_display_text, text=self.files[self.cur_index].name)
-		self.renameWindowLocation = self.canvas.bbox(self.file_name_display_text)[2]
-		self.canvas.coords(self.rename_button, self.renameWindowLocation, 0)
+		self.rename_window_x_offset = self.canvas.bbox(self.file_name_display_text)[2]
+		self.canvas.coords(self.rename_button, self.rename_window_x_offset, 0)
 		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.infod, state="hidden")
 
 	''' displays a frame on screen and recursively calls itself on next frame
@@ -545,7 +547,7 @@ class Viewer:
 			frame_index -= 1
 			ms_until_next_frame += 10
 		else:
-			self.canvas.itemconfig(self.drawnImage, image=current_frame)
+			self.canvas.itemconfig(self.image_display, image=current_frame)
 
 		self.animation_id = self.app.after(ms_until_next_frame, self.animate, frame_index, speed)
 
@@ -586,8 +588,8 @@ class Viewer:
 		box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
 		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.trueSize}", fill="white")
 
-		self.dropImage: ImageTk.PhotoImage = ImageTk.PhotoImage(box_to_draw_on._image)
-		self.canvas.itemconfig(self.infod, image=self.dropImage, state="normal")
+		self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
+		self.canvas.itemconfig(self.infod, image=self.dropdown_image, state="normal")
 
 	''' find index of image in the sorted list of all images in the directory
 	target_image: name of image file to find
@@ -607,7 +609,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
