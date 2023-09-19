@@ -71,7 +71,7 @@ class Viewer:
 		def __lt__(self, b) -> bool:
 			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "trueWidth", "trueHeigh", "rename_window_x_offset", "bit_size", "trueSize", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "dropbar", "file_name_display_text", "dropb", "hoverDrop", "upb", "hoverUp", "inp", "infod", "rename_entry", "temp", "trueHeight", "trueWidth", "conImg", "dbox", "rename_button", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_icon", "dropdown_hovered_icon", "dropdown_showing_icon", "dropdown_showing_hovered_icon", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "conImg", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
@@ -88,12 +88,12 @@ class Viewer:
 		self.redraw_screen: bool = False
 
 		# data on current image
-		self.trueWidth: int = 0
-		self.trueHeigh: int = 0
+		self.image_width: int = 0
+		self.image_height: int = 0
 		self.rename_window_x_offset: int = 0
 		self.bit_size: int = 0
 		self.cur_index: int = 0
-		self.trueSize: str = ""
+		self.image_size: str = ""
 
 		# variables used for animations, empty when no animation playing
 		self.aniamtion_frames: list = []
@@ -171,7 +171,7 @@ class Viewer:
 		self.move(-1 if event.delta > 0 else 1)
 
 	def hide_rename_window(self) -> None:
-		self.canvas.itemconfig(self.inp, state="hidden")
+		self.canvas.itemconfig(self.rename_window_id, state="hidden")
 		self.app.focus()
 
 	# move to next image, dir shoud be either -1 or 1 to move left or right
@@ -207,116 +207,116 @@ class Viewer:
 
 		# create stuff on topbar
 		self.topbar = ImageTk.PhotoImage(Image.new("RGBA", (self.screen_w, topbar_height), TOPBAR_RGBA))
-		exitb = ImageTk.PhotoImage(Image.new("RGB", (topbar_height, topbar_height), (190, 40, 40)))
+		exit_icon = ImageTk.PhotoImage(Image.new("RGB", (topbar_height, topbar_height), (190, 40, 40)))
 		draw = ImageDraw.Draw(Image.new("RGB", (topbar_height, topbar_height), (180, 25, 20)))
 		draw.line((6, 6, 26, 26), width=2, fill=LINE_RGB)
 		draw.line((6, 26, 26, 6), width=2, fill=LINE_RGB)
-		hoveredExit = ImageTk.PhotoImage(draw._image)
-		loadedImgDef = Image.new("RGB", (topbar_height, topbar_height), ICON_RGB)  # default icon background
-		loadedImgHov = Image.new("RGB", (topbar_height, topbar_height), ICON_HOVERED_RGB)  # hovered icon background
-		draw = ImageDraw.Draw(loadedImgDef.copy())
+		exit_icon_hovered = ImageTk.PhotoImage(draw._image)
+		icon_default = Image.new("RGB", (topbar_height, topbar_height), ICON_RGB)
+		icon_hovered_default = Image.new("RGB", (topbar_height, topbar_height), ICON_HOVERED_RGB)
+		draw = ImageDraw.Draw(icon_default.copy())
 		draw.line((6, 24, 24, 24), width=2, fill=LINE_RGB)
-		minib = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgHov.copy())
+		minify_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_hovered_default.copy())
 		draw.line((6, 24, 24, 24), width=2, fill=LINE_RGB)
-		hoveredMini = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgDef.copy())
+		minify_hovered_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_default.copy())
 		draw.line((9, 9, 9, 22), width=2, fill=LINE_RGB)
 		draw.line((21, 9, 21, 22), width=2, fill=LINE_RGB)
 		draw.line((9, 22, 21, 22), width=2, fill=LINE_RGB)
 		draw.line((7, 9, 24, 9), width=2, fill=LINE_RGB)
 		draw.line((12, 8, 19, 8), width=3, fill=LINE_RGB)
-		trashb = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgHov.copy())
+		trash_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_hovered_default.copy())
 		draw.line((9, 9, 9, 22), width=2, fill=LINE_RGB)
 		draw.line((21, 9, 21, 22), width=2, fill=LINE_RGB)
 		draw.line((9, 22, 21, 22), width=2, fill=LINE_RGB)
 		draw.line((7, 9, 24, 9), width=2, fill=LINE_RGB)
 		draw.line((12, 8, 19, 8), width=3, fill=LINE_RGB)
-		hoverTrash = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgDef.copy())
+		trash_hovered_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_default.copy())
 		draw.line((6, 11, 16, 21), width=2, fill=LINE_RGB)
 		draw.line((16, 21, 26, 11), width=2, fill=LINE_RGB)
-		self.dropb = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgHov.copy())
+		self.dropdown_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_hovered_default.copy())
 		draw.line((6, 11, 16, 21), width=2, fill=LINE_RGB)
 		draw.line((16, 21, 26, 11), width=2, fill=LINE_RGB)
-		self.hoverDrop = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgDef)
+		self.dropdown_hovered_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_default)
 		draw.line((6, 21, 16, 11), width=2, fill=LINE_RGB)
 		draw.line((16, 11, 26, 21), width=2, fill=LINE_RGB)
 		draw.line((16, 11, 16, 11), width=1, fill=LINE_RGB)
-		self.upb = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(loadedImgHov)
+		self.dropdown_showing_icon = ImageTk.PhotoImage(draw._image)
+		draw = ImageDraw.Draw(icon_hovered_default)
 		draw.line((6, 21, 16, 11), width=2, fill=LINE_RGB)
 		draw.line((16, 11, 26, 21), width=2, fill=LINE_RGB)
 		draw.line((16, 11, 16, 11), width=1, fill=LINE_RGB)
-		self.hoverUp = ImageTk.PhotoImage(draw._image)
+		self.dropdown_showing_hovered_icon = ImageTk.PhotoImage(draw._image)
 		base_RGBA_image: Image = Image.new("RGBA", (topbar_height, topbar_height), (0, 0, 0, 0))  # rename button background
 		draw = ImageDraw.Draw(base_RGBA_image.copy())
 		draw.rectangle((7, 10, 25, 22), width=1, outline=LINE_RGB)
 		draw.line((7, 16, 16, 16), width=3, fill=LINE_RGB)
 		draw.line((16, 8, 16, 24), width=2, fill=LINE_RGB)
-		rename_button_image: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
+		rename_icon: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
 		draw = ImageDraw.Draw(base_RGBA_image)
 		draw.rectangle((4, 5, 28, 27), width=1, fill=ICON_HOVERED_RGB)
 		draw.rectangle((7, 10, 25, 22), width=1, outline=LINE_RGB)
 		draw.line((7, 16, 16, 16), width=3, fill=LINE_RGB)
 		draw.line((16, 8, 16, 24), width=2, fill=LINE_RGB)
-		hoverRename = ImageTk.PhotoImage(draw._image)
+		rename_hovered_icon = ImageTk.PhotoImage(draw._image)
 
 		# create the topbar
 		self.canvas.create_image(0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden")
-		self.file_name_display_text: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topbar", state="hidden")
-		self.rename_button: int = self.canvas.create_image(0, 0, image=rename_button_image, anchor="nw", tag="topbar", state="hidden")
-		exit_button_id: int = self.canvas.create_image(self.screen_w, 0, image=exitb, anchor="ne", tag="topbar", state="hidden")
-		minimize_button_id: int = self.canvas.create_image(self.screen_w-topbar_height, 0, image=minib, anchor="ne", tag="topbar", state="hidden")
-		trash_button_id: int = self.canvas.create_image(0, 0, image=trashb, anchor="nw", tag="topbar", state="hidden")
+		self.file_name_text_id: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topbar", state="hidden")
+		self.rename_button_id: int = self.canvas.create_image(0, 0, image=rename_icon, anchor="nw", tag="topbar", state="hidden")
+		exit_button_id: int = self.canvas.create_image(self.screen_w, 0, image=exit_icon, anchor="ne", tag="topbar", state="hidden")
+		minimize_button_id: int = self.canvas.create_image(self.screen_w-topbar_height, 0, image=minify_icon, anchor="ne", tag="topbar", state="hidden")
+		trash_button_id: int = self.canvas.create_image(0, 0, image=trash_icon, anchor="nw", tag="topbar", state="hidden")
 
 		self.canvas.tag_bind(exit_button_id, "<Button-1>", self.exit)
 		self.canvas.tag_bind(minimize_button_id, "<Button-1>", self.minimize)
 		self.canvas.tag_bind(trash_button_id, "<Button-1>", self.trash_image)
-		self.canvas.tag_bind(self.rename_button, "<Button-1>", self.toggle_show_rename_window)
-		self.canvas.tag_bind(exit_button_id, "<Enter>", lambda e: self.hover(exit_button_id, hoveredExit))
-		self.canvas.tag_bind(exit_button_id, "<Leave>", lambda e: self.hover(exit_button_id, exitb))
-		self.canvas.tag_bind(minimize_button_id, "<Enter>", lambda e: self.hover(minimize_button_id, hoveredMini))
-		self.canvas.tag_bind(minimize_button_id, "<Leave>", lambda e: self.hover(minimize_button_id, minib))
-		self.canvas.tag_bind(trash_button_id, "<Enter>", lambda e: self.hover(trash_button_id, hoverTrash))
-		self.canvas.tag_bind(trash_button_id, "<Leave>", lambda e: self.hover(trash_button_id, trashb))
-		self.canvas.tag_bind(self.rename_button, "<Enter>", lambda e: self.hover(self.rename_button, hoverRename))
-		self.canvas.tag_bind(self.rename_button, "<Leave>", lambda e: self.hover(self.rename_button, rename_button_image))
+		self.canvas.tag_bind(self.rename_button_id, "<Button-1>", self.toggle_show_rename_window)
+		self.canvas.tag_bind(exit_button_id, "<Enter>", lambda e: self.hover(exit_button_id, exit_icon_hovered))
+		self.canvas.tag_bind(exit_button_id, "<Leave>", lambda e: self.hover(exit_button_id, exit_icon))
+		self.canvas.tag_bind(minimize_button_id, "<Enter>", lambda e: self.hover(minimize_button_id, minify_hovered_icon))
+		self.canvas.tag_bind(minimize_button_id, "<Leave>", lambda e: self.hover(minimize_button_id, minify_icon))
+		self.canvas.tag_bind(trash_button_id, "<Enter>", lambda e: self.hover(trash_button_id, trash_hovered_icon))
+		self.canvas.tag_bind(trash_button_id, "<Leave>", lambda e: self.hover(trash_button_id, trash_icon))
+		self.canvas.tag_bind(self.rename_button_id, "<Enter>", lambda e: self.hover(self.rename_button_id, rename_hovered_icon))
+		self.canvas.tag_bind(self.rename_button_id, "<Leave>", lambda e: self.hover(self.rename_button_id, rename_icon))
 
 		# details dropdown
-		self.dbox: int = self.canvas.create_image(self.screen_w-topbar_height-topbar_height, 0, image=self.dropb, anchor="ne", tag="topbar", state="hidden")
-		self.canvas.tag_bind(self.dbox, "<Button-1>", self.toggle_details_dropdown)
-		self.canvas.tag_bind(self.dbox, "<Enter>", self.hover_dropdown_toggle)
-		self.canvas.tag_bind(self.dbox, "<Leave>", self.leave_hover_dropdown_toggle)
-		self.infod: int = self.canvas.create_image(self.screen_w, topbar_height, anchor="ne", tag="topbar", state="hidden")
+		self.dropdown_button_id: int = self.canvas.create_image(self.screen_w-topbar_height-topbar_height, 0, image=self.dropdown_icon, anchor="ne", tag="topbar", state="hidden")
+		self.canvas.tag_bind(self.dropdown_button_id, "<Button-1>", self.toggle_details_dropdown)
+		self.canvas.tag_bind(self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle)
+		self.canvas.tag_bind(self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle)
+		self.dropdown_id: int = self.canvas.create_image(self.screen_w, topbar_height, anchor="ne", tag="topbar", state="hidden")
 
 		# rename window
-		self.inp: int = self.canvas.create_window(0, 0, width=200, height=24, anchor="nw")
+		self.rename_window_id: int = self.canvas.create_window(0, 0, width=200, height=24, anchor="nw")
 		self.rename_entry: Entry = Entry(self.app, font=FONT)
 		self.rename_entry.bind("<Return>", self.try_rename_or_convert)
 		self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
 		self.rename_entry.bind("<Control-c>", self.copy_to_clipboard)
-		self.canvas.itemconfig(self.inp, state="hidden", window=self.rename_entry)
+		self.canvas.itemconfig(self.rename_window_id, state="hidden", window=self.rename_entry)
 
 	# tkinter's entry seems broken and ctrl+c doesn't work so I have to implement it myself
 	def copy_to_clipboard(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, "state") == "hidden" or not self.rename_entry.select_present():
+		if self.canvas.itemcget(self.rename_window_id, "state") == "hidden" or not self.rename_entry.select_present():
 			return
 		pyperclip.copy(self.rename_entry.selection_get())
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, "state") == "normal":
+		if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
 			self.hide_rename_window()
 			return
 		self.exit()
 
 	# properly exit program
 	def exit(self, event: Event = None) -> None:
-		self.canvas.delete(self.file_name_display_text)
+		self.canvas.delete(self.file_name_text_id)
 		self.app.quit()
 		self.app.destroy()
 		exit(0)
@@ -325,10 +325,10 @@ class Viewer:
 		self.canvas.itemconfig(id, image=img)
 
 	def leave_hover_dropdown_toggle(self, event: Event = None) -> None:
-		self.canvas.itemconfig(self.dbox, image=self.upb if self.dropdown_shown else self.dropb)
+		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_icon if self.dropdown_shown else self.dropdown_icon)
 
 	def hover_dropdown_toggle(self, event: Event = None) -> None:
-		self.canvas.itemconfig(self.dbox, image=self.hoverUp if self.dropdown_shown else self.hoverDrop)
+		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_hovered_icon if self.dropdown_shown else self.dropdown_hovered_icon)
 
 	def trash_image(self, event: Event = None) -> None:
 		self.clear_animation_variables()
@@ -337,14 +337,14 @@ class Viewer:
 		self.remove_image_and_move_to_next()
 
 	def toggle_show_rename_window(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, "state") == "normal":
+		if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
 			self.hide_rename_window()
 			return
 
 		if self.canvas.itemcget("topbar", "state") == "hidden":
 			self.show_topbar()
-		self.canvas.itemconfig(self.inp, state="normal")
-		self.canvas.coords(self.inp, self.rename_window_x_offset+40, 4)
+		self.canvas.itemconfig(self.rename_window_id, state="normal")
+		self.canvas.coords(self.rename_window_id, self.rename_window_x_offset+40, 4)
 		self.rename_entry.focus()
 
 	def cleanup_after_rename(self, newname: str) -> None:
@@ -398,7 +398,7 @@ class Viewer:
 		return True
 
 	def try_rename_or_convert(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.inp, "state") == "hidden":
+		if self.canvas.itemcget(self.rename_window_id, "state") == "hidden":
 			return
 
 		# make a new name removing illegal char for current OS
@@ -432,10 +432,10 @@ class Viewer:
 		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C'), dimensions, interpolation=interpolation)))
 
 	def dimension_finder(self) -> tuple[int, int]:
-		width: int = round(self.trueWidth * (self.screen_h/self.trueHeight))
+		width: int = round(self.image_width * (self.screen_h/self.image_height))
 
 		# fit to height if width in screen, else fit to width and let height go off screen
-		return (width, self.screen_h) if width <= self.screen_w else (self.screen_w, round(self.trueHeight * (self.screen_w/self.trueWidth)))
+		return (width, self.screen_h) if width <= self.screen_w else (self.screen_w, round(self.image_height * (self.screen_w/self.image_width)))
 
 	# loads and displays an image
 	def image_loader(self) -> None:
@@ -454,15 +454,15 @@ class Viewer:
 		# check if was cached and not changed outside of program
 		cached_img_data = self.cache.get(current_img.name, None)
 		if cached_img_data is not None and self.bit_size == cached_img_data.bit_size:
-			self.trueWidth, self.trueHeight, self.trueSize, self.conImg = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
+			self.image_width, self.image_height, self.image_size, self.conImg = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
 			self.temp.close()
 		else:
-			self.trueWidth, self.trueHeight = self.temp.size
+			self.image_width, self.image_height = self.temp.size
 			size_kb: int = self.bit_size >> 10
-			self.trueSize = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
+			self.image_size = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
 			dimensions = self.dimension_finder()
 			frame_count: int = getattr(self.temp, "n_frames", 1)
-			interpolation: int = cv2.INTER_AREA if self.trueHeight > self.screen_h else cv2.INTER_CUBIC
+			interpolation: int = cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
 			self.conImg = self.get_image_fit_to_screen(interpolation, dimensions)
 
 			# special case, file is animated
@@ -481,7 +481,7 @@ class Viewer:
 				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
 				# cache non-animated images
-				self.cache[current_img.name] = self.CachedImage(self.trueWidth, self.trueHeight, self.trueSize, self.conImg, self.bit_size)
+				self.cache[current_img.name] = self.CachedImage(self.image_width, self.image_height, self.image_size, self.conImg, self.bit_size)
 				self.temp.close()
 		self.canvas.itemconfig(self.image_display, image=self.conImg)
 		self.app.title(current_img.name)
@@ -526,10 +526,10 @@ class Viewer:
 			self.refresh_topbar()
 
 	def refresh_topbar(self) -> None:
-		self.canvas.itemconfig(self.file_name_display_text, text=self.files[self.cur_index].name)
-		self.rename_window_x_offset = self.canvas.bbox(self.file_name_display_text)[2]
-		self.canvas.coords(self.rename_button, self.rename_window_x_offset, 0)
-		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.infod, state="hidden")
+		self.canvas.itemconfig(self.file_name_text_id, text=self.files[self.cur_index].name)
+		self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
+		self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
+		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.dropdown_id, state="hidden")
 
 	''' displays a frame on screen and recursively calls itself on next frame
 		frame_index: index of current frame to be displayed
@@ -577,19 +577,19 @@ class Viewer:
 	def toggle_details_dropdown(self, event: Event) -> None:
 		self.dropdown_shown = not self.dropdown_shown
 		self.hover_dropdown_toggle()  # fake mouse hover
-		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.infod, state="hidden")
+		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.dropdown_id, state="hidden")
 
 	def create_details_dropdown(self) -> None:
-		image_dimension_text: str = f"Pixels: {self.trueWidth}x{self.trueHeight}"
+		image_dimension_text: str = f"Pixels: {self.image_width}x{self.image_height}"
 
 		text_bbox: tuple = ImageDraw.ImageDraw.font.getbbox(image_dimension_text)
 
 		box_to_draw_on: ImageDraw = ImageDraw.Draw(Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)))
 		box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
-		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.trueSize}", fill="white")
+		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.image_size}", fill="white")
 
 		self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
-		self.canvas.itemconfig(self.infod, image=self.dropdown_image, state="normal")
+		self.canvas.itemconfig(self.dropdown_id, image=self.dropdown_image, state="normal")
 
 	''' find index of image in the sorted list of all images in the directory
 	target_image: name of image file to find
