@@ -12,7 +12,6 @@ from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
 import simplejpeg  # 1.7.2
-import pyperclip  # 1.8.2
 
 path_to_exe: str = argv[0].replace('\\', '/')
 path_to_exe = path_to_exe[:path_to_exe.rfind('/')+1]
@@ -305,7 +304,9 @@ class Viewer:
 	def copy_to_clipboard(self, event: Event = None) -> None:
 		if self.canvas.itemcget(self.rename_window_id, "state") == "hidden" or not self.rename_entry.select_present():
 			return
-		pyperclip.copy(self.rename_entry.selection_get())
+		self.app.clipboard_clear()
+		self.app.clipboard_append(self.rename_entry.selection_get())
+		self.app.update()
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
