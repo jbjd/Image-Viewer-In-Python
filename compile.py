@@ -2,6 +2,7 @@ import subprocess
 import os
 from shutil import rmtree
 import re
+from distutils.dir_util import copy_tree
 
 try:
 	import nuitka  # noqa: F401
@@ -80,7 +81,11 @@ try:
 	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
 		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
 
+	if not os.path.exists("C:/Program Files/Personal Image Viewer/util/"):
+		os.makedirs("C:/Program Files/Personal Image Viewer/util/")
+
 	os.system(f'copy "{os.path.abspath(WORKING_DIR+"icon/icon.ico")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/icon/icon.ico")}"')
+	copy_tree(f"{WORKING_DIR}util/", "C:/Program Files/Personal Image Viewer/util")
 
 	print("Waiting for nuitka compilation")
 	process.wait()

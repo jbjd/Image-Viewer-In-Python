@@ -12,7 +12,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
-from turbojpeg import TurboJPEG, TJPF_RGB
+from turbojpeg import TurboJPEG, TJPF_RGB  # 1.7.2
 
 path_to_exe: str = argv[0].replace('\\', '/')
 path_to_exe = path_to_exe[:path_to_exe.rfind('/')+1]
@@ -616,7 +616,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
