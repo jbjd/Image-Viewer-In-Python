@@ -564,12 +564,15 @@ class Viewer:
 			return
 		try:
 			self.temp.seek(frame_index)
-			self.aniamtion_frames[frame_index] = self.get_image_fit_to_screen(interpolation, dimensions)
+			self.aniamtion_frames[frame_index] = self.get_frame_fit_to_screen(interpolation, dimensions)
 			self.load_frame(frame_index+1, dimensions, file_name, interpolation)
 		except Exception:
 			# scrolling, recursion ending, etc cause variety of errors. Catch and close if thread was for current animation
 			if file_name == self.files[self.cur_index].name:
 				self.temp.close()
+
+	def get_frame_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int]) -> ImageTk.PhotoImage:
+		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp.convert("RGB"), order='C'), dimensions, interpolation=interpolation)))
 
 	# cleans up after an animated file was opened
 	def clear_animation_variables(self) -> None:
