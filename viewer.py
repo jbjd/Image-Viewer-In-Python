@@ -432,6 +432,7 @@ class Viewer:
 		# simplejpeg is faster way of decoding to numpy array
 		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
+				# the tuple scales down JPEGs bigger than screen. Uses log2 to fing largest power of 2 less than ratio between screen/image
 				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  (1, (int(log2(scale_factor | 1)) << 1) or 1))
 		else:
 			# This cv2 resize is faster than PIL, but convert from mode P to RGB then resize is slower. Yet, PIL resize for P mode images looks very bad so still use cv2
@@ -510,10 +511,7 @@ class Viewer:
 		self.hide_rename_window()
 
 	def handle_click(self, event: Event) -> None:
-		if self.topbar_shown:
-			self.hide_topbar()
-		else:
-			self.show_topbar()
+		self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
 	def remove_image(self) -> None:
 		# delete image from files array and from cache if present
@@ -619,11 +617,11 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
 		from time import perf_counter_ns, sleep  # noqa: F401 DEBUG
-		Viewer(r"C:\Users\jimde\OneDrive\Pictures\myself.jpg")  # DEBUG
+		Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")  # DEBUG
 	else:
 		print("An Image Viewer written in Python\nRun with 'python -m viewer \"C:/path/to/an/image\"' or convert to an exe and select \"open with\" on your image")
