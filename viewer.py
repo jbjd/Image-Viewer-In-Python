@@ -337,54 +337,56 @@ class Viewer:
 		self.canvas.coords(self.rename_window_id, self.rename_window_x_offset+40, 4)
 		self.rename_entry.focus()
 
-	def cleanup_after_rename(self, newname: str) -> None:
-		newnameObj = self.ImagePath(newname)
-		self.files.insert(self.binary_search(newnameObj.name), newnameObj)
+	def cleanup_after_rename(self, new_name: str) -> None:
+		new_name_obj = self.ImagePath(new_name)
+		self.files.insert(self.binary_search(new_name_obj.name), new_name_obj)
 		self.hide_rename_window()
 		self.image_loader_safe()
 		self.refresh_topbar()
 
 	# asks os to rename file and changes position in list to new location
-	def rename_image(self, newname: str, newPath: str) -> None:
-		if os.path.isfile(newPath) or os.path.isdir(newPath):
+	def rename_image(self, new_name: str, new_path: str) -> None:
+		if os.path.isfile(new_path) or os.path.isdir(new_path):
 			raise FileExistsError()
 
 		# need to close: would be open if currently loading GIF frames
 		self.temp.close()
-		os.rename(self.full_path, newPath)
+		os.rename(self.full_path, new_path)
 		self.remove_image()
-		self.cleanup_after_rename(newname)
+		self.cleanup_after_rename(new_name)
 
 	# returns bool of successful conversion
-	def convert_file_and_save_new(self, newname: str, newPath: str, imageExtension: str) -> bool:
-		if os.path.isfile(newPath) or os.path.isdir(newPath):
+	def convert_file_and_save_new(self, new_name: str, new_path: str, image_extension: str) -> bool:
+		if os.path.isfile(new_path) or os.path.isdir(new_path):
 			raise FileExistsError()
 
 		with open(self.full_path, mode="rb") as fp:
 			with Image.open(fp) as temp_img:
 				# refuse to convert animations for now
-				if (getattr(temp_img, "n_frames", 1) > 1):
-					return False
+				if (getattr(temp_img, "n_frames", 1) > 1 and image_extension != ".webp"):
+					raise ValueError()
 
-				match imageExtension:
+				match image_extension:
 					case ".webp":
-						temp_img.save(newPath, "WebP", quality=100, method=6)
+						temp_img.save(new_path, "WebP", quality=100, method=6, save_all=True)
 					case ".png":
-						temp_img.save(newPath, "PNG", optimize=True)
+						temp_img.save(new_path, "PNG", optimize=True)
 					case ".bmp":
-						temp_img.save(newPath, "BMP")
+						temp_img.save(new_path, "BMP")
 					case ".jpg" | ".jpeg" | ".jif" | ".jfif" | ".jpe":  # any JPEG variation
-						if self.files[self.cur_index].name[0] == 'j':
+						# if two different JPEG varients
+						if self.files[self.cur_index].suffix[1] == 'j':
 							return False
-						temp_img.save(newPath, "JPEG", optimize=True, quality=100)
+						temp_img.save(new_path, "JPEG", optimize=True, quality=100)
 					case _:
 						return False
 
 				fp.flush()
 
-		if askyesno("Confirm deletion", f"Converted file to {imageExtension}, delete old file?"):
+		if askyesno("Confirm deletion", f"Converted file to {image_extension}, delete old file?"):
 			self.trash_image()
-		self.cleanup_after_rename(newname)
+
+		self.cleanup_after_rename(new_name)
 		return True
 
 	def try_rename_or_convert(self, event: Event = None) -> None:
@@ -399,9 +401,11 @@ class Viewer:
 		# otherwise use old extension and rename the file
 		try:
 			if new_image_extension != self.files[self.cur_index].suffix:
-				if new_image_extension in self.VALID_FILE_TYPES and self.convert_file_and_save_new(new_name, f'{self.image_directory}{new_name}', new_image_extension):
+				if new_image_extension not in self.VALID_FILE_TYPES:
+					new_name += self.files[self.cur_index].suffix
+				elif self.convert_file_and_save_new(new_name, f'{self.image_directory}{new_name}', new_image_extension):
 					return
-				new_name += self.files[self.cur_index].suffix
+				
 			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
 			self.rename_entry.config(bg="#e6505f")  # flash red to tell user program couldn't rename
@@ -575,14 +579,15 @@ class Viewer:
 
 		text_bbox: tuple = ImageDraw.ImageDraw.font.getbbox(image_dimension_text)
 
-		box_to_draw_on: ImageDraw = ImageDraw.Draw(Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)))
+		box_to_draw_on: ImageDraw.ImageDraw = ImageDraw.Draw(Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)), "RGBA")
 		box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
 		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.image_size}", fill="white")
 
 		self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
 		self.canvas.itemconfig(self.dropdown_id, image=self.dropdown_image, state="normal")
 
-	''' find index of image in the sorted list of all images in the directory
+	'''
+	find index of image in the sorted list of all images in the directory
 	target_image: name of image file to find
 	'''
 	def binary_search(self, target_image: str) -> int:
