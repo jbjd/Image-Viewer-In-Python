@@ -298,19 +298,11 @@ class Viewer:
 
 		# rename window
 		self.rename_window_id: int = self.canvas.create_window(0, 0, width=200, height=24, anchor="nw")
+		#from image_manager import A
 		self.rename_entry: Entry = Entry(self.app, font=FONT)
 		self.rename_entry.bind("<Return>", self.try_rename_or_convert)
 		self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
-		self.rename_entry.bind("<Control-c>", self.copy_to_clipboard)
 		self.canvas.itemconfig(self.rename_window_id, state="hidden", window=self.rename_entry)
-
-	# tkinter's entry seems broken and ctrl+c doesn't work so I have to implement it myself
-	def copy_to_clipboard(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.rename_window_id, "state") == "hidden" or not self.rename_entry.select_present():
-			return
-		self.app.clipboard_clear()
-		self.app.clipboard_append(self.rename_entry.selection_get())
-		self.app.update()
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
