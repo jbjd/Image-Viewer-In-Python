@@ -273,15 +273,8 @@ class Viewer:
 		self.file_name_text_id: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topbar", state="hidden")
 		self.make_topbar_button(exit_icon, exit_hovered_icon, "ne", self.screen_w, self.exit)
 		self.make_topbar_button(minify_icon, minify_hovered_icon, "ne", self.screen_w-topbar_height, self.minimize)
-		self.rename_button_id: int = self.canvas.create_image(0, 0, image=rename_icon, anchor="nw", tag="topbar", state="hidden")
-		trash_button_id: int = self.canvas.create_image(0, 0, image=trash_icon, anchor="nw", tag="topbar", state="hidden")
-
-		self.canvas.tag_bind(trash_button_id, "<Button-1>", self.trash_image)
-		self.canvas.tag_bind(self.rename_button_id, "<Button-1>", self.toggle_show_rename_window)
-		self.canvas.tag_bind(trash_button_id, "<Enter>", lambda e: self.hover(trash_button_id, trash_hovered_icon))
-		self.canvas.tag_bind(trash_button_id, "<Leave>", lambda e: self.hover(trash_button_id, trash_icon))
-		self.canvas.tag_bind(self.rename_button_id, "<Enter>", lambda e: self.hover(self.rename_button_id, rename_hovered_icon))
-		self.canvas.tag_bind(self.rename_button_id, "<Leave>", lambda e: self.hover(self.rename_button_id, rename_icon))
+		self.make_topbar_button(trash_icon, trash_hovered_icon, "nw", 0, self.trash_image)
+		self.rename_button_id: int = self.make_topbar_button(rename_icon, rename_hovered_icon, "nw", 0, self.toggle_show_rename_window)
 
 		# details dropdown
 		self.dropdown_button_id: int = self.canvas.create_image(self.screen_w-topbar_height-topbar_height, 0, image=self.dropdown_icon, anchor="ne", tag="topbar", state="hidden")
@@ -298,12 +291,14 @@ class Viewer:
 		self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
 		self.canvas.itemconfig(self.rename_window_id, state="hidden", window=self.rename_entry)
 
-	def make_topbar_button(self, regular_image: ImageTk.PhotoImage, hovered_image: ImageTk.PhotoImage, anchor: str, x_offset: int, function_to_bind):
+	# for simple buttons on topbar that only change on hover and have on click event
+	def make_topbar_button(self, regular_image: ImageTk.PhotoImage, hovered_image: ImageTk.PhotoImage, anchor: str, x_offset: int, function_to_bind) -> int:
 		button_id: int = self.canvas.create_image(x_offset, 0, image=regular_image, anchor=anchor, tag="topbar", state="hidden")
 
 		self.canvas.tag_bind(button_id, "<Enter>", lambda _: self.canvas.itemconfig(button_id, image=hovered_image))
 		self.canvas.tag_bind(button_id, "<Leave>", lambda _: self.canvas.itemconfig(button_id, image=regular_image))
 		self.canvas.tag_bind(button_id, "<Button-1>", function_to_bind)
+		return button_id
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
@@ -318,9 +313,6 @@ class Viewer:
 		self.app.quit()
 		self.app.destroy()
 		exit(0)
-
-	def hover(self, id: str, img: ImageTk.PhotoImage) -> None:
-		self.canvas.itemconfig(id, image=img)
 
 	def leave_hover_dropdown_toggle(self, event: Event = None) -> None:
 		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_icon if self.dropdown_shown else self.dropdown_icon)
@@ -608,7 +600,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = False
+	DEBUG: bool = True
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
