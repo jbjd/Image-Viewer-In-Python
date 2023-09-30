@@ -1,5 +1,5 @@
 # python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
-# std librarys
+
 from sys import argv
 from tkinter import Tk, Canvas, Entry, Event
 from tkinter.messagebox import askyesno
@@ -7,7 +7,7 @@ from threading import Thread
 import os
 from re import sub
 from math import log2
-# non-std librarys
+
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
@@ -214,7 +214,7 @@ class Viewer:
 		draw = ImageDraw.Draw(Image.new("RGB", (topbar_height, topbar_height), (180, 25, 20)))
 		draw.line((6, 6, 26, 26), width=2, fill=LINE_RGB)
 		draw.line((6, 26, 26, 6), width=2, fill=LINE_RGB)
-		exit_icon_hovered = ImageTk.PhotoImage(draw._image)
+		exit_hovered_icon = ImageTk.PhotoImage(draw._image)
 		icon_default = Image.new("RGB", (topbar_height, topbar_height), ICON_RGB)
 		icon_hovered_default = Image.new("RGB", (topbar_height, topbar_height), ICON_HOVERED_RGB)
 		draw = ImageDraw.Draw(icon_default.copy())
@@ -271,19 +271,13 @@ class Viewer:
 		# create the topbar
 		self.canvas.create_image(0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden")
 		self.file_name_text_id: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topbar", state="hidden")
+		self.make_topbar_button(exit_icon, exit_hovered_icon, "ne", self.screen_w, self.exit)
+		self.make_topbar_button(minify_icon, minify_hovered_icon, "ne", self.screen_w-topbar_height, self.minimize)
 		self.rename_button_id: int = self.canvas.create_image(0, 0, image=rename_icon, anchor="nw", tag="topbar", state="hidden")
-		exit_button_id: int = self.canvas.create_image(self.screen_w, 0, image=exit_icon, anchor="ne", tag="topbar", state="hidden")
-		minimize_button_id: int = self.canvas.create_image(self.screen_w-topbar_height, 0, image=minify_icon, anchor="ne", tag="topbar", state="hidden")
 		trash_button_id: int = self.canvas.create_image(0, 0, image=trash_icon, anchor="nw", tag="topbar", state="hidden")
 
-		self.canvas.tag_bind(exit_button_id, "<Button-1>", self.exit)
-		self.canvas.tag_bind(minimize_button_id, "<Button-1>", self.minimize)
 		self.canvas.tag_bind(trash_button_id, "<Button-1>", self.trash_image)
 		self.canvas.tag_bind(self.rename_button_id, "<Button-1>", self.toggle_show_rename_window)
-		self.canvas.tag_bind(exit_button_id, "<Enter>", lambda e: self.hover(exit_button_id, exit_icon_hovered))
-		self.canvas.tag_bind(exit_button_id, "<Leave>", lambda e: self.hover(exit_button_id, exit_icon))
-		self.canvas.tag_bind(minimize_button_id, "<Enter>", lambda e: self.hover(minimize_button_id, minify_hovered_icon))
-		self.canvas.tag_bind(minimize_button_id, "<Leave>", lambda e: self.hover(minimize_button_id, minify_icon))
 		self.canvas.tag_bind(trash_button_id, "<Enter>", lambda e: self.hover(trash_button_id, trash_hovered_icon))
 		self.canvas.tag_bind(trash_button_id, "<Leave>", lambda e: self.hover(trash_button_id, trash_icon))
 		self.canvas.tag_bind(self.rename_button_id, "<Enter>", lambda e: self.hover(self.rename_button_id, rename_hovered_icon))
@@ -303,6 +297,13 @@ class Viewer:
 		self.rename_entry.bind("<Return>", self.try_rename_or_convert)
 		self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
 		self.canvas.itemconfig(self.rename_window_id, state="hidden", window=self.rename_entry)
+
+	def make_topbar_button(self, regular_image: ImageTk.PhotoImage, hovered_image: ImageTk.PhotoImage, anchor: str, x_offset: int, function_to_bind):
+		button_id: int = self.canvas.create_image(x_offset, 0, image=regular_image, anchor=anchor, tag="topbar", state="hidden")
+
+		self.canvas.tag_bind(button_id, "<Enter>", lambda _: self.canvas.itemconfig(button_id, image=hovered_image))
+		self.canvas.tag_bind(button_id, "<Leave>", lambda _: self.canvas.itemconfig(button_id, image=regular_image))
+		self.canvas.tag_bind(button_id, "<Button-1>", function_to_bind)
 
 	# wrapper for exit function to close rename window first if its open
 	def escape_button(self, event: Event = None) -> None:
@@ -395,8 +396,6 @@ class Viewer:
 		return True
 
 	def try_rename_or_convert(self, event: Event = None) -> None:
-		if self.canvas.itemcget(self.rename_window_id, "state") == "hidden":
-			return
 
 		# make a new name removing illegal char for current OS
 		# technically windows allows spaces at end of name but thats a bit silly so strip anyway
