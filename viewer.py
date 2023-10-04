@@ -285,7 +285,6 @@ class Viewer:
 
 		# rename window
 		self.rename_window_id: int = self.canvas.create_window(0, 0, width=200, height=24, anchor="nw")
-		#from image_manager import A
 		self.rename_entry: Entry = Entry(self.app, font=FONT)
 		self.rename_entry.bind("<Return>", self.try_rename_or_convert)
 		self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
@@ -405,7 +404,7 @@ class Viewer:
 					new_name += self.files[self.cur_index].suffix
 				elif self.convert_file_and_save_new(new_name, f'{self.image_directory}{new_name}', new_image_extension):
 					return
-				
+
 			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
 			self.rename_entry.config(bg="#e6505f")  # flash red to tell user program couldn't rename
@@ -605,7 +604,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-	DEBUG: bool = True
+	DEBUG: bool = False
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:

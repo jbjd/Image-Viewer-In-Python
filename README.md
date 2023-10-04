@@ -23,3 +23,6 @@ Feel free to take this code and edit it however you like.
 5. Run "python compile.py" or the full path to compile.py if not currently in the same directory. This will install it into your program files directory -> C:/Program Files/Personal Image Viewer/viewer.exe
 
 6. To use it as an exe, go to an image file and right-click > select 'open with' > 'Choose another app' > select the exe file
+
+For simplicity I include the turbo jpeg dll in this repo, according to turbo jpeg's liscense I must state:
+This software is based in part on the work of the Independent JPEG Group.
