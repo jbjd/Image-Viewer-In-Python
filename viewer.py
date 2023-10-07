@@ -372,13 +372,16 @@ class Viewer:
 			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
 			self.rename_entry.config(bg="#e6505f")  # flash red to tell user program couldn't rename
-			self.app.after(400, lambda: self.rename_entry.config(bg="white"))
+			self.app.after(400, self.reset_entry_color)
+
+	def reset_entry_color(self):
+		self.rename_entry.config(bg="white")
 
 	def minimize(self, event: Event) -> None:
 		self.redraw_screen = True
 		self.app.iconify()
 
-	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int], scale_factor: int = 1) -> ImageTk.PhotoImage:
+	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int], scale_factor: int) -> ImageTk.PhotoImage:
 		# simplejpeg is faster way of decoding to numpy array
 		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
