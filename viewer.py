@@ -67,7 +67,7 @@ class Viewer:
 	class IKey:
 		__slots__ = ("name")
 
-		def __init__(self, image: str) -> None:
+		def __init__(self, image) -> None:
 			self.name: str = image.name
 
 		def __lt__(self, b) -> bool:
@@ -122,9 +122,9 @@ class Viewer:
 		self.screen_h: int = self.app.winfo_height()
 		background = self.canvas.create_rectangle(0, 0, self.screen_w, self.screen_h, fill="black")
 		self.image_display = self.canvas.create_image(self.screen_w >> 1, self.screen_h >> 1, anchor="center")
-		self.load_assests(32)  # hard coded for now, should relative to 32 pixels of 1080 pixel height screen
+		self.load_assests(self.scale_pixels_to_screen(32))
 
-		# draw first img, then get all paths in dir
+		# draw first image, then get all image paths in directory
 		current_image = self.ImagePath(image_path_raw[image_path_raw.rfind('/')+1:])
 		self.files = [current_image]
 		self.image_loader()
@@ -152,9 +152,9 @@ class Viewer:
 
 		self.app.mainloop()
 
-	# Normalize all pixels relative to a 1080 pixel tall screen
 	def scale_pixels_to_screen(self, original_pixels: int) -> int:
-		return original_pixels*self.screen_h//1080
+		""" Normalize all pixels relative to a 1080 pixel tall screen """
+		return original_pixels*(self.screen_h//1080)
 
 	def handle_all_keybinds(self, event: Event) -> None:
 		if event.widget is self.app:
@@ -179,8 +179,11 @@ class Viewer:
 		self.canvas.itemconfig(self.rename_window_id, state="hidden")
 		self.app.focus()
 
-	# move to next image, dir shoud be either -1 or 1 to move left or right
 	def move(self, dir: int) -> None:
+		"""
+		Move to different image
+		dir: 1 or -1 indicating movement to next or previous
+		"""
 		self.hide_rename_window()
 		self.cur_index += dir
 		if self.cur_index < 0:
@@ -191,9 +194,11 @@ class Viewer:
 		if self.topbar_shown:
 			self.refresh_topbar()
 
-	# redraws image if bit size of cached image is different than file that currently has that name
-	# This happens if user perhaps deleted image and named a new file with the same name
 	def redraw(self, event: Event) -> None:
+		"""
+		Redraws screen if current image has a diffent size than when it was loaded
+		This implys it was edited outside of the program
+		"""
 		if event.widget is not self.app or not self.redraw_screen:
 			return
 		self.redraw_screen = False
@@ -481,11 +486,13 @@ class Viewer:
 		self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
 		self.create_details_dropdown() if self.dropdown_shown else self.canvas.itemconfig(self.dropdown_id, state="hidden")
 
-	''' displays a frame on screen and recursively calls itself on next frame
+	# START ANIMATION FUNCTIONS
+	def animate(self, frame_index: int, speed: int) -> None:
+		"""
+		displays a frame on screen and recursively calls itself after a delay
 		frame_index: index of current frame to be displayed
 		speed: speed in ms until next frame
-	'''
-	def animate(self, frame_index: int, speed: int) -> None:
+		"""
 		frame_index += 1
 		if frame_index >= len(self.aniamtion_frames):
 			frame_index = 0
@@ -502,7 +509,7 @@ class Viewer:
 		self.animation_id = self.app.after(ms_until_next_frame, self.animate, frame_index, speed)
 
 	def load_frame(self, frame_index: int, dimensions: tuple[int, int], file_name: str, interpolation: int) -> None:
-		# if moved to new image, don't keep loading previous animated image
+		# if user moved to new image, don't keep loading previous animated image
 		if file_name != self.files[self.cur_index].name:
 			return
 		try:
@@ -526,7 +533,9 @@ class Viewer:
 		self.animation_id = ""
 		self.aniamtion_frames.clear()
 		self.temp.close()
+	# END ANIMATION FUNCTIONS
 
+	# START DROPDOWN FUNCTIONS
 	def toggle_details_dropdown(self, event: Event) -> None:
 		self.dropdown_shown = not self.dropdown_shown
 		self.hover_dropdown_toggle()  # fake mouse hover
@@ -543,6 +552,7 @@ class Viewer:
 
 		self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
 		self.canvas.itemconfig(self.dropdown_id, image=self.dropdown_image, state="normal")
+	# END DROPDOWN FUNCTIONS
 
 	def binary_search(self, target_image: str) -> int:
 		"""
@@ -567,7 +577,6 @@ if __name__ == "__main__":
 	if len(argv) > 1:
 		Viewer(argv[1])
 	elif DEBUG:
-		from time import perf_counter_ns, sleep  # noqa: F401 DEBUG
 		Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")  # DEBUG
 	else:
 		print("An Image Viewer written in Python\nRun with 'python -m viewer \"C:/path/to/an/image\"' or convert to an exe and select \"open with\" on your image")

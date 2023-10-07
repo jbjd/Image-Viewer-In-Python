@@ -1,6 +1,7 @@
 from PIL import Image, ImageTk, ImageDraw
 
 
+# Currently draws symbols at set points, not relative to size of icons. Monitors other than mine might get wrong size symbols
 class IconFactory:
 	LINE_RGB: tuple = (170, 170, 170)
 	ICON_RGB: tuple = (100, 104, 102)
