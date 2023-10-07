@@ -7,10 +7,8 @@ class IconFactory:
 	ICON_HOVERED_RGB: tuple = (95, 92, 88)
 	TOPBAR_RGBA: tuple = (60, 60, 60, 170)
 
-	EXIT_RGB = (190, 40, 40)
-	EXIT_HOVER_RGB = (180, 25, 20)
-
-	FONT: str = 'arial 11'
+	EXIT_RGB: tuple = (190, 40, 40)
+	EXIT_HOVER_RGB: tuple = (180, 25, 20)
 
 	__slots__ = ("icon_size", "screen_width", "icon_default", "icon_hovered_default")
 
@@ -33,17 +31,16 @@ class IconFactory:
 		draw.line((6, 26, 26, 6), width=2, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
+	def _make_icon_base(self) -> tuple[ImageDraw.ImageDraw, ImageDraw.ImageDraw]:
+		return ImageDraw.Draw(self.icon_default.copy()), ImageDraw.Draw(self.icon_hovered_default.copy())
+
 	def _draw_minify_symbol(self, draw: ImageDraw.ImageDraw) -> ImageTk.PhotoImage:
 		draw.line((6, 24, 24, 24), width=2, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
-	def make_minify_icon(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_default.copy())
-		return self._draw_minify_symbol(draw)
-
-	def make_minify_icon_hovered(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_hovered_default.copy())
-		return self._draw_minify_symbol(draw)
+	def make_minify_icons(self) -> tuple[ImageTk.PhotoImage, ImageTk.PhotoImage]:
+		draw, draw_hovered = self._make_icon_base()
+		return self._draw_minify_symbol(draw), self._draw_minify_symbol(draw_hovered)
 
 	def _draw_trash_symbol(self, draw: ImageDraw.ImageDraw) -> ImageTk.PhotoImage:
 		draw.line((9, 9, 9, 22), width=2, fill=self.LINE_RGB)
@@ -53,30 +50,18 @@ class IconFactory:
 		draw.line((12, 8, 19, 8), width=3, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
-	def make_trash_icon(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_default.copy())
-		return self._draw_trash_symbol(draw)
-
-	def make_trash_icon_hovered(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_hovered_default.copy())
-		return self._draw_trash_symbol(draw)
+	def make_trash_icons(self) -> tuple[ImageTk.PhotoImage, ImageTk.PhotoImage]:
+		draw, draw_hovered = self._make_icon_base()
+		return self._draw_trash_symbol(draw),  self._draw_trash_symbol(draw_hovered)
 
 	def _draw_down_arrow(self, draw: ImageDraw.ImageDraw) -> ImageTk.PhotoImage:
 		draw.line((6, 11, 16, 21), width=2, fill=self.LINE_RGB)
 		draw.line((16, 21, 26, 11), width=2, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
-	def make_dropdown_hidden_icon(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_default.copy())
-		draw.line((6, 11, 16, 21), width=2, fill=self.LINE_RGB)
-		draw.line((16, 21, 26, 11), width=2, fill=self.LINE_RGB)
-		return self._draw_down_arrow(draw)
-
-	def make_dropdown_hidden_icon_hovered(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_hovered_default.copy())
-		draw.line((6, 11, 16, 21), width=2, fill=self.LINE_RGB)
-		draw.line((16, 21, 26, 11), width=2, fill=self.LINE_RGB)
-		return self._draw_down_arrow(draw)
+	def make_dropdown_hidden_icons(self) -> tuple[ImageTk.PhotoImage, ImageTk.PhotoImage]:
+		draw, draw_hovered = self._make_icon_base()
+		return self._draw_down_arrow(draw),  self._draw_down_arrow(draw_hovered)
 
 	def _draw_up_arrow(self, draw: ImageDraw.ImageDraw) -> ImageTk.PhotoImage:
 		draw.line((6, 21, 16, 11), width=2, fill=self.LINE_RGB)
@@ -84,13 +69,9 @@ class IconFactory:
 		draw.line((16, 11, 16, 11), width=1, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
-	def make_dropdown_showing_icon(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_default.copy())
-		return self._draw_up_arrow(draw)
-
-	def make_dropdown_showing_icon_hovered(self) -> ImageTk.PhotoImage:
-		draw = ImageDraw.Draw(self.icon_hovered_default.copy())
-		return self._draw_up_arrow(draw)
+	def make_dropdown_showing_icons(self) -> tuple[ImageTk.PhotoImage, ImageTk.PhotoImage]:
+		draw, draw_hovered = self._make_icon_base()
+		return self._draw_up_arrow(draw),  self._draw_up_arrow(draw_hovered)
 
 	def _draw_rename_symbol(self, draw: ImageDraw.ImageDraw) -> ImageTk.PhotoImage:
 		draw.rectangle((7, 10, 25, 22), width=1, outline=self.LINE_RGB)
@@ -98,10 +79,8 @@ class IconFactory:
 		draw.line((16, 8, 16, 24), width=2, fill=self.LINE_RGB)
 		return ImageTk.PhotoImage(draw._image)
 
-	def make_rename_icon(self, hovered: bool) -> ImageTk.PhotoImage:
+	def make_rename_icons(self) -> tuple[ImageTk.PhotoImage, ImageTk.PhotoImage]:
 		icon_default_alpha = Image.new("RGBA", (self.icon_size, self.icon_size), (0, 0, 0, 0))
-		draw = ImageDraw.Draw(icon_default_alpha.copy())
-		if hovered:
-			draw.rectangle((4, 5, 28, 27), width=1, fill=self.ICON_HOVERED_RGB)
-
-		return self._draw_rename_symbol(draw)
+		draw, draw_hovered = ImageDraw.Draw(icon_default_alpha.copy()), ImageDraw.Draw(icon_default_alpha.copy())
+		draw_hovered.rectangle((4, 5, 28, 27), width=1, fill=self.ICON_HOVERED_RGB)
+		return self._draw_rename_symbol(draw), self._draw_rename_symbol(draw_hovered)

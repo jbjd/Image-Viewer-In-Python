@@ -106,11 +106,11 @@ class Viewer:
 
 		# application and canvas
 		self.app: Tk = Tk()
-		if os.name == 'nt':
+		if os.name == "nt":
 			self.app.iconbitmap(default=f"{path_to_exe}icon/icon.ico")
 			self.OS_illegal_chars: str = '[\\\\/<>:"|?*]'
 		else:
-			self.OS_illegal_chars: str = '[/]'
+			self.OS_illegal_chars: str = "[/]"
 
 		self.cache: dict[str, self.CachedImage] = {}
 		self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
@@ -136,19 +136,19 @@ class Viewer:
 				self.files.append(fp)
 		self.files.sort(key=self.IKey)
 		self.cur_index = self.binary_search(current_image.name)
-		self.full_path = f'{self.image_directory}{self.files[self.cur_index].name}'
+		self.full_path = f"{self.image_directory}{self.files[self.cur_index].name}"
 		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", self.scale_pixels_to_screen(22))  # font for drawing on images
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 
 		# events based on input
-		self.KEY_MAPPING = {'r': self.toggle_show_rename_window, "Left": self.arrow, "Right": self.arrow}  # allowed only in main app
+		self.KEY_MAPPING = {"r": self.toggle_show_rename_window, "Left": self.arrow, "Right": self.arrow}  # allowed only in main app
 		self.KEY_MAPPING_LIMITED = {"F2": self.toggle_show_rename_window, "Up": self.hide_topbar, "Down": self.show_topbar}  # allowed in entry or main app
 		self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
 		self.canvas.tag_bind(self.image_display, "<Button-1>", self.handle_click)
-		self.app.bind('<FocusIn>', self.redraw)
-		self.app.bind('<MouseWheel>', self.scroll)
-		self.app.bind('<Escape>', self.escape_button)
-		self.app.bind('<KeyRelease>', self.handle_all_keybinds)
+		self.app.bind("<FocusIn>", self.redraw)
+		self.app.bind("<MouseWheel>", self.scroll)
+		self.app.bind("<Escape>", self.escape_button)
+		self.app.bind("<KeyRelease>", self.handle_all_keybinds)
 
 		self.app.mainloop()
 
@@ -214,20 +214,15 @@ class Viewer:
 		exit_icon = icon_factory.make_exit_icon()
 		exit_icon_hovered = icon_factory.make_exit_icon_hovered()
 
-		minify_icon = icon_factory.make_minify_icon()
-		minify_icon_hovered = icon_factory.make_minify_icon_hovered()
+		minify_icon, minify_icon_hovered = icon_factory.make_minify_icons()
 
-		trash_icon = icon_factory.make_trash_icon()
-		trash_icon_hovered = icon_factory.make_trash_icon_hovered()
+		trash_icon, trash_icon_hovered = icon_factory.make_trash_icons()
 
-		self.dropdown_hidden_icon = icon_factory.make_dropdown_hidden_icon()
-		self.dropdown_hidden_icon_hovered = icon_factory.make_dropdown_hidden_icon_hovered()
+		self.dropdown_hidden_icon, self.dropdown_hidden_icon_hovered = icon_factory.make_dropdown_hidden_icons()
 
-		self.dropdown_showing_icon = icon_factory.make_dropdown_showing_icon()
-		self.dropdown_showing_icon_hovered = icon_factory.make_dropdown_showing_icon_hovered()
+		self.dropdown_showing_icon, self.dropdown_showing_icon_hovered = icon_factory.make_dropdown_showing_icons()
 
-		rename_icon = icon_factory.make_rename_icon(hovered=False)
-		rename_icon_hovered = icon_factory.make_rename_icon(hovered=True)
+		rename_icon, rename_icon_hovered = icon_factory.make_rename_icons()
 
 		# create the topbar
 		self.canvas.create_image(0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden")
@@ -549,11 +544,11 @@ class Viewer:
 		self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
 		self.canvas.itemconfig(self.dropdown_id, image=self.dropdown_image, state="normal")
 
-	'''
-	find index of image in the sorted list of all images in the directory
-	target_image: name of image file to find
-	'''
 	def binary_search(self, target_image: str) -> int:
+		"""
+		find index of image in the sorted list of all images in the directory
+		target_image: name of image file to find
+		"""
 		low, high = 0, len(self.files)-1
 		while low <= high:
 			mid = (low+high) >> 1

@@ -13,7 +13,7 @@ Feel free to take this code and edit it however you like.
 
 # Instructions to get it running:
 
-1. Have Python 3.9+ installed (along with nuitka if you want to convert it to an .exe file).
+1. Have Python 3.10+ installed (along with nuitka if you want to convert it to an .exe file).
 2. Install Pip packages listed in requirements.txt, this can be done with "pip install -r requirements.txt"
   
 3. Use 'python viewer.py "C:/example/path/to/image.png"' to run it, or continue following to convert it to an exe if using Windows. I currently don't support Linux/Mac but might in the future. 
