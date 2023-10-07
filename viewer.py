@@ -1,4 +1,4 @@
-# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 viewer.py
+# python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 --follow-import-to="factories" viewer.py
 
 from sys import argv
 from tkinter import Tk, Canvas, Entry, Event
@@ -7,6 +7,8 @@ from threading import Thread
 import os
 from re import sub
 from math import log2
+
+from factories.icon_factory import IconFactory
 
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
 from send2trash import send2trash  # 1.8.2
@@ -71,7 +73,7 @@ class Viewer:
 		def __lt__(self, b) -> bool:
 			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("jpeg_helper", "OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_icon", "dropdown_hovered_icon", "dropdown_showing_icon", "dropdown_showing_hovered_icon", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("jpeg_helper", "OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_hidden_icon", "dropdown_hidden_icon_hovered", "dropdown_showing_icon", "dropdown_showing_icon_hovered", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
@@ -199,85 +201,44 @@ class Viewer:
 			return
 		self.image_loader_safe()
 
-	# The only massive function, draws all icons on header
 	def load_assests(self, topbar_height) -> None:
-		# color constants
-		LINE_RGB: tuple = (170, 170, 170)
-		ICON_RGB: tuple = (100, 104, 102)
-		ICON_HOVERED_RGB: tuple = (95, 92, 88)
-		TOPBAR_RGBA: tuple = (60, 60, 60, 170)
+		"""
+		Load all assets on topbar from factory and create tkinter objects
+		topbar_height: size to make icons/topbar
+		"""
 		FONT: str = 'arial 11'
 
-		# create stuff on topbar
-		self.topbar = ImageTk.PhotoImage(Image.new("RGBA", (self.screen_w, topbar_height), TOPBAR_RGBA))
-		exit_icon = ImageTk.PhotoImage(Image.new("RGB", (topbar_height, topbar_height), (190, 40, 40)))
-		draw = ImageDraw.Draw(Image.new("RGB", (topbar_height, topbar_height), (180, 25, 20)))
-		draw.line((6, 6, 26, 26), width=2, fill=LINE_RGB)
-		draw.line((6, 26, 26, 6), width=2, fill=LINE_RGB)
-		exit_hovered_icon = ImageTk.PhotoImage(draw._image)
-		icon_default = Image.new("RGB", (topbar_height, topbar_height), ICON_RGB)
-		icon_hovered_default = Image.new("RGB", (topbar_height, topbar_height), ICON_HOVERED_RGB)
-		draw = ImageDraw.Draw(icon_default.copy())
-		draw.line((6, 24, 24, 24), width=2, fill=LINE_RGB)
-		minify_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_hovered_default.copy())
-		draw.line((6, 24, 24, 24), width=2, fill=LINE_RGB)
-		minify_hovered_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_default.copy())
-		draw.line((9, 9, 9, 22), width=2, fill=LINE_RGB)
-		draw.line((21, 9, 21, 22), width=2, fill=LINE_RGB)
-		draw.line((9, 22, 21, 22), width=2, fill=LINE_RGB)
-		draw.line((7, 9, 24, 9), width=2, fill=LINE_RGB)
-		draw.line((12, 8, 19, 8), width=3, fill=LINE_RGB)
-		trash_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_hovered_default.copy())
-		draw.line((9, 9, 9, 22), width=2, fill=LINE_RGB)
-		draw.line((21, 9, 21, 22), width=2, fill=LINE_RGB)
-		draw.line((9, 22, 21, 22), width=2, fill=LINE_RGB)
-		draw.line((7, 9, 24, 9), width=2, fill=LINE_RGB)
-		draw.line((12, 8, 19, 8), width=3, fill=LINE_RGB)
-		trash_hovered_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_default.copy())
-		draw.line((6, 11, 16, 21), width=2, fill=LINE_RGB)
-		draw.line((16, 21, 26, 11), width=2, fill=LINE_RGB)
-		self.dropdown_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_hovered_default.copy())
-		draw.line((6, 11, 16, 21), width=2, fill=LINE_RGB)
-		draw.line((16, 21, 26, 11), width=2, fill=LINE_RGB)
-		self.dropdown_hovered_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_default)
-		draw.line((6, 21, 16, 11), width=2, fill=LINE_RGB)
-		draw.line((16, 11, 26, 21), width=2, fill=LINE_RGB)
-		draw.line((16, 11, 16, 11), width=1, fill=LINE_RGB)
-		self.dropdown_showing_icon = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(icon_hovered_default)
-		draw.line((6, 21, 16, 11), width=2, fill=LINE_RGB)
-		draw.line((16, 11, 26, 21), width=2, fill=LINE_RGB)
-		draw.line((16, 11, 16, 11), width=1, fill=LINE_RGB)
-		self.dropdown_showing_hovered_icon = ImageTk.PhotoImage(draw._image)
-		base_RGBA_image: Image = Image.new("RGBA", (topbar_height, topbar_height), (0, 0, 0, 0))  # rename button background
-		draw = ImageDraw.Draw(base_RGBA_image.copy())
-		draw.rectangle((7, 10, 25, 22), width=1, outline=LINE_RGB)
-		draw.line((7, 16, 16, 16), width=3, fill=LINE_RGB)
-		draw.line((16, 8, 16, 24), width=2, fill=LINE_RGB)
-		rename_icon: ImageTk.PhotoImage = ImageTk.PhotoImage(draw._image)
-		draw = ImageDraw.Draw(base_RGBA_image)
-		draw.rectangle((4, 5, 28, 27), width=1, fill=ICON_HOVERED_RGB)
-		draw.rectangle((7, 10, 25, 22), width=1, outline=LINE_RGB)
-		draw.line((7, 16, 16, 16), width=3, fill=LINE_RGB)
-		draw.line((16, 8, 16, 24), width=2, fill=LINE_RGB)
-		rename_hovered_icon = ImageTk.PhotoImage(draw._image)
+		icon_factory = IconFactory(topbar_height, self.screen_w)
+		self.topbar = icon_factory.make_topbar()
+
+		exit_icon = icon_factory.make_exit_icon()
+		exit_icon_hovered = icon_factory.make_exit_icon_hovered()
+
+		minify_icon = icon_factory.make_minify_icon()
+		minify_icon_hovered = icon_factory.make_minify_icon_hovered()
+
+		trash_icon = icon_factory.make_trash_icon()
+		trash_icon_hovered = icon_factory.make_trash_icon_hovered()
+
+		self.dropdown_hidden_icon = icon_factory.make_dropdown_hidden_icon()
+		self.dropdown_hidden_icon_hovered = icon_factory.make_dropdown_hidden_icon_hovered()
+
+		self.dropdown_showing_icon = icon_factory.make_dropdown_showing_icon()
+		self.dropdown_showing_icon_hovered = icon_factory.make_dropdown_showing_icon_hovered()
+
+		rename_icon = icon_factory.make_rename_icon(hovered=False)
+		rename_icon_hovered = icon_factory.make_rename_icon(hovered=True)
 
 		# create the topbar
 		self.canvas.create_image(0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden")
 		self.file_name_text_id: int = self.canvas.create_text(36, 5, text='', fill="white", anchor="nw", font=FONT, tag="topbar", state="hidden")
-		self.make_topbar_button(exit_icon, exit_hovered_icon, "ne", self.screen_w, self.exit)
-		self.make_topbar_button(minify_icon, minify_hovered_icon, "ne", self.screen_w-topbar_height, self.minimize)
-		self.make_topbar_button(trash_icon, trash_hovered_icon, "nw", 0, self.trash_image)
-		self.rename_button_id: int = self.make_topbar_button(rename_icon, rename_hovered_icon, "nw", 0, self.toggle_show_rename_window)
+		self.make_topbar_button(exit_icon, exit_icon_hovered, "ne", self.screen_w, self.exit)
+		self.make_topbar_button(minify_icon, minify_icon_hovered, "ne", self.screen_w-topbar_height, self.minimize)
+		self.make_topbar_button(trash_icon, trash_icon_hovered, "nw", 0, self.trash_image)
+		self.rename_button_id: int = self.make_topbar_button(rename_icon, rename_icon_hovered, "nw", 0, self.toggle_show_rename_window)
 
 		# details dropdown
-		self.dropdown_button_id: int = self.canvas.create_image(self.screen_w-topbar_height-topbar_height, 0, image=self.dropdown_icon, anchor="ne", tag="topbar", state="hidden")
+		self.dropdown_button_id: int = self.canvas.create_image(self.screen_w-topbar_height-topbar_height, 0, image=self.dropdown_hidden_icon, anchor="ne", tag="topbar", state="hidden")
 		self.canvas.tag_bind(self.dropdown_button_id, "<Button-1>", self.toggle_details_dropdown)
 		self.canvas.tag_bind(self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle)
 		self.canvas.tag_bind(self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle)
@@ -314,10 +275,13 @@ class Viewer:
 		exit(0)
 
 	def leave_hover_dropdown_toggle(self, event: Event = None) -> None:
-		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_icon if self.dropdown_shown else self.dropdown_icon)
+		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_icon if self.dropdown_shown else self.dropdown_hidden_icon)
 
 	def hover_dropdown_toggle(self, event: Event = None) -> None:
-		self.canvas.itemconfig(self.dropdown_button_id, image=self.dropdown_showing_hovered_icon if self.dropdown_shown else self.dropdown_hovered_icon)
+		self.canvas.itemconfig(
+			self.dropdown_button_id,
+			image=self.dropdown_showing_icon_hovered if self.dropdown_shown else self.dropdown_hidden_icon_hovered
+		)
 
 	def trash_image(self, event: Event = None) -> None:
 		self.clear_animation_variables()

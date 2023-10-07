@@ -25,6 +25,8 @@ def countTabLevel(line: str):
 if os.name != "nt":
 	raise Exception("Compiling on Linux/Mac not currently supported")
 
+INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
+
 WORKING_DIR = __file__.replace('\\', '/')
 WORKING_DIR = WORKING_DIR[:WORKING_DIR.rfind('/')+1]
 
@@ -65,37 +67,33 @@ else:
 			f.write(line)
 
 print("Starting up nuitka")
-cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 {WORKING_DIR}temp.py'
+cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 --follow-import-to="factories" {WORKING_DIR}temp.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:
-	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
-		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
+	# keeps a copy of previously installed version just in case
+	exe_install_path = f"{INSTALL_PATH}viewer.exe"
+	old_exe_install_path = f"{INSTALL_PATH}viewer2.exe"
 
-	if os.path.isfile("C:/Program Files/Personal Image Viewer/viewer2.exe"):
-		os.remove("C:/Program Files/Personal Image Viewer/viewer2.exe")
+	if os.path.isfile(old_exe_install_path):
+		os.remove(old_exe_install_path)
 
-	if os.path.isfile("C:/Program Files/Personal Image Viewer/viewer.exe"):
-		os.rename("C:/Program Files/Personal Image Viewer/viewer.exe", "C:/Program Files/Personal Image Viewer/viewer2.exe")
+	if os.path.isfile(exe_install_path):
+		os.rename(exe_install_path, old_exe_install_path)
 
-	if not os.path.exists("C:/Program Files/Personal Image Viewer/icon/"):
-		os.makedirs("C:/Program Files/Personal Image Viewer/icon/")
-
-	if not os.path.exists("C:/Program Files/Personal Image Viewer/util/"):
-		os.makedirs("C:/Program Files/Personal Image Viewer/util/")
-
-	os.system(f'copy "{os.path.abspath(WORKING_DIR+"icon/icon.ico")}" "{os.path.abspath("C:/Program Files/Personal Image Viewer/icon/icon.ico")}"')
-	copy_tree(f"{WORKING_DIR}util/", "C:/Program Files/Personal Image Viewer/util")
+	# data files
+	copy_tree(f"{WORKING_DIR}icon/", f"{INSTALL_PATH}icon")
+	copy_tree(f"{WORKING_DIR}util/", f"{INSTALL_PATH}util")
 
 	print("Waiting for nuitka compilation")
 	process.wait()
 	os.remove(f"{WORKING_DIR}temp.py")
-	rmtree(WORKING_DIR+"temp.build")
-	os.remove(WORKING_DIR+"temp.cmd")
-	os.rename(WORKING_DIR+"temp.exe", "C:/Program Files/Personal Image Viewer/viewer.exe")
+	os.remove(f"{WORKING_DIR}temp.cmd")
+	os.rename(f"{WORKING_DIR}temp.exe", exe_install_path)
+	rmtree(f"{WORKING_DIR}temp.build")
 
 except Exception as e:
 	print(e)
-	print("No root privileges, please run as admin")
+	print("This is probably due to a lack of root privileges, please run as root")
 	process.kill()
 	exit(0)
