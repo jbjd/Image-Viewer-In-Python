@@ -381,12 +381,19 @@ class Viewer:
 		self.redraw_screen = True
 		self.app.iconify()
 
-	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int], scale_factor: int) -> ImageTk.PhotoImage:
-		# simplejpeg is faster way of decoding to numpy array
+	def get_jpeg_scale_factor(self, ratio_to_screen) -> tuple[int, int]:
+		""" Gets scaling factor for images larger than screen """
+		if ratio_to_screen >= 4:
+			return (1, 4)
+		if ratio_to_screen >= 2:
+			return (1, 2)
+		return (1, 1)
+
+	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int], ratio_to_screen: int) -> ImageTk.PhotoImage:
+		# faster way of decoding to numpy array for JPEG
 		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
-				# the tuple scales down JPEGs bigger than screen. Uses log2 to fing largest power of 2 less than ratio between screen/image
-				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  (1, (int(log2(scale_factor | 1)) << 1) or 1))
+				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  self.get_jpeg_scale_factor(ratio_to_screen), 0)
 		else:
 			# This cv2 resize is faster than PIL, but convert from mode P to RGB then resize is slower. Yet, PIL resize for P mode images looks very bad so still use cv2
 			image_as_array = asarray(self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C')
@@ -421,10 +428,10 @@ class Viewer:
 			self.image_width, self.image_height = self.temp.size
 			size_kb: int = self.bit_size >> 10
 			self.image_size = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
-			dimensions, scale_factor = self.dimension_finder()
+			dimensions, ratio_to_screen = self.dimension_finder()
 			frame_count: int = getattr(self.temp, "n_frames", 1)
 			interpolation: int = cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
-			self.current_img = self.get_image_fit_to_screen(interpolation, dimensions, scale_factor)
+			self.current_img = self.get_image_fit_to_screen(interpolation, dimensions, ratio_to_screen)
 
 			# special case, file is animated
 			if frame_count > 1:
