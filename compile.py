@@ -39,10 +39,26 @@ with open(f"{WORKING_DIR}viewer.py", "r") as f:
 	lines = f.readlines()
 lines_without_debug = []
 # skip comments and lines used for debug purposes
+part_of_multiline_comment = ""
 for line in lines:
-	if "DEBUG" not in line and line.lstrip() != "" and line.lstrip()[0] != '#':
-		# also replaces all 4 spaces with tabs for consistency
-		lines_without_debug.append(line.replace("    ", "	"))
+	if part_of_multiline_comment:
+		if part_of_multiline_comment in line:
+			# multiline comment ended
+			part_of_multiline_comment = ""
+		continue
+	stripped_line = line.strip()
+
+	if stripped_line != "":
+		if stripped_line[:3] == '"""' or stripped_line[:3] == "'''":
+			if (
+				len(stripped_line) < 6 or
+				stripped_line[-3:] != '"""' and
+				stripped_line[-3:] != "'''"
+			):
+				part_of_multiline_comment = stripped_line[:3]
+		elif "DEBUG" not in stripped_line and stripped_line[0] != '#':
+			# also replaces all 4 spaces with tabs for consistency
+			lines_without_debug.append(line.replace("    ", "	"))
 lines.clear()
 
 """
