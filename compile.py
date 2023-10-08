@@ -7,7 +7,9 @@ from distutils.dir_util import copy_tree
 try:
 	import nuitka  # noqa: F401
 except ImportError:
-	raise ImportError("Nuitka is not installed on your system, it must be installed to compile")
+	raise ImportError(
+		"Nuitka is not installed on your system, it must be installed to compile"
+		)
 
 
 # returns tabs on left side of string
@@ -39,9 +41,14 @@ lines_without_debug = []
 # skip comments and lines used for debug purposes
 for line in lines:
 	if "DEBUG" not in line and line.lstrip() != "" and line.lstrip()[0] != '#':
-		lines_without_debug.append(line.replace("    ", "	"))  # also replaces all 4 spaces with tabs for consistency
+		# also replaces all 4 spaces with tabs for consistency
+		lines_without_debug.append(line.replace("    ", "	"))
 lines.clear()
-# make new temp py file to compile with that discards lines of code that only run on other operating systems
+
+"""
+make new temp.py file to compile
+it will discard lines of code that only run on other operating systems
+"""
 if os.name == "nt":
 	with open(f"{WORKING_DIR}temp.py", "w") as f:
 		i = 0
@@ -50,13 +57,19 @@ if os.name == "nt":
 			if re.search("if[ 	(]+os.name[ 	]*==[ 	]*('nt'|\"nt\")", line):
 				tabLevel = countTabLevel(line)
 				i += 1
-				while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
+				while (
+					i < len(lines_without_debug) and
+					countTabLevel(lines_without_debug[i]) > tabLevel
+				):
 					f.write(lines_without_debug[i][1:])
 					i += 1
 				if lines_without_debug[i].lstrip()[:4] == "else":
 					tabLevel = countTabLevel(lines_without_debug[i])
 					i += 1
-					while i < len(lines_without_debug) and countTabLevel(lines_without_debug[i]) > tabLevel:
+					while (
+						i < len(lines_without_debug) and
+						countTabLevel(lines_without_debug[i]) > tabLevel
+					):
 						i += 1
 			else:
 				f.write(line)
@@ -67,7 +80,9 @@ else:
 			f.write(line)
 
 print("Starting up nuitka")
-cmd_str = f'python -m nuitka --windows-disable-console --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 --follow-import-to="factories" {WORKING_DIR}temp.py'
+cmd_str = f'python -m nuitka --windows-disable-console \
+	--windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 \
+	--follow-import-to="factories" {WORKING_DIR}temp.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:
