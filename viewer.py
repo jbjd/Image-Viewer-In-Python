@@ -6,7 +6,6 @@ from tkinter.messagebox import askyesno
 from threading import Thread
 import os
 from re import sub
-from math import log2
 
 from factories.icon_factory import IconFactory
 
