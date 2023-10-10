@@ -39,7 +39,7 @@ else:
 
 
 class Viewer:
-	# class vars
+
 	DEFAULT_SPEED: int = 100
 	ANIMATION_SPEED_FACTOR: float = .75
 	VALID_FILE_TYPES: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}
@@ -72,7 +72,7 @@ class Viewer:
 		def __lt__(self, b) -> bool:
 			return utilHelper.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("jpeg_helper", "OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_hidden_icon", "dropdown_hidden_icon_hovered", "dropdown_showing_icon", "dropdown_showing_icon_hovered", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("size_ratio", "jpeg_helper", "OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_hidden_icon", "dropdown_hidden_icon_hovered", "dropdown_showing_icon", "dropdown_showing_icon_hovered", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
@@ -119,6 +119,7 @@ class Viewer:
 		self.app.update()  # updates winfo width and height to the current size, this is necessary
 		self.screen_w: int = self.app.winfo_width()
 		self.screen_h: int = self.app.winfo_height()
+		self.size_ratio: float = self.screen_h/1080
 		background = self.canvas.create_rectangle(0, 0, self.screen_w, self.screen_h, fill="black")
 		self.image_display = self.canvas.create_image(self.screen_w >> 1, self.screen_h >> 1, anchor="center")
 		self.load_assests(self.scale_pixels_to_screen(32))
@@ -153,7 +154,7 @@ class Viewer:
 
 	def scale_pixels_to_screen(self, original_pixels: int) -> int:
 		""" Normalize all pixels relative to a 1080 pixel tall screen """
-		return original_pixels*(self.screen_h//1080)
+		return int(original_pixels*self.size_ratio)
 
 	def handle_all_keybinds(self, event: Event) -> None:
 		if event.widget is self.app:
@@ -380,29 +381,30 @@ class Viewer:
 		self.redraw_screen = True
 		self.app.iconify()
 
-	def get_jpeg_scale_factor(self, ratio_to_screen) -> tuple[int, int]:
+	def get_jpeg_scale_factor(self) -> tuple[int, int] | None:
 		""" Gets scaling factor for images larger than screen """
+		ratio_to_screen: float = self.image_height / self.screen_h
 		if ratio_to_screen >= 4:
 			return (1, 4)
 		if ratio_to_screen >= 2:
 			return (1, 2)
-		return (1, 1)
+		return None
 
-	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int], ratio_to_screen: int) -> ImageTk.PhotoImage:
+	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int]) -> ImageTk.PhotoImage:
 		# faster way of decoding to numpy array for JPEG
 		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
-				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  self.get_jpeg_scale_factor(ratio_to_screen), 0)
+				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  self.get_jpeg_scale_factor(), 0)
 		else:
 			# This cv2 resize is faster than PIL, but convert from mode P to RGB then resize is slower. Yet, PIL resize for P mode images looks very bad so still use cv2
 			image_as_array = asarray(self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C')
 		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(image_as_array, dimensions, interpolation=interpolation)))
 
-	def dimension_finder(self) -> tuple[tuple[int, int], int]:
+	def dimension_finder(self) -> tuple[int, int]:
 		width: int = round(self.image_width * (self.screen_h/self.image_height))
 
 		# fit to height if width in screen, else fit to width and let height go off screen
-		return ((width, self.screen_h), self.image_height//self.screen_h) if width <= self.screen_w else ((self.screen_w, round(self.image_height * (self.screen_w/self.image_width))), self.image_width//self.screen_w)
+		return (width, self.screen_h) if width <= self.screen_w else (self.screen_w, round(self.image_height * (self.screen_w/self.image_width)))
 
 	# loads and displays an image
 	def image_loader(self) -> None:
@@ -427,10 +429,10 @@ class Viewer:
 			self.image_width, self.image_height = self.temp.size
 			size_kb: int = self.bit_size >> 10
 			self.image_size = f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
-			dimensions, ratio_to_screen = self.dimension_finder()
+			dimensions = self.dimension_finder()
 			frame_count: int = getattr(self.temp, "n_frames", 1)
 			interpolation: int = cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
-			self.current_img = self.get_image_fit_to_screen(interpolation, dimensions, ratio_to_screen)
+			self.current_img = self.get_image_fit_to_screen(interpolation, dimensions)
 
 			# special case, file is animated
 			if frame_count > 1:
