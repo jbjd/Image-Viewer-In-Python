@@ -46,7 +46,6 @@ class Viewer:
         "temp",
         "image_height",
         "image_width",
-        "current_image",
         "dropdown_button_id",
         "rename_button_id",
         "KEY_MAPPING",
@@ -441,7 +440,7 @@ class Viewer:
             self.image_width = cached_img_data.width
             self.image_height = cached_img_data.height
             self.image_size = cached_img_data.size_as_text
-            self.current_image = cached_img_data.image
+            current_image = cached_img_data.image
             self.temp.close()
         else:
             self.image_width, self.image_height = self.temp.size
@@ -454,12 +453,12 @@ class Viewer:
             interpolation: int = (
                 cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
             )
-            self.current_image = self.get_image_fit_to_screen(interpolation, dimensions)
+            current_image = self.get_image_fit_to_screen(interpolation, dimensions)
 
             # special case, file is animated
             if frame_count > 1:
                 self.aniamtion_frames = [None] * frame_count
-                self.aniamtion_frames[0] = self.current_image
+                self.aniamtion_frames[0] = current_image
                 Thread(
                     target=self.load_frame,
                     args=(1, dimensions, current_image_data.name, interpolation),
@@ -482,11 +481,11 @@ class Viewer:
                     self.image_width,
                     self.image_height,
                     self.image_size,
-                    self.current_image,
+                    current_image,
                     bit_size,
                 )
                 self.temp.close()
-        self.canvas.itemconfig(self.image_display_id, image=self.current_image)
+        self.canvas.itemconfig(self.image_display_id, image=current_image)
         self.app.title(current_image_data.name)
 
     def image_loader_safe(self) -> None:
