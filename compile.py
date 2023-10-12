@@ -27,7 +27,7 @@ print("Starting up nuitka")
 cmd_str = f'python -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 \
     --follow-import-to="factories" --follow-import-to="helpers" \
-    --follow-import-to="image_classes" {WORKING_DIR}viewer.py'
+    --follow-import-to="image_classes" --follow-import-to="viewer" {WORKING_DIR}main.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:
@@ -47,9 +47,9 @@ try:
 
     print("Waiting for nuitka compilation")
     process.wait()
-    os.remove(f"{WORKING_DIR}viewer.cmd")
-    os.rename(f"{WORKING_DIR}viewer.exe", exe_install_path)
-    rmtree(f"{WORKING_DIR}viewer.build")
+    os.remove(f"{WORKING_DIR}main.cmd")
+    os.rename(f"{WORKING_DIR}main.exe", exe_install_path)
+    rmtree(f"{WORKING_DIR}main.build")
 
 except Exception as e:
     print(e)

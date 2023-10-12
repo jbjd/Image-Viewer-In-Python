@@ -2,10 +2,7 @@
 
 __pycache__/
 
-viewer.exe
-temp.exe
-viewer.cmd
-temp.cmd
-temp.py
+main.exe
+main.cmd
 
 *.build/

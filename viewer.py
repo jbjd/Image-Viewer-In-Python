@@ -102,13 +102,13 @@ class Viewer:
         self.animation_id: str = ""
 
         # helpers for specific file types
-        path_to_exe: str = f"{os.path.dirname(os.path.realpath(argv[0]))}/"
-        self.jpeg_helper = TurboJPEG(f"{path_to_exe}util/libturbojpeg.dll")
+        path_to_exe = os.path.dirname(os.path.realpath(argv[0]))
+        self.jpeg_helper = TurboJPEG(f"{path_to_exe}/util/libturbojpeg.dll")
 
         # application and canvas
         self.app: Tk = Tk()
         if os.name == "nt":
-            self.app.iconbitmap(default=f"{path_to_exe}icon/icon.ico")
+            self.app.iconbitmap(default=f"{path_to_exe}/icon/icon.ico")
 
         self.cache: dict[str, CachedImage] = {}
         self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
@@ -772,14 +772,4 @@ class Viewer:
 
 
 if __name__ == "__main__":
-    DEBUG: bool = False
-    if len(argv) > 1:
-        Viewer(argv[1])
-    elif DEBUG:
-        Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")  # DEBUG
-    else:
-        print(
-            "An Image Viewer written in Python\n"
-            "Run with 'python -m viewer C:/path/to/an/image'"
-            ' or convert to an exe and select "open with" on your image'
-        )
+    Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")
