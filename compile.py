@@ -26,7 +26,7 @@ if not WORKING_DIR:
 print("Starting up nuitka")
 cmd_str = f'python -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 \
-    --follow-import-to="factories" {WORKING_DIR}viewer.py'
+    --follow-import-to="factories" --follow-import-to="helpers" {WORKING_DIR}viewer.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 try:

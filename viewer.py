@@ -6,6 +6,7 @@ import os
 from re import sub
 
 from factories.icon_factory import IconFactory
+from helpers.os import get_illegal_OS_char_re, OS_name_cmp, OSFileSortKey
 
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.1
 from send2trash import send2trash  # 1.8.2
@@ -13,37 +14,9 @@ import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
 from turbojpeg import TurboJPEG, TJPF_RGB  # 1.7.2
 
-path_to_exe: str = argv[0].replace("\\", "/")
-path_to_exe = path_to_exe[: path_to_exe.rfind("/") + 1]
-if os.name == "nt":
-    from ctypes import windll
-
-    class OSUtil:
-        OS_illegal_chars: str = '[\\\\/<>:"|?*]'
-
-        __slots__ = ()
-
-        def my_cmp_w(self, a, b) -> bool:
-            return windll.shlwapi.StrCmpLogicalW(a, b) < 0
-
-else:
-    # if can't determine OS
-    class OSUtil:
-        OS_illegal_chars: str = "[/]"
-
-        __slots__ = ()
-
-        def my_cmp_w(self, a, b) -> bool:
-            if a == b:
-                return 0
-            return a < b
-
-
-os_utilities = OSUtil()
-
 
 class Viewer:
-    DEFAULT_SPEED: int = 100
+    DEFAULT_GIF_SPEED: int = 100
     ANIMATION_SPEED_FACTOR: float = 0.75
     VALID_FILE_TYPES: set[str] = {
         ".png",
@@ -75,16 +48,6 @@ class Viewer:
         def __init__(self, name: str) -> None:
             self.suffix = name[name.rfind(".") :].lower()
             self.name = name
-
-    # key for sorting
-    class IKey:
-        __slots__ = "name"
-
-        def __init__(self, image) -> None:
-            self.name: str = image.name
-
-        def __lt__(self, b) -> bool:
-            return os_utilities.my_cmp_w(self.name, b.name)
 
     __slots__ = (
         "size_ratio",
@@ -157,6 +120,7 @@ class Viewer:
         self.animation_id: str = ""
 
         # helpers for specific file types
+        path_to_exe: str = f"{os.path.dirname(os.path.realpath(argv[0]))}/"
         self.jpeg_helper = TurboJPEG(f"{path_to_exe}util/libturbojpeg.dll")
 
         # application and canvas
@@ -191,7 +155,7 @@ class Viewer:
             fp = self.ImagePath(p)
             if fp.suffix in self.VALID_FILE_TYPES:
                 self.files.append(fp)
-        self.files.sort(key=self.IKey)
+        self.files.sort(key=OSFileSortKey)
         self.cur_index = self.binary_search(current_image.name)
         self.full_path = f"{self.image_directory}{self.files[self.cur_index].name}"
         ImageDraw.ImageDraw.font = ImageFont.truetype(
@@ -511,7 +475,7 @@ class Viewer:
         # make a new name removing illegal char for current OS
         # windows allows spaces at end of name but thats a bit silly so strip anyway
         new_name: str = sub(
-            os_utilities.OS_illegal_chars, "", self.rename_entry.get().strip()
+            get_illegal_OS_char_re(), "", self.rename_entry.get().strip()
         )
 
         new_image_extension: str = new_name[new_name.rfind(".", -5) :]
@@ -635,9 +599,9 @@ class Viewer:
                         self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR
                     )
                     if speed < 2:
-                        speed = self.DEFAULT_SPEED
+                        speed = self.DEFAULT_GIF_SPEED
                 except (KeyError, AttributeError):
-                    speed = self.DEFAULT_SPEED
+                    speed = self.DEFAULT_GIF_SPEED
 
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
@@ -818,7 +782,7 @@ class Viewer:
             current_image = self.files[mid].name
             if target_image == current_image:
                 return mid
-            if os_utilities.my_cmp_w(target_image, current_image):
+            if OS_name_cmp(target_image, current_image):
                 high = mid - 1
             else:
                 low = mid + 1
@@ -826,7 +790,7 @@ class Viewer:
 
 
 if __name__ == "__main__":
-    DEBUG: bool = True
+    DEBUG: bool = False
     if len(argv) > 1:
         Viewer(argv[1])
     elif DEBUG:
