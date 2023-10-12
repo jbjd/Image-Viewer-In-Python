@@ -7,7 +7,7 @@ from re import sub
 
 from factories.icon_factory import IconFactory
 
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.0
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.1
 from send2trash import send2trash  # 1.8.2
 import cv2  # 4.8.0.76
 from numpy import asarray  # 1.25.2
