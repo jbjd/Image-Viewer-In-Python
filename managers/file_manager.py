@@ -1,8 +1,8 @@
 import os
 from re import sub
 
-from helpers.os_helper import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
-from helpers.rename_helper import try_convert_file_and_save_new, rename_image
+from util.os import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
+from util.rename import try_convert_file_and_save_new, rename_image
 from image_classes import ImagePath, CachedImage
 
 from PIL.Image import Image
@@ -33,6 +33,7 @@ class ImageFileManager:
     )
 
     def __init__(self, first_image_to_load: str) -> None:
+        """Load single file for display before we load the rest"""
         first_image_to_load = first_image_to_load.replace("\\", "/")
         first_image_data = ImagePath(
             first_image_to_load[first_image_to_load.rfind("/") + 1 :]
@@ -50,10 +51,13 @@ class ImageFileManager:
         self.cache: dict[str, CachedImage] = {}
 
     def _populate_data_attributes(self) -> None:
+        """Sets variables about current image.
+        Should be called when lenth of files changes"""
         self.current_image = self._files[self._current_index]
         self.path_to_current_image = f"{self.image_directory}/{self.current_image.name}"
 
     def fully_load_images(self) -> None:
+        """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._current_index].name
         self._files.clear()
 
@@ -63,7 +67,7 @@ class ImageFileManager:
                 self._files.append(fp)
 
         self._files.sort(key=OSFileSortKey)
-        self._current_index = self.binary_search(image_to_start_at)
+        self._current_index = self._binary_search(image_to_start_at)
         self._populate_data_attributes()
 
     def move_current_index(self, amount: int) -> None:
@@ -92,6 +96,8 @@ class ImageFileManager:
     def rename_or_convert_current_image(
         self, image_to_close: Image, new_name: str
     ) -> bool:
+        """try to either rename or convert based on user input.
+        return: if file was converted and a new file was created"""
         new_name = sub(get_illegal_OS_char_re(), "", new_name)
         new_image_data = ImagePath(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
@@ -118,7 +124,7 @@ class ImageFileManager:
 
     def add_new_image(self, new_name: str) -> None:
         image_data = ImagePath(new_name)
-        self._files.insert(self.binary_search(image_data.name), image_data)
+        self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
     def cache_current_image(
@@ -137,7 +143,7 @@ class ImageFileManager:
             self.path_to_image
         ) == self.cache.get(self.current_image.name, 0)
 
-    def binary_search(self, target_image: str) -> int:
+    def _binary_search(self, target_image: str) -> int:
         """
         find index of image in the sorted list of all images in the directory
         target_image: name of image file to find

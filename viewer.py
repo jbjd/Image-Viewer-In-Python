@@ -73,7 +73,7 @@ class Viewer:
 
         # helpers for specific file types
         path_to_exe = os.path.dirname(os.path.realpath(argv[0]))
-        self.jpeg_helper = TurboJPEG(f"{path_to_exe}/util/libturbojpeg.dll")
+        self.jpeg_helper = TurboJPEG(f"{path_to_exe}/dll/libturbojpeg.dll")
 
         # application and canvas
         self.app: Tk = Tk()

@@ -3,19 +3,21 @@ import os
 if os.name == "nt":
     from ctypes import windll
 
-    def get_illegal_OS_char_re():
-        return r'[\\\\/<>:"|?*]'
+    illegal_char = r'[\\\\/<>:"|?*]'
 
     def OS_name_cmp(a, b) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
 else:
     # if can't determine OS
-    def get_illegal_OS_char_re():
-        return r"[/]"
+    illegal_char = r"[/]"
 
     def OS_name_cmp(a, b) -> bool:
         return a < b
+
+
+def get_illegal_OS_char_re():
+    return illegal_char
 
 
 # used to sort files same as current OS
