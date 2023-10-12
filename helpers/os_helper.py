@@ -18,6 +18,7 @@ else:
         return a < b
 
 
+# used to sort files same as current OS
 class OSFileSortKey:
     __slots__ = "name"
 

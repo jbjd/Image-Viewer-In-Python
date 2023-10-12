@@ -1,10 +1,12 @@
 import os
 from re import sub
 
-from helpers.os import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
+from helpers.os_helper import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
+from helpers.rename_helper import try_convert_file_and_save_new, rename_image
 from image_classes import ImagePath, CachedImage
 
-from PIL import Image
+from PIL.Image import Image
+from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
 
@@ -87,65 +89,29 @@ class ImageFileManager:
 
         return remaining_image_count
 
-    def _convert_file_and_save_new(self, image_to_close: Image, new_name: str) -> bool:
-        new_image_path: str = f"{self.image_directory}/{new_name}"
-        if os.path.isfile(new_image_path) or os.path.isdir(new_image_path):
-            raise FileExistsError()
-
-        image_to_close.close()
-        with open(self.path_to_current_image, mode="rb") as fp:
-            with Image.open(fp) as temp_img:
-                new_image_data = ImagePath(new_name)
-                # refuse to convert animations for now
-                if (
-                    getattr(temp_img, "n_frames", 1) > 1
-                    and new_image_data.suffix != ".webp"
-                ):
-                    raise ValueError()
-
-                match new_image_data.suffix:
-                    case ".webp":
-                        temp_img.save(
-                            new_image_path, "WebP", quality=100, method=6, save_all=True
-                        )
-                    case ".png":
-                        temp_img.save(new_image_path, "PNG", optimize=True)
-                    case ".bmp":
-                        temp_img.save(new_image_path, "BMP")
-                    case ".jpg" | ".jpeg" | ".jif" | ".jfif" | ".jpe":
-                        # if two different JPEG varients
-                        if self.current_image.suffix[1] == "j":
-                            return False
-                        temp_img.save(
-                            new_image_path, "JPEG", optimize=True, quality=100
-                        )
-                    case _:
-                        return False
-
-                fp.flush()
-
-        return True
-
-    def _rename_current_image(self, image_to_close: Image, new_name: str) -> None:
-        new_image_path: str = f"{self.image_directory}/{new_name}"
-        if os.path.isfile(new_image_path) or os.path.isdir(new_image_path):
-            raise FileExistsError()
-        image_to_close.close()
-        os.rename(self.path_to_current_image, new_image_path)
-
     def rename_or_convert_current_image(
         self, image_to_close: Image, new_name: str
     ) -> bool:
         new_name = sub(get_illegal_OS_char_re(), "", new_name)
         new_image_data = ImagePath(new_name)
-        if new_image_data.suffix != self.current_image.suffix:
-            if new_image_data.suffix not in self.VALID_FILE_TYPES:
-                new_name += self.current_image.suffix
-            elif self._convert_file_and_save_new(image_to_close, new_name):
-                self.add_new_image(new_name)
-                return True
+        if new_image_data.suffix not in self.VALID_FILE_TYPES:
+            new_name += self.current_image.suffix
+            new_image_data = ImagePath(new_name)
+        new_path: str = f"{self.image_directory}/{new_name}"
+        if (
+            new_image_data.suffix != self.current_image.suffix
+            and try_convert_file_and_save_new(
+                image_to_close,
+                self.path_to_current_image,
+                self.current_image,
+                new_path,
+                new_image_data,
+            )
+        ):
+            self.add_new_image(new_name)
+            return True
 
-        self._rename_current_image(image_to_close, new_name)
+        rename_image(image_to_close, self.path_to_current_image, new_path)
         self.remove_current_image(delete_from_disk=False)
         self.add_new_image(new_name)
         return False
@@ -155,7 +121,18 @@ class ImageFileManager:
         self._files.insert(self.binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
-    def image_cache_still_fresh(self) -> bool:
+    def cache_current_image(
+        self, width: int, height: int, size, photo_image: PhotoImage, bit_size: int
+    ):
+        self.cache[self.current_image.name] = CachedImage(
+            width,
+            height,
+            size,
+            photo_image,
+            bit_size,
+        )
+
+    def current_image_cache_still_fresh(self) -> bool:
         return os.path.isfile(self.path_to_image) and os.path.getsize(
             self.path_to_image
         ) == self.cache.get(self.current_image.name, 0)

@@ -5,7 +5,6 @@ from threading import Thread
 import os
 
 from factories.icon_factory import IconFactory
-from image_classes import CachedImage
 from managers.file_manager import ImageFileManager
 
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError
@@ -173,7 +172,7 @@ class Viewer:
         if event.widget is not self.app or not self.redraw_screen:
             return
         self.redraw_screen = False
-        if self.file_manager.image_cache_still_fresh():
+        if self.file_manager.current_image_cache_still_fresh():
             return
         self.image_loader_safe()
 
@@ -479,7 +478,7 @@ class Viewer:
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
                 # cache non-animated images
-                self.file_manager.cache[current_image_data.name] = CachedImage(
+                self.file_manager.cache_current_image(
                     self.image_width,
                     self.image_height,
                     self.image_size,
