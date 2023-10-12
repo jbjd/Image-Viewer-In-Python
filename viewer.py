@@ -3,56 +3,38 @@ from tkinter import Tk, Canvas, Entry, Event
 from tkinter.messagebox import askyesno
 from threading import Thread
 import os
-from re import sub
 
 from factories.icon_factory import IconFactory
-from helpers.os import get_illegal_OS_char_re, OS_name_cmp, OSFileSortKey
-from image_classes import ImagePath, CachedImage
+from image_classes import CachedImage
+from managers.file_manager import ImageFileManager
 
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.1
-from send2trash import send2trash  # 1.8.2
-import cv2  # 4.8.0.76
-from numpy import asarray  # 1.25.2
-from turbojpeg import TurboJPEG, TJPF_RGB  # 1.7.2
+from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError
+import cv2
+from numpy import asarray
+from turbojpeg import TurboJPEG, TJPF_RGB
 
 
 class Viewer:
     DEFAULT_GIF_SPEED: int = 100
     ANIMATION_SPEED_FACTOR: float = 0.75
-    VALID_FILE_TYPES: set[str] = {
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".jfif",
-        ".jif",
-        ".jpe",
-        ".webp",
-        ".gif",
-        ".bmp",
-    }
 
     __slots__ = (
         "size_ratio",
         "jpeg_helper",
-        "full_path",
-        "image_directory",
         "topbar_shown",
         "dropdown_shown",
         "redraw_screen",
         "dropdown_image",
         "rename_window_x_offset",
-        "bit_size",
         "image_size",
         "aniamtion_frames",
         "animation_id",
         "app",
-        "cache",
         "canvas",
         "screen_w",
         "screen_h",
-        "image_display",
-        "files",
-        "cur_index",
+        "image_display_id",
+        "file_manager",
         "topbar",
         "file_name_text_id",
         "dropdown_hidden_icon",
@@ -65,24 +47,15 @@ class Viewer:
         "temp",
         "image_height",
         "image_width",
-        "current_img",
+        "current_image",
         "dropdown_button_id",
         "rename_button_id",
         "KEY_MAPPING",
         "KEY_MAPPING_LIMITED",
     )
 
-    def __init__(self, image_path_raw: str) -> None:
-        image_path_raw = image_path_raw.replace("\\", "/")
-        if (
-            not os.path.isfile(image_path_raw)
-            or image_path_raw[image_path_raw.rfind(".") :] not in self.VALID_FILE_TYPES
-        ):
-            exit(1)
-
-        self.image_directory: str = image_path_raw[: image_path_raw.rfind("/") + 1]
-        if not os.access(self.image_directory, os.W_OK):
-            exit(1)
+    def __init__(self, first_image_to_show: str) -> None:
+        self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
         self.topbar_shown: bool = False
@@ -93,8 +66,6 @@ class Viewer:
         self.image_width: int = 0
         self.image_height: int = 0
         self.rename_window_x_offset: int = 0
-        self.bit_size: int = 0
-        self.cur_index: int = 0
         self.image_size: str = ""
 
         # variables used for animations, empty when no animation playing
@@ -110,7 +81,6 @@ class Viewer:
         if os.name == "nt":
             self.app.iconbitmap(default=f"{path_to_exe}/icon/icon.ico")
 
-        self.cache: dict[str, CachedImage] = {}
         self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
         self.canvas.pack(anchor="nw", fill="both", expand=1)
         self.app.attributes("-fullscreen", True)
@@ -122,24 +92,15 @@ class Viewer:
         background = self.canvas.create_rectangle(
             0, 0, self.screen_w, self.screen_h, fill="black"
         )
-        self.image_display = self.canvas.create_image(
+        self.image_display_id = self.canvas.create_image(
             self.screen_w >> 1, self.screen_h >> 1, anchor="center"
         )
         self.load_assests(self.scale_pixels_to_screen(32))
 
         # draw first image, then get all image paths in directory
-        current_image = ImagePath(image_path_raw[image_path_raw.rfind("/") + 1 :])
-        self.files = [current_image]
         self.image_loader()
         self.app.update()
-        self.files: list[ImagePath] = []
-        for p in next(os.walk(self.image_directory), (None, None, []))[2]:
-            fp = ImagePath(p)
-            if fp.suffix in self.VALID_FILE_TYPES:
-                self.files.append(fp)
-        self.files.sort(key=OSFileSortKey)
-        self.cur_index = self.binary_search(current_image.name)
-        self.full_path = f"{self.image_directory}{self.files[self.cur_index].name}"
+        self.file_manager.fully_load_images()
         ImageDraw.ImageDraw.font = ImageFont.truetype(
             "arial.ttf", self.scale_pixels_to_screen(22)
         )
@@ -157,7 +118,7 @@ class Viewer:
             "Down": self.show_topbar,
         }  # allowed in entry or main app
         self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
-        self.canvas.tag_bind(self.image_display, "<Button-1>", self.handle_click)
+        self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
         self.app.bind("<FocusIn>", self.redraw)
         self.app.bind("<MouseWheel>", self.scroll)
         self.app.bind("<Escape>", self.escape_button)
@@ -192,17 +153,14 @@ class Viewer:
         self.canvas.itemconfig(self.rename_window_id, state="hidden")
         self.app.focus()
 
-    def move(self, dir: int) -> None:
+    def move(self, amount: int) -> None:
         """
         Move to different image
-        dir: 1 or -1 indicating movement to next or previous
+        amount: 1 or -1 indicating movement to next or previous
         """
         self.hide_rename_window()
-        self.cur_index += dir
-        if self.cur_index < 0:
-            self.cur_index = len(self.files) - 1
-        elif self.cur_index >= len(self.files):
-            self.cur_index = 0
+        self.file_manager.move_current_index(amount)
+
         self.image_loader_safe()
         if self.topbar_shown:
             self.refresh_topbar()
@@ -215,10 +173,7 @@ class Viewer:
         if event.widget is not self.app or not self.redraw_screen:
             return
         self.redraw_screen = False
-        if (
-            os.path.isfile(self.full_path)
-            and os.path.getsize(self.full_path) == self.bit_size
-        ):
+        if self.file_manager.image_cache_still_fresh():
             return
         self.image_loader_safe()
 
@@ -304,7 +259,6 @@ class Viewer:
             self.screen_w, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
 
-        # rename window
         self.rename_window_id: int = self.canvas.create_window(
             0, 0, width=200, height=24, anchor="nw"
         )
@@ -378,11 +332,8 @@ class Viewer:
 
     def trash_image(self, event: Event = None) -> None:
         self.clear_animation_variables()
-        send2trash(
-            os.path.abspath(self.full_path)
-        )  # had errors in windows without abspath
         self.hide_rename_window()
-        self.remove_image_and_move_to_next()
+        self.remove_image_and_move_to_next(delete_from_disk=True)
 
     def toggle_show_rename_window(self, event: Event = None) -> None:
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
@@ -395,89 +346,29 @@ class Viewer:
         self.canvas.coords(self.rename_window_id, self.rename_window_x_offset + 40, 4)
         self.rename_entry.focus()
 
-    def cleanup_after_rename(self, new_name: str) -> None:
-        new_name_obj = ImagePath(new_name)
-        self.files.insert(self.binary_search(new_name_obj.name), new_name_obj)
+    def cleanup_after_rename(self) -> None:
         self.hide_rename_window()
         self.image_loader_safe()
         self.refresh_topbar()
 
-    # asks os to rename file and changes position in list to new location
-    def rename_image(self, new_name: str, new_path: str) -> None:
-        if os.path.isfile(new_path) or os.path.isdir(new_path):
-            raise FileExistsError()
-
-        # need to close: would be open if currently loading GIF frames
-        self.temp.close()
-        os.rename(self.full_path, new_path)
-        self.remove_image()
-        self.cleanup_after_rename(new_name)
-
-    # returns bool of successful conversion
-    def convert_file_and_save_new(
-        self, new_name: str, new_path: str, image_extension: str
-    ) -> bool:
-        if os.path.isfile(new_path) or os.path.isdir(new_path):
-            raise FileExistsError()
-
-        with open(self.full_path, mode="rb") as fp:
-            with Image.open(fp) as temp_img:
-                # refuse to convert animations for now
-                if getattr(temp_img, "n_frames", 1) > 1 and image_extension != ".webp":
-                    raise ValueError()
-
-                match image_extension:
-                    case ".webp":
-                        temp_img.save(
-                            new_path, "WebP", quality=100, method=6, save_all=True
-                        )
-                    case ".png":
-                        temp_img.save(new_path, "PNG", optimize=True)
-                    case ".bmp":
-                        temp_img.save(new_path, "BMP")
-                    case ".jpg" | ".jpeg" | ".jif" | ".jfif" | ".jpe":
-                        # if two different JPEG varients
-                        if self.files[self.cur_index].suffix[1] == "j":
-                            return False
-                        temp_img.save(new_path, "JPEG", optimize=True, quality=100)
-                    case _:
-                        return False
-
-                fp.flush()
-
-        if askyesno(
-            "Confirm deletion", f"Converted file to {image_extension}, delete old file?"
-        ):
-            self.trash_image()
-
-        self.cleanup_after_rename(new_name)
-        return True
-
     def try_rename_or_convert(self, event: Event = None) -> None:
-        # make a new name removing illegal char for current OS
-        # windows allows spaces at end of name but thats a bit silly so strip anyway
-        new_name: str = sub(
-            get_illegal_OS_char_re(), "", self.rename_entry.get().strip()
-        )
-
-        new_image_extension: str = new_name[new_name.rfind(".", -5) :]
-
-        # if the extension is valid, try to convert
-        # otherwise use old extension and rename the file
         try:
-            if new_image_extension != self.files[self.cur_index].suffix:
-                if new_image_extension not in self.VALID_FILE_TYPES:
-                    new_name += self.files[self.cur_index].suffix
-                elif self.convert_file_and_save_new(
-                    new_name, f"{self.image_directory}{new_name}", new_image_extension
-                ):
-                    return
-
-            self.rename_image(new_name, f"{self.image_directory}{new_name}")
+            was_converted = self.file_manager.rename_or_convert_current_image(
+                self.temp, self.rename_entry.get().strip()
+            )
         except Exception:
             # flash red to tell user rename failed
             self.rename_entry.config(bg="#e6505f")
             self.app.after(400, self.reset_entry_color)
+            return
+
+        if was_converted and askyesno(
+            "Confirm deletion",
+            "Converted file to new format, delete old file?",
+        ):
+            self.remove_image_and_move_to_next(delete_from_disk=True)
+
+        self.cleanup_after_rename()
 
     def reset_entry_color(self):
         self.rename_entry.config(bg="white")
@@ -500,9 +391,9 @@ class Viewer:
     ) -> ImageTk.PhotoImage:
         # faster way of decoding to numpy array for JPEG
         if self.temp.format == "JPEG":
-            with open(self.full_path, "rb") as im:
+            with open(self.file_manager.path_to_current_image, "rb") as im_bytes:
                 image_as_array = self.jpeg_helper.decode(
-                    im.read(), TJPF_RGB, self.get_jpeg_scale_factor(), 0
+                    im_bytes.read(), TJPF_RGB, self.get_jpeg_scale_factor(), 0
                 )
         else:
             # cv2 resize is faster than PIL, but convert to RGB then resize is slower
@@ -533,29 +424,29 @@ class Viewer:
 
     # loads and displays an image
     def image_loader(self) -> None:
-        current_img = self.files[self.cur_index]
-        self.full_path = f"{self.image_directory}{self.files[self.cur_index].name}"
+        current_image_data = self.file_manager.current_image
 
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            self.temp = Image.open(self.full_path)
-        except (FileNotFoundError, UnidentifiedImageError):
-            self.remove_image_and_move_to_next()
+            self.temp = Image.open(self.file_manager.path_to_current_image)
+        except (FileNotFoundError, UnidentifiedImageError) as e:
+            print(e)
+            self.remove_image_and_move_to_next(delete_from_disk=False)
             return
 
-        self.bit_size: int = os.path.getsize(self.full_path)
+        bit_size: int = os.path.getsize(self.file_manager.path_to_current_image)
 
         # check if was cached and not changed outside of program
-        cached_img_data = self.cache.get(current_img.name, None)
-        if cached_img_data is not None and self.bit_size == cached_img_data.bit_size:
+        cached_img_data = self.file_manager.cache.get(current_image_data.name, None)
+        if cached_img_data is not None and bit_size == cached_img_data.bit_size:
             self.image_width = cached_img_data.width
             self.image_height = cached_img_data.height
             self.image_size = cached_img_data.size_as_text
-            self.current_img = cached_img_data.image
+            self.current_image = cached_img_data.image
             self.temp.close()
         else:
             self.image_width, self.image_height = self.temp.size
-            size_kb: int = self.bit_size >> 10
+            size_kb: int = bit_size >> 10
             self.image_size = (
                 f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
             )
@@ -564,15 +455,15 @@ class Viewer:
             interpolation: int = (
                 cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
             )
-            self.current_img = self.get_image_fit_to_screen(interpolation, dimensions)
+            self.current_image = self.get_image_fit_to_screen(interpolation, dimensions)
 
             # special case, file is animated
             if frame_count > 1:
                 self.aniamtion_frames = [None] * frame_count
-                self.aniamtion_frames[0] = self.current_img
+                self.aniamtion_frames[0] = self.current_image
                 Thread(
                     target=self.load_frame,
-                    args=(1, dimensions, current_img.name, interpolation),
+                    args=(1, dimensions, current_image_data.name, interpolation),
                     daemon=True,
                 ).start()
                 # find animation frame speed
@@ -588,20 +479,19 @@ class Viewer:
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
                 # cache non-animated images
-                self.cache[current_img.name] = CachedImage(
+                self.file_manager.cache[current_image_data.name] = CachedImage(
                     self.image_width,
                     self.image_height,
                     self.image_size,
-                    self.current_img,
-                    self.bit_size,
+                    self.current_image,
+                    bit_size,
                 )
                 self.temp.close()
-        self.canvas.itemconfig(self.image_display, image=self.current_img)
-        self.app.title(current_img.name)
+        self.canvas.itemconfig(self.image_display_id, image=self.current_image)
+        self.app.title(current_image_data.name)
 
-    # call this when an animation might have been playing before
-    # and you need to load a new image
     def image_loader_safe(self) -> None:
+        """Wrapper for image_loader when an animation might have been playing"""
         self.clear_animation_variables()
         self.image_loader()
 
@@ -619,18 +509,13 @@ class Viewer:
     def handle_click(self, event: Event) -> None:
         self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
-    def remove_image(self) -> None:
-        # delete image from files array and from cache if present
-        self.cache.pop(self.files.pop(self.cur_index).name, None)
+    def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
+        remaining_image_count: int = self.file_manager.remove_current_image(
+            delete_from_disk
+        )
 
-    def remove_image_and_move_to_next(self) -> None:
-        self.remove_image()
-
-        number_of_images: int = len(self.files)
-        if number_of_images == 0:
+        if remaining_image_count <= 0:
             self.exit()
-        if self.cur_index >= number_of_images:
-            self.cur_index = number_of_images - 1
 
         self.image_loader()
         if self.topbar_shown:
@@ -638,7 +523,7 @@ class Viewer:
 
     def refresh_topbar(self) -> None:
         self.canvas.itemconfig(
-            self.file_name_text_id, text=self.files[self.cur_index].name
+            self.file_name_text_id, text=self.file_manager.current_image.name
         )
         self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
         self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
@@ -667,7 +552,7 @@ class Viewer:
             frame_index -= 1
             ms_until_next_frame += 10
         else:
-            self.canvas.itemconfig(self.image_display, image=current_frame)
+            self.canvas.itemconfig(self.image_display_id, image=current_frame)
 
         self.animation_id = self.app.after(
             ms_until_next_frame, self.animate, frame_index, speed
@@ -681,7 +566,7 @@ class Viewer:
         interpolation: int,
     ) -> None:
         # if user moved to new image, don't keep loading previous animated image
-        if file_name != self.files[self.cur_index].name:
+        if file_name != self.file_manager.current_image.name:
             return
         try:
             self.temp.seek(frame_index)
@@ -692,7 +577,7 @@ class Viewer:
         except Exception:
             # Scrolling, recursion ending, etc cause variety of errors
             # Catch and close if thread was for current animation
-            if file_name == self.files[self.cur_index].name:
+            if file_name == self.file_manager.current_image.name:
                 self.temp.close()
 
     def get_frame_fit_to_screen(
@@ -753,23 +638,7 @@ class Viewer:
 
     # END DROPDOWN FUNCTIONS
 
-    def binary_search(self, target_image: str) -> int:
-        """
-        find index of image in the sorted list of all images in the directory
-        target_image: name of image file to find
-        """
-        low, high = 0, len(self.files) - 1
-        while low <= high:
-            mid = (low + high) >> 1
-            current_image = self.files[mid].name
-            if target_image == current_image:
-                return mid
-            if OS_name_cmp(target_image, current_image):
-                high = mid - 1
-            else:
-                low = mid + 1
-        return low
 
-
+# For testing
 if __name__ == "__main__":
     Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")
