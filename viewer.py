@@ -7,7 +7,8 @@ import os
 from factories.icon_factory import IconFactory
 from managers.file_manager import ImageFileManager
 
-from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from PIL.ImageTk import PhotoImage
 import cv2
 from numpy import asarray
 from turbojpeg import TurboJPEG, TJPF_RGB
@@ -270,8 +271,8 @@ class Viewer:
     # for simple buttons on topbar that only change on hover and have on click event
     def make_topbar_button(
         self,
-        regular_image: ImageTk.PhotoImage,
-        hovered_image: ImageTk.PhotoImage,
+        regular_image: PhotoImage,
+        hovered_image: PhotoImage,
         anchor: str,
         x_offset: int,
         function_to_bind,
@@ -386,7 +387,7 @@ class Viewer:
 
     def get_image_fit_to_screen(
         self, interpolation: int, dimensions: tuple[int, int]
-    ) -> ImageTk.PhotoImage:
+    ) -> PhotoImage:
         # faster way of decoding to numpy array for JPEG
         if self.temp.format == "JPEG":
             with open(self.file_manager.path_to_current_image, "rb") as im_bytes:
@@ -400,7 +401,7 @@ class Viewer:
                 self.temp if self.temp.mode != "P" else self.temp.convert("RGB"),
                 order="C",
             )
-        return ImageTk.PhotoImage(
+        return PhotoImage(
             Image.fromarray(
                 cv2.resize(image_as_array, dimensions, interpolation=interpolation)
             )
@@ -543,7 +544,7 @@ class Viewer:
             frame_index = 0
 
         ms_until_next_frame: int = speed
-        current_frame: ImageTk.PhotoImage = self.aniamtion_frames[frame_index]
+        current_frame: PhotoImage = self.aniamtion_frames[frame_index]
         # if tried to show next frame before it is loaded
         # reset to current frame and try again after delay
         if current_frame is None:
@@ -580,8 +581,8 @@ class Viewer:
 
     def get_frame_fit_to_screen(
         self, interpolation: int, dimensions: tuple[int, int]
-    ) -> ImageTk.PhotoImage:
-        return ImageTk.PhotoImage(
+    ) -> PhotoImage:
+        return PhotoImage(
             Image.fromarray(
                 cv2.resize(
                     asarray(self.temp.convert("RGB"), order="C"),
@@ -629,7 +630,7 @@ class Viewer:
             (10, int(text_bbox[3] * 3)), f"Size: {self.image_size}", fill="white"
         )
 
-        self.dropdown_image = ImageTk.PhotoImage(box_to_draw_on._image)
+        self.dropdown_image = PhotoImage(box_to_draw_on._image)
         self.canvas.itemconfig(
             self.dropdown_id, image=self.dropdown_image, state="normal"
         )

@@ -1,4 +1,4 @@
-from PIL import ImageTk
+from PIL.ImageTk import PhotoImage
 
 
 # struct for holding cached images
@@ -10,7 +10,7 @@ class CachedImage:
         self.width: int = width
         self.height: int = height
         self.size_as_text: str = size_as_text
-        self.image: ImageTk.PhotoImage = image
+        self.image: PhotoImage = image
         self.bit_size: int = bit_size
 
 
