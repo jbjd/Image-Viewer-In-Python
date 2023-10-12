@@ -52,7 +52,8 @@ try:
     rmtree(f"{WORKING_DIR}main.build")
 
 except Exception as e:
-    print(e)
-    print("This is probably due to a lack of root privileges, please run as root")
     process.kill()
-    exit(0)
+    raise Exception(
+        "Compile failed. "
+        "This is likely due to a lack of root privileges, please run as root"
+    ) from e
