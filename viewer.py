@@ -7,7 +7,9 @@ import os
 from factories.icon_factory import IconFactory
 from managers.file_manager import ImageFileManager
 
-from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
+from PIL.ImageDraw import ImageDraw, Draw
+from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
 import cv2
 from numpy import asarray
@@ -100,10 +102,8 @@ class Viewer:
         self.image_loader()
         self.app.update()
         self.file_manager.fully_load_images()
-        ImageDraw.ImageDraw.font = ImageFont.truetype(
-            "arial.ttf", self.scale_pixels_to_screen(22)
-        )
-        ImageDraw.ImageDraw.fontmode = "L"  # antialiasing
+        ImageDraw.font = truetype("arial.ttf", self.scale_pixels_to_screen(22))
+        ImageDraw.fontmode = "L"  # antialiasing
 
         # events based on input
         self.KEY_MAPPING = {
@@ -617,9 +617,9 @@ class Viewer:
     def create_details_dropdown(self) -> None:
         image_dimension_text: str = f"Pixels: {self.image_width}x{self.image_height}"
 
-        text_bbox: tuple = ImageDraw.ImageDraw.font.getbbox(image_dimension_text)
+        text_bbox: tuple = ImageDraw.font.getbbox(image_dimension_text)
 
-        box_to_draw_on = ImageDraw.Draw(
+        box_to_draw_on: ImageDraw = Draw(
             Image.new(
                 "RGBA", (text_bbox[2] + 20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)
             ),
