@@ -139,8 +139,8 @@ class ImageFileManager:
         )
 
     def current_image_cache_still_fresh(self) -> bool:
-        return os.path.isfile(self.path_to_image) and os.path.getsize(
-            self.path_to_image
+        return os.path.isfile(self.path_to_current_image) and os.path.getsize(
+            self.path_to_current_image
         ) == self.cache.get(self.current_image.name, 0)
 
     def _binary_search(self, target_image: str) -> int:
