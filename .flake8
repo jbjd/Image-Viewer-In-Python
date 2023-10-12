@@ -1,3 +1,4 @@
 [flake8]
-# W191: tabs, E501: unused imports
+max-line-length = 99
+# W191: tabs
 extend-ignore = W191

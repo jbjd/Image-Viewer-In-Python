@@ -20,22 +20,25 @@ path_to_exe = path_to_exe[:path_to_exe.rfind('/')+1]
 if os.name == "nt":
 	from ctypes import windll
 
-	class WinUtil():
+	class OSUtil():
+		OS_illegal_chars: str = '[\\\\/<>:"|?*]'
+
 		__slots__ = ()
 
 		def my_cmp_w(self, a, b) -> bool:
 			return windll.shlwapi.StrCmpLogicalW(a, b) < 0
-	utilHelper = WinUtil()
 else:
-	# default functions, currently only support windows
-	class DefaultUtil():
+	# if can't determine OS
+	class OSUtil():
+		OS_illegal_chars: str = "[/]"
+
 		__slots__ = ()
 
 		def my_cmp_w(self, a, b) -> bool:
 			if a == b:
 				return 0
 			return a < b
-	utilHelper = DefaultUtil()
+os_utilities = OSUtil()
 
 
 class Viewer:
@@ -44,7 +47,8 @@ class Viewer:
 	ANIMATION_SPEED_FACTOR: float = .75
 	VALID_FILE_TYPES: set[str] = {".png", ".jpg", ".jpeg", ".jfif", ".jif", ".jpe", ".webp", ".gif", ".bmp"}
 
-	# struct for holding cached images, for some reason this stores less data than a regular tuple based on my tests
+	# struct for holding cached images
+	# for some reason this stores less data than a regular tuple based on my tests
 	class CachedImage:
 		__slots__ = ("width", "height", "size_as_text", "image", "bit_size")
 
@@ -70,13 +74,16 @@ class Viewer:
 			self.name: str = image.name
 
 		def __lt__(self, b) -> bool:
-			return utilHelper.my_cmp_w(self.name, b.name)
+			return os_utilities.my_cmp_w(self.name, b.name)
 
-	__slots__ = ("size_ratio", "jpeg_helper", "OS_illegal_chars", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_hidden_icon", "dropdown_hidden_icon_hovered", "dropdown_showing_icon", "dropdown_showing_icon_hovered", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
+	__slots__ = ("size_ratio", "jpeg_helper", "full_path", "image_directory", "topbar_shown", "dropdown_shown", "redraw_screen", "dropdown_image", "rename_window_x_offset", "bit_size", "image_size", "aniamtion_frames", "animation_id", "app", "cache", "canvas", "screen_w", "screen_h", "image_display", "files", "cur_index", "topbar", "file_name_text_id", "dropdown_hidden_icon", "dropdown_hidden_icon_hovered", "dropdown_showing_icon", "dropdown_showing_icon_hovered", "rename_window_id", "dropdown_id", "rename_entry", "temp", "image_height", "image_width", "current_img", "dropdown_button_id", "rename_button_id", "KEY_MAPPING", "KEY_MAPPING_LIMITED")
 
 	def __init__(self, image_path_raw: str) -> None:
 		image_path_raw = image_path_raw.replace('\\', '/')
-		if not os.path.isfile(image_path_raw) or image_path_raw[image_path_raw.rfind('.'):] not in self.VALID_FILE_TYPES:
+		if (
+			not os.path.isfile(image_path_raw) or
+			image_path_raw[image_path_raw.rfind('.'):] not in self.VALID_FILE_TYPES
+		):
 			exit(1)
 
 		self.image_directory: str = image_path_raw[:image_path_raw.rfind('/')+1]
@@ -107,9 +114,6 @@ class Viewer:
 		self.app: Tk = Tk()
 		if os.name == "nt":
 			self.app.iconbitmap(default=f"{path_to_exe}icon/icon.ico")
-			self.OS_illegal_chars: str = '[\\\\/<>:"|?*]'
-		else:
-			self.OS_illegal_chars: str = "[/]"
 
 		self.cache: dict[str, self.CachedImage] = {}
 		self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
@@ -121,7 +125,11 @@ class Viewer:
 		self.screen_h: int = self.app.winfo_height()
 		self.size_ratio: float = self.screen_h/1080
 		background = self.canvas.create_rectangle(0, 0, self.screen_w, self.screen_h, fill="black")
-		self.image_display = self.canvas.create_image(self.screen_w >> 1, self.screen_h >> 1, anchor="center")
+		self.image_display = self.canvas.create_image(
+			self.screen_w >> 1,
+			self.screen_h >> 1,
+			anchor="center"
+		)
 		self.load_assests(self.scale_pixels_to_screen(32))
 
 		# draw first image, then get all image paths in directory
@@ -137,7 +145,7 @@ class Viewer:
 		self.files.sort(key=self.IKey)
 		self.cur_index = self.binary_search(current_image.name)
 		self.full_path = f"{self.image_directory}{self.files[self.cur_index].name}"
-		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", self.scale_pixels_to_screen(22))  # font for drawing on images
+		ImageDraw.ImageDraw.font = ImageFont.truetype("arial.ttf", self.scale_pixels_to_screen(22))
 		ImageDraw.ImageDraw.fontmode = 'L'  # antialiasing
 
 		# events based on input
@@ -223,7 +231,7 @@ class Viewer:
 
 		trash_icon, trash_icon_hovered = icon_factory.make_trash_icons()
 
-		self.dropdown_hidden_icon, self.dropdown_hidden_icon_hovered = icon_factory.make_dropdown_hidden_icons()
+		self.dropdown_hidden_icon, self.dropdown_hidden_icon_hovered  = icon_factory.make_dropdown_hidden_icons()
 
 		self.dropdown_showing_icon, self.dropdown_showing_icon_hovered = icon_factory.make_dropdown_showing_icons()
 
@@ -252,11 +260,29 @@ class Viewer:
 		self.canvas.itemconfig(self.rename_window_id, state="hidden", window=self.rename_entry)
 
 	# for simple buttons on topbar that only change on hover and have on click event
-	def make_topbar_button(self, regular_image: ImageTk.PhotoImage, hovered_image: ImageTk.PhotoImage, anchor: str, x_offset: int, function_to_bind) -> int:
-		button_id: int = self.canvas.create_image(x_offset, 0, image=regular_image, anchor=anchor, tag="topbar", state="hidden")
+	def make_topbar_button(
+			self,
+			regular_image: ImageTk.PhotoImage,
+			hovered_image: ImageTk.PhotoImage,
+			anchor: str,
+			x_offset: int,
+			function_to_bind
+		) -> int:
 
-		self.canvas.tag_bind(button_id, "<Enter>", lambda _: self.canvas.itemconfig(button_id, image=hovered_image))
-		self.canvas.tag_bind(button_id, "<Leave>", lambda _: self.canvas.itemconfig(button_id, image=regular_image))
+		button_id: int = self.canvas.create_image(
+			x_offset, 0, image=regular_image, anchor=anchor, tag="topbar", state="hidden"
+		)
+
+		self.canvas.tag_bind(
+			button_id,
+			"<Enter>",
+			lambda _: self.canvas.itemconfig(button_id, image=hovered_image)
+		)
+		self.canvas.tag_bind(
+			button_id,
+			"<Leave>",
+			lambda _: self.canvas.itemconfig(button_id, image=regular_image)
+		)
 		self.canvas.tag_bind(button_id, "<Button-1>", function_to_bind)
 		return button_id
 
@@ -346,7 +372,10 @@ class Viewer:
 
 				fp.flush()
 
-		if askyesno("Confirm deletion", f"Converted file to {image_extension}, delete old file?"):
+		if askyesno(
+			"Confirm deletion",
+			f"Converted file to {image_extension}, delete old file?"
+		):
 			self.trash_image()
 
 		self.cleanup_after_rename(new_name)
@@ -355,8 +384,12 @@ class Viewer:
 	def try_rename_or_convert(self, event: Event = None) -> None:
 
 		# make a new name removing illegal char for current OS
-		# technically windows allows spaces at end of name but thats a bit silly so strip anyway
-		new_name: str = sub(self.OS_illegal_chars, "", self.rename_entry.get().strip())
+		# windows allows spaces at end of name but thats a bit silly so strip anyway
+		new_name: str = sub(
+			os_utilities.OS_illegal_chars,
+			"",
+			self.rename_entry.get().strip()
+		)
 
 		new_image_extension: str = new_name[new_name.rfind('.', -5):]
 
@@ -366,12 +399,15 @@ class Viewer:
 			if new_image_extension != self.files[self.cur_index].suffix:
 				if new_image_extension not in self.VALID_FILE_TYPES:
 					new_name += self.files[self.cur_index].suffix
-				elif self.convert_file_and_save_new(new_name, f'{self.image_directory}{new_name}', new_image_extension):
+				elif self.convert_file_and_save_new(
+					new_name, f'{self.image_directory}{new_name}', new_image_extension
+				):
 					return
 
 			self.rename_image(new_name, f'{self.image_directory}{new_name}')
 		except Exception:
-			self.rename_entry.config(bg="#e6505f")  # flash red to tell user program couldn't rename
+			# flash red to tell user rename failed
+			self.rename_entry.config(bg="#e6505f")
 			self.app.after(400, self.reset_entry_color)
 
 	def reset_entry_color(self):
@@ -390,15 +426,22 @@ class Viewer:
 			return (1, 2)
 		return None
 
-	def get_image_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int]) -> ImageTk.PhotoImage:
+	def get_image_fit_to_screen(
+			self, interpolation: int, dimensions: tuple[int, int]
+		) -> ImageTk.PhotoImage:
 		# faster way of decoding to numpy array for JPEG
 		if self.temp.format == "JPEG":
 			with open(self.full_path, "rb") as im:
 				image_as_array = self.jpeg_helper.decode(im.read(), TJPF_RGB,  self.get_jpeg_scale_factor(), 0)
 		else:
-			# This cv2 resize is faster than PIL, but convert from mode P to RGB then resize is slower. Yet, PIL resize for P mode images looks very bad so still use cv2
-			image_as_array = asarray(self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C')
-		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(image_as_array, dimensions, interpolation=interpolation)))
+			# cv2 resize is faster than PIL, but convert from P to RGB then resize is slower
+			# PIL resize for P mode images looks very bad so still use cv2
+			image_as_array = asarray(
+				self.temp if self.temp.mode != 'P' else self.temp.convert("RGB"), order='C'
+			)
+		return ImageTk.PhotoImage(
+			Image.fromarray(cv2.resize(image_as_array, dimensions, interpolation=interpolation))
+		)
 
 	def dimension_finder(self) -> tuple[int, int]:
 		width: int = round(self.image_width * (self.screen_h/self.image_height))
@@ -423,7 +466,10 @@ class Viewer:
 		# check if was cached and not changed outside of program
 		cached_img_data = self.cache.get(current_img.name, None)
 		if cached_img_data is not None and self.bit_size == cached_img_data.bit_size:
-			self.image_width, self.image_height, self.image_size, self.current_img = cached_img_data.width, cached_img_data.height, cached_img_data.size_as_text, cached_img_data.image
+			self.image_width = cached_img_data.width
+			self.image_height = cached_img_data.height
+			self.image_size = cached_img_data.size_as_text
+			self.current_img = cached_img_data.image
 			self.temp.close()
 		else:
 			self.image_width, self.image_height = self.temp.size
@@ -438,7 +484,11 @@ class Viewer:
 			if frame_count > 1:
 				self.aniamtion_frames = [None] * frame_count
 				self.aniamtion_frames[0] = self.current_img
-				Thread(target=self.load_frame, args=(1, dimensions, current_img.name, interpolation), daemon=True).start()
+				Thread(
+					target=self.load_frame,
+					args=(1, dimensions, current_img.name, interpolation),
+					daemon=True
+				).start()
 				# find animation frame speed
 				try:
 					speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
@@ -450,7 +500,9 @@ class Viewer:
 				self.animation_id = self.app.after(speed+20, self.animate, 1, speed)
 			else:
 				# cache non-animated images
-				self.cache[current_img.name] = self.CachedImage(self.image_width, self.image_height, self.image_size, self.current_img, self.bit_size)
+				self.cache[current_img.name] = self.CachedImage(
+					self.image_width, self.image_height, self.image_size, self.current_img, self.bit_size
+				)
 				self.temp.close()
 		self.canvas.itemconfig(self.image_display, image=self.current_img)
 		self.app.title(current_img.name)
@@ -528,11 +580,14 @@ class Viewer:
 			self.aniamtion_frames[frame_index] = self.get_frame_fit_to_screen(interpolation, dimensions)
 			self.load_frame(frame_index+1, dimensions, file_name, interpolation)
 		except Exception:
-			# scrolling, recursion ending, etc cause variety of errors. Catch and close if thread was for current animation
+			# Scrolling, recursion ending, etc cause variety of errors
+			# Catch and close if thread was for current animation
 			if file_name == self.files[self.cur_index].name:
 				self.temp.close()
 
-	def get_frame_fit_to_screen(self, interpolation: int, dimensions: tuple[int, int]) -> ImageTk.PhotoImage:
+	def get_frame_fit_to_screen(
+			self, interpolation: int, dimensions: tuple[int, int]
+		) -> ImageTk.PhotoImage:
 		return ImageTk.PhotoImage(Image.fromarray(cv2.resize(asarray(self.temp.convert("RGB"), order='C'), dimensions, interpolation=interpolation)))
 
 	# cleans up after an animated file was opened
@@ -557,7 +612,10 @@ class Viewer:
 
 		text_bbox: tuple = ImageDraw.ImageDraw.font.getbbox(image_dimension_text)
 
-		box_to_draw_on: ImageDraw.ImageDraw = ImageDraw.Draw(Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)), "RGBA")
+		box_to_draw_on = ImageDraw.Draw(
+			Image.new("RGBA", (text_bbox[2]+20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)),
+			"RGBA"
+		)
 		box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
 		box_to_draw_on.text((10, int(text_bbox[3]*3)), f"Size: {self.image_size}", fill="white")
 
@@ -576,7 +634,7 @@ class Viewer:
 			current_image = self.files[mid].name
 			if target_image == current_image:
 				return mid
-			if utilHelper.my_cmp_w(target_image, current_image):
+			if os_utilities.my_cmp_w(target_image, current_image):
 				high = mid-1
 			else:
 				low = mid+1
@@ -590,4 +648,8 @@ if __name__ == "__main__":
 	elif DEBUG:
 		Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")  # DEBUG
 	else:
-		print("An Image Viewer written in Python\nRun with 'python -m viewer \"C:/path/to/an/image\"' or convert to an exe and select \"open with\" on your image")
+		print(
+			"An Image Viewer written in Python\n"
+			"Run with 'python -m viewer C:/path/to/an/image'"
+			' or convert to an exe and select "open with" on your image'
+		)
