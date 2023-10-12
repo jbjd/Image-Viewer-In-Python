@@ -7,6 +7,7 @@ from re import sub
 
 from factories.icon_factory import IconFactory
 from helpers.os import get_illegal_OS_char_re, OS_name_cmp, OSFileSortKey
+from image_classes import ImagePath, CachedImage
 
 from PIL import Image, ImageTk, ImageDraw, ImageFont, UnidentifiedImageError  # 10.0.1
 from send2trash import send2trash  # 1.8.2
@@ -29,25 +30,6 @@ class Viewer:
         ".gif",
         ".bmp",
     }
-
-    # struct for holding cached images
-    # for some reason this stores less data than a regular tuple based on my tests
-    class CachedImage:
-        __slots__ = ("width", "height", "size_as_text", "image", "bit_size")
-
-        def __init__(self, width, height, size_as_text, image, bit_size) -> None:
-            self.width: int = width
-            self.height: int = height
-            self.size_as_text: str = size_as_text
-            self.image: ImageTk.PhotoImage = image
-            self.bit_size: int = bit_size
-
-    class ImagePath:
-        __slots__ = ("suffix", "name")
-
-        def __init__(self, name: str) -> None:
-            self.suffix = name[name.rfind(".") :].lower()
-            self.name = name
 
     __slots__ = (
         "size_ratio",
@@ -128,7 +110,7 @@ class Viewer:
         if os.name == "nt":
             self.app.iconbitmap(default=f"{path_to_exe}icon/icon.ico")
 
-        self.cache: dict[str, self.CachedImage] = {}
+        self.cache: dict[str, CachedImage] = {}
         self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
         self.canvas.pack(anchor="nw", fill="both", expand=1)
         self.app.attributes("-fullscreen", True)
@@ -146,13 +128,13 @@ class Viewer:
         self.load_assests(self.scale_pixels_to_screen(32))
 
         # draw first image, then get all image paths in directory
-        current_image = self.ImagePath(image_path_raw[image_path_raw.rfind("/") + 1 :])
+        current_image = ImagePath(image_path_raw[image_path_raw.rfind("/") + 1 :])
         self.files = [current_image]
         self.image_loader()
         self.app.update()
-        self.files: list[self.ImagePath] = []
+        self.files: list[ImagePath] = []
         for p in next(os.walk(self.image_directory), (None, None, []))[2]:
-            fp = self.ImagePath(p)
+            fp = ImagePath(p)
             if fp.suffix in self.VALID_FILE_TYPES:
                 self.files.append(fp)
         self.files.sort(key=OSFileSortKey)
@@ -414,7 +396,7 @@ class Viewer:
         self.rename_entry.focus()
 
     def cleanup_after_rename(self, new_name: str) -> None:
-        new_name_obj = self.ImagePath(new_name)
+        new_name_obj = ImagePath(new_name)
         self.files.insert(self.binary_search(new_name_obj.name), new_name_obj)
         self.hide_rename_window()
         self.image_loader_safe()
@@ -606,7 +588,7 @@ class Viewer:
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
                 # cache non-animated images
-                self.cache[current_img.name] = self.CachedImage(
+                self.cache[current_img.name] = CachedImage(
                     self.image_width,
                     self.image_height,
                     self.image_size,

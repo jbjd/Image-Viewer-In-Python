@@ -1,2 +1,2 @@
 
-python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 --follow-import-to="factories" --follow-import-to="helpers" viewer.py
+python -m nuitka --windows-disable-console --windows-icon-from-ico="C:\PythonCode\Viewer\icon\icon.ico" --mingw64 --follow-import-to="factories" --follow-import-to="helpers"  --follow-import-to="image_classes" viewer.py
