@@ -428,8 +428,7 @@ class Viewer:
         try:
             # open even if in cache to throw error if user deleted it outside of program
             self.temp = Image.open(self.file_manager.path_to_current_image)
-        except (FileNotFoundError, UnidentifiedImageError) as e:
-            print(e)
+        except (FileNotFoundError, UnidentifiedImageError):
             self.remove_image_and_move_to_next(delete_from_disk=False)
             return
 
