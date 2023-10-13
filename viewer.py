@@ -350,22 +350,25 @@ class Viewer:
         self.image_loader_safe()
         self.refresh_topbar()
 
+    def ask_delete_after_convert(self, new_format: str) -> None:
+        if askyesno(
+            "Confirm deletion",
+            f"Converted file to {new_format}, delete old file?",
+        ):
+            self.remove_image_and_move_to_next(delete_from_disk=True)
+
     def try_rename_or_convert(self, event: Event = None) -> None:
         try:
-            was_converted = self.file_manager.rename_or_convert_current_image(
-                self.temp, self.rename_entry.get().strip()
+            self.file_manager.rename_or_convert_current_image(
+                self.temp,
+                self.rename_entry.get().strip(),
+                self.ask_delete_after_convert,
             )
         except Exception:
             # flash red to tell user rename failed
             self.rename_entry.config(bg="#e6505f")
             self.app.after(400, self.reset_entry_color)
             return
-
-        if was_converted and askyesno(
-            "Confirm deletion",
-            "Converted file to new format, delete old file?",
-        ):
-            self.remove_image_and_move_to_next(delete_from_disk=True)
 
         self.cleanup_after_rename()
 

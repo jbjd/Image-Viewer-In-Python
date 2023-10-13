@@ -1,5 +1,6 @@
 import os
 from re import sub
+from typing import Callable
 
 from util.os import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
 from util.rename import try_convert_file_and_save_new, rename_image
@@ -94,10 +95,13 @@ class ImageFileManager:
         return remaining_image_count
 
     def rename_or_convert_current_image(
-        self, image_to_close: Image, new_name: str
-    ) -> bool:
+        self,
+        image_to_close: Image,
+        new_name: str,
+        ask_delete_after_convert: Callable[[str], None],
+    ) -> None:
         """try to either rename or convert based on user input.
-        return: if file was converted and a new file was created"""
+        ask_delete_after_convert lets user choose to delete old file"""
         new_name = sub(get_illegal_OS_char_re(), "", new_name)
         new_image_data = ImagePath(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
@@ -114,13 +118,14 @@ class ImageFileManager:
                 new_image_data,
             )
         ):
+            ask_delete_after_convert(new_image_data.suffix)
             self.add_new_image(new_name)
-            return True
+            return
 
         rename_image(image_to_close, self.path_to_current_image, new_path)
         self.remove_current_image(delete_from_disk=False)
         self.add_new_image(new_name)
-        return False
+        return
 
     def add_new_image(self, new_name: str) -> None:
         image_data = ImagePath(new_name)
