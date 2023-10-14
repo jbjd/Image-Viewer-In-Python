@@ -80,11 +80,14 @@ class ImageFileManager:
 
         self._populate_data_attributes()
 
+    def _clear_image_data(self) -> None:
+        self.cache.pop(self._files.pop(self._current_index).name, None)
+
     def remove_current_image(self, delete_from_disk: bool) -> int:
         # delete image from files array and from cache if present
         if delete_from_disk:
             send2trash(os.path.abspath(self.path_to_current_image))
-        self.cache.pop(self._files.pop(self._current_index).name, None)
+        self._clear_image_data()
 
         remaining_image_count: int = len(self._files)
         if self._current_index >= remaining_image_count:
@@ -123,7 +126,7 @@ class ImageFileManager:
             return
 
         rename_image(image_to_close, self.path_to_current_image, new_path)
-        self.remove_current_image(delete_from_disk=False)
+        self._clear_image_data()
         self.add_new_image(new_name)
         return
 
