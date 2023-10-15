@@ -6,11 +6,9 @@ import os
 
 from factories.icon_factory import IconFactory
 from managers.file_manager import ImageFileManager
-from image import array_to_photoimage
+from image import array_to_photoimage, init_font, create_dropdown_image
 
 from PIL import Image, UnidentifiedImageError
-from PIL.ImageDraw import ImageDraw, Draw
-from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
 import cv2
 from numpy import asarray
@@ -103,8 +101,7 @@ class Viewer:
         self.image_loader()
         self.app.update()
         self.file_manager.fully_load_images()
-        ImageDraw.font = truetype("arial.ttf", self.scale_pixels_to_screen(22))
-        ImageDraw.fontmode = "L"  # antialiasing
+        init_font(self.scale_pixels_to_screen(22))
 
         # events based on input
         self.KEY_MAPPING = {
@@ -310,6 +307,7 @@ class Viewer:
 
     # properly exit program
     def exit(self, event: Event = None) -> None:
+        self.temp.close()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
@@ -467,8 +465,8 @@ class Viewer:
                     target=self.load_frame,
                     args=(
                         1,
+                        self.temp,
                         dimensions,
-                        current_image_data.name,
                         interpolation,
                         frame_count,
                     ),
@@ -536,7 +534,6 @@ class Viewer:
             else self.canvas.itemconfig(self.dropdown_id, state="hidden")
         )
 
-    # START ANIMATION FUNCTIONS
     def animate(self, frame_index: int, speed: int) -> None:
         """
         displays a frame on screen and recursively calls itself after a delay
@@ -564,13 +561,13 @@ class Viewer:
     def load_frame(
         self,
         frame_index: int,
+        original_image,
         dimensions: tuple[int, int],
-        file_name: str,
         interpolation: int,
         last_frame: int,
     ) -> None:
         # if user moved to new image, don't keep loading previous animated image
-        if file_name != self.file_manager.current_image.name:
+        if self.temp is not original_image:
             return
         try:
             self.temp.seek(frame_index)
@@ -579,14 +576,11 @@ class Viewer:
             )
         except Exception:
             # changing images during load causes a variety of errors
-            # Catch and close if thread was for the current animation
-            if file_name == self.file_manager.current_image.name:
-                self.temp.close()
-
+            pass
         frame_index += 1
         if frame_index < last_frame:
             self.load_frame(
-                frame_index, dimensions, file_name, interpolation, last_frame
+                frame_index, original_image, dimensions, interpolation, last_frame
             )
 
     def get_frame_fit_to_screen(
@@ -610,9 +604,6 @@ class Viewer:
         self.aniamtion_frames.clear()
         self.temp.close()
 
-    # END ANIMATION FUNCTIONS
-
-    # START DROPDOWN FUNCTIONS
     def toggle_details_dropdown(self, event: Event) -> None:
         self.dropdown_shown = not self.dropdown_shown
         self.hover_dropdown_toggle()  # fake mouse hover
@@ -623,27 +614,13 @@ class Viewer:
         )
 
     def create_details_dropdown(self) -> None:
-        image_dimension_text: str = f"Pixels: {self.image_width}x{self.image_height}"
+        dimension_text: str = f"Pixels: {self.image_width}x{self.image_height}"
+        size_text: str = f"Size: {self.image_size}"
 
-        text_bbox: tuple = ImageDraw.font.getbbox(image_dimension_text)
-
-        box_to_draw_on: ImageDraw = Draw(
-            Image.new(
-                "RGBA", (text_bbox[2] + 20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)
-            ),
-            "RGBA",
-        )
-        box_to_draw_on.text((10, text_bbox[3] + 5), image_dimension_text, fill="white")
-        box_to_draw_on.text(
-            (10, int(text_bbox[3] * 3)), f"Size: {self.image_size}", fill="white"
-        )
-
-        self.dropdown_image = PhotoImage(box_to_draw_on._image)
+        self.dropdown_image = create_dropdown_image(dimension_text, size_text)
         self.canvas.itemconfig(
             self.dropdown_id, image=self.dropdown_image, state="normal"
         )
-
-    # END DROPDOWN FUNCTIONS
 
 
 # For testing
