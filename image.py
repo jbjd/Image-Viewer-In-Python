@@ -36,9 +36,16 @@ def init_font(font_size: int) -> None:
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
     text_bbox: tuple = ImageDraw.font.getbbox(dimension_text)
+    x_offset: int = int(text_bbox[2] * 0.07)
+    if x_offset < 10:
+        x_offset = 10
 
     box_to_draw_on: ImageDraw = Draw(
-        new("RGBA", (text_bbox[2] + 20, text_bbox[3] * 5 + 10), (40, 40, 40, 170)),
+        new(
+            "RGBA",
+            (text_bbox[2] + (x_offset << 1), text_bbox[3] * 5 + 10),
+            (40, 40, 40, 170),
+        ),
         "RGBA",
     )
     box_to_draw_on.text((10, text_bbox[3] + 5), dimension_text, fill="white")
