@@ -75,12 +75,12 @@ class Viewer:
 
         # helpers for specific file types
         path_to_exe = os.path.dirname(os.path.realpath(argv[0]))
-        self.jpeg_helper = TurboJPEG(f"{path_to_exe}/dll/libturbojpeg.dll")
+        self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
 
         # application and canvas
         self.app: Tk = Tk()
         if os.name == "nt":
-            self.app.iconbitmap(default=f"{path_to_exe}/icon/icon.ico")
+            self.app.iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
 
         self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
         self.canvas.pack(anchor="nw", fill="both", expand=1)
