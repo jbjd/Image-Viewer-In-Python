@@ -141,7 +141,8 @@ class Viewer:
             self.KEY_MAPPING_LIMITED[event.keysym](event)
 
     def arrow(self, event: Event) -> None:
-        # only move images if user not in entry
+        """Handle L/R arrow key input
+        Doesn't move when main window unfocused"""
         if event.widget is self.app:
             self.move(1 if event.keysym == "Right" else -1)
 
@@ -160,7 +161,7 @@ class Viewer:
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
 
-        self.image_loader_safe()
+        self.image_loader()
         if self.topbar_shown:
             self.refresh_topbar()
 
@@ -174,7 +175,7 @@ class Viewer:
         self.redraw_screen = False
         if self.file_manager.current_image_cache_still_fresh():
             return
-        self.image_loader_safe()
+        self.image_loader()
 
     def load_assests(self, topbar_height) -> None:
         """
@@ -347,7 +348,7 @@ class Viewer:
 
     def cleanup_after_rename(self) -> None:
         self.hide_rename_window()
-        self.image_loader_safe()
+        self.image_loader()
         self.refresh_topbar()
 
     def ask_delete_after_convert(self, new_format: str) -> None:
@@ -426,6 +427,7 @@ class Viewer:
 
     # loads and displays an image
     def image_loader(self) -> None:
+        self.clear_animation_variables()
         current_image_data = self.file_manager.current_image
 
         try:
@@ -490,11 +492,6 @@ class Viewer:
                 self.temp.close()
         self.canvas.itemconfig(self.image_display_id, image=current_image)
         self.app.title(current_image_data.name)
-
-    def image_loader_safe(self) -> None:
-        """Wrapper for image_loader when an animation might have been playing"""
-        self.clear_animation_variables()
-        self.image_loader()
 
     def show_topbar(self, event: Event = None) -> None:
         self.topbar_shown = True
