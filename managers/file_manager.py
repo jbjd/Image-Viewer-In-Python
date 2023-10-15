@@ -1,8 +1,7 @@
 import os
-from re import sub
 from typing import Callable
 
-from util.os import OS_name_cmp, get_illegal_OS_char_re, OSFileSortKey
+from util.os import OS_name_cmp, clean_str_for_OS_path, OSFileSortKey
 from util.rename import try_convert_file_and_save_new, rename_image
 from image_classes import ImagePath, CachedImage
 
@@ -105,7 +104,7 @@ class ImageFileManager:
     ) -> None:
         """try to either rename or convert based on user input.
         ask_delete_after_convert lets user choose to delete old file"""
-        new_name = sub(get_illegal_OS_char_re(), "", new_name)
+        new_name = clean_str_for_OS_path(new_name)
         new_image_data = ImagePath(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
             new_name += self.current_image.suffix

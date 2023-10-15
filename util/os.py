@@ -1,4 +1,7 @@
 import os
+from re import sub
+
+from image_classes import ImagePath
 
 if os.name == "nt":
     from ctypes import windll
@@ -16,16 +19,16 @@ else:
         return a < b
 
 
-def get_illegal_OS_char_re():
-    return illegal_char
+def clean_str_for_OS_path(name: str) -> str:
+    return sub(illegal_char, "", name)
 
 
-# used to sort files same as current OS
+# used to sort files the same as current OS does
 class OSFileSortKey:
     __slots__ = "name"
 
-    def __init__(self, image) -> None:
+    def __init__(self, image: ImagePath) -> None:
         self.name: str = image.name
 
-    def __lt__(self, b) -> bool:
-        return OS_name_cmp(self.name, b.name)
+    def __lt__(self, other: ImagePath) -> bool:
+        return OS_name_cmp(self.name, other.name)
