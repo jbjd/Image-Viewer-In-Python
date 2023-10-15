@@ -3,7 +3,7 @@ from typing import Callable
 
 from util.os import OS_name_cmp, clean_str_for_OS_path, OSFileSortKey
 from util.rename import try_convert_file_and_save_new, rename_image
-from image_classes import ImagePath, CachedImage
+from image import ImagePath, CachedImage
 
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage

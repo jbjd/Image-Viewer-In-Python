@@ -6,6 +6,7 @@ import os
 
 from factories.icon_factory import IconFactory
 from managers.file_manager import ImageFileManager
+from image import array_to_photoimage
 
 from PIL import Image, UnidentifiedImageError
 from PIL.ImageDraw import ImageDraw, Draw
@@ -405,10 +406,8 @@ class Viewer:
                 self.temp if self.temp.mode != "P" else self.temp.convert("RGB"),
                 order="C",
             )
-        return PhotoImage(
-            Image.fromarray(
-                cv2.resize(image_as_array, dimensions, interpolation=interpolation)
-            )
+        return array_to_photoimage(
+            cv2.resize(image_as_array, dimensions, interpolation=interpolation)
         )
 
     def dimension_finder(self) -> tuple[int, int]:
@@ -466,7 +465,13 @@ class Viewer:
                 self.aniamtion_frames[0] = current_image
                 Thread(
                     target=self.load_frame,
-                    args=(1, dimensions, current_image_data.name, interpolation),
+                    args=(
+                        1,
+                        dimensions,
+                        current_image_data.name,
+                        interpolation,
+                        frame_count,
+                    ),
                     daemon=True,
                 ).start()
                 # find animation frame speed
@@ -562,6 +567,7 @@ class Viewer:
         dimensions: tuple[int, int],
         file_name: str,
         interpolation: int,
+        last_frame: int,
     ) -> None:
         # if user moved to new image, don't keep loading previous animated image
         if file_name != self.file_manager.current_image.name:
@@ -571,23 +577,26 @@ class Viewer:
             self.aniamtion_frames[frame_index] = self.get_frame_fit_to_screen(
                 interpolation, dimensions
             )
-            self.load_frame(frame_index + 1, dimensions, file_name, interpolation)
         except Exception:
-            # Scrolling, recursion ending, etc cause variety of errors
-            # Catch and close if thread was for current animation
+            # changing images during load causes a variety of errors
+            # Catch and close if thread was for the current animation
             if file_name == self.file_manager.current_image.name:
                 self.temp.close()
+
+        frame_index += 1
+        if frame_index < last_frame:
+            self.load_frame(
+                frame_index, dimensions, file_name, interpolation, last_frame
+            )
 
     def get_frame_fit_to_screen(
         self, interpolation: int, dimensions: tuple[int, int]
     ) -> PhotoImage:
-        return PhotoImage(
-            Image.fromarray(
-                cv2.resize(
-                    asarray(self.temp.convert("RGB"), order="C"),
-                    dimensions,
-                    interpolation=interpolation,
-                )
+        return array_to_photoimage(
+            cv2.resize(
+                asarray(self.temp.convert("RGB"), order="C"),
+                dimensions,
+                interpolation=interpolation,
             )
         )
 

@@ -27,7 +27,7 @@ print("Starting up nuitka")
 cmd_str = f'python -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" --mingw64 \
     --follow-import-to="factories" --follow-import-to="util" \
-    --follow-import-to="image_classes" --follow-import-to="viewer" \
+    --follow-import-to="image" --follow-import-to="viewer" \
     --follow-import-to="managers" {WORKING_DIR}main.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 

@@ -1,4 +1,5 @@
 from PIL.ImageTk import PhotoImage
+from PIL.Image import fromarray
 
 
 # struct for holding cached images
@@ -20,3 +21,7 @@ class ImagePath:
     def __init__(self, name: str) -> None:
         self.suffix = name[name.rfind(".") :].lower()
         self.name = name
+
+
+def array_to_photoimage(array) -> PhotoImage:
+    return PhotoImage(fromarray(array))
