@@ -245,7 +245,7 @@ class Viewer:
             state="hidden",
         )
         self.canvas.tag_bind(
-            self.dropdown_button_id, "<Button-1>", self.toggle_details_dropdown
+            self.dropdown_button_id, "<ButtonRelease-1>", self.toggle_details_dropdown
         )
         self.canvas.tag_bind(
             self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle
@@ -295,7 +295,7 @@ class Viewer:
             "<Leave>",
             lambda _: self.canvas.itemconfig(button_id, image=regular_image),
         )
-        self.canvas.tag_bind(button_id, "<Button-1>", function_to_bind)
+        self.canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
         return button_id
 
     # wrapper for exit function to close rename window first if its open
