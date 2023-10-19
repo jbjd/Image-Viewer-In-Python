@@ -1,7 +1,7 @@
-import subprocess
 import os
-from shutil import rmtree
+import subprocess
 from distutils.dir_util import copy_tree
+from shutil import rmtree
 
 try:
     import nuitka  # noqa: F401

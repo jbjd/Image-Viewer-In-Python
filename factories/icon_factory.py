@@ -1,5 +1,5 @@
 from PIL.Image import Image, new
-from PIL.ImageDraw import ImageDraw, Draw
+from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 
 

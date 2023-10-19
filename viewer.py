@@ -1,18 +1,18 @@
-from sys import argv
-from tkinter import Tk, Canvas, Entry, Event
-from tkinter.messagebox import askyesno
-from threading import Thread
 import os
+from sys import argv
+from threading import Thread
+from tkinter import Canvas, Entry, Event, Tk
+from tkinter.messagebox import askyesno
 
-from factories.icon_factory import IconFactory
-from managers.file_manager import ImageFileManager
-from image import array_to_photoimage, init_font, create_dropdown_image
-
-from PIL import Image, UnidentifiedImageError
-from PIL.ImageTk import PhotoImage
 import cv2
 from numpy import asarray
-from turbojpeg import TurboJPEG, TJPF_RGB
+from PIL import Image, UnidentifiedImageError
+from PIL.ImageTk import PhotoImage
+from turbojpeg import TJPF_RGB, TurboJPEG
+
+from factories.icon_factory import IconFactory
+from image import array_to_photoimage, create_dropdown_image, init_font
+from managers.file_manager import ImageFileManager
 
 
 class Viewer:

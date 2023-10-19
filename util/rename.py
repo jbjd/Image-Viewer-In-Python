@@ -1,5 +1,7 @@
 import os
-from PIL.Image import Image, open as open_image
+
+from PIL.Image import Image
+from PIL.Image import open as open_image
 
 from image import ImagePath
 

@@ -1,5 +1,6 @@
-from viewer import Viewer
 from sys import argv
+
+from viewer import Viewer
 
 if len(argv) > 1:
     Viewer(argv[1])

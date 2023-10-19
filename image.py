@@ -1,7 +1,7 @@
-from PIL.ImageTk import PhotoImage
 from PIL.Image import fromarray, new
-from PIL.ImageDraw import ImageDraw, Draw
+from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
+from PIL.ImageTk import PhotoImage
 
 
 # struct for holding cached images
