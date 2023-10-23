@@ -12,13 +12,11 @@ from turbojpeg import TJPF_RGB, TurboJPEG
 
 from factories.icon_factory import IconFactory
 from image import array_to_photoimage, create_dropdown_image, init_font
+from managers.display_manager import DisplayManager
 from managers.file_manager import ImageFileManager
 
 
 class Viewer:
-    DEFAULT_GIF_SPEED: int = 100
-    ANIMATION_SPEED_FACTOR: float = 0.75
-
     __slots__ = (
         "size_ratio",
         "jpeg_helper",
@@ -28,14 +26,12 @@ class Viewer:
         "dropdown_image",
         "rename_window_x_offset",
         "image_size",
-        "aniamtion_frames",
-        "animation_id",
         "app",
         "canvas",
         "screen_w",
         "screen_h",
-        "image_display_id",
         "file_manager",
+        "display_manager",
         "topbar",
         "file_name_text_id",
         "dropdown_hidden_icon",
@@ -68,10 +64,6 @@ class Viewer:
         self.rename_window_x_offset: int = 0
         self.image_size: str = ""
 
-        # variables used for animations, empty when no animation playing
-        self.aniamtion_frames: list = []
-        self.animation_id: str = ""
-
         # helpers for specific file types
         path_to_exe = os.path.dirname(os.path.realpath(argv[0]))
         self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
@@ -92,10 +84,12 @@ class Viewer:
         background = self.canvas.create_rectangle(
             0, 0, self.screen_w, self.screen_h, fill="black"
         )
-        self.image_display_id = self.canvas.create_image(
+        image_display_id: int = self.canvas.create_image(
             self.screen_w >> 1, self.screen_h >> 1, anchor="center"
         )
         self.load_assests(self.scale_pixels_to_screen(32))
+
+        self.display_manager = DisplayManager(self.app, self.canvas, image_display_id)
 
         # draw first image, then get all image paths in directory
         self.image_loader()
@@ -115,7 +109,7 @@ class Viewer:
             "Down": self.show_topbar,
         }  # allowed in entry or main app
         self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
-        self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
+        self.canvas.tag_bind(image_display_id, "<Button-1>", self.handle_click)
         self.app.bind("<FocusIn>", self.redraw)
         self.app.bind("<MouseWheel>", self.scroll)
         self.app.bind("<Escape>", self.escape_button)
@@ -459,8 +453,8 @@ class Viewer:
 
             # special case, file is animated
             if frame_count > 1:
-                self.aniamtion_frames = [None] * frame_count
-                self.aniamtion_frames[0] = current_image
+                duration: int = self.temp.info["duration"]
+                self.display_manager.start_animate(current_image, frame_count, duration)
                 Thread(
                     target=self.load_frame,
                     args=(
@@ -472,17 +466,7 @@ class Viewer:
                     ),
                     daemon=True,
                 ).start()
-                # find animation frame speed
-                try:
-                    speed = int(
-                        self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR
-                    )
-                    if speed < 2:
-                        speed = self.DEFAULT_GIF_SPEED
-                except (KeyError, AttributeError):
-                    speed = self.DEFAULT_GIF_SPEED
 
-                self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
                 # cache non-animated images
                 self.file_manager.cache_current_image(
@@ -493,7 +477,7 @@ class Viewer:
                     bit_size,
                 )
                 self.temp.close()
-        self.canvas.itemconfig(self.image_display_id, image=current_image)
+        self.display_manager.update_image(current_image)
         self.app.title(current_image_data.name)
 
     def show_topbar(self, event: Event = None) -> None:
@@ -534,30 +518,6 @@ class Viewer:
             else self.canvas.itemconfig(self.dropdown_id, state="hidden")
         )
 
-    def animate(self, frame_index: int, speed: int) -> None:
-        """
-        displays a frame on screen and recursively calls itself after a delay
-        frame_index: index of current frame to be displayed
-        speed: speed in ms until next frame
-        """
-        frame_index += 1
-        if frame_index >= len(self.aniamtion_frames):
-            frame_index = 0
-
-        ms_until_next_frame: int = speed
-        current_frame: PhotoImage = self.aniamtion_frames[frame_index]
-        # if tried to show next frame before it is loaded
-        # reset to current frame and try again after delay
-        if current_frame is None:
-            frame_index -= 1
-            ms_until_next_frame += 10
-        else:
-            self.canvas.itemconfig(self.image_display_id, image=current_frame)
-
-        self.animation_id = self.app.after(
-            ms_until_next_frame, self.animate, frame_index, speed
-        )
-
     def load_frame(
         self,
         frame_index: int,
@@ -571,9 +531,9 @@ class Viewer:
             return
         try:
             self.temp.seek(frame_index)
-            self.aniamtion_frames[frame_index] = self.get_frame_fit_to_screen(
-                interpolation, dimensions
-            )
+            self.display_manager.aniamtion_frames[
+                frame_index
+            ] = self.get_frame_fit_to_screen(interpolation, dimensions)
         except Exception:
             # changing images during load causes a variety of errors
             pass
@@ -596,13 +556,9 @@ class Viewer:
 
     # cleans up after an animated file was opened
     def clear_animation_variables(self) -> None:
-        if self.animation_id == "":
-            return
-
-        self.app.after_cancel(self.animation_id)
-        self.animation_id = ""
-        self.aniamtion_frames.clear()
-        self.temp.close()
+        if self.display_manager.is_animating():
+            self.display_manager.end_animation()
+            self.temp.close()
 
     def toggle_details_dropdown(self, event: Event) -> None:
         self.dropdown_shown = not self.dropdown_shown
