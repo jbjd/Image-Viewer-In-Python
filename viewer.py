@@ -460,7 +460,16 @@ class Viewer:
             # special case, file is animated
             if frame_count > 1:
                 self.aniamtion_frames = [None] * frame_count
-                self.aniamtion_frames[0] = current_image
+                try:
+                    speed = int(
+                        self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR
+                    )
+                    if speed < 1:
+                        speed = self.DEFAULT_GIF_SPEED
+                except (KeyError, AttributeError):
+                    speed = self.DEFAULT_GIF_SPEED
+
+                self.aniamtion_frames[0] = current_image, speed
                 Thread(
                     target=self.load_frame,
                     args=(
@@ -473,14 +482,6 @@ class Viewer:
                     daemon=True,
                 ).start()
                 # find animation frame speed
-                try:
-                    speed = int(
-                        self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR
-                    )
-                    if speed < 2:
-                        speed = self.DEFAULT_GIF_SPEED
-                except (KeyError, AttributeError):
-                    speed = self.DEFAULT_GIF_SPEED
 
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
             else:
@@ -544,15 +545,15 @@ class Viewer:
         if frame_index >= len(self.aniamtion_frames):
             frame_index = 0
 
-        ms_until_next_frame: int = speed
-        current_frame: PhotoImage = self.aniamtion_frames[frame_index]
+        frame_and_speed: tuple[PhotoImage, int] = self.aniamtion_frames[frame_index]
         # if tried to show next frame before it is loaded
         # reset to current frame and try again after delay
-        if current_frame is None:
+        if frame_and_speed is None:
             frame_index -= 1
-            ms_until_next_frame += 10
+            ms_until_next_frame = int(speed * 1.4)
         else:
-            self.canvas.itemconfig(self.image_display_id, image=current_frame)
+            self.canvas.itemconfig(self.image_display_id, image=frame_and_speed[0])
+            ms_until_next_frame = frame_and_speed[1]
 
         self.animation_id = self.app.after(
             ms_until_next_frame, self.animate, frame_index, speed
@@ -571,8 +572,15 @@ class Viewer:
             return
         try:
             self.temp.seek(frame_index)
-            self.aniamtion_frames[frame_index] = self.get_frame_fit_to_screen(
-                interpolation, dimensions
+            try:
+                speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
+                if speed < 1:
+                    speed = self.DEFAULT_GIF_SPEED
+            except (KeyError, AttributeError):
+                speed = self.DEFAULT_GIF_SPEED
+            self.aniamtion_frames[frame_index] = (
+                self.get_frame_fit_to_screen(interpolation, dimensions),
+                speed,
             )
         except Exception:
             # changing images during load causes a variety of errors
@@ -625,4 +633,4 @@ class Viewer:
 
 # For testing
 if __name__ == "__main__":
-    Viewer(r"c:\Users\jimde\OneDrive\Pictures\test.jpg")
+    Viewer(r"c:\photos\test.jpg")
