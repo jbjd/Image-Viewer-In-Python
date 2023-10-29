@@ -142,7 +142,11 @@ class Viewer:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
         if event.widget is self.app:
-            self.move(1 if event.keysym == "Right" else -1)
+            # move 5 when ctrl held
+            move_amount: int = 1 + (event.state & 4)
+            if event.keysym == "Left":
+                move_amount = -move_amount
+            self.move(move_amount)
 
     def scroll(self, event: Event) -> None:
         self.move(-1 if event.delta > 0 else 1)
