@@ -1,5 +1,4 @@
 import os
-from sys import argv
 from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
@@ -54,7 +53,7 @@ class Viewer:
         "KEY_MAPPING_LIMITED",
     )
 
-    def __init__(self, first_image_to_show: str) -> None:
+    def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
@@ -73,7 +72,6 @@ class Viewer:
         self.animation_id: str = ""
 
         # helpers for specific file types
-        path_to_exe = os.path.dirname(os.path.realpath(argv[0]))
         self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
 
         # application and canvas
@@ -158,7 +156,7 @@ class Viewer:
     def move(self, amount: int) -> None:
         """
         Move to different image
-        amount: 1 or -1 indicating movement to next or previous
+        amount: any non-zero value indicating movement to next or previous
         """
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
@@ -516,11 +514,9 @@ class Viewer:
         self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
     def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
-        remaining_image_count: int = self.file_manager.remove_current_image(
-            delete_from_disk
-        )
-
-        if remaining_image_count <= 0:
+        try:
+            self.file_manager.remove_current_image(delete_from_disk)
+        except IndexError:
             self.exit()
 
         self.image_loader()
@@ -637,4 +633,4 @@ class Viewer:
 
 # For testing
 if __name__ == "__main__":
-    Viewer(r"c:\photos\test.jpg")
+    Viewer(r"c:\photos\test.jpg", "C:/PythonCode/Viewer")
