@@ -10,7 +10,14 @@ from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 
 from factories.icon_factory import IconFactory
-from image import array_to_photoimage, create_dropdown_image, init_font
+from image import (
+    CachedInfo,
+    CachedInfoAndImage,
+    ImagePath,
+    array_to_photoimage,
+    create_dropdown_image,
+    init_font,
+)
 from managers.file_manager import ImageFileManager
 
 
@@ -26,7 +33,6 @@ class Viewer:
         "redraw_screen",
         "dropdown_image",
         "rename_window_x_offset",
-        "image_size",
         "aniamtion_frames",
         "animation_id",
         "app",
@@ -45,8 +51,6 @@ class Viewer:
         "dropdown_id",
         "rename_entry",
         "temp",
-        "image_height",
-        "image_width",
         "dropdown_button_id",
         "rename_button_id",
         "KEY_MAPPING",
@@ -60,12 +64,7 @@ class Viewer:
         self.topbar_shown: bool = False
         self.dropdown_shown: bool = False
         self.redraw_screen: bool = False
-
-        # data on current image
-        self.image_width: int = 0
-        self.image_height: int = 0
         self.rename_window_x_offset: int = 0
-        self.image_size: str = ""
 
         # variables used for animations, empty when no animation playing
         self.aniamtion_frames: list = []
@@ -381,37 +380,58 @@ class Viewer:
         self.redraw_screen = True
         self.app.iconify()
 
-    def get_jpeg_scale_factor(self) -> tuple[int, int] | None:
+    def image_is_scaling_down(self, image_width: int, image_height: int) -> bool:
+        """returns true when image must scale down"""
+        return image_height > self.screen_h or image_width > self.screen_w
+
+    def get_jpeg_scale_factor(
+        self,
+        image_width: int,
+        image_height: int,
+    ) -> tuple[int, int] | None:
         """Gets scaling factor for images larger than screen"""
-        ratio_to_screen: float = self.image_height / self.screen_h
+        ratio_to_screen: float = max(
+            image_width / self.screen_w, image_height / self.screen_h
+        )
+
         if ratio_to_screen >= 4:
             return (1, 4)
         if ratio_to_screen >= 2:
             return (1, 2)
         return None
 
-    def get_image_fit_to_screen(
-        self, interpolation: int, dimensions: tuple[int, int]
+    def get_jpeg_fit_to_screen(
+        self,
+        dimensions: tuple[int, int],
+        interpolation: int,
+        image_width: int,
+        image_height: int,
     ) -> PhotoImage:
-        # faster way of decoding to numpy array for JPEG
-        if self.temp.format == "JPEG":
-            with open(self.file_manager.path_to_current_image, "rb") as im_bytes:
-                image_as_array = self.jpeg_helper.decode(
-                    im_bytes.read(), TJPF_RGB, self.get_jpeg_scale_factor(), 0
-                )
-        else:
-            # cv2 resize is faster than PIL, but convert to RGB then resize is slower
-            # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
-            image_as_array = asarray(
+        with open(self.file_manager.path_to_current_image, "rb") as im_bytes:
+            image_as_array = self.jpeg_helper.decode(
+                im_bytes.read(),
+                TJPF_RGB,
+                self.get_jpeg_scale_factor(image_width, image_height),
+                0,
+            )
+            return array_to_photoimage(image_as_array, dimensions, interpolation)
+
+    def get_image_fit_to_screen(
+        self, dimensions: tuple[int, int], interpolation: int
+    ) -> PhotoImage:
+        # cv2 resize is faster than PIL, but convert to RGB then resize is slower
+        # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
+        return array_to_photoimage(
+            asarray(
                 self.temp if self.temp.mode != "P" else self.temp.convert("RGB"),
                 order="C",
-            )
-        return array_to_photoimage(
-            cv2.resize(image_as_array, dimensions, interpolation=interpolation)
+            ),
+            dimensions,
+            interpolation,
         )
 
-    def dimension_finder(self) -> tuple[int, int]:
-        width: int = round(self.image_width * (self.screen_h / self.image_height))
+    def dimension_finder(self, image_width: int, image_height: int) -> tuple[int, int]:
+        width: int = round(image_width * (self.screen_h / image_height))
 
         # fit to height if width in screen,
         # else fit to width and let height go off screen
@@ -420,14 +440,14 @@ class Viewer:
             if width <= self.screen_w
             else (
                 self.screen_w,
-                round(self.image_height * (self.screen_w / self.image_width)),
+                round(image_height * (self.screen_w / image_width)),
             )
         )
 
     # loads and displays an image
     def image_loader(self) -> None:
         self.clear_animation_variables()
-        current_image_data = self.file_manager.current_image
+        current_image_data: ImagePath = self.file_manager.current_image
 
         try:
             # open even if in cache to throw error if user deleted it outside of program
@@ -439,25 +459,33 @@ class Viewer:
         bit_size: int = os.path.getsize(self.file_manager.path_to_current_image)
 
         # check if was cached and not changed outside of program
-        cached_img_data = self.file_manager.cache.get(current_image_data.name, None)
-        if cached_img_data is not None and bit_size == cached_img_data.bit_size:
-            self.image_width = cached_img_data.width
-            self.image_height = cached_img_data.height
-            self.image_size = cached_img_data.size_as_text
+        cached_img_data = self.file_manager.cache.get(current_image_data.name, False)
+        if (
+            cached_img_data
+            and isinstance(cached_img_data, CachedInfoAndImage)
+            and bit_size == cached_img_data.bit_size
+        ):
             current_image = cached_img_data.image
             self.temp.close()
         else:
-            self.image_width, self.image_height = self.temp.size
+            image_width, image_height = self.temp.size
             size_kb: int = bit_size >> 10
-            self.image_size = (
+            image_size = (
                 f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
             )
-            dimensions = self.dimension_finder()
+            dimensions = self.dimension_finder(image_width, image_height)
             frame_count: int = getattr(self.temp, "n_frames", 1)
             interpolation: int = (
-                cv2.INTER_AREA if self.image_height > self.screen_h else cv2.INTER_CUBIC
+                cv2.INTER_AREA
+                if self.image_is_scaling_down(image_width, image_height)
+                else cv2.INTER_CUBIC
             )
-            current_image = self.get_image_fit_to_screen(interpolation, dimensions)
+            if self.temp.format == "JPEG":
+                current_image = self.get_jpeg_fit_to_screen(
+                    dimensions, interpolation, image_width, image_height
+                )
+            else:
+                current_image = self.get_image_fit_to_screen(dimensions, interpolation)
 
             # special case, file is animated
             if frame_count > 1:
@@ -486,12 +514,17 @@ class Viewer:
                 # find animation frame speed
 
                 self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
+                self.file_manager.cache_info(
+                    image_width,
+                    image_height,
+                    image_size,
+                )
             else:
                 # cache non-animated images
-                self.file_manager.cache_current_image(
-                    self.image_width,
-                    self.image_height,
-                    self.image_size,
+                self.file_manager.cache_image(
+                    image_width,
+                    image_height,
+                    image_size,
                     current_image,
                     bit_size,
                 )
@@ -579,7 +612,7 @@ class Viewer:
             except (KeyError, AttributeError):
                 speed = self.DEFAULT_GIF_SPEED
             self.aniamtion_frames[frame_index] = (
-                self.get_frame_fit_to_screen(interpolation, dimensions),
+                self.get_frame_fit_to_screen(dimensions, interpolation),
                 speed,
             )
         except Exception:
@@ -592,14 +625,12 @@ class Viewer:
             )
 
     def get_frame_fit_to_screen(
-        self, interpolation: int, dimensions: tuple[int, int]
+        self, dimensions: tuple[int, int], interpolation: int
     ) -> PhotoImage:
         return array_to_photoimage(
-            cv2.resize(
-                asarray(self.temp.convert("RGB"), order="C"),
-                dimensions,
-                interpolation=interpolation,
-            )
+            asarray(self.temp.convert("RGB"), order="C"),
+            dimensions,
+            interpolation,
         )
 
     # cleans up after an animated file was opened
@@ -622,8 +653,9 @@ class Viewer:
         )
 
     def create_details_dropdown(self) -> None:
-        dimension_text: str = f"Pixels: {self.image_width}x{self.image_height}"
-        size_text: str = f"Size: {self.image_size}"
+        image_info: CachedInfo = self.file_manager.get_current_image_cache()
+        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
+        size_text: str = f"Size: {image_info.size_as_text}"
 
         self.dropdown_image = create_dropdown_image(dimension_text, size_text)
         self.canvas.itemconfig(

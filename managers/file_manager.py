@@ -5,7 +5,7 @@ from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
-from image import CachedImage, ImagePath
+from image import CachedInfo, CachedInfoAndImage, ImagePath
 from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
 from util.rename import rename_image, try_convert_file_and_save_new
 
@@ -48,7 +48,7 @@ class ImageFileManager:
         self._files: list[ImagePath] = [first_image_data]
         self._current_index: int = 0
         self._populate_data_attributes()
-        self.cache: dict[str, CachedImage] = {}
+        self.cache: dict[str, CachedInfo] = {}
 
     def _populate_data_attributes(self) -> None:
         """Sets variables about current image.
@@ -136,16 +136,26 @@ class ImageFileManager:
         self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
-    def cache_current_image(
+    def cache_info(self, width: int, height: int, size):
+        self.cache[self.current_image.name] = CachedInfo(
+            width,
+            height,
+            size,
+        )
+
+    def cache_image(
         self, width: int, height: int, size, photo_image: PhotoImage, bit_size: int
     ):
-        self.cache[self.current_image.name] = CachedImage(
+        self.cache[self.current_image.name] = CachedInfoAndImage(
             width,
             height,
             size,
             photo_image,
             bit_size,
         )
+
+    def get_current_image_cache(self) -> CachedInfo:
+        return self.cache[self.current_image.name]
 
     def current_image_cache_still_fresh(self) -> bool:
         return os.path.isfile(self.path_to_current_image) and os.path.getsize(

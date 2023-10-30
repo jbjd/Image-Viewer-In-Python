@@ -1,3 +1,4 @@
+from cv2 import resize
 from PIL.Image import fromarray, new
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
@@ -6,13 +7,20 @@ from PIL.ImageTk import PhotoImage
 
 # struct for holding cached images
 # for some reason this stores less data than a regular tuple based on my tests
-class CachedImage:
-    __slots__ = ("width", "height", "size_as_text", "image", "bit_size")
+class CachedInfo:
+    __slots__ = ("width", "height", "size_as_text")
 
-    def __init__(self, width, height, size_as_text, image, bit_size) -> None:
+    def __init__(self, width, height, size_as_text) -> None:
         self.width: int = width
         self.height: int = height
         self.size_as_text: str = size_as_text
+
+
+class CachedInfoAndImage(CachedInfo):
+    __slots__ = ("image", "bit_size")
+
+    def __init__(self, width, height, size_as_text, image, bit_size) -> None:
+        super().__init__(width, height, size_as_text)
         self.image: PhotoImage = image
         self.bit_size: int = bit_size
 
@@ -25,8 +33,10 @@ class ImagePath:
         self.name = name
 
 
-def array_to_photoimage(array) -> PhotoImage:
-    return PhotoImage(fromarray(array))
+def array_to_photoimage(
+    array, dimensions: tuple[int, int], interpolation: int
+) -> PhotoImage:
+    return PhotoImage(fromarray(resize(array, dimensions, interpolation=interpolation)))
 
 
 def init_font(font_size: int) -> None:
