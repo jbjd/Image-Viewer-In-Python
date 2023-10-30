@@ -38,6 +38,8 @@ def try_convert_file_and_save_new(
                     # if two different JPEG varients
                     if old_image_data.suffix[1] == "j":
                         return False
+                    if temp_img.mode == "RGBA":
+                        temp_img = temp_img.convert("RGB")
                     temp_img.save(new_path, "JPEG", optimize=True, quality=100)
                 case _:
                     return False
