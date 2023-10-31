@@ -55,6 +55,7 @@ class Viewer:
         "rename_button_id",
         "KEY_MAPPING",
         "KEY_MAPPING_LIMITED",
+        "move_id",
     )
 
     def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
@@ -65,6 +66,7 @@ class Viewer:
         self.dropdown_shown: bool = False
         self.redraw_screen: bool = False
         self.rename_window_x_offset: int = 0
+        self.move_id: str = ""
 
         # variables used for animations, empty when no animation playing
         self.aniamtion_frames: list = []
@@ -116,13 +118,20 @@ class Viewer:
         self.app.bind("<FocusIn>", self.redraw)
         self.app.bind("<MouseWheel>", self.scroll)
         self.app.bind("<Escape>", self.escape_button)
-        self.app.bind("<KeyRelease>", self.handle_all_keybinds)
+        self.app.bind("<KeyPress>", self.handle_all_keybinds)
+        self.app.bind("<KeyRelease>", self.handle_key_release)
 
         self.app.mainloop()
 
     def scale_pixels_to_screen(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
         return int(original_pixels * self.size_ratio)
+
+    def handle_key_release(self, event: Event) -> None:
+        if event.widget is self.app:
+            if self.move_id and (event.keysym == "Left" or event.keysym == "Right"):
+                self.app.after_cancel(self.move_id)
+                self.move_id = ""
 
     def handle_all_keybinds(self, event: Event) -> None:
         if event.widget is self.app:
@@ -138,12 +147,19 @@ class Viewer:
     def arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
+        if self.move_id != "":
+            return
         if event.widget is self.app:
-            # move 5 when ctrl held
-            move_amount: int = 1 + (event.state & 4)
+            # move 5 when ctrl held, 2 when shift held
+            move_amount: int = 1 + (event.state & 5)
             if event.keysym == "Left":
                 move_amount = -move_amount
-            self.move(move_amount)
+            self.repeat_move(move_amount, 600)
+
+    def repeat_move(self, move_amount: int, ms: int) -> None:
+        """Repeat move to next image while L/R key held"""
+        self.move(move_amount)
+        self.move_id = self.app.after(ms, self.repeat_move, move_amount, 300)
 
     def scroll(self, event: Event) -> None:
         self.move(-1 if event.delta > 0 else 1)

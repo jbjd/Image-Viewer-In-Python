@@ -6,7 +6,7 @@ from image import ImagePath
 if os.name == "nt":
     from ctypes import windll
 
-    illegal_char = r'[\\\\/<>:"|?*]'
+    illegal_char = r'[\\/<>:"|?*]'
 
     def OS_name_cmp(a, b) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
