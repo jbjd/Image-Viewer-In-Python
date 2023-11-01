@@ -377,7 +377,6 @@ class Viewer:
     def try_rename_or_convert(self, event: Event = None) -> None:
         try:
             self.file_manager.rename_or_convert_current_image(
-                self.temp,
                 self.rename_entry.get().strip(),
                 self.ask_delete_after_convert,
             )
@@ -639,6 +638,8 @@ class Viewer:
             self.load_frame(
                 frame_index, original_image, dimensions, interpolation, last_frame
             )
+        elif self.temp is original_image:
+            self.temp.close()
 
     def get_frame_fit_to_screen(
         self, dimensions: tuple[int, int], interpolation: int

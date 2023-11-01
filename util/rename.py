@@ -1,13 +1,9 @@
-import os
-
-from PIL.Image import Image
 from PIL.Image import open as open_image
 
 from image import ImagePath
 
 
 def try_convert_file_and_save_new(
-    old_image: Image,
     old_path: str,
     old_image_data: ImagePath,
     new_path: str,
@@ -16,7 +12,6 @@ def try_convert_file_and_save_new(
     """
     Closes image and reopens it for safety, thens trys to convert to new file format.
     return: if file was converted and a new file was created"""
-    _prepare_to_rename(new_path, old_image)
 
     with open(old_path, mode="rb") as fp:
         with open_image(fp) as temp_img:
@@ -47,16 +42,3 @@ def try_convert_file_and_save_new(
             fp.flush()
 
     return True
-
-
-def rename_image(old_image: Image, old_path: str, new_path: str) -> None:
-    _prepare_to_rename(new_path, old_image)
-    os.rename(old_path, new_path)
-
-
-def _prepare_to_rename(path: str, old_image: Image) -> None:
-    """Errors if path already exists.
-    Then closes old image to prepare for rename"""
-    if os.path.isfile(path) or os.path.isdir(path):
-        raise FileExistsError()
-    old_image.close()

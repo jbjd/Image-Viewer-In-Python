@@ -1,13 +1,12 @@
 import os
 from typing import Callable
 
-from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
 from image import CachedInfo, CachedInfoAndImage, ImagePath
 from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
-from util.rename import rename_image, try_convert_file_and_save_new
+from util.rename import try_convert_file_and_save_new
 
 
 class ImageFileManager:
@@ -100,7 +99,6 @@ class ImageFileManager:
 
     def rename_or_convert_current_image(
         self,
-        image_to_close: Image,
         new_name: str,
         ask_delete_after_convert: Callable[[str], None],
     ) -> None:
@@ -112,10 +110,13 @@ class ImageFileManager:
             new_name += self.current_image.suffix
             new_image_data = ImagePath(new_name)
         new_path: str = f"{self.image_directory}/{new_name}"
+
+        if os.path.isfile(new_path) or os.path.isdir(new_path):
+            raise FileExistsError()
+
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
-                image_to_close,
                 self.path_to_current_image,
                 self.current_image,
                 new_path,
@@ -123,13 +124,10 @@ class ImageFileManager:
             )
         ):
             ask_delete_after_convert(new_image_data.suffix)
-            self.add_new_image(new_name)
-            return
-
-        rename_image(image_to_close, self.path_to_current_image, new_path)
-        self._clear_image_data()
+        else:
+            os.rename(self.path_to_current_image, new_path)
+            self._clear_image_data()
         self.add_new_image(new_name)
-        return
 
     def add_new_image(self, new_name: str) -> None:
         image_data = ImagePath(new_name)
