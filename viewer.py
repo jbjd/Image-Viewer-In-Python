@@ -159,7 +159,7 @@ class Viewer:
     def repeat_move(self, move_amount: int, ms: int) -> None:
         """Repeat move to next image while L/R key held"""
         self.move(move_amount)
-        self.move_id = self.app.after(ms, self.repeat_move, move_amount, 300)
+        self.move_id = self.app.after(ms, self.repeat_move, move_amount, 200)
 
     def scroll(self, event: Event) -> None:
         self.move(-1 if event.delta > 0 else 1)
