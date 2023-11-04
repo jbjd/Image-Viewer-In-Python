@@ -4,17 +4,15 @@ from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 
 import cv2
-from numpy import asarray
 from PIL import Image, UnidentifiedImageError
 from PIL.ImageTk import PhotoImage
-from turbojpeg import TJPF_RGB, TurboJPEG
 
 from factories.icon_factory import IconFactory
+from helpers.image_resize import ImageResizeHelper
 from image import (
     CachedInfo,
     CachedInfoAndImage,
     ImagePath,
-    array_to_photoimage,
     create_dropdown_image,
     init_font,
 )
@@ -27,7 +25,7 @@ class Viewer:
 
     __slots__ = (
         "size_ratio",
-        "jpeg_helper",
+        "image_resizer",
         "topbar_shown",
         "dropdown_shown",
         "redraw_screen",
@@ -37,8 +35,6 @@ class Viewer:
         "animation_id",
         "app",
         "canvas",
-        "screen_w",
-        "screen_h",
         "image_display_id",
         "file_manager",
         "topbar",
@@ -72,9 +68,6 @@ class Viewer:
         self.aniamtion_frames: list = []
         self.animation_id: str = ""
 
-        # helpers for specific file types
-        self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
-
         # application and canvas
         self.app: Tk = Tk()
         if os.name == "nt":
@@ -85,21 +78,24 @@ class Viewer:
         self.app.attributes("-fullscreen", True)
         self.app.state("zoomed")
         self.app.update()  # updates winfo width and height to the current size
-        self.screen_w: int = self.app.winfo_width()
-        self.screen_h: int = self.app.winfo_height()
-        self.size_ratio: float = self.screen_h / 1080
+        screen_width: int = self.app.winfo_width()
+        screen_height: int = self.app.winfo_height()
+        self.size_ratio: float = screen_height / 1080
         background = self.canvas.create_rectangle(
-            0, 0, self.screen_w, self.screen_h, fill="black"
+            0, 0, screen_width, screen_height, fill="black"
         )
         self.image_display_id = self.canvas.create_image(
-            self.screen_w >> 1, self.screen_h >> 1, anchor="center"
+            screen_width >> 1, screen_height >> 1, anchor="center"
         )
-        self.load_assests(self.scale_pixels_to_screen(32))
+        self.load_assests(screen_width, self.scale_pixels_to_screen(32))
+
+        # move this to file_manager later
+        self.image_resizer = ImageResizeHelper(screen_width, screen_height, path_to_exe)
 
         # draw first image, then get all image paths in directory
         self.image_loader()
         self.app.update()
-        self.file_manager.fully_load_images()
+        self.file_manager.fully_load_image_data()
         init_font(self.scale_pixels_to_screen(22))
 
         # events based on input
@@ -192,14 +188,14 @@ class Viewer:
             return
         self.image_loader()
 
-    def load_assests(self, topbar_height) -> None:
+    def load_assests(self, screen_width: int, topbar_height: int) -> None:
         """
         Load all assets on topbar from factory and create tkinter objects
         topbar_height: size to make icons/topbar
         """
         FONT: str = "arial 11"
 
-        icon_factory = IconFactory(topbar_height, self.screen_w)
+        icon_factory = IconFactory(topbar_height, screen_width)
         self.topbar = icon_factory.make_topbar()
 
         exit_icon = icon_factory.make_exit_icon()
@@ -236,13 +232,13 @@ class Viewer:
             state="hidden",
         )
         self.make_topbar_button(
-            exit_icon, exit_icon_hovered, "ne", self.screen_w, self.exit
+            exit_icon, exit_icon_hovered, "ne", screen_width, self.exit
         )
         self.make_topbar_button(
             minify_icon,
             minify_icon_hovered,
             "ne",
-            self.screen_w - topbar_height,
+            screen_width - topbar_height,
             self.minimize,
         )
         self.make_topbar_button(
@@ -254,7 +250,7 @@ class Viewer:
 
         # details dropdown
         self.dropdown_button_id: int = self.canvas.create_image(
-            self.screen_w - topbar_height - topbar_height,
+            screen_width - topbar_height - topbar_height,
             0,
             image=self.dropdown_hidden_icon,
             anchor="ne",
@@ -271,7 +267,7 @@ class Viewer:
             self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
         )
         self.dropdown_id: int = self.canvas.create_image(
-            self.screen_w, topbar_height, anchor="ne", tag="topbar", state="hidden"
+            screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
 
         self.rename_window_id: int = self.canvas.create_window(
@@ -395,70 +391,6 @@ class Viewer:
         self.redraw_screen = True
         self.app.iconify()
 
-    def image_is_scaling_down(self, image_width: int, image_height: int) -> bool:
-        """returns true when image must scale down"""
-        return image_height > self.screen_h or image_width > self.screen_w
-
-    def get_jpeg_scale_factor(
-        self,
-        image_width: int,
-        image_height: int,
-    ) -> tuple[int, int] | None:
-        """Gets scaling factor for images larger than screen"""
-        ratio_to_screen: float = max(
-            image_width / self.screen_w, image_height / self.screen_h
-        )
-
-        if ratio_to_screen >= 4:
-            return (1, 4)
-        if ratio_to_screen >= 2:
-            return (1, 2)
-        return None
-
-    def get_jpeg_fit_to_screen(
-        self,
-        dimensions: tuple[int, int],
-        interpolation: int,
-        image_width: int,
-        image_height: int,
-    ) -> PhotoImage:
-        with open(self.file_manager.path_to_current_image, "rb") as im_bytes:
-            image_as_array = self.jpeg_helper.decode(
-                im_bytes.read(),
-                TJPF_RGB,
-                self.get_jpeg_scale_factor(image_width, image_height),
-                0,
-            )
-            return array_to_photoimage(image_as_array, dimensions, interpolation)
-
-    def get_image_fit_to_screen(
-        self, dimensions: tuple[int, int], interpolation: int
-    ) -> PhotoImage:
-        # cv2 resize is faster than PIL, but convert to RGB then resize is slower
-        # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
-        return array_to_photoimage(
-            asarray(
-                self.temp if self.temp.mode != "P" else self.temp.convert("RGB"),
-                order="C",
-            ),
-            dimensions,
-            interpolation,
-        )
-
-    def dimension_finder(self, image_width: int, image_height: int) -> tuple[int, int]:
-        width: int = round(image_width * (self.screen_h / image_height))
-
-        # fit to height if width in screen,
-        # else fit to width and let height go off screen
-        return (
-            (width, self.screen_h)
-            if width <= self.screen_w
-            else (
-                self.screen_w,
-                round(image_height * (self.screen_w / image_width)),
-            )
-        )
-
     # loads and displays an image
     def image_loader(self) -> None:
         self.clear_animation_variables()
@@ -488,19 +420,21 @@ class Viewer:
             image_size = (
                 f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
             )
-            dimensions = self.dimension_finder(image_width, image_height)
+
             frame_count: int = getattr(self.temp, "n_frames", 1)
             interpolation: int = (
                 cv2.INTER_AREA
-                if self.image_is_scaling_down(image_width, image_height)
+                if self.image_resizer.image_is_scaling_down(image_width, image_height)
                 else cv2.INTER_CUBIC
             )
             if self.temp.format == "JPEG":
-                current_image = self.get_jpeg_fit_to_screen(
-                    dimensions, interpolation, image_width, image_height
+                current_image = self.image_resizer.get_jpeg_fit_to_screen(
+                    self.temp, self.file_manager.path_to_current_image, interpolation
                 )
             else:
-                current_image = self.get_image_fit_to_screen(dimensions, interpolation)
+                current_image = self.image_resizer.get_image_fit_to_screen(
+                    self.temp, interpolation
+                )
 
             # special case, file is animated
             if frame_count > 1:
@@ -517,13 +451,7 @@ class Viewer:
                 self.aniamtion_frames[0] = current_image, speed
                 Thread(
                     target=self.load_frame,
-                    args=(
-                        1,
-                        self.temp,
-                        dimensions,
-                        interpolation,
-                        frame_count,
-                    ),
+                    args=(1, self.temp, interpolation, frame_count),
                     daemon=True,
                 ).start()
                 # find animation frame speed
@@ -611,7 +539,6 @@ class Viewer:
         self,
         frame_index: int,
         original_image,
-        dimensions: tuple[int, int],
         interpolation: int,
         last_frame: int,
     ) -> None:
@@ -627,7 +554,7 @@ class Viewer:
             except (KeyError, AttributeError):
                 speed = self.DEFAULT_GIF_SPEED
             self.aniamtion_frames[frame_index] = (
-                self.get_frame_fit_to_screen(dimensions, interpolation),
+                self.image_resizer.get_image_fit_to_screen(self.temp, interpolation),
                 speed,
             )
         except Exception:
@@ -635,20 +562,9 @@ class Viewer:
             pass
         frame_index += 1
         if frame_index < last_frame:
-            self.load_frame(
-                frame_index, original_image, dimensions, interpolation, last_frame
-            )
+            self.load_frame(frame_index, original_image, interpolation, last_frame)
         elif self.temp is original_image:
             self.temp.close()
-
-    def get_frame_fit_to_screen(
-        self, dimensions: tuple[int, int], interpolation: int
-    ) -> PhotoImage:
-        return array_to_photoimage(
-            asarray(self.temp.convert("RGB"), order="C"),
-            dimensions,
-            interpolation,
-        )
 
     # cleans up after an animated file was opened
     def clear_animation_variables(self) -> None:

@@ -55,7 +55,7 @@ class ImageFileManager:
         self.current_image = self._files[self._current_index]
         self.path_to_current_image = f"{self.image_directory}/{self.current_image.name}"
 
-    def fully_load_images(self) -> None:
+    def fully_load_image_data(self) -> None:
         """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._current_index].name
         self._files.clear()
@@ -152,7 +152,7 @@ class ImageFileManager:
             bit_size,
         )
 
-    def get_current_image_cache(self) -> CachedInfo:
+    def get_current_image_cache(self) -> CachedInfo | CachedInfoAndImage:
         return self.cache[self.current_image.name]
 
     def current_image_cache_still_fresh(self) -> bool:

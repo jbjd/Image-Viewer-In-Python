@@ -1,0 +1,81 @@
+import os
+from functools import cache
+
+from numpy import asarray
+from PIL import Image
+from PIL.ImageTk import PhotoImage
+from turbojpeg import TJPF_RGB, TurboJPEG
+
+from image import array_to_photoimage
+
+
+class ImageResizeHelper:
+    def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
+        self.screen_width: int = screen_width
+        self.screen_height: int = screen_height
+        self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
+
+    def image_is_scaling_down(self, image_width: int, image_height: int) -> bool:
+        """returns true when image must scale down"""
+        return image_height > self.screen_height or image_width > self.screen_width
+
+    def _get_jpeg_scale_factor(
+        self, image_width: int, image_height: int
+    ) -> tuple[int, int] | None:
+        """Gets scaling factor for images larger than screen"""
+        ratio_to_screen: float = max(
+            image_width / self.screen_width, image_height / self.screen_height
+        )
+
+        if ratio_to_screen >= 4:
+            return (1, 4)
+        if ratio_to_screen >= 2:
+            return (1, 2)
+        return None
+
+    def get_jpeg_fit_to_screen(
+        self,
+        image: Image,
+        path_to_image: str,
+        interpolation: int,
+    ) -> PhotoImage:
+        image_width, image_height = image.size
+        with open(path_to_image, "rb") as im_bytes:
+            image_as_array = self.jpeg_helper.decode(
+                im_bytes.read(),
+                TJPF_RGB,
+                self._get_jpeg_scale_factor(image_width, image_height),
+                0,
+            )
+            return array_to_photoimage(
+                image_as_array,
+                self.dimension_finder(image_width, image_height),
+                interpolation,
+            )
+
+    def get_image_fit_to_screen(self, image: Image, interpolation: int) -> PhotoImage:
+        # cv2 resize is faster than PIL, but convert to RGB then resize is slower
+        # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
+        return array_to_photoimage(
+            asarray(
+                image if image.mode != "P" else image.convert("RGB"),
+                order="C",
+            ),
+            self.dimension_finder(*image.size),
+            interpolation,
+        )
+
+    @cache
+    def dimension_finder(self, image_width: int, image_height: int) -> tuple[int, int]:
+        """fits dimensions to height if width within screen,
+        else fit to width and let height go off screen"""
+        width: int = round(image_width * (self.screen_height / image_height))
+
+        return (
+            (width, self.screen_height)
+            if width <= self.screen_width
+            else (
+                self.screen_width,
+                round(image_height * (self.screen_width / image_width)),
+            )
+        )
