@@ -1,5 +1,4 @@
-from cv2 import resize
-from PIL.Image import fromarray, new
+from PIL.Image import new
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
@@ -31,12 +30,6 @@ class ImagePath:
     def __init__(self, name: str) -> None:
         self.suffix = name[name.rfind(".") :].lower()
         self.name = name
-
-
-def array_to_photoimage(
-    array, dimensions: tuple[int, int], interpolation: int
-) -> PhotoImage:
-    return PhotoImage(fromarray(resize(array, dimensions, interpolation=interpolation)))
 
 
 def init_font(font_size: int) -> None:

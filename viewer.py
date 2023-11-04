@@ -3,7 +3,6 @@ from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 
-import cv2
 from PIL import Image, UnidentifiedImageError
 from PIL.ImageTk import PhotoImage
 
@@ -422,19 +421,12 @@ class Viewer:
             )
 
             frame_count: int = getattr(self.temp, "n_frames", 1)
-            interpolation: int = (
-                cv2.INTER_AREA
-                if self.image_resizer.image_is_scaling_down(image_width, image_height)
-                else cv2.INTER_CUBIC
-            )
             if self.temp.format == "JPEG":
                 current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                    self.temp, self.file_manager.path_to_current_image, interpolation
+                    self.temp, self.file_manager.path_to_current_image
                 )
             else:
-                current_image = self.image_resizer.get_image_fit_to_screen(
-                    self.temp, interpolation
-                )
+                current_image = self.image_resizer.get_image_fit_to_screen(self.temp)
 
             # special case, file is animated
             if frame_count > 1:
@@ -451,7 +443,7 @@ class Viewer:
                 self.aniamtion_frames[0] = current_image, speed
                 Thread(
                     target=self.load_frame,
-                    args=(1, self.temp, interpolation, frame_count),
+                    args=(self.temp, 1, frame_count),
                     daemon=True,
                 ).start()
                 # find animation frame speed
@@ -537,9 +529,8 @@ class Viewer:
 
     def load_frame(
         self,
+        original_image: Image,
         frame_index: int,
-        original_image,
-        interpolation: int,
         last_frame: int,
     ) -> None:
         # if user moved to new image, don't keep loading previous animated image
@@ -554,7 +545,7 @@ class Viewer:
             except (KeyError, AttributeError):
                 speed = self.DEFAULT_GIF_SPEED
             self.aniamtion_frames[frame_index] = (
-                self.image_resizer.get_image_fit_to_screen(self.temp, interpolation),
+                self.image_resizer.get_image_fit_to_screen(self.temp),
                 speed,
             )
         except Exception:
@@ -562,7 +553,7 @@ class Viewer:
             pass
         frame_index += 1
         if frame_index < last_frame:
-            self.load_frame(frame_index, original_image, interpolation, last_frame)
+            self.load_frame(original_image, frame_index, last_frame)
         elif self.temp is original_image:
             self.temp.close()
 
