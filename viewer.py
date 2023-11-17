@@ -1,3 +1,4 @@
+from typing import Optional
 import os
 from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
@@ -48,8 +49,7 @@ class Viewer:
         "temp",
         "dropdown_button_id",
         "rename_button_id",
-        "KEY_MAPPING",
-        "KEY_MAPPING_LIMITED",
+        "key_bindings",
         "move_id",
     )
 
@@ -98,22 +98,19 @@ class Viewer:
         init_font(self.scale_pixels_to_screen(22))
 
         # events based on input
-        self.KEY_MAPPING = {
-            "r": self.toggle_show_rename_window,
-            "Left": self.arrow,
-            "Right": self.arrow,
-        }  # allowed only in main app
-        self.KEY_MAPPING_LIMITED = {
+        self.key_bindings = {
             "F2": self.toggle_show_rename_window,
             "Up": self.hide_topbar,
             "Down": self.show_topbar,
+            "Left": self.lr_arrow,
+            "Right": self.lr_arrow,
         }  # allowed in entry or main app
         self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
         self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
         self.app.bind("<FocusIn>", self.redraw)
         self.app.bind("<MouseWheel>", self.scroll)
         self.app.bind("<Escape>", self.escape_button)
-        self.app.bind("<KeyPress>", self.handle_all_keybinds)
+        self.app.bind("<KeyPress>", self.handle_keybinds_main)
         self.app.bind("<KeyRelease>", self.handle_key_release)
 
         self.app.mainloop()
@@ -128,18 +125,24 @@ class Viewer:
                 self.app.after_cancel(self.move_id)
                 self.move_id = ""
 
-    def handle_all_keybinds(self, event: Event) -> None:
+    def handle_keybinds_main(self, event: Event) -> None:
+        """Key binds on main screen"""
         if event.widget is self.app:
-            if event.keysym in self.KEY_MAPPING:
-                self.KEY_MAPPING[event.keysym](event)
+            if event.keysym == "r":
+                self.toggle_show_rename_window(event)
             else:
-                self.handle_limited_keybinds(event)
+                self.handle_keybinds_default(event)
+
+    def handle_keybinds_default(self, event: Event) -> None:
+        """Key binds that can be used anywhere"""
+        if event.keysym in self.key_bindings:
+            self.key_bindings[event.keysym](event)
 
     def handle_limited_keybinds(self, event: Event) -> None:
         if event.keysym in self.KEY_MAPPING_LIMITED:
             self.KEY_MAPPING_LIMITED[event.keysym](event)
 
-    def arrow(self, event: Event) -> None:
+    def lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
         if self.move_id != "":
@@ -274,7 +277,7 @@ class Viewer:
         )
         self.rename_entry: Entry = Entry(self.app, font=FONT)
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
-        self.rename_entry.bind("<KeyRelease>", self.handle_limited_keybinds)
+        self.rename_entry.bind("<KeyPress>", self.handle_keybinds_default)
         self.canvas.itemconfig(
             self.rename_window_id, state="hidden", window=self.rename_entry
         )
@@ -311,21 +314,21 @@ class Viewer:
         return button_id
 
     # wrapper for exit function to close rename window first if its open
-    def escape_button(self, event: Event = None) -> None:
+    def escape_button(self, event: Optional[Event] = None) -> None:
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
         self.exit()
 
     # properly exit program
-    def exit(self, event: Event = None) -> None:
+    def exit(self, event: Optional[Event] = None) -> None:
         self.temp.close()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
         exit(0)
 
-    def leave_hover_dropdown_toggle(self, event: Event = None) -> None:
+    def leave_hover_dropdown_toggle(self, event: Optional[Event] = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
@@ -333,7 +336,7 @@ class Viewer:
             else self.dropdown_hidden_icon,
         )
 
-    def hover_dropdown_toggle(self, event: Event = None) -> None:
+    def hover_dropdown_toggle(self, event: Optional[Event] = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
@@ -341,12 +344,12 @@ class Viewer:
             else self.dropdown_hidden_icon_hovered,
         )
 
-    def trash_image(self, event: Event = None) -> None:
+    def trash_image(self, event: Optional[Event] = None) -> None:
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image_and_move_to_next(delete_from_disk=True)
 
-    def toggle_show_rename_window(self, event: Event = None) -> None:
+    def toggle_show_rename_window(self, event: Optional[Event] = None) -> None:
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
@@ -369,7 +372,7 @@ class Viewer:
         ):
             self.remove_image_and_move_to_next(delete_from_disk=True)
 
-    def try_rename_or_convert(self, event: Event = None) -> None:
+    def try_rename_or_convert(self, event: Optional[Event] = None) -> None:
         try:
             self.file_manager.rename_or_convert_current_image(
                 self.rename_entry.get().strip(),
@@ -467,12 +470,12 @@ class Viewer:
         self.canvas.itemconfig(self.image_display_id, image=current_image)
         self.app.title(current_image_data.name)
 
-    def show_topbar(self, event: Event = None) -> None:
+    def show_topbar(self, event: Optional[Event] = None) -> None:
         self.topbar_shown = True
         self.canvas.itemconfig("topbar", state="normal")
         self.refresh_topbar()
 
-    def hide_topbar(self, event: Event = None) -> None:
+    def hide_topbar(self, event: Optional[Event] = None) -> None:
         self.app.focus()
         self.topbar_shown = False
         self.canvas.itemconfig("topbar", state="hidden")
@@ -567,7 +570,7 @@ class Viewer:
         self.aniamtion_frames.clear()
         self.temp.close()
 
-    def toggle_details_dropdown(self, event: Event) -> None:
+    def toggle_details_dropdown(self, event: Optional[Event] = None) -> None:
         self.dropdown_shown = not self.dropdown_shown
         self.hover_dropdown_toggle()  # fake mouse hover
         (
