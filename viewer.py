@@ -57,22 +57,23 @@ class Viewer:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
-        self.topbar_shown: bool = False
-        self.dropdown_shown: bool = False
-        self.redraw_screen: bool = False
+        self.topbar_shown: bool
+        self.dropdown_shown: bool
+        self.redraw_screen: bool
+        self.topbar_shown = self.dropdown_shown = self.redraw_screen = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
 
         # variables used for animations, empty when no animation playing
-        self.aniamtion_frames: list = []
+        self.aniamtion_frames: list[PhotoImage | None] = []
         self.animation_id: str = ""
 
         # application and canvas
-        self.app: Tk = Tk()
+        self.app = Tk()
         if os.name == "nt":
             self.app.iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
 
-        self.canvas: Canvas = Canvas(self.app, bg="black", highlightthickness=0)
+        self.canvas = Canvas(self.app, bg="black", highlightthickness=0)
         self.canvas.pack(anchor="nw", fill="both", expand=1)
         self.app.attributes("-fullscreen", True)
         self.app.state("zoomed")
@@ -138,17 +139,13 @@ class Viewer:
         if event.keysym in self.key_bindings:
             self.key_bindings[event.keysym](event)
 
-    def handle_limited_keybinds(self, event: Event) -> None:
-        if event.keysym in self.KEY_MAPPING_LIMITED:
-            self.KEY_MAPPING_LIMITED[event.keysym](event)
-
     def lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
         if self.move_id != "":
             return
         if event.widget is self.app:
-            # move 5 when ctrl held, 2 when shift held
+            # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (event.state & 5)
             if event.keysym == "Left":
                 move_amount = -move_amount
@@ -405,7 +402,7 @@ class Viewer:
             self.remove_image_and_move_to_next(delete_from_disk=False)
             return
 
-        bit_size: int = os.path.getsize(self.file_manager.path_to_current_image)
+        bit_size: int = os.stat(self.file_manager.path_to_current_image).st_size
 
         # check if was cached and not changed outside of program
         cached_img_data = self.file_manager.cache.get(current_image_data.name, False)

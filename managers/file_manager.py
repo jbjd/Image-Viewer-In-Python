@@ -33,15 +33,12 @@ class ImageFileManager:
 
     def __init__(self, first_image_to_load: str) -> None:
         """Load single file for display before we load the rest"""
-        first_image_to_load = first_image_to_load.replace("\\", "/")
-        first_image_data = ImagePath(
-            first_image_to_load[first_image_to_load.rfind("/") + 1 :]
-        )
+        first_image_data = ImagePath(os.path.basename(first_image_to_load))
         if (
             not os.path.isfile(first_image_to_load)
             or first_image_data.suffix not in self.VALID_FILE_TYPES
         ):
-            raise Exception("File not a valid image")
+            raise ValueError("File not a valid image")
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
         self._files: list[ImagePath] = [first_image_data]
