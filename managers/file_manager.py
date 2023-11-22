@@ -131,20 +131,25 @@ class ImageFileManager:
         self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
-    def cache_info(self, width: int, height: int, size):
+    def cache_info(self, width: int, height: int, dimensions: str):
         self.cache[self.current_image.name] = CachedInfo(
             width,
             height,
-            size,
+            dimensions,
         )
 
     def cache_image(
-        self, width: int, height: int, size, photo_image: PhotoImage, bit_size: int
+        self,
+        width: int,
+        height: int,
+        dimensions: str,
+        photo_image: PhotoImage,
+        bit_size: int,
     ):
         self.cache[self.current_image.name] = CachedInfoAndImage(
             width,
             height,
-            size,
+            dimensions,
             photo_image,
             bit_size,
         )
@@ -153,15 +158,15 @@ class ImageFileManager:
         return self.cache[self.current_image.name]
 
     def current_image_cache_still_fresh(self) -> bool:
+        """Returns true when we think the cached image is still accurate.
+        Not guaranteed to be correct, but thats not important for this case"""
         return os.path.isfile(self.path_to_current_image) and os.path.getsize(
             self.path_to_current_image
         ) == self.cache.get(self.current_image.name, 0)
 
     def _binary_search(self, target_image: str) -> int:
-        """
-        find index of image in the sorted list of all images in the directory
-        target_image: name of image file to find
-        """
+        """Finds index of image in the sorted list of all images in the directory.
+        target_image: name of image file to find"""
         low: int = 0
         mid: int
         high: int = len(self._files) - 1

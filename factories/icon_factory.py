@@ -11,9 +11,6 @@ class IconFactory:
     ICON_HOVERED_RGB: tuple = (95, 92, 88)
     TOPBAR_RGBA: tuple = (60, 60, 60, 170)
 
-    EXIT_RGB: tuple = (190, 40, 40)
-    EXIT_HOVER_RGB: tuple = (180, 25, 20)
-
     __slots__ = ("icon_size", "screen_width", "icon_default", "icon_hovered_default")
 
     def __init__(self, icon_size: int, screen_width: int) -> None:
@@ -31,10 +28,12 @@ class IconFactory:
         )
 
     def make_exit_icon(self) -> PhotoImage:
-        return PhotoImage(new("RGB", (self.icon_size, self.icon_size), self.EXIT_RGB))
+        EXIT_RGB: tuple = (190, 40, 40)
+        return PhotoImage(new("RGB", (self.icon_size, self.icon_size), EXIT_RGB))
 
     def make_exit_icon_hovered(self) -> PhotoImage:
-        draw = Draw(new("RGB", (self.icon_size, self.icon_size), self.EXIT_HOVER_RGB))
+        EXIT_HOVER_RGB: tuple = (180, 25, 20)
+        draw = Draw(new("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), width=2, fill=self.LINE_RGB)
         draw.line((6, 26, 26, 6), width=2, fill=self.LINE_RGB)
         return PhotoImage(draw._image)

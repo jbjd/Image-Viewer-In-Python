@@ -579,7 +579,7 @@ class Viewer:
     def create_details_dropdown(self) -> None:
         image_info: CachedInfo = self.file_manager.get_current_image_cache()
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
-        size_text: str = f"Size: {image_info.size_as_text}"
+        size_text: str = f"Size: {image_info.dimensions}"
 
         self.dropdown_image = create_dropdown_image(dimension_text, size_text)
         self.canvas.itemconfig(
