@@ -3,8 +3,7 @@ from functools import cache
 
 import cv2
 from numpy import asarray
-from PIL import Image
-from PIL.Image import fromarray
+from PIL.Image import Image, fromarray
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 

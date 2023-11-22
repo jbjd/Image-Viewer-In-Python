@@ -1,7 +1,7 @@
+import ctypes
 import os
 import subprocess
-from distutils.dir_util import copy_tree
-from shutil import rmtree
+from distutils.dir_util import copy_tree, remove_tree
 
 try:
     import nuitka  # noqa: F401
@@ -14,6 +14,11 @@ except ImportError:
 # only works for windows currently
 if os.name != "nt":
     raise Exception("Compiling on Linux/Mac not currently supported")
+
+is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+if not is_admin:
+    raise Exception("compile.py needs admin privileges to run")
 
 INSTALL_PATH: str = "C:/Program Files/Personal Image Viewer/"
 
@@ -31,11 +36,11 @@ cmd_str = f'python -m nuitka --windows-disable-console \
     --follow-import-to="managers"  --follow-import-to="helpers" {WORKING_DIR}main.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
-try:
-    # keeps a copy of previously installed version just in case
-    exe_install_path = f"{INSTALL_PATH}viewer.exe"
-    old_exe_install_path = f"{INSTALL_PATH}viewer2.exe"
+# keep a copy of previously installed version just in case
+exe_install_path = f"{INSTALL_PATH}viewer.exe"
+old_exe_install_path = f"{INSTALL_PATH}viewer2.exe"
 
+try:
     if os.path.isfile(old_exe_install_path):
         os.remove(old_exe_install_path)
 
@@ -50,11 +55,7 @@ try:
     process.wait()
     os.remove(f"{WORKING_DIR}main.cmd")
     os.rename(f"{WORKING_DIR}main.exe", exe_install_path)
-    rmtree(f"{WORKING_DIR}main.build")
-
-except Exception as e:
+    remove_tree(f"{WORKING_DIR}main.build")
+    print(f"\nComplete, installed to {INSTALL_PATH}")
+finally:
     process.kill()
-    raise Exception(
-        "Compile failed. "
-        "This is likely due to a lack of root privileges, please run as root"
-    ) from e

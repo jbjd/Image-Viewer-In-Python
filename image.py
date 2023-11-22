@@ -53,4 +53,4 @@ def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
     )
     box_to_draw_on.text((10, text_bbox[3] + 5), dimension_text, fill="white")
     box_to_draw_on.text((10, int(text_bbox[3] * 3)), size_text, fill="white")
-    return PhotoImage(box_to_draw_on._image)
+    return PhotoImage(box_to_draw_on._image)  # type: ignore

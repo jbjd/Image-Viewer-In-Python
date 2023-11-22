@@ -65,7 +65,7 @@ class Viewer:
         self.move_id: str = ""
 
         # variables used for animations, empty when no animation playing
-        self.aniamtion_frames: list[PhotoImage | None] = []
+        self.aniamtion_frames: list = []
         self.animation_id: str = ""
 
         # application and canvas
@@ -146,7 +146,7 @@ class Viewer:
             return
         if event.widget is self.app:
             # move +4 when ctrl held, +1 when shift held
-            move_amount: int = 1 + (event.state & 5)
+            move_amount: int = 1 + (event.state & 5)  # type: ignore
             if event.keysym == "Left":
                 move_amount = -move_amount
             self.repeat_move(move_amount, 600)
