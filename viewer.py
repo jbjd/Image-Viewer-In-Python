@@ -4,7 +4,8 @@ from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 
-from PIL import Image, UnidentifiedImageError
+from PIL.Image import Image, open as open_image
+from PIL import UnidentifiedImageError
 from PIL.ImageTk import PhotoImage
 
 from factories.icon_factory import IconFactory
@@ -221,14 +222,13 @@ class Viewer:
             0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
         )
         self.file_name_text_id: int = self.canvas.create_text(
-            36,
-            5,
+            36.0,
+            5.0,
             text="",
             fill="white",
             anchor="nw",
             font=FONT,
-            tag="topbar",
-            state="hidden",
+            tags="topbar",
         )
         self.make_topbar_button(
             exit_icon, exit_icon_hovered, "ne", screen_width, self.exit
@@ -397,7 +397,7 @@ class Viewer:
 
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            self.temp = Image.open(self.file_manager.path_to_current_image)
+            self.temp = open_image(self.file_manager.path_to_current_image)
         except (FileNotFoundError, UnidentifiedImageError):
             self.remove_image_and_move_to_next(delete_from_disk=False)
             return
