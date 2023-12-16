@@ -131,7 +131,7 @@ class ImageFileManager:
         self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
-    def cache_info(self, width: int, height: int, dimensions: str):
+    def cache_info(self, width: int, height: int, dimensions: str) -> None:
         self.cache[self.current_image.name] = CachedInfo(
             width,
             height,
@@ -145,7 +145,7 @@ class ImageFileManager:
         dimensions: str,
         photo_image: PhotoImage,
         bit_size: int,
-    ):
+    ) -> None:
         self.cache[self.current_image.name] = CachedInfoAndImage(
             width,
             height,

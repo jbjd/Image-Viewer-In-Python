@@ -384,7 +384,7 @@ class Viewer:
 
         self.cleanup_after_rename()
 
-    def reset_entry_color(self):
+    def reset_entry_color(self) -> None:
         self.rename_entry.config(bg="white")
 
     def minimize(self, event: Event) -> None:
