@@ -6,3 +6,5 @@ main.exe
 main.cmd
 
 *.build/
+
+.mypy_cache

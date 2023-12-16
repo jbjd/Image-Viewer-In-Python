@@ -1,4 +1,5 @@
 from typing import Optional
+from collections.abc import Callable
 import os
 from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
@@ -100,7 +101,7 @@ class Viewer:
         init_font(self.scale_pixels_to_screen(22))
 
         # events based on input
-        self.key_bindings = {
+        self.key_bindings: dict[str, Callable] = {
             "F2": self.toggle_show_rename_window,
             "Up": self.hide_topbar,
             "Down": self.show_topbar,
