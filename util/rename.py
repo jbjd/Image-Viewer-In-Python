@@ -17,13 +17,13 @@ def try_convert_file_and_save_new(
         with open_image(fp) as temp_img:
             # refuse to convert animations other than to webp
             is_animated: bool = getattr(temp_img, "n_frames", 1) > 1
-            if is_animated and new_image_data.suffix not in (".webp", ".gif"):
+            if is_animated and new_image_data.suffix not in (".webp", ".gif", ".png"):
                 raise ValueError()
 
             match new_image_data.suffix:
                 case ".webp":
                     temp_img.save(
-                        new_path, "WebP", quality=100, method=6, save_all=is_animated
+                        new_path, "WEBP", quality=100, method=6, save_all=is_animated
                     )
                 case ".png":
                     temp_img.save(new_path, "PNG", optimize=True)
@@ -37,7 +37,7 @@ def try_convert_file_and_save_new(
                         temp_img = temp_img.convert("RGB")
                     temp_img.save(new_path, "JPEG", optimize=True, quality=100)
                 case ".gif":
-                    temp_img.save(new_path, save_all=is_animated)
+                    temp_img.save(new_path, "GIF", save_all=is_animated)
                 case _:
                     return False
 
