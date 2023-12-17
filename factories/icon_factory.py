@@ -10,20 +10,19 @@ class IconFactory:
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
 
-    __slots__ = ("icon_size", "screen_width", "icon_default", "icon_hovered_default")
+    __slots__ = ("icon_size", "icon_default", "icon_hovered_default")
 
-    def __init__(self, icon_size: int, screen_width: int) -> None:
+    def __init__(self, icon_size: int) -> None:
         self.icon_size: int = icon_size
-        self.screen_width: int = screen_width
 
         self.icon_default: Image = new("RGB", (icon_size, icon_size), self.ICON_RGB)
         self.icon_hovered_default: Image = new(
             "RGB", (icon_size, icon_size), self.ICON_HOVERED_RGB
         )
 
-    def make_topbar(self) -> PhotoImage:
+    def make_topbar(self, screen_width: int) -> PhotoImage:
         TOPBAR_RGBA: tuple = (60, 60, 60, 170)
-        return PhotoImage(new("RGBA", (self.screen_width, self.icon_size), TOPBAR_RGBA))
+        return PhotoImage(new("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA))
 
     def make_exit_icon(self) -> PhotoImage:
         EXIT_RGB: tuple = (190, 40, 40)

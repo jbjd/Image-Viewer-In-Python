@@ -196,8 +196,8 @@ class Viewer:
         """
         FONT: str = "arial 11"
 
-        icon_factory = IconFactory(topbar_height, screen_width)
-        self.topbar = icon_factory.make_topbar()
+        icon_factory = IconFactory(topbar_height)
+        self.topbar = icon_factory.make_topbar(screen_width)
 
         exit_icon = icon_factory.make_exit_icon()
         exit_icon_hovered = icon_factory.make_exit_icon_hovered()
@@ -358,12 +358,8 @@ class Viewer:
         self.canvas.coords(self.rename_window_id, self.rename_window_x_offset + 40, 4)
         self.rename_entry.focus()
 
-    def cleanup_after_rename(self) -> None:
-        self.hide_rename_window()
-        self.image_loader()
-        self.refresh_topbar()
-
-    def ask_delete_after_convert(self, new_format: str) -> None:
+    def _ask_delete_after_convert(self, new_format: str) -> None:
+        """Used as callback function for after a succecssful file conversion"""
         if askyesno(
             "Confirm deletion",
             f"Converted file to {new_format}, delete old file?",
@@ -371,10 +367,12 @@ class Viewer:
             self.remove_image_and_move_to_next(delete_from_disk=True)
 
     def try_rename_or_convert(self, event: Optional[Event] = None) -> None:
+        """Handles user input into rename window.
+        Trys to convert or rename based on input"""
         try:
             self.file_manager.rename_or_convert_current_image(
                 self.rename_entry.get().strip(),
-                self.ask_delete_after_convert,
+                self._ask_delete_after_convert,
             )
         except Exception:
             # flash red to tell user rename failed
@@ -382,12 +380,16 @@ class Viewer:
             self.app.after(400, self.reset_entry_color)
             return
 
-        self.cleanup_after_rename()
+        # Cleanup after successful rename
+        self.hide_rename_window()
+        self.image_loader()
+        self.refresh_topbar()
 
     def reset_entry_color(self) -> None:
         self.rename_entry.config(bg="white")
 
     def minimize(self, event: Event) -> None:
+        """Minimizes the app and sets flag to redraw current image when opened again"""
         self.redraw_screen = True
         self.app.iconify()
 

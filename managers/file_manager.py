@@ -106,6 +106,7 @@ class ImageFileManager:
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
             new_name += self.current_image.suffix
             new_image_data = ImagePath(new_name)
+
         new_path: str = f"{self.image_directory}/{new_name}"
 
         if os.path.isfile(new_path) or os.path.isdir(new_path):
