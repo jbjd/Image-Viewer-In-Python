@@ -5,20 +5,15 @@ from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 from typing import Optional
 
+from cv2 import error as ResizeException
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
-from cv2 import error as ResizeException
 
 from factories.icon_factory import IconFactory
 from helpers.image_resize import ImageResizeHelper
-from image import (
-    CachedImageData,
-    ImagePath,
-    create_dropdown_image,
-    init_font,
-)
+from image import CachedImageData, ImagePath, create_dropdown_image, init_font
 from managers.file_manager import ImageFileManager
 
 

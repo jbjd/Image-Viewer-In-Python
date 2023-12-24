@@ -1,7 +1,7 @@
 import ctypes
 import os
+import shutil
 import subprocess
-from distutils.dir_util import copy_tree, remove_tree
 
 try:
     import nuitka  # noqa: F401
@@ -36,26 +36,26 @@ cmd_str = f'python -m nuitka --windows-disable-console \
     --follow-import-to="managers"  --follow-import-to="helpers" {WORKING_DIR}main.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
-# keep a copy of previously installed version just in case
 exe_install_path = f"{INSTALL_PATH}viewer.exe"
 old_exe_install_path = f"{INSTALL_PATH}viewer2.exe"
+data_file_paths: list[str] = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 
 try:
-    if os.path.isfile(old_exe_install_path):
-        os.remove(old_exe_install_path)
-
+    # keep a copy of previously installed version just in case
     if os.path.isfile(exe_install_path):
-        os.rename(exe_install_path, old_exe_install_path)
+        shutil.move(exe_install_path, old_exe_install_path)
 
-    # data files
-    copy_tree(f"{WORKING_DIR}icon/", f"{INSTALL_PATH}icon/")
-    copy_tree(f"{WORKING_DIR}dll/", f"{INSTALL_PATH}dll/")
+    for data_file_path in data_file_paths:
+        shutil.copy(f"{WORKING_DIR}{data_file_path}", f"{INSTALL_PATH}{data_file_path}")
 
     print("Waiting for nuitka compilation")
     process.wait()
     os.remove(f"{WORKING_DIR}main.cmd")
     os.rename(f"{WORKING_DIR}main.exe", exe_install_path)
-    remove_tree(f"{WORKING_DIR}main.build")
+    shutil.rmtree(f"{WORKING_DIR}main.build")
     print(f"\nComplete, installed to {INSTALL_PATH}")
 finally:
+    # move backup exe to original exe
+    shutil.move(old_exe_install_path, exe_install_path)
+    # and stop the new compile thread
     process.kill()
