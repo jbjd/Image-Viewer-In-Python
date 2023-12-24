@@ -2,6 +2,7 @@ import ctypes
 import os
 import shutil
 import subprocess
+from argparse import ArgumentParser
 
 try:
     import nuitka  # noqa: F401
@@ -10,24 +11,46 @@ except ImportError:
         "Nuitka is not installed on your system, it must be installed to compile"
     )
 
+parser = ArgumentParser(
+    description="Compiles code in this repository to an executable, must be run as root"
+)
+parser.add_argument("--python-path", help="Python path to use in compilation")
+args = parser.parse_args()
 
 # only works for windows currently
 if os.name == "nt":
-    is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    is_root: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
 else:
     raise Exception("Compiling on Linux/Mac not currently supported")
 
-if not is_admin:
-    raise Exception("compile.py needs admin privileges to run")
+if not is_root:
+    raise Exception("compile.py needs root privileges to run")
+
+python_path: str
+if args.python_path is None:
+    # if not provided, try to find with where
+    args.python_path = (
+        subprocess.run("where python", shell=True, stdout=subprocess.PIPE)
+        .stdout.decode()
+        .partition("\n")[0]
+    )
+    if args.python_path == "":
+        raise Exception(
+            (
+                "Failed to find path to python. "
+                "Please provide the --python-path command line argument"
+            )
+        )
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
 INSTALL_PATH: str = "C:/Program Files/Personal Image Viewer/"
-TEMP_PATH: str = f"{WORKING_DIR}/TEMP/"  # set up here, then copy to install path
+TEMP_PATH: str = f"{WORKING_DIR}/TEMP/"  # setup here, then copy to install path
 DATA_FILE_PATHS: list[str] = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 
-
-print("Starting up nuitka")
-cmd_str = f'python -m nuitka --windows-disable-console \
+# begin nuitka compilation in another thread
+print("Starting compilation with nuitka")
+print("Using python install found at", args.python_path)
+cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="image" --follow-import-to="viewer" \
@@ -43,6 +66,7 @@ def cleanup_after_compile() -> None:
         pass
 
 
+# setup data files
 try:
     os.makedirs(INSTALL_PATH, exist_ok=True)
 
@@ -57,7 +81,7 @@ except Exception as e:
     cleanup_after_compile()
     raise e
 
-print("Waiting for nuitka compilation")
+print("Waiting for nuitka compilation...")
 process.wait()
 
 os.rename(f"{WORKING_DIR}main.exe", f"{TEMP_PATH}viewer.exe")
@@ -67,4 +91,5 @@ shutil.rmtree(INSTALL_PATH, ignore_errors=True)
 os.rename(TEMP_PATH, INSTALL_PATH)
 
 cleanup_after_compile()
-print(f"\nFinished, installed to {INSTALL_PATH}")
+print("\nFinished")
+print("Installed to", INSTALL_PATH)
