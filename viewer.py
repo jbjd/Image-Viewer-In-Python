@@ -1,12 +1,13 @@
-from typing import Optional
-from collections.abc import Callable
 import os
+from collections.abc import Callable
 from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
+from typing import Optional
 
-from PIL.Image import Image, open as open_image
 from PIL import UnidentifiedImageError
+from PIL.Image import Image
+from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
 
 from factories.icon_factory import IconFactory
