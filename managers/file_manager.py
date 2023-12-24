@@ -1,10 +1,10 @@
 import os
-from typing import Callable, Union
+from typing import Callable
 
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
-from image import CachedInfo, CachedInfoAndImage, ImagePath
+from image import CachedImageData, ImagePath
 from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
 from util.rename import try_convert_file_and_save_new
 
@@ -44,7 +44,7 @@ class ImageFileManager:
         self._files: list[ImagePath] = [first_image_data]
         self._current_index: int = 0
         self._populate_data_attributes()
-        self.cache: dict[str, CachedInfo] = {}
+        self.cache: dict[str, CachedImageData] = {}
 
     def _populate_data_attributes(self) -> None:
         """Sets variables about current image.
@@ -132,13 +132,6 @@ class ImageFileManager:
         self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()
 
-    def cache_info(self, width: int, height: int, dimensions: str) -> None:
-        self.cache[self.current_image.name] = CachedInfo(
-            width,
-            height,
-            dimensions,
-        )
-
     def cache_image(
         self,
         width: int,
@@ -147,7 +140,7 @@ class ImageFileManager:
         photo_image: PhotoImage,
         bit_size: int,
     ) -> None:
-        self.cache[self.current_image.name] = CachedInfoAndImage(
+        self.cache[self.current_image.name] = CachedImageData(
             width,
             height,
             dimensions,
@@ -155,7 +148,7 @@ class ImageFileManager:
             bit_size,
         )
 
-    def get_current_image_cache(self) -> CachedInfo | CachedInfoAndImage:
+    def get_current_image_cache(self) -> CachedImageData:
         return self.cache[self.current_image.name]
 
     def current_image_cache_still_fresh(self) -> bool:
@@ -165,8 +158,8 @@ class ImageFileManager:
             self.path_to_current_image
         ) == self.cache.get(self.current_image.name, 0)
 
-    def get_cached_image_data(self) -> Union[CachedInfo, bool]:
-        return self.cache.get(self.current_image.name, False)
+    def get_cached_image_data(self) -> CachedImageData | None:
+        return self.cache.get(self.current_image.name, None)
 
     def _binary_search(self, target_image: str) -> int:
         """Finds index of image in the sorted list of all images in the directory.

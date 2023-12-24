@@ -6,20 +6,13 @@ from PIL.ImageTk import PhotoImage
 
 # struct for holding cached images
 # for some reason this stores less data than a regular tuple based on my tests
-class CachedInfo:
-    __slots__ = ("width", "height", "dimensions")
+class CachedImageData:
+    __slots__ = ("width", "height", "dimensions", "image", "kb_size")
 
-    def __init__(self, width, height, dimensions) -> None:
+    def __init__(self, width, height, dimensions, image, kb_size) -> None:
         self.width: int = width
         self.height: int = height
         self.dimensions: str = dimensions
-
-
-class CachedInfoAndImage(CachedInfo):
-    __slots__ = ("image", "kb_size")
-
-    def __init__(self, width, height, dimensions, image, kb_size) -> None:
-        super().__init__(width, height, dimensions)
         self.image: PhotoImage = image
         self.kb_size: int = kb_size
 

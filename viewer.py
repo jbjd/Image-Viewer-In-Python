@@ -14,8 +14,7 @@ from cv2 import error as ResizeException
 from factories.icon_factory import IconFactory
 from helpers.image_resize import ImageResizeHelper
 from image import (
-    CachedInfo,
-    CachedInfoAndImage,
+    CachedImageData,
     ImagePath,
     create_dropdown_image,
     init_font,
@@ -439,16 +438,17 @@ class Viewer:
         image_kb_size: int = (
             os.stat(self.file_manager.path_to_current_image).st_size >> 10
         )
+        frame_count: int = getattr(self.temp, "n_frames", 1)
 
         # check if was cached and not changed outside of program
         cached_image_data = self.file_manager.get_cached_image_data()
-        if (
-            cached_image_data
-            and isinstance(cached_image_data, CachedInfoAndImage)
-            and image_kb_size == cached_image_data.kb_size
-        ):
+        if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
-            self.temp.close()
+            if frame_count > 1:
+                self.temp.seek(0)
+                self.begin_animation(current_image, frame_count)
+            else:
+                self.temp.close()
         else:
             image_width, image_height = self.temp.size
             image_size: str = (
@@ -474,21 +474,16 @@ class Viewer:
 
             if frame_count > 1:
                 self.begin_animation(current_image, frame_count)
-                self.file_manager.cache_info(
-                    image_width,
-                    image_height,
-                    image_size,
-                )
             else:
-                # cache non-animated images
-                self.file_manager.cache_image(
-                    image_width,
-                    image_height,
-                    image_size,
-                    current_image,
-                    image_kb_size,
-                )
                 self.temp.close()
+
+            self.file_manager.cache_image(
+                image_width,
+                image_height,
+                image_size,
+                current_image,
+                image_kb_size,
+            )
 
         self.canvas.itemconfig(self.image_display_id, image=current_image)
         self.app.title(current_image_data.name)
@@ -601,7 +596,7 @@ class Viewer:
         )
 
     def create_details_dropdown(self) -> None:
-        image_info: CachedInfo = self.file_manager.get_current_image_cache()
+        image_info: CachedImageData = self.file_manager.get_current_image_cache()
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.dimensions}"
 
