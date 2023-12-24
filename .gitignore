@@ -1,10 +1,11 @@
 .vscode/
-
 __pycache__/
+.mypy_cache
 
-main.exe
-main.cmd
-
+# nuitka artifacts
+*.exe
+*.cmd
 *.build/
 
-.mypy_cache
+# used in compile.py
+TEMP/
