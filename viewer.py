@@ -9,6 +9,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
+from cv2 import error as ResizeException
 
 from factories.icon_factory import IconFactory
 from helpers.image_resize import ImageResizeHelper
@@ -394,8 +395,29 @@ class Viewer:
         self.redraw_screen = True
         self.app.iconify()
 
-    # loads and displays an image
+    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
+        """Begins new thread to handle dispalying frames of an aniamted image"""
+        self.aniamtion_frames = [None] * frame_count
+
+        try:
+            speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
+            if speed < 1:
+                speed = self.DEFAULT_GIF_SPEED
+        except (KeyError, AttributeError):
+            speed = self.DEFAULT_GIF_SPEED
+
+        self.aniamtion_frames[0] = current_image, speed
+        # begin loading frames in new thread and call animate
+        Thread(
+            target=self.load_frame,
+            args=(self.temp, 1, frame_count),
+            daemon=True,
+        ).start()
+
+        self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
+
     def image_loader(self) -> None:
+        """Loads an image, resizes it to fit on the screen and updates display"""
         self.clear_animation_variables()
         current_image_data: ImagePath = self.file_manager.current_image
 
@@ -406,53 +428,44 @@ class Viewer:
             self.remove_image_and_move_to_next(delete_from_disk=False)
             return
 
-        bit_size: int = os.stat(self.file_manager.path_to_current_image).st_size
+        image_kb_size: int = (
+            os.stat(self.file_manager.path_to_current_image).st_size >> 10
+        )
 
         # check if was cached and not changed outside of program
-        cached_img_data = self.file_manager.cache.get(current_image_data.name, False)
+        cached_image_data = self.file_manager.cache.get(current_image_data.name, False)
         if (
-            cached_img_data
-            and isinstance(cached_img_data, CachedInfoAndImage)
-            and bit_size == cached_img_data.bit_size
+            cached_image_data
+            and isinstance(cached_image_data, CachedInfoAndImage)
+            and image_kb_size == cached_image_data.kb_size
         ):
-            current_image = cached_img_data.image
+            current_image = cached_image_data.image
             self.temp.close()
         else:
             image_width, image_height = self.temp.size
-            size_kb: int = bit_size >> 10
-            image_size = (
-                f"{round(size_kb/10.24)/100}mb" if size_kb > 999 else f"{size_kb}kb"
+            image_size: str = (
+                f"{round(image_kb_size/10.24)/100}mb"
+                if image_kb_size > 999
+                else f"{image_kb_size}kb"
             )
 
-            frame_count: int = getattr(self.temp, "n_frames", 1)
-            if self.temp.format == "JPEG":
-                current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                    self.temp, self.file_manager.path_to_current_image
-                )
-            else:
-                current_image = self.image_resizer.get_image_fit_to_screen(self.temp)
-
-            # special case, file is animated
-            if frame_count > 1:
-                self.aniamtion_frames = [None] * frame_count
-                try:
-                    speed = int(
-                        self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR
+            try:
+                if self.temp.format == "JPEG":
+                    current_image = self.image_resizer.get_jpeg_fit_to_screen(
+                        self.temp, self.file_manager.path_to_current_image
                     )
-                    if speed < 1:
-                        speed = self.DEFAULT_GIF_SPEED
-                except (KeyError, AttributeError):
-                    speed = self.DEFAULT_GIF_SPEED
+                else:
+                    current_image = self.image_resizer.get_image_fit_to_screen(
+                        self.temp
+                    )
+            except ResizeException:
+                self.remove_image_and_move_to_next(delete_from_disk=False)
+                return
 
-                self.aniamtion_frames[0] = current_image, speed
-                Thread(
-                    target=self.load_frame,
-                    args=(self.temp, 1, frame_count),
-                    daemon=True,
-                ).start()
-                # find animation frame speed
+            frame_count: int = getattr(self.temp, "n_frames", 1)
 
-                self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
+            if frame_count > 1:
+                self.begin_animation(current_image, frame_count)
                 self.file_manager.cache_info(
                     image_width,
                     image_height,
@@ -465,9 +478,10 @@ class Viewer:
                     image_height,
                     image_size,
                     current_image,
-                    bit_size,
+                    image_kb_size,
                 )
                 self.temp.close()
+
         self.canvas.itemconfig(self.image_display_id, image=current_image)
         self.app.title(current_image_data.name)
 

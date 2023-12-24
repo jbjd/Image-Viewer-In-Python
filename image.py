@@ -16,12 +16,12 @@ class CachedInfo:
 
 
 class CachedInfoAndImage(CachedInfo):
-    __slots__ = ("image", "bit_size")
+    __slots__ = ("image", "kb_size")
 
-    def __init__(self, width, height, dimensions, image, bit_size) -> None:
+    def __init__(self, width, height, dimensions, image, kb_size) -> None:
         super().__init__(width, height, dimensions)
         self.image: PhotoImage = image
-        self.bit_size: int = bit_size
+        self.kb_size: int = kb_size
 
 
 class ImagePath:
