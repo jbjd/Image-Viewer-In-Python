@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from typing import Callable, Union
 
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
@@ -164,6 +164,9 @@ class ImageFileManager:
         return os.path.isfile(self.path_to_current_image) and os.path.getsize(
             self.path_to_current_image
         ) == self.cache.get(self.current_image.name, 0)
+
+    def get_cached_image_data(self) -> Union[CachedInfo, bool]:
+        return self.cache.get(self.current_image.name, False)
 
     def _binary_search(self, target_image: str) -> int:
         """Finds index of image in the sorted list of all images in the directory.

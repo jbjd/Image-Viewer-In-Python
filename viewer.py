@@ -395,10 +395,8 @@ class Viewer:
         self.redraw_screen = True
         self.app.iconify()
 
-    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
-        """Begins new thread to handle dispalying frames of an aniamted image"""
-        self.aniamtion_frames = [None] * frame_count
-
+    def get_ms_until_next_frame(self):
+        """Returns time until next frame for animated images"""
         try:
             speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
             if speed < 1:
@@ -406,7 +404,15 @@ class Viewer:
         except (KeyError, AttributeError):
             speed = self.DEFAULT_GIF_SPEED
 
-        self.aniamtion_frames[0] = current_image, speed
+        return speed
+
+    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
+        """Begins new thread to handle dispalying frames of an aniamted image"""
+        self.aniamtion_frames = [None] * frame_count
+
+        ms_until_next_frame: int = self.get_ms_until_next_frame()
+
+        self.aniamtion_frames[0] = current_image, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_frame,
@@ -414,7 +420,9 @@ class Viewer:
             daemon=True,
         ).start()
 
-        self.animation_id = self.app.after(speed + 20, self.animate, 1, speed)
+        self.animation_id = self.app.after(
+            ms_until_next_frame + 20, self.animate, 1, ms_until_next_frame
+        )
 
     def image_loader(self) -> None:
         """Loads an image, resizes it to fit on the screen and updates display"""
@@ -433,7 +441,7 @@ class Viewer:
         )
 
         # check if was cached and not changed outside of program
-        cached_image_data = self.file_manager.cache.get(current_image_data.name, False)
+        cached_image_data = self.file_manager.get_cached_image_data()
         if (
             cached_image_data
             and isinstance(cached_image_data, CachedInfoAndImage)
@@ -500,6 +508,8 @@ class Viewer:
         self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
     def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
+        """Removes current image from internal image list
+        and optionaly deletes it from disk"""
         try:
             self.file_manager.remove_current_image(delete_from_disk)
         except IndexError:
@@ -556,15 +566,11 @@ class Viewer:
             return
         try:
             self.temp.seek(frame_index)
-            try:
-                speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
-                if speed < 1:
-                    speed = self.DEFAULT_GIF_SPEED
-            except (KeyError, AttributeError):
-                speed = self.DEFAULT_GIF_SPEED
+            ms_until_next_frame: int = self.get_ms_until_next_frame()
+
             self.aniamtion_frames[frame_index] = (
                 self.image_resizer.get_image_fit_to_screen(self.temp),
-                speed,
+                ms_until_next_frame,
             )
         except Exception:
             # changing images during load causes a variety of errors
@@ -572,8 +578,8 @@ class Viewer:
         frame_index += 1
         if frame_index < last_frame:
             self.load_frame(original_image, frame_index, last_frame)
-        elif self.temp is original_image:
-            self.temp.close()
+        else:
+            original_image.close()
 
     # cleans up after an animated file was opened
     def clear_animation_variables(self) -> None:
