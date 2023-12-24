@@ -10,6 +10,8 @@ from util.rename import try_convert_file_and_save_new
 
 
 class ImageFileManager:
+    """Manages internal list of images"""
+
     VALID_FILE_TYPES: set[str] = {
         ".png",
         ".jpg",
@@ -128,6 +130,7 @@ class ImageFileManager:
         self.add_new_image(new_name)
 
     def add_new_image(self, new_name: str) -> None:
+        """Adds new image to internal list and updates attributes"""
         image_data = ImagePath(new_name)
         self._files.insert(self._binary_search(image_data.name), image_data)
         self._populate_data_attributes()

@@ -445,7 +445,6 @@ class Viewer:
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
             if frame_count > 1:
-                self.temp.seek(0)
                 self.begin_animation(current_image, frame_count)
             else:
                 self.temp.close()

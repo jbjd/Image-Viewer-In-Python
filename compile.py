@@ -12,10 +12,10 @@ except ImportError:
 
 
 # only works for windows currently
-if os.name != "nt":
+if os.name == "nt":
+    is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
+else:
     raise Exception("Compiling on Linux/Mac not currently supported")
-
-is_admin: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
 if not is_admin:
     raise Exception("compile.py needs admin privileges to run")

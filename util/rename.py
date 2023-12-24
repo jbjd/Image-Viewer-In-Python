@@ -9,9 +9,8 @@ def try_convert_file_and_save_new(
     new_path: str,
     new_image_data: ImagePath,
 ) -> bool:
-    """
-    Closes image and reopens it for safety, thens trys to convert to new file format.
-    return: if file was converted and a new file was created"""
+    """Trys to convert to new file format.
+    Return: bool if file was converted and a new file was created"""
 
     with open_image(old_path) as temp_img:
         # refuse to convert animations other than to webp
