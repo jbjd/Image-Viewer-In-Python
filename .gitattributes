@@ -1,0 +1,5 @@
+*.py text diff=python
+*.ini text
+*.md text
+*.txt text
+*.dll binary
