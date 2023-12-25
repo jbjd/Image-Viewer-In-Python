@@ -1,7 +1,7 @@
 import os
 from re import sub
 
-from image import ImagePath
+from util.image import ImagePath
 
 if os.name == "nt":
     from ctypes import windll

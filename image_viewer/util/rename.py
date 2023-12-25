@@ -1,6 +1,6 @@
 from PIL.Image import open as open_image
 
-from image import ImagePath
+from util.image import ImagePath
 
 
 def try_convert_file_and_save_new(

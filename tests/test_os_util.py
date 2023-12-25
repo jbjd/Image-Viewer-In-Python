@@ -1,4 +1,4 @@
-from util.os import clean_str_for_OS_path
+from image_viewer.util.os import clean_str_for_OS_path
 
 
 def test_clean_str_for_OS_path():

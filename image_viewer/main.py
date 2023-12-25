@@ -1,8 +1,8 @@
 import os
 from sys import argv
 
-from viewer import Viewer
+from viewer import ViewerApp
 
 if len(argv) > 1:
     path_to_exe: str = os.path.dirname(os.path.realpath(argv[0]))
-    Viewer(argv[1], path_to_exe)
+    ViewerApp(argv[1], path_to_exe)

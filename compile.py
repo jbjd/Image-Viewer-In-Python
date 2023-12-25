@@ -53,8 +53,8 @@ print("Using python install found at", args.python_path)
 cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" \
     --follow-import-to="factories" --follow-import-to="util" \
-    --follow-import-to="image" --follow-import-to="viewer" \
-    --follow-import-to="managers"  --follow-import-to="helpers" {WORKING_DIR}main.py'
+    --follow-import-to="viewer" --follow-import-to="managers"  \
+    --follow-import-to="helpers" {WORKING_DIR}image_viewer/main.py'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 
