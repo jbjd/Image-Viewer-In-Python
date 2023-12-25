@@ -1,12 +1,12 @@
 import os
-import pytest
-
 from unittest import mock
+
+import pytest
 
 from image_viewer.managers.file_manager import ImageFileManager
 
 
-def test_image_file_manager(monkeypatch):
+def test_image_file_manager():
     """Test various functions of the file manager with empty image files"""
     manager = ImageFileManager(os.path.abspath("tests/example_images/a.png"))
     assert len(manager._files) == 1
@@ -22,7 +22,7 @@ def test_image_file_manager(monkeypatch):
     with pytest.raises(FileExistsError):
         manager.rename_or_convert_current_image("c.webp", lambda _: None)
 
-    # Try to rename a.png without mocking the os call away should pass
+    # Try to rename a.png mocking the os call away should pass
     with mock.patch("os.rename", lambda *_: None):
         manager.rename_or_convert_current_image("example.png", lambda _: None)
 
