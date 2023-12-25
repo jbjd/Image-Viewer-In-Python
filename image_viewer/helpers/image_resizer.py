@@ -8,7 +8,7 @@ from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 
 
-class ImageResizeHelper:
+class ImageResizer:
     def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
         self.screen_width: int = screen_width
         self.screen_height: int = screen_height

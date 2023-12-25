@@ -1,35 +1,25 @@
 import os
 from collections.abc import Callable
-from threading import Thread
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 from typing import Optional
 
-from cv2 import error as ResizeException
-from PIL import UnidentifiedImageError
-from PIL.Image import Image
-from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
 
 from factories.icon_factory import IconFactory
-from helpers.image_resize import ImageResizeHelper
+from helpers.image_loader import ImageLoader
 from managers.file_manager import ImageFileManager
-from util.image import CachedImageData, ImagePath, create_dropdown_image, init_font
+from util.image import CachedImageData, create_dropdown_image, init_font
 
 
 class ViewerApp:
-    DEFAULT_GIF_SPEED: int = 100
-    ANIMATION_SPEED_FACTOR: float = 0.75
-
     __slots__ = (
         "size_ratio",
-        "image_resizer",
         "topbar_shown",
         "dropdown_shown",
         "redraw_screen",
         "dropdown_image",
         "rename_window_x_offset",
-        "aniamtion_frames",
         "animation_id",
         "app",
         "canvas",
@@ -44,11 +34,11 @@ class ViewerApp:
         "rename_window_id",
         "dropdown_id",
         "rename_entry",
-        "temp",
         "dropdown_button_id",
         "rename_button_id",
         "key_bindings",
         "move_id",
+        "image_loader",
     )
 
     def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
@@ -62,8 +52,7 @@ class ViewerApp:
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
 
-        # variables used for animations, empty when no animation playing
-        self.aniamtion_frames: list = []
+        # Animation variables
         self.animation_id: str = ""
 
         # application and canvas
@@ -87,11 +76,16 @@ class ViewerApp:
         )
         self.load_assests(screen_width, self.scale_pixels_to_screen(32))
 
-        # move this to file_manager later
-        self.image_resizer = ImageResizeHelper(screen_width, screen_height, path_to_exe)
+        # set up and draw first image, then get all image paths in directory
+        self.image_loader = ImageLoader(
+            self.file_manager,
+            screen_width,
+            screen_height,
+            path_to_exe,
+            self.animation_loop,
+        )
 
-        # draw first image, then get all image paths in directory
-        self.image_loader()
+        self.load_image()
         self.app.update()
         self.file_manager.fully_load_image_data()
         init_font(self.scale_pixels_to_screen(22))
@@ -169,7 +163,7 @@ class ViewerApp:
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
 
-        self.image_loader()
+        self.load_image()
         if self.topbar_shown:
             self.refresh_topbar()
 
@@ -183,7 +177,7 @@ class ViewerApp:
         self.redraw_screen = False
         if self.file_manager.current_image_cache_still_fresh():
             return
-        self.image_loader()
+        self.load_image()
 
     def load_assests(self, screen_width: int, topbar_height: int) -> None:
         """
@@ -316,7 +310,7 @@ class ViewerApp:
 
     # properly exit program
     def exit(self, event: Optional[Event] = None) -> None:
-        self.temp.close()
+        self.image_loader.reset()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
@@ -378,7 +372,7 @@ class ViewerApp:
 
         # Cleanup after successful rename
         self.hide_rename_window()
-        self.image_loader()
+        self.load_image()
         self.refresh_topbar()
 
     def reset_entry_color(self) -> None:
@@ -389,98 +383,16 @@ class ViewerApp:
         self.redraw_screen = True
         self.app.iconify()
 
-    def get_ms_until_next_frame(self):
-        """Returns time until next frame for animated images"""
-        try:
-            speed = int(self.temp.info["duration"] * self.ANIMATION_SPEED_FACTOR)
-            if speed < 1:
-                speed = self.DEFAULT_GIF_SPEED
-        except (KeyError, AttributeError):
-            speed = self.DEFAULT_GIF_SPEED
-
-        return speed
-
-    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
-        """Begins new thread to handle dispalying frames of an aniamted image"""
-        self.aniamtion_frames = [None] * frame_count
-
-        ms_until_next_frame: int = self.get_ms_until_next_frame()
-
-        self.aniamtion_frames[0] = current_image, ms_until_next_frame
-        # begin loading frames in new thread and call animate
-        Thread(
-            target=self.load_frame,
-            args=(self.temp, 1, frame_count),
-            daemon=True,
-        ).start()
-
-        self.animation_id = self.app.after(
-            ms_until_next_frame + 20, self.animate, 1, ms_until_next_frame
-        )
-
-    def image_loader(self) -> None:
+    def load_image(self) -> None:
         """Loads an image, resizes it to fit on the screen and updates display"""
         self.clear_animation_variables()
-        current_image_data: ImagePath = self.file_manager.current_image
 
-        try:
-            # open even if in cache to throw error if user deleted it outside of program
-            self.temp = open_image(self.file_manager.path_to_current_image)
-        except (FileNotFoundError, UnidentifiedImageError):
-            self.remove_image_and_move_to_next(delete_from_disk=False)
-            return
-
-        image_kb_size: int = (
-            os.stat(self.file_manager.path_to_current_image).st_size >> 10
-        )
-        frame_count: int = getattr(self.temp, "n_frames", 1)
-
-        # check if was cached and not changed outside of program
-        cached_image_data = self.file_manager.get_cached_image_data()
-        if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
-            current_image = cached_image_data.image
-            if frame_count > 1:
-                self.begin_animation(current_image, frame_count)
-            else:
-                self.temp.close()
-        else:
-            image_width, image_height = self.temp.size
-            image_size: str = (
-                f"{round(image_kb_size/10.24)/100}mb"
-                if image_kb_size > 999
-                else f"{image_kb_size}kb"
-            )
-
-            try:
-                if self.temp.format == "JPEG":
-                    current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                        self.temp, self.file_manager.path_to_current_image
-                    )
-                else:
-                    current_image = self.image_resizer.get_image_fit_to_screen(
-                        self.temp
-                    )
-            except ResizeException:
-                self.remove_image_and_move_to_next(delete_from_disk=False)
-                return
-
-            frame_count: int = getattr(self.temp, "n_frames", 1)
-
-            if frame_count > 1:
-                self.begin_animation(current_image, frame_count)
-            else:
-                self.temp.close()
-
-            self.file_manager.cache_image(
-                image_width,
-                image_height,
-                image_size,
-                current_image,
-                image_kb_size,
-            )
+        # When load fails, keep removing bad image and trying to load next
+        while (current_image := self.image_loader.load_image()) is None:
+            self.remove_image(delete_from_disk=False)
 
         self.canvas.itemconfig(self.image_display_id, image=current_image)
-        self.app.title(current_image_data.name)
+        self.app.title(self.file_manager.current_image.name)
 
     def show_topbar(self, event: Optional[Event] = None) -> None:
         self.topbar_shown = True
@@ -496,15 +408,19 @@ class ViewerApp:
     def handle_click(self, event: Event) -> None:
         self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
-    def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
-        """Removes current image from internal image list
-        and optionaly deletes it from disk"""
+    def remove_image(self, delete_from_disk: bool) -> None:
+        """Removes current image from internal image list"""
         try:
             self.file_manager.remove_current_image(delete_from_disk)
         except IndexError:
             self.exit()
 
-        self.image_loader()
+    def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
+        """Removes current image from internal image list
+        and optionaly deletes it from disk"""
+        self.remove_image(delete_from_disk)
+
+        self.load_image()
         if self.topbar_shown:
             self.refresh_topbar()
 
@@ -520,55 +436,30 @@ class ViewerApp:
             else self.canvas.itemconfig(self.dropdown_id, state="hidden")
         )
 
-    def animate(self, frame_index: int, speed: int) -> None:
+    def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
+        self.animation_id = self.app.after(
+            ms_until_next_frame, self.animate, ms_backoff
+        )
+
+    def animate(self, ms_backoff: int) -> None:
         """
         displays a frame on screen and recursively calls itself after a delay
         frame_index: index of current frame to be displayed
         speed: speed in ms until next frame
         """
-        frame_index += 1
-        if frame_index >= len(self.aniamtion_frames):
-            frame_index = 0
+        frame_and_speed = self.image_loader.get_next_frame()
 
-        frame_and_speed: tuple[PhotoImage, int] = self.aniamtion_frames[frame_index]
         # if tried to show next frame before it is loaded
         # reset to current frame and try again after delay
+        ms_until_next_frame: int
         if frame_and_speed is None:
-            frame_index -= 1
-            ms_until_next_frame = int(speed * 1.4)
+            ms_backoff = int(ms_backoff * 1.4)
+            ms_until_next_frame = ms_backoff
         else:
             self.canvas.itemconfig(self.image_display_id, image=frame_and_speed[0])
             ms_until_next_frame = frame_and_speed[1]
 
-        self.animation_id = self.app.after(
-            ms_until_next_frame, self.animate, frame_index, speed
-        )
-
-    def load_frame(
-        self,
-        original_image: Image,
-        frame_index: int,
-        last_frame: int,
-    ) -> None:
-        # if user moved to new image, don't keep loading previous animated image
-        if self.temp is not original_image:
-            return
-        try:
-            self.temp.seek(frame_index)
-            ms_until_next_frame: int = self.get_ms_until_next_frame()
-
-            self.aniamtion_frames[frame_index] = (
-                self.image_resizer.get_image_fit_to_screen(self.temp),
-                ms_until_next_frame,
-            )
-        except Exception:
-            # changing images during load causes a variety of errors
-            pass
-        frame_index += 1
-        if frame_index < last_frame:
-            self.load_frame(original_image, frame_index, last_frame)
-        else:
-            original_image.close()
+        self.animation_loop(ms_until_next_frame, ms_backoff)
 
     # cleans up after an animated file was opened
     def clear_animation_variables(self) -> None:
@@ -577,8 +468,7 @@ class ViewerApp:
 
         self.app.after_cancel(self.animation_id)
         self.animation_id = ""
-        self.aniamtion_frames.clear()
-        self.temp.close()
+        self.image_loader.reset()
 
     def toggle_details_dropdown(self, event: Optional[Event] = None) -> None:
         self.dropdown_shown = not self.dropdown_shown
