@@ -13,13 +13,8 @@ from PIL.ImageTk import PhotoImage
 
 from factories.icon_factory import IconFactory
 from helpers.image_resize import ImageResizeHelper
-from util.image import (
-    CachedImageData,
-    ImagePath,
-    create_dropdown_image,
-    init_font,
-)
 from managers.file_manager import ImageFileManager
+from util.image import CachedImageData, ImagePath, create_dropdown_image, init_font
 
 
 class ViewerApp:
