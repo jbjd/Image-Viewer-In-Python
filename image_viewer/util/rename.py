@@ -24,9 +24,7 @@ def try_convert_file_and_save_new(
                     new_path, "WEBP", quality=100, method=6, save_all=is_animated
                 )
             case ".png":
-                temp_img.save(new_path, "PNG", optimize=True)
-            case ".bmp":
-                temp_img.save(new_path, "BMP")
+                temp_img.save(new_path, "PNG", optimize=True, save_all=is_animated)
             case ".jpg" | ".jpeg" | ".jif" | ".jfif" | ".jpe":
                 # if two different JPEG varients
                 if old_image_data.suffix[1] == "j":
@@ -35,6 +33,8 @@ def try_convert_file_and_save_new(
                     temp_img = temp_img.convert("RGB")
                 temp_img.save(new_path, "JPEG", optimize=True, quality=100)
             case ".gif":
+                # TODO: sometimes this is saves a corrupted image
+                # try storing all gifs as PNG then using img2webp?
                 temp_img.save(new_path, "GIF", save_all=is_animated)
             case _:
                 return False
