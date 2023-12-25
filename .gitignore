@@ -1,6 +1,7 @@
+.mypy_cache
+.pytest_cache/
 .vscode/
 __pycache__/
-.mypy_cache
 
 # nuitka artifacts
 *.exe
