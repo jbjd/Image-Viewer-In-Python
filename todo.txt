@@ -1,5 +1,4 @@
 Standard Priority:
-    Investigate animated webp -> gif alternatives
     Investigate a console for entering commands into such as 'jump abc.png' or 'convert webp'
 
 Low Priority:

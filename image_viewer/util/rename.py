@@ -33,8 +33,8 @@ def try_convert_file_and_save_new(
                     temp_img = temp_img.convert("RGB")
                 temp_img.save(new_path, "JPEG", optimize=True, quality=100)
             case ".gif":
-                # TODO: sometimes this is saves a corrupted image
-                # try storing all gifs as PNG then using img2webp?
+                # This pop fixes missing bitmap error during webp -> gif conversion
+                temp_img.info.pop("background", None)
                 temp_img.save(new_path, "GIF", save_all=is_animated)
             case _:
                 return False
