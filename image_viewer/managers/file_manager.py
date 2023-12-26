@@ -48,11 +48,16 @@ class ImageFileManager:
         self._populate_data_attributes()
         self.cache: dict[str, CachedImageData] = {}
 
+    def construct_path_to_image(self, image_name: str) -> str:
+        return f"{self.image_directory}/{image_name}"
+
     def _populate_data_attributes(self) -> None:
         """Sets variables about current image.
         Should be called when lenth of files changes"""
         self.current_image = self._files[self._current_index]
-        self.path_to_current_image = f"{self.image_directory}/{self.current_image.name}"
+        self.path_to_current_image = self.construct_path_to_image(
+            self.current_image.name
+        )
 
     def fully_load_image_data(self) -> None:
         """Init only loads one file, load entire directory here"""
@@ -109,7 +114,7 @@ class ImageFileManager:
             new_name += self.current_image.suffix
             new_image_data = ImagePath(new_name)
 
-        new_path: str = f"{self.image_directory}/{new_name}"
+        new_path: str = self.construct_path_to_image(new_name)
 
         if os.path.isfile(new_path) or os.path.isdir(new_path):
             raise FileExistsError()

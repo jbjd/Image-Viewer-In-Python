@@ -129,8 +129,6 @@ class ImageLoader:
             except ResizeException:
                 return None
 
-            frame_count: int = getattr(self.file_pointer, "n_frames", 1)
-
             self._finish_image_load(current_image, frame_count)
 
             self.file_manager.cache_image(

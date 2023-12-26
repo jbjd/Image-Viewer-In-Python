@@ -16,7 +16,7 @@ def try_convert_file_and_save_new(
         # refuse to convert animations other than to webp
         is_animated: bool = getattr(temp_img, "n_frames", 1) > 1
         if is_animated and new_image_data.suffix not in (".webp", ".gif", ".png"):
-            raise ValueError()
+            raise ValueError(f"Can't convert animated image to {new_image_data.suffix}")
 
         match new_image_data.suffix:
             case ".webp":
