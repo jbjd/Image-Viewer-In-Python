@@ -4,9 +4,9 @@ from typing import Callable
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
+from util.convert import try_convert_file_and_save_new
 from util.image import CachedImageData, ImagePath
 from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
-from util.rename import try_convert_file_and_save_new
 
 
 class ImageFileManager:
