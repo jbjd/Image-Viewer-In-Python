@@ -11,11 +11,31 @@ except ImportError:
         "Nuitka is not installed on your system, it must be installed to compile"
     )
 
+WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
+TEMP_PATH: str = f"{WORKING_DIR}TEMP/"  # setup here, then copy to install path
+DATA_FILE_PATHS: list[str] = ["icon/icon.ico"]
+INSTALL_PATH: str
+EXECUTABLE_EXT: str
+
+if os.name == "nt":
+    INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
+    EXECUTABLE_EXT = ".exe"
+    DATA_FILE_PATHS.append("dll/libturbojpeg.dll")
+else:
+    INSTALL_PATH = "/usr/local/personal-image-viewer/"
+    EXECUTABLE_EXT = ".bin"
+
 parser = ArgumentParser(
     description="Compiles code in this repository to an executable, must be run as root"
 )
-parser.add_argument("--python-path", help="Python path to use in compilation")
+parser.add_argument("-p", "--python-path", help="Python path to use in compilation")
+parser.add_argument(
+    "--install-path", help=f"Path to install to, default is {INSTALL_PATH}"
+)
 args = parser.parse_args()
+
+if args.install_path:
+    INSTALL_PATH = args.install_path
 
 is_root: bool
 if os.name == "nt":
@@ -44,21 +64,6 @@ if args.python_path is None:
     else:
         args.python_path = "python3"
 
-WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
-TEMP_PATH: str = f"{WORKING_DIR}TEMP/"  # setup here, then copy to install path
-DATA_FILE_PATHS: list[str] = ["icon/icon.ico"]
-INSTALL_PATH: str
-EXECUTABLE_EXT: str
-
-# TODO: allow install path to be passed via command line arguments
-if os.name == "nt":
-    DATA_FILE_PATHS.append("dll/libturbojpeg.dll")
-    INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
-    EXECUTABLE_EXT = ".exe"
-else:
-    INSTALL_PATH = "/usr/local/personal-image-viewer"
-    EXECUTABLE_EXT = ".bin"
-
 # begin nuitka compilation in another thread
 print("Starting compilation with nuitka")
 print("Using python install found at", args.python_path)
@@ -66,7 +71,7 @@ cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="viewer" --follow-import-to="managers"  \
-    --follow-import-to="helpers" {WORKING_DIR}image_viewer/main.py'
+    --follow-import-to="helpers" "{WORKING_DIR}image_viewer/main.py"'
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 
