@@ -62,16 +62,17 @@ class ViewerApp:
         self.canvas.pack(anchor="nw", fill="both", expand=1)
         self.app.attributes("-fullscreen", True)
 
+        # Set icon and zoom state
         if os.name == "nt":
             self.app.state("zoomed")
-
-        # Set icon in taskbar
-        self.app.tk.call(
-            "wm",
-            "iconphoto",
-            self.app._w,
-            tkinter.Image("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
-        )
+            self.app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
+        else:
+            self.app.tk.call(
+                "wm",
+                "iconphoto",
+                self.app._w,  # type: ignore
+                tkinter.Image("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
+            )
 
         self.app.update()  # updates winfo width and height to the current size
         screen_width: int = self.app.winfo_width()
@@ -507,4 +508,4 @@ class ViewerApp:
 
 # For testing
 if __name__ == "__main__":
-    ViewerApp(r"c:\photos\test.jpg", "C:/PythonCode/Viewer")
+    ViewerApp(r"c:\photos\test.jpg", "C:/Python/Viewer")
