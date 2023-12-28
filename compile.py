@@ -13,17 +13,18 @@ except ImportError:
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
 TEMP_PATH: str = f"{WORKING_DIR}TEMP/"  # setup here, then copy to install path
-DATA_FILE_PATHS: list[str] = ["icon/icon.ico"]
 INSTALL_PATH: str
 EXECUTABLE_EXT: str
+DATA_FILE_PATHS: list[str]
 
 if os.name == "nt":
     INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
     EXECUTABLE_EXT = ".exe"
-    DATA_FILE_PATHS.append("dll/libturbojpeg.dll")
+    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
     INSTALL_PATH = "/usr/local/personal-image-viewer/"
     EXECUTABLE_EXT = ".bin"
+    DATA_FILE_PATHS = ["icon/icon.png"]
 
 parser = ArgumentParser(
     description="Compiles code in this repository to an executable, must be run as root"
