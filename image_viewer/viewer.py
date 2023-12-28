@@ -1,4 +1,5 @@
 import os
+import tkinter
 from collections.abc import Callable
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
@@ -57,16 +58,21 @@ class ViewerApp:
 
         # application and canvas
         self.app = Tk()
-        if os.name == "nt":
-            self.app.iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
-
         self.canvas = Canvas(self.app, bg="black", highlightthickness=0)
         self.canvas.pack(anchor="nw", fill="both", expand=1)
         self.app.attributes("-fullscreen", True)
 
         if os.name == "nt":
             self.app.state("zoomed")
-    
+
+        # Set icon in taskbar
+        self.app.tk.call(
+            "wm",
+            "iconphoto",
+            self.app._w,
+            tkinter.Image("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
+        )
+
         self.app.update()  # updates winfo width and height to the current size
         screen_width: int = self.app.winfo_width()
         screen_height: int = self.app.winfo_height()
@@ -104,10 +110,17 @@ class ViewerApp:
         self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
         self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
         self.app.bind("<FocusIn>", self.redraw)
-        self.app.bind("<MouseWheel>", self.scroll)
         self.app.bind("<Escape>", self.escape_button)
         self.app.bind("<KeyPress>", self.handle_keybinds_main)
         self.app.bind("<KeyRelease>", self.handle_key_release)
+
+        if os.name == "nt":
+            self.app.bind(
+                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
+            )
+        else:
+            self.app.bind("<Button-4>", lambda _: self.move(-1))
+            self.app.bind("<Button-5>", lambda _: self.move(1))
 
         self.app.mainloop()
 
@@ -150,9 +163,6 @@ class ViewerApp:
         """Repeat move to next image while L/R key held"""
         self.move(move_amount)
         self.move_id = self.app.after(ms, self.repeat_move, move_amount, 200)
-
-    def scroll(self, event: Event) -> None:
-        self.move(-1 if event.delta > 0 else 1)
 
     def hide_rename_window(self) -> None:
         self.canvas.itemconfig(self.rename_window_id, state="hidden")
@@ -266,7 +276,9 @@ class ViewerApp:
         self.rename_window_id: int = self.canvas.create_window(
             0, 0, width=200, height=24, anchor="nw"
         )
-        self.rename_entry: Entry = Entry(self.app, font=FONT, bg="#FEFEFE", borderwidth=0)
+        self.rename_entry: Entry = Entry(
+            self.app, font=FONT, bg="#FEFEFE", borderwidth=0
+        )
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
         self.rename_entry.bind("<KeyPress>", self.handle_keybinds_default)
         self.canvas.itemconfig(
