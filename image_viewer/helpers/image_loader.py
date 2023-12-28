@@ -19,12 +19,12 @@ class ImageLoader:
     ANIMATION_SPEED_FACTOR: float = 0.75
 
     __slots__ = (
-        "file_manager",
-        "image_resizer",
-        "file_pointer",
         "aniamtion_frames",
         "animation_callback",
+        "file_manager",
+        "file_pointer",
         "frame_index",
+        "image_resizer"
     )
 
     def __init__(

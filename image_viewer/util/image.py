@@ -6,7 +6,7 @@ from PIL.ImageTk import PhotoImage
 
 # for some reason this stores less data than a regular tuple based on my tests
 class CachedImageData:
-    __slots__ = ("width", "height", "dimensions", "image", "kb_size")
+    __slots__ = ("dimensions", "height", "image", "kb_size", "width")
 
     def __init__(self, width, height, dimensions, image, kb_size) -> None:
         self.width: int = width
@@ -17,7 +17,7 @@ class CachedImageData:
 
 
 class ImagePath:
-    __slots__ = ("suffix", "name")
+    __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
         self.suffix = name[name.rfind(".") :].lower()

@@ -10,13 +10,13 @@ class IconFactory:
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
 
-    __slots__ = ("icon_size", "icon_default", "icon_hovered_default")
+    __slots__ = ("icon_default", "icon_default_hovered", "icon_size")
 
     def __init__(self, icon_size: int) -> None:
         self.icon_size: int = icon_size
 
         self.icon_default: Image = new("RGB", (icon_size, icon_size), self.ICON_RGB)
-        self.icon_hovered_default: Image = new(
+        self.icon_default_hovered: Image = new(
             "RGB", (icon_size, icon_size), self.ICON_HOVERED_RGB
         )
 
@@ -36,7 +36,7 @@ class IconFactory:
         return PhotoImage(draw._image)  # type: ignore
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
-        return Draw(self.icon_default.copy()), Draw(self.icon_hovered_default.copy())
+        return Draw(self.icon_default.copy()), Draw(self.icon_default_hovered.copy())
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.line((6, 24, 24, 24), width=2, fill=self.LINE_RGB)

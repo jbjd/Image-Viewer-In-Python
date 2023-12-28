@@ -25,12 +25,12 @@ class ImageFileManager:
     }
 
     __slots__ = (
-        "_files",
         "_current_index",
-        "image_directory",
+        "_files",
         "cache",
         "current_image",
-        "path_to_current_image",
+        "image_directory",
+        "path_to_current_image"
     )
 
     def __init__(self, first_image_to_load: str) -> None:
