@@ -266,7 +266,7 @@ class ViewerApp:
         self.rename_window_id: int = self.canvas.create_window(
             0, 0, width=200, height=24, anchor="nw"
         )
-        self.rename_entry: Entry = Entry(self.app, font=FONT)
+        self.rename_entry: Entry = Entry(self.app, font=FONT, bg="#FEFEFE", borderwidth=0)
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
         self.rename_entry.bind("<KeyPress>", self.handle_keybinds_default)
         self.canvas.itemconfig(
