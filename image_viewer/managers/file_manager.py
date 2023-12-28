@@ -12,17 +12,19 @@ from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
 class ImageFileManager:
     """Manages internal list of images"""
 
-    VALID_FILE_TYPES: set[str] = {
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".jfif",
-        ".jif",
-        ".jpe",
-        ".webp",
-        ".gif",
-        ".bmp",
-    }
+    VALID_FILE_TYPES: frozenset[str] = frozenset(
+        {
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".jfif",
+            ".jif",
+            ".jpe",
+            ".webp",
+            ".gif",
+            ".bmp",
+        }
+    )
 
     __slots__ = (
         "_current_index",
@@ -30,7 +32,7 @@ class ImageFileManager:
         "cache",
         "current_image",
         "image_directory",
-        "path_to_current_image"
+        "path_to_current_image",
     )
 
     def __init__(self, first_image_to_load: str) -> None:
