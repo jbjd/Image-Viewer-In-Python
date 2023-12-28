@@ -12,7 +12,12 @@ class ImageResizer:
     def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
         self.screen_width: int = screen_width
         self.screen_height: int = screen_height
-        self.jpeg_helper = TurboJPEG(os.path.join(path_to_exe, "dll/libturbojpeg.dll"))
+
+        self.jpeg_helper = TurboJPEG(
+            os.path.join(path_to_exe, "dll/libturbojpeg.dll")
+            if os.name == "nt"
+            else None
+        )
 
     def array_to_photoimage(
         self, array, image_width: int, image_height: int

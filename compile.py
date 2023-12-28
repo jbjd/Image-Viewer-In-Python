@@ -17,35 +17,47 @@ parser = ArgumentParser(
 parser.add_argument("--python-path", help="Python path to use in compilation")
 args = parser.parse_args()
 
-# only works for windows currently
+is_root: bool
 if os.name == "nt":
-    is_root: bool = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
 else:
-    raise Exception("Compiling on Linux/Mac not currently supported")
+    is_root = os.geteuid() == 0
 
 if not is_root:
     raise Exception("compile.py needs root privileges to run")
 
-python_path: str
 if args.python_path is None:
-    # if not provided, try to find with where
-    args.python_path = (
-        subprocess.run("where python", shell=True, stdout=subprocess.PIPE)
-        .stdout.decode()
-        .partition("\n")[0]
-    )
-    if args.python_path == "":
-        raise Exception(
-            (
-                "Failed to find path to python. "
-                "Please provide the --python-path command line argument"
-            )
+    if os.name == "nt":
+        # if not provided, try to find with where
+        args.python_path = (
+            subprocess.run("where python", shell=True, stdout=subprocess.PIPE)
+            .stdout.decode()
+            .partition("\n")[0]
         )
+        if args.python_path == "":
+            raise Exception(
+                (
+                    "Failed to find path to python. "
+                    "Please provide the --python-path command line argument"
+                )
+            )
+    else:
+        args.python_path = "python3"
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
-INSTALL_PATH: str = "C:/Program Files/Personal Image Viewer/"
-TEMP_PATH: str = f"{WORKING_DIR}/TEMP/"  # setup here, then copy to install path
-DATA_FILE_PATHS: list[str] = ["icon/icon.ico", "dll/libturbojpeg.dll"]
+TEMP_PATH: str = f"{WORKING_DIR}TEMP/"  # setup here, then copy to install path
+DATA_FILE_PATHS: list[str] = ["icon/icon.ico"]
+INSTALL_PATH: str
+EXECUTABLE_EXT: str
+
+# TODO: allow install path to be passed via command line arguments
+if os.name == "nt":
+    DATA_FILE_PATHS.append("dll/libturbojpeg.dll")
+    INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
+    EXECUTABLE_EXT = ".exe"
+else:
+    INSTALL_PATH = "/usr/local/personal-image-viewer"
+    EXECUTABLE_EXT = ".bin"
 
 # begin nuitka compilation in another thread
 print("Starting compilation with nuitka")
@@ -84,7 +96,7 @@ except Exception as e:
 print("Waiting for nuitka compilation...")
 process.wait()
 
-os.rename(f"{WORKING_DIR}main.exe", f"{TEMP_PATH}viewer.exe")
+os.rename(f"{WORKING_DIR}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}")
 
 # copy temp path to install path
 shutil.rmtree(INSTALL_PATH, ignore_errors=True)

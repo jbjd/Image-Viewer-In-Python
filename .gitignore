@@ -4,6 +4,7 @@
 __pycache__/
 
 # nuitka artifacts
+*.bin
 *.exe
 *.cmd
 *.build/
