@@ -42,7 +42,7 @@ class ImageLoader:
 
         self.animation_callback: Callable = animation_callback
         self.aniamtion_frames: list = []
-        self.frame_index = 0
+        self.frame_index: int = 0
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
         self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
@@ -102,9 +102,8 @@ class ImageLoader:
         )
         frame_count: int = getattr(self.file_pointer, "n_frames", 1)
 
-        current_image: PhotoImage
-
         # check if was cached and not changed outside of program
+        current_image: PhotoImage
         cached_image_data = self.file_manager.get_cached_image_data()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
