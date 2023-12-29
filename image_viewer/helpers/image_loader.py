@@ -24,7 +24,7 @@ class ImageLoader:
         "file_manager",
         "file_pointer",
         "frame_index",
-        "image_resizer"
+        "image_resizer",
     )
 
     def __init__(
@@ -80,8 +80,8 @@ class ImageLoader:
         self.aniamtion_frames[0] = current_image, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
-            target=self.load_frame,
-            args=(self.file_pointer, 1, frame_count),
+            target=self.load_remaining_frames,
+            args=(self.file_pointer, frame_count),
             daemon=True,
         ).start()
 
@@ -141,30 +141,32 @@ class ImageLoader:
 
         return current_image
 
-    def load_frame(
+    def load_remaining_frames(
         self,
         original_image: Image,
-        frame_index: int,
         last_frame: int,
     ) -> None:
-        # if user moved to new image, don't keep loading previous animated image
-        if self.file_pointer is not original_image:
-            return
-        try:
-            self.file_pointer.seek(frame_index)
-            ms_until_next_frame: int = self.get_ms_until_next_frame()
+        """Loads all frames starting from the second.
+        Assumes the first will be loaded already"""
 
-            self.aniamtion_frames[frame_index] = (
-                self.image_resizer.get_image_fit_to_screen(self.file_pointer),
-                ms_until_next_frame,
-            )
-        except Exception:
-            # changing images during load causes a variety of errors
-            pass
-        frame_index += 1
-        if frame_index < last_frame:
-            self.load_frame(original_image, frame_index, last_frame)
-        else:
+        for i in range(1, last_frame):
+            # if user moved to new image, don't keep loading previous animated image
+            if self.file_pointer is not original_image:
+                return
+            try:
+                self.file_pointer.seek(i)
+                ms_until_next_frame: int = self.get_ms_until_next_frame()
+
+                self.aniamtion_frames[i] = (
+                    self.image_resizer.get_image_fit_to_screen(self.file_pointer),
+                    ms_until_next_frame,
+                )
+            except Exception:
+                # moving to new image during this function causes a variety of errors
+                # just break and close to kill thread
+                break
+
+        if self.file_pointer is original_image:
             original_image.close()
 
     def reset(self) -> None:
