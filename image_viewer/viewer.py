@@ -28,6 +28,7 @@ class ViewerApp:
         "dropdown_shown",
         "file_manager",
         "file_name_text_id",
+        "height_ratio",
         "image_display_id",
         "image_loader",
         "key_bindings",
@@ -37,9 +38,9 @@ class ViewerApp:
         "rename_entry",
         "rename_window_id",
         "rename_window_x_offset",
-        "size_ratio",
         "topbar",
         "topbar_shown",
+        "width_ratio",
     )
 
     def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
@@ -77,14 +78,15 @@ class ViewerApp:
         self.app.update()  # updates winfo width and height to the current size
         screen_width: int = self.app.winfo_width()
         screen_height: int = self.app.winfo_height()
-        self.size_ratio: float = screen_height / 1080
+        self.height_ratio: float = screen_height / 1080
+        self.width_ratio: float = screen_width / 1920
         background = self.canvas.create_rectangle(
             0, 0, screen_width, screen_height, fill="black"
         )
         self.image_display_id = self.canvas.create_image(
             screen_width >> 1, screen_height >> 1, anchor="center"
         )
-        self.load_assests(screen_width, self.scale_pixels_to_screen(32))
+        self.load_assests(screen_width, self._scale_pixels_to_height(32))
 
         # set up and draw first image, then get all image paths in directory
         self.image_loader = ImageLoader(
@@ -98,7 +100,7 @@ class ViewerApp:
         self.load_image()
         self.app.update()
         self.file_manager.fully_load_image_data()
-        init_font(self.scale_pixels_to_screen(22))
+        init_font(self._scale_pixels_to_height(22))
 
         # events based on input
         self.key_bindings: dict[str, Callable] = {
@@ -125,9 +127,13 @@ class ViewerApp:
 
         self.app.mainloop()
 
-    def scale_pixels_to_screen(self, original_pixels: int) -> int:
+    def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
-        return int(original_pixels * self.size_ratio)
+        return int(original_pixels * self.height_ratio)
+
+    def _scale_pixels_to_width(self, original_pixels: int) -> int:
+        """Normalize all pixels relative to a 1080 pixel tall screen"""
+        return int(original_pixels * self.height_ratio)
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
@@ -199,7 +205,7 @@ class ViewerApp:
         topbar_height: size to make icons/topbar
         """
         # negative makes it an absolute size for consistency with different monitors
-        FONT: str = f"arial -{self.scale_pixels_to_screen(18)}"
+        FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
 
         icon_factory = IconFactory(topbar_height)
 
@@ -209,8 +215,8 @@ class ViewerApp:
             0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
         )
         self.file_name_text_id: int = self.canvas.create_text(
-            36.0,
-            15.0,
+            self._scale_pixels_to_width(36),
+            self._scale_pixels_to_height(15),
             text="",
             fill="white",
             anchor="w",
