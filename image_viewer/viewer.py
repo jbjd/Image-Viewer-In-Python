@@ -198,18 +198,42 @@ class ViewerApp:
         Load all assets on topbar from factory and create tkinter objects
         topbar_height: size to make icons/topbar
         """
-        FONT: str = "arial 11"
+        # negative makes it an absolute size for consistency with different monitors
+        FONT: str = f"arial -{self.scale_pixels_to_screen(18)}"
 
         icon_factory = IconFactory(topbar_height)
+
+        # create the topbar
         self.topbar = icon_factory.make_topbar(screen_width)
+        self.canvas.create_image(
+            0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
+        )
+        self.file_name_text_id: int = self.canvas.create_text(
+            36.0,
+            15.0,
+            text="",
+            fill="white",
+            anchor="w",
+            font=FONT,
+            tags="topbar",
+        )
+        self.make_topbar_button(
+            *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
+        )
+        self.make_topbar_button(
+            *icon_factory.make_minify_icons(),
+            "ne",
+            screen_width - topbar_height,
+            self.minimize,
+        )
+        self.make_topbar_button(
+            *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
+        )
+        self.rename_button_id: int = self.make_topbar_button(
+            *icon_factory.make_rename_icons(), "nw", 0, self.toggle_show_rename_window
+        )
 
-        exit_icon = icon_factory.make_exit_icon()
-        exit_icon_hovered = icon_factory.make_exit_icon_hovered()
-
-        minify_icon, minify_icon_hovered = icon_factory.make_minify_icons()
-
-        trash_icon, trash_icon_hovered = icon_factory.make_trash_icons()
-
+        # details dropdown
         (
             self.dropdown_hidden_icon,
             self.dropdown_hidden_icon_hovered,
@@ -220,39 +244,6 @@ class ViewerApp:
             self.dropdown_showing_icon_hovered,
         ) = icon_factory.make_dropdown_showing_icons()
 
-        rename_icon, rename_icon_hovered = icon_factory.make_rename_icons()
-
-        # create the topbar
-        self.canvas.create_image(
-            0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
-        )
-        self.file_name_text_id: int = self.canvas.create_text(
-            36.0,
-            5.0,
-            text="",
-            fill="white",
-            anchor="nw",
-            font=FONT,
-            tags="topbar",
-        )
-        self.make_topbar_button(
-            exit_icon, exit_icon_hovered, "ne", screen_width, self.exit
-        )
-        self.make_topbar_button(
-            minify_icon,
-            minify_icon_hovered,
-            "ne",
-            screen_width - topbar_height,
-            self.minimize,
-        )
-        self.make_topbar_button(
-            trash_icon, trash_icon_hovered, "nw", 0, self.trash_image
-        )
-        self.rename_button_id: int = self.make_topbar_button(
-            rename_icon, rename_icon_hovered, "nw", 0, self.toggle_show_rename_window
-        )
-
-        # details dropdown
         self.dropdown_button_id: int = self.canvas.create_image(
             screen_width - topbar_height - topbar_height,
             0,
@@ -274,6 +265,7 @@ class ViewerApp:
             screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
 
+        # rename window
         self.rename_window_id: int = self.canvas.create_window(
             0, 0, width=200, height=24, anchor="nw"
         )

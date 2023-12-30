@@ -24,16 +24,16 @@ class IconFactory:
         TOPBAR_RGBA: tuple = (60, 60, 60, 170)
         return PhotoImage(new("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA))
 
-    def make_exit_icon(self) -> PhotoImage:
+    def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple = (190, 40, 40)
-        return PhotoImage(new("RGB", (self.icon_size, self.icon_size), EXIT_RGB))
-
-    def make_exit_icon_hovered(self) -> PhotoImage:
         EXIT_HOVER_RGB: tuple = (180, 25, 20)
         draw = Draw(new("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), width=2, fill=self.LINE_RGB)
         draw.line((6, 26, 26, 6), width=2, fill=self.LINE_RGB)
-        return PhotoImage(draw._image)  # type: ignore
+        return (
+            PhotoImage(new("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
+            PhotoImage(draw._image),  # type: ignore
+        )
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
         return Draw(self.icon_default.copy()), Draw(self.icon_default_hovered.copy())
