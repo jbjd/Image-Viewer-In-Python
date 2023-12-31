@@ -14,6 +14,8 @@ from util.image import CachedImageData, create_dropdown_image, init_font
 
 
 class ViewerApp:
+    """Main UI class handling IO and on screen widgets"""
+
     __slots__ = (
         "animation_id",
         "app",
@@ -232,19 +234,19 @@ class ViewerApp:
             font=FONT,
             tags="topbar",
         )
-        self.make_topbar_button(  # type: ignore
+        self._make_topbar_button(  # type: ignore
             *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
         )
-        self.make_topbar_button(  # type: ignore
+        self._make_topbar_button(  # type: ignore
             *icon_factory.make_minify_icons(),
             "ne",
             screen_width - topbar_height,
             self.minimize,
         )
-        self.make_topbar_button(  # type: ignore
+        self._make_topbar_button(  # type: ignore
             *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
         )
-        self.rename_button_id: int = self.make_topbar_button(  # type: ignore
+        self.rename_button_id: int = self._make_topbar_button(  # type: ignore
             *icon_factory.make_rename_icons(), "nw", 0, self.toggle_show_rename_window
         )
 
@@ -279,7 +281,11 @@ class ViewerApp:
 
         # rename window
         self.rename_window_id: int = self.canvas.create_window(
-            0, 0, width=200, height=24, anchor="nw"
+            0,
+            0,
+            width=self._scale_pixels_to_width(200),
+            height=int(topbar_height * 0.75),
+            anchor="nw",
         )
         self.rename_entry: Entry = Entry(
             self.app, font=FONT, bg="#FEFEFE", borderwidth=0
@@ -290,8 +296,7 @@ class ViewerApp:
             self.rename_window_id, state="hidden", window=self.rename_entry
         )
 
-    # for simple buttons on topbar that only change on hover and have on click event
-    def make_topbar_button(
+    def _make_topbar_button(
         self,
         regular_image: PhotoImage,
         hovered_image: PhotoImage,
@@ -299,6 +304,7 @@ class ViewerApp:
         x_offset: int,
         function_to_bind,
     ) -> int:
+        """Default way to setup a button on the topbar"""
         button_id: int = self.canvas.create_image(
             x_offset,
             0,
@@ -321,22 +327,21 @@ class ViewerApp:
         self.canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
         return button_id
 
-    # wrapper for exit function to close rename window first if its open
-    def escape_button(self, event: Optional[Event] = None) -> None:
+    def escape_button(self, _: Optional[Event] = None) -> None:
+        """Closes rename window, then program on hitting escape"""
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
         self.exit()
 
-    # properly exit program
-    def exit(self, event: Optional[Event] = None) -> None:
+    def exit(self, _: Optional[Event] = None) -> None:
         self.image_loader.reset()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
         exit(0)
 
-    def leave_hover_dropdown_toggle(self, event: Optional[Event] = None) -> None:
+    def leave_hover_dropdown_toggle(self, _: Optional[Event] = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
@@ -344,7 +349,7 @@ class ViewerApp:
             else self.dropdown_hidden_icon,
         )
 
-    def hover_dropdown_toggle(self, event: Optional[Event] = None) -> None:
+    def hover_dropdown_toggle(self, _: Optional[Event] = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
@@ -352,12 +357,12 @@ class ViewerApp:
             else self.dropdown_hidden_icon_hovered,
         )
 
-    def trash_image(self, event: Optional[Event] = None) -> None:
+    def trash_image(self, _: Optional[Event] = None) -> None:
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image_and_move_to_next(delete_from_disk=True)
 
-    def toggle_show_rename_window(self, event: Optional[Event] = None) -> None:
+    def toggle_show_rename_window(self, _: Optional[Event] = None) -> None:
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
@@ -366,7 +371,11 @@ class ViewerApp:
             self.show_topbar()
 
         self.canvas.itemconfig(self.rename_window_id, state="normal")
-        self.canvas.coords(self.rename_window_id, self.rename_window_x_offset + 40, 4)
+        self.canvas.coords(
+            self.rename_window_id,
+            self.rename_window_x_offset + self._scale_pixels_to_width(40),
+            self._scale_pixels_to_height(4),
+        )
         self.rename_entry.focus()
 
     def _ask_delete_after_convert(self, new_format: str) -> None:
@@ -377,7 +386,7 @@ class ViewerApp:
         ):
             self.remove_image_and_move_to_next(delete_from_disk=True)
 
-    def try_rename_or_convert(self, event: Optional[Event] = None) -> None:
+    def try_rename_or_convert(self, _: Optional[Event] = None) -> None:
         """Handles user input into rename window.
         Trys to convert or rename based on input"""
         try:
@@ -396,7 +405,7 @@ class ViewerApp:
         self.load_image()
         self.refresh_topbar()
 
-    def minimize(self, event: Event) -> None:
+    def minimize(self, _: Event) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
         self.redraw_screen = True
         self.app.iconify()
@@ -416,18 +425,18 @@ class ViewerApp:
 
         self.update_after_image_load(current_image)
 
-    def show_topbar(self, event: Optional[Event] = None) -> None:
+    def show_topbar(self, _: Optional[Event] = None) -> None:
         self.topbar_shown = True
         self.canvas.itemconfig("topbar", state="normal")
         self.refresh_topbar()
 
-    def hide_topbar(self, event: Optional[Event] = None) -> None:
+    def hide_topbar(self, _: Optional[Event] = None) -> None:
         self.app.focus()
         self.topbar_shown = False
         self.canvas.itemconfig("topbar", state="hidden")
         self.hide_rename_window()
 
-    def handle_click(self, event: Event) -> None:
+    def handle_click(self, _: Event) -> None:
         self.hide_topbar() if self.topbar_shown else self.show_topbar()
 
     def remove_image(self, delete_from_disk: bool) -> None:
@@ -483,7 +492,6 @@ class ViewerApp:
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
-    # cleans up after an animated file was opened
     def clear_animation_variables(self) -> None:
         if self.animation_id == "":
             return
