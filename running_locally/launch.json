@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Start Image Viewer",
+            "type": "python",
+            "request": "launch",
+            "program": "C:/Python/Viewer/image_viewer/main.py",
+            "args": [
+                "c:/photos/test.jpg"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
