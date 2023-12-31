@@ -1,4 +1,6 @@
-from PIL import Image
+from PIL import ImageOps
+from PIL.Image import Image
+from PIL.Image import new as new_image
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 
@@ -18,26 +20,26 @@ class IconFactory:
     def make_topbar(self, screen_width: int) -> PhotoImage:
         TOPBAR_RGBA: tuple = (60, 60, 60, 170)
         return PhotoImage(
-            Image.new("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA)
+            new_image("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA)
         )
 
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple = (190, 40, 40)
         EXIT_HOVER_RGB: tuple = (180, 25, 20)
-        draw = Draw(Image.new("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
+        draw = Draw(new_image("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), width=2, fill=self.LINE_RGB)
         draw.line((6, 26, 26, 6), width=2, fill=self.LINE_RGB)
         return (
-            PhotoImage(Image.new("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
+            PhotoImage(new_image("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
             PhotoImage(draw._image),  # type: ignore
         )
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
         """Returns tuple of icon and hovered icon base images"""
         return Draw(
-            Image.new("RGB", (self.icon_size, self.icon_size), self.ICON_RGB)
+            new_image("RGB", (self.icon_size, self.icon_size), self.ICON_RGB)
         ), Draw(
-            Image.new("RGB", (self.icon_size, self.icon_size), self.ICON_HOVERED_RGB)
+            new_image("RGB", (self.icon_size, self.icon_size), self.ICON_HOVERED_RGB)
         )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
@@ -60,28 +62,25 @@ class IconFactory:
         draw, draw_hovered = self._make_icon_base()
         return self._draw_trash_symbol(draw), self._draw_trash_symbol(draw_hovered)
 
-    def _draw_down_arrow(self, draw: ImageDraw) -> PhotoImage:
+    def _draw_down_arrow(self, draw: ImageDraw) -> Image:
         draw.line((6, 11, 16, 21), width=2, fill=self.LINE_RGB)
         draw.line((16, 21, 26, 11), width=2, fill=self.LINE_RGB)
-        return PhotoImage(draw._image)  # type: ignore
+        return draw._image  # type: ignore
 
-    def make_dropdown_hidden_icons(
+    def make_dropdown_icons(
         self,
-    ) -> tuple[PhotoImage, PhotoImage]:
+    ) -> tuple[PhotoImage, PhotoImage, PhotoImage, PhotoImage]:
+        """Return tuple of down arrow default, hovered and up arrow
+        default hovered icons in that order"""
         draw, draw_hovered = self._make_icon_base()
-        return self._draw_down_arrow(draw), self._draw_down_arrow(draw_hovered)
-
-    def _draw_up_arrow(self, draw: ImageDraw) -> PhotoImage:
-        draw.line((6, 21, 16, 11), width=2, fill=self.LINE_RGB)
-        draw.line((16, 11, 26, 21), width=2, fill=self.LINE_RGB)
-        draw.line((16, 11, 16, 11), width=1, fill=self.LINE_RGB)
-        return PhotoImage(draw._image)  # type: ignore
-
-    def make_dropdown_showing_icons(
-        self,
-    ) -> tuple[PhotoImage, PhotoImage]:
-        draw, draw_hovered = self._make_icon_base()
-        return self._draw_up_arrow(draw), self._draw_up_arrow(draw_hovered)
+        default: Image = self._draw_down_arrow(draw)
+        hovered: Image = self._draw_down_arrow(draw_hovered)
+        return (
+            PhotoImage(default),
+            PhotoImage(hovered),
+            PhotoImage(ImageOps.flip(default)),
+            PhotoImage(ImageOps.flip(hovered)),
+        )
 
     def _draw_rename_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.rectangle((7, 10, 25, 22), width=1, outline=self.LINE_RGB)
@@ -90,7 +89,7 @@ class IconFactory:
         return PhotoImage(draw._image)  # type: ignore
 
     def make_rename_icons(self) -> tuple[PhotoImage, PhotoImage]:
-        icon_default_alpha = Image.new(
+        icon_default_alpha = new_image(
             "RGBA", (self.icon_size, self.icon_size), (0, 0, 0, 0)
         )
         draw, draw_hovered = Draw(icon_default_alpha.copy()), Draw(

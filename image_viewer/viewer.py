@@ -252,12 +252,9 @@ class ViewerApp:
         (
             self.dropdown_hidden_icon,
             self.dropdown_hidden_icon_hovered,
-        ) = icon_factory.make_dropdown_hidden_icons()
-
-        (
             self.dropdown_showing_icon,
             self.dropdown_showing_icon_hovered,
-        ) = icon_factory.make_dropdown_showing_icons()
+        ) = icon_factory.make_dropdown_icons()
 
         self.dropdown_button_id: int = self.canvas.create_image(
             screen_width - topbar_height - topbar_height,
