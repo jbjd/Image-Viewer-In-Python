@@ -97,9 +97,18 @@ class ViewerApp:
             self.animation_loop,
         )
 
-        self.load_image()
+        # Don't call load_image for first image since if it fails to load, don't exit
+        # until we load the rest of the images and try to display them as well
+        if current_image := self.image_loader.load_image():
+            self.update_after_image_load(current_image)
+
         self.app.update()
         self.file_manager.fully_load_image_data()
+
+        # if first load failed, load new one now that all images are loaded
+        if current_image is None:
+            self.load_image()
+
         init_font(self._scale_pixels_to_height(22))
 
         # events based on input
@@ -398,6 +407,11 @@ class ViewerApp:
         self.redraw_screen = True
         self.app.iconify()
 
+    def update_after_image_load(self, current_image: PhotoImage) -> None:
+        """Updates app title and displayed image"""
+        self.canvas.itemconfig(self.image_display_id, image=current_image)
+        self.app.title(self.file_manager.current_image.name)
+
     def load_image(self) -> None:
         """Loads an image, resizes it to fit on the screen and updates display"""
         self.clear_animation_variables()
@@ -406,8 +420,7 @@ class ViewerApp:
         while (current_image := self.image_loader.load_image()) is None:
             self.remove_image(delete_from_disk=False)
 
-        self.canvas.itemconfig(self.image_display_id, image=current_image)
-        self.app.title(self.file_manager.current_image.name)
+        self.update_after_image_load(current_image)
 
     def show_topbar(self, event: Optional[Event] = None) -> None:
         self.topbar_shown = True
