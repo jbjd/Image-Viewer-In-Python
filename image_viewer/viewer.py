@@ -215,6 +215,8 @@ class ViewerApp:
         Load all assets on topbar from factory and create tkinter objects
         topbar_height: size to make icons/topbar
         """
+        topbar_height += topbar_height % 2  # ensure even number
+
         # negative makes it an absolute size for consistency with different monitors
         FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
 
@@ -227,7 +229,7 @@ class ViewerApp:
         )
         self.file_name_text_id: int = self.canvas.create_text(
             self._scale_pixels_to_width(36),
-            self._scale_pixels_to_height(15),
+            self._scale_pixels_to_height(16),
             text="",
             fill="white",
             anchor="w",
