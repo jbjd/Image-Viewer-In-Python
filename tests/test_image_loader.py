@@ -1,3 +1,4 @@
+import os
 import pytest
 from PIL import Image
 
@@ -6,11 +7,12 @@ from image_viewer.helpers.image_loader import ImageLoader
 
 @pytest.fixture
 def mock_image_loader():
-    mock_image_loader = ImageLoader(None, 0, 0, "", lambda *_: None)  # type: ignore
+    module_path: str = os.path.dirname(os.path.dirname(__file__)) + "/image_viewer"
+    image_loader = ImageLoader(None, 0, 0, module_path, lambda *_: None)  # type: ignore
     # file_pointer will (and must) exist before calling reset
     # since first thing done is loading an image where its normally set
-    mock_image_loader.file_pointer = Image.new("RGB", (10, 10))
-    return mock_image_loader
+    image_loader.file_pointer = Image.new("RGB", (10, 10))
+    return image_loader
 
 
 def test_next_frame(mock_image_loader):
