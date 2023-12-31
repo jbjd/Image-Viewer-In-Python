@@ -70,7 +70,7 @@ if args.python_path is None:
 print("Starting compilation with nuitka")
 print("Using python install found at", args.python_path)
 cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
-    --windows-icon-from-ico="{WORKING_DIR}icon/icon.ico" \
+    --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="viewer" --follow-import-to="managers"  \
     --follow-import-to="helpers" "{WORKING_DIR}image_viewer/main.py"'
@@ -90,7 +90,7 @@ try:
     os.makedirs(INSTALL_PATH, exist_ok=True)
 
     for data_file_path in DATA_FILE_PATHS:
-        old_path: str = f"{WORKING_DIR}{data_file_path}"
+        old_path: str = f"{WORKING_DIR}image_viewer/{data_file_path}"
         new_path: str = f"{TEMP_PATH}{data_file_path}"
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)

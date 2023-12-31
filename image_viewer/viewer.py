@@ -520,8 +520,3 @@ class ViewerApp:
         self.canvas.itemconfig(
             self.dropdown_id, image=self.dropdown_image, state="normal"
         )
-
-
-# For testing
-if __name__ == "__main__":
-    ViewerApp(r"c:\photos\test.jpg", "C:/Python/Viewer")
