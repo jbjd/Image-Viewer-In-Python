@@ -76,12 +76,7 @@ class ImageFileManager:
         self._populate_data_attributes()
 
     def move_current_index(self, amount: int) -> None:
-        self._current_index += amount
-        if (
-            self._current_index >= (length := len(self._files))
-            or self._current_index < 0
-        ):
-            self._current_index %= length
+        self._current_index = (self._current_index + amount) % len(self._files)
 
         self._populate_data_attributes()
 
