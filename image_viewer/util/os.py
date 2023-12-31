@@ -11,7 +11,7 @@ if os.name == "nt":
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
-else:  # if can't determine / unsupported OS
+else:  # linux / can't determine / unsupported OS
     illegal_char = r"[/]"
 
     def OS_name_cmp(a: str, b: str) -> bool:

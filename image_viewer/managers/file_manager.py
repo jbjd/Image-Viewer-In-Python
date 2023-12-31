@@ -38,10 +38,10 @@ class ImageFileManager:
     def __init__(self, first_image_to_load: str) -> None:
         """Load single file for display before we load the rest"""
         first_image_data = ImagePath(os.path.basename(first_image_to_load))
-        if (
-            not os.path.isfile(first_image_to_load)
-            or first_image_data.suffix not in self.VALID_FILE_TYPES
-        ):
+
+        if not os.path.isfile(first_image_to_load):
+            raise ValueError("Could not find file specified")
+        if first_image_data.suffix not in self.VALID_FILE_TYPES:
             raise ValueError("File not a valid image")
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
