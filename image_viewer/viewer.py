@@ -358,6 +358,7 @@ class ViewerApp:
 
         if self.canvas.itemcget("topbar", "state") == "hidden":
             self.show_topbar()
+
         self.canvas.itemconfig(self.rename_window_id, state="normal")
         self.canvas.coords(self.rename_window_id, self.rename_window_x_offset + 40, 4)
         self.rename_entry.focus()

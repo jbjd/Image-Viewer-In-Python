@@ -1,4 +1,4 @@
-from PIL.Image import Image, new
+from PIL import Image
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 
@@ -10,33 +10,35 @@ class IconFactory:
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
 
-    __slots__ = ("icon_default", "icon_default_hovered", "icon_size")
+    __slots__ = "icon_size"
 
     def __init__(self, icon_size: int) -> None:
         self.icon_size: int = icon_size
 
-        self.icon_default: Image = new("RGB", (icon_size, icon_size), self.ICON_RGB)
-        self.icon_default_hovered: Image = new(
-            "RGB", (icon_size, icon_size), self.ICON_HOVERED_RGB
-        )
-
     def make_topbar(self, screen_width: int) -> PhotoImage:
         TOPBAR_RGBA: tuple = (60, 60, 60, 170)
-        return PhotoImage(new("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA))
+        return PhotoImage(
+            Image.new("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA)
+        )
 
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple = (190, 40, 40)
         EXIT_HOVER_RGB: tuple = (180, 25, 20)
-        draw = Draw(new("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
+        draw = Draw(Image.new("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), width=2, fill=self.LINE_RGB)
         draw.line((6, 26, 26, 6), width=2, fill=self.LINE_RGB)
         return (
-            PhotoImage(new("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
+            PhotoImage(Image.new("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
             PhotoImage(draw._image),  # type: ignore
         )
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
-        return Draw(self.icon_default.copy()), Draw(self.icon_default_hovered.copy())
+        """Returns tuple of icon and hovered icon base images"""
+        return Draw(
+            Image.new("RGB", (self.icon_size, self.icon_size), self.ICON_RGB)
+        ), Draw(
+            Image.new("RGB", (self.icon_size, self.icon_size), self.ICON_HOVERED_RGB)
+        )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.line((6, 24, 24, 24), width=2, fill=self.LINE_RGB)
@@ -88,7 +90,9 @@ class IconFactory:
         return PhotoImage(draw._image)  # type: ignore
 
     def make_rename_icons(self) -> tuple[PhotoImage, PhotoImage]:
-        icon_default_alpha = new("RGBA", (self.icon_size, self.icon_size), (0, 0, 0, 0))
+        icon_default_alpha = Image.new(
+            "RGBA", (self.icon_size, self.icon_size), (0, 0, 0, 0)
+        )
         draw, draw_hovered = Draw(icon_default_alpha.copy()), Draw(
             icon_default_alpha.copy()
         )
