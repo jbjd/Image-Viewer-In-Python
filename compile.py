@@ -42,7 +42,8 @@ is_root: bool
 if os.name == "nt":
     is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
 else:
-    is_root = os.geteuid() == 0
+    # On windows, mypy doesn't know this exists
+    is_root = os.geteuid() == 0  # type: ignore
 
 if not is_root:
     raise Exception("compile.py needs root privileges to run")

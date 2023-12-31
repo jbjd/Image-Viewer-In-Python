@@ -232,19 +232,19 @@ class ViewerApp:
             font=FONT,
             tags="topbar",
         )
-        self.make_topbar_button(
+        self.make_topbar_button(  # type: ignore
             *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
         )
-        self.make_topbar_button(
+        self.make_topbar_button(  # type: ignore
             *icon_factory.make_minify_icons(),
             "ne",
             screen_width - topbar_height,
             self.minimize,
         )
-        self.make_topbar_button(
+        self.make_topbar_button(  # type: ignore
             *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
         )
-        self.rename_button_id: int = self.make_topbar_button(
+        self.rename_button_id: int = self.make_topbar_button(  # type: ignore
             *icon_factory.make_rename_icons(), "nw", 0, self.toggle_show_rename_window
         )
 
@@ -391,16 +391,13 @@ class ViewerApp:
         except Exception:
             # flash red to tell user rename failed
             self.rename_entry.config(bg="#e6505f")
-            self.app.after(400, self.reset_entry_color)
+            self.app.after(400, lambda: self.rename_entry.config(bg="white"))
             return
 
         # Cleanup after successful rename
         self.hide_rename_window()
         self.load_image()
         self.refresh_topbar()
-
-    def reset_entry_color(self) -> None:
-        self.rename_entry.config(bg="white")
 
     def minimize(self, event: Event) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
