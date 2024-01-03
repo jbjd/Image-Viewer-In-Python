@@ -75,6 +75,12 @@ class ImageFileManager:
         self._current_index = self._binary_search(image_to_start_at)
         self._populate_data_attributes()
 
+    def refresh_image_list(self) -> None:
+        """Clears cache and updates internal image list with current
+        images in direcrory"""
+        self.cache.clear()
+        self.fully_load_image_data()
+
     def move_current_index(self, amount: int) -> None:
         self._current_index = (self._current_index + amount) % len(self._files)
 

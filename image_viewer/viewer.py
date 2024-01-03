@@ -1,6 +1,5 @@
 import os
 import tkinter
-from collections.abc import Callable
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
 from typing import Optional
@@ -33,7 +32,6 @@ class ViewerApp:
         "height_ratio",
         "image_display_id",
         "image_loader",
-        "key_bindings",
         "move_id",
         "redraw_screen",
         "rename_button_id",
@@ -113,20 +111,18 @@ class ViewerApp:
 
         init_font(self._scale_pixels_to_height(22))
 
-        # events based on input
-        self.key_bindings: dict[str, Callable] = {
-            "F2": self.toggle_show_rename_window,
-            "Up": self.hide_topbar,
-            "Down": self.show_topbar,
-            "Left": self.lr_arrow,
-            "Right": self.lr_arrow,
-        }  # allowed in entry or main app
         self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
         self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
         self.app.bind("<FocusIn>", self.redraw)
         self.app.bind("<Escape>", self.escape_button)
         self.app.bind("<KeyPress>", self.handle_keybinds_main)
         self.app.bind("<KeyRelease>", self.handle_key_release)
+        self.app.bind("<Control-r>", self.refresh_image_list)
+        self.app.bind("<F2>", self.toggle_show_rename_window)
+        self.app.bind("<Up>", self.hide_topbar)
+        self.app.bind("<Down>", self.show_topbar)
+        self.app.bind("<Left>", self.lr_arrow)
+        self.app.bind("<Right>", self.lr_arrow)
 
         if os.name == "nt":
             self.app.bind(
@@ -157,13 +153,6 @@ class ViewerApp:
         if event.widget is self.app:
             if event.keysym == "r":
                 self.toggle_show_rename_window(event)
-            else:
-                self.handle_keybinds_default(event)
-
-    def handle_keybinds_default(self, event: Event) -> None:
-        """Key binds that can be used anywhere"""
-        if event.keysym in self.key_bindings:
-            self.key_bindings[event.keysym](event)
 
     def lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
@@ -181,6 +170,16 @@ class ViewerApp:
         """Repeat move to next image while L/R key held"""
         self.move(move_amount)
         self.move_id = self.app.after(ms, self.repeat_move, move_amount, 200)
+
+    def refresh_image_list(self, _: Event) -> None:
+        """Get images in current directory and update internal list with them"""
+        self.clear_animation_variables()
+        try:
+            self.file_manager.refresh_image_list()
+        except IndexError:
+            self.exit()
+
+        self.load_image()
 
     def hide_rename_window(self) -> None:
         self.canvas.itemconfig(self.rename_window_id, state="hidden")
@@ -293,7 +292,6 @@ class ViewerApp:
             self.app, font=FONT, bg="#FEFEFE", borderwidth=0
         )
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
-        self.rename_entry.bind("<KeyPress>", self.handle_keybinds_default)
         self.canvas.itemconfig(
             self.rename_window_id, state="hidden", window=self.rename_entry
         )
