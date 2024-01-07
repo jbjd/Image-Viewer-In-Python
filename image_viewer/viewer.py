@@ -358,7 +358,7 @@ class ViewerApp:
     def trash_image(self, _: Optional[Event] = None) -> None:
         self.clear_animation_variables()
         self.hide_rename_window()
-        self.remove_image_and_move_to_next(delete_from_disk=True)
+        self.remove_image_and_move_to_next(True)
 
     def toggle_show_rename_window(self, _: Optional[Event] = None) -> None:
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
@@ -382,7 +382,7 @@ class ViewerApp:
             "Confirm deletion",
             f"Converted file to {new_format}, delete old file?",
         ):
-            self.remove_image_and_move_to_next(delete_from_disk=True)
+            self.remove_image_and_move_to_next(True)
 
     def try_rename_or_convert(self, _: Optional[Event] = None) -> None:
         """Handles user input into rename window.
@@ -419,7 +419,7 @@ class ViewerApp:
 
         # When load fails, keep removing bad image and trying to load next
         while (current_image := self.image_loader.load_image()) is None:
-            self.remove_image(delete_from_disk=False)
+            self.remove_image(False)
 
         self.update_after_image_load(current_image)
 
