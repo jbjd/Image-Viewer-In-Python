@@ -157,9 +157,7 @@ class ViewerApp:
     def lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
-        if self.move_id != "":
-            return
-        if event.widget is self.app:
+        if event.widget is self.app and self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (event.state & 5)  # type: ignore
             if event.keysym == "Left":
