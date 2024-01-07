@@ -5,9 +5,9 @@ from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 
 
-# Currently draws symbols at set points, not relative to size of icons
-# Monitors other than mine might get wrong size symbols
 class IconFactory:
+    """Creates UI icons scaled to screen size"""
+
     LINE_RGB: tuple[int, int, int] = (170, 170, 170)
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
