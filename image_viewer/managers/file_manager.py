@@ -12,19 +12,17 @@ from util.os import OS_name_cmp, clean_str_for_OS_path
 class ImageFileManager:
     """Manages internal list of images"""
 
-    VALID_FILE_TYPES: frozenset[str] = frozenset(
-        {
-            ".png",
-            ".jpg",
-            ".jpeg",
-            ".jfif",
-            ".jif",
-            ".jpe",
-            ".webp",
-            ".gif",
-            ".bmp",
-        }
-    )
+    VALID_FILE_TYPES: set[str] = {
+        ".bmp",
+        ".gif",
+        ".jpg",
+        ".jpeg",
+        ".jpe",
+        ".jfif",
+        ".jif",
+        ".png",
+        ".webp",
+    }
 
     __slots__ = (
         "_current_index",
