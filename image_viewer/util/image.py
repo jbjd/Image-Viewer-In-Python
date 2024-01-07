@@ -3,6 +3,8 @@ from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
 
+from util.os import OS_name_cmp
+
 
 # for some reason this stores less data than a regular tuple based on my tests
 class CachedImageData:
@@ -22,6 +24,9 @@ class ImagePath:
     def __init__(self, name: str) -> None:
         self.suffix = name[name.rfind(".") :].lower()
         self.name = name
+
+    def __lt__(self, other) -> bool:
+        return OS_name_cmp(self.name, other.name)
 
 
 def init_font(font_size: int) -> None:

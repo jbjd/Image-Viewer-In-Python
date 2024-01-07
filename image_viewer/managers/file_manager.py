@@ -6,7 +6,7 @@ from send2trash import send2trash
 
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImageData, ImagePath
-from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
+from util.os import OS_name_cmp, clean_str_for_OS_path
 
 
 class ImageFileManager:
@@ -71,7 +71,7 @@ class ImageFileManager:
             if (image_path := ImagePath(path)).suffix in self.VALID_FILE_TYPES
         ]
 
-        self._files.sort(key=OSFileSortKey)
+        self._files.sort()
         self._current_index = self._binary_search(image_to_start_at)
         self._populate_data_attributes()
 
