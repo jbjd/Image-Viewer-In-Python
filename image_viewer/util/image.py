@@ -37,7 +37,9 @@ def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
 
     text_bbox: tuple = ImageDraw.font.getbbox(dimension_text)
-    x_offset: int = max(int(text_bbox[2] * 0.07), 10)
+    x_offset: int = int(text_bbox[2] * 0.07)
+    if x_offset < 10:
+        x_offset = 10
 
     box_to_draw_on: ImageDraw = Draw(
         new(
