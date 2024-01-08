@@ -9,6 +9,3 @@ __pycache__/
 *.cmd
 *.build/
 *.dist/
-
-# used in compile.py
-TEMP/
