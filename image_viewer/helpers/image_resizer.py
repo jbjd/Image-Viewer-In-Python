@@ -27,14 +27,6 @@ class ImageResizer:
             fromarray(cv2.resize(array, dimensions, interpolation=interpolation))
         )
 
-    def get_interpolation(self, image_width: int, image_height: int) -> int:
-        """returns true when image must scale down"""
-        return (
-            cv2.INTER_AREA
-            if image_height > self.screen_height or image_width > self.screen_width
-            else cv2.INTER_CUBIC
-        )
-
     def _get_jpeg_scale_factor(
         self, image_width: int, image_height: int
     ) -> tuple[int, int] | None:
