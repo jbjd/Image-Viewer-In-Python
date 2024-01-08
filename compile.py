@@ -33,6 +33,13 @@ parser.add_argument("-p", "--python-path", help="Python path to use in compilati
 parser.add_argument(
     "--install-path", help=f"Path to install to, default is {INSTALL_PATH}"
 )
+parser.add_argument(
+    "--use-mingw64",
+    help="Adds mingw64 flag to nuitka",
+    action="store_const",
+    const=True,
+    default=False,
+)
 args = parser.parse_args()
 
 if args.install_path:
@@ -42,7 +49,7 @@ is_root: bool
 if os.name == "nt":
     is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
 else:
-    # On windows, mypy doesn't know this exists
+    # On windows, mypy complains
     is_root = os.geteuid() == 0  # type: ignore
 
 if not is_root:
@@ -74,6 +81,10 @@ cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="viewer" --follow-import-to="managers"  \
     --follow-import-to="helpers" "{WORKING_DIR}image_viewer/main.py"'
+
+if args.use_mingw64:
+    cmd_str += " --mingw64"
+
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
 
