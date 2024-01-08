@@ -86,8 +86,9 @@ cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="viewer" --follow-import-to="managers"  \
-    --follow-import-to="helpers" --python-flag="no_annotations,no_docstrings" \
-    {extra_args} "{WORKING_DIR}image_viewer/main.py"'
+    --follow-import-to="helpers" {extra_args} \
+    --python-flag="no_asserts,no_annotations,no_docstrings" \
+    "{WORKING_DIR}image_viewer/main.py"'
 
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
