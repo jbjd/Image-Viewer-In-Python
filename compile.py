@@ -26,7 +26,7 @@ else:
     EXECUTABLE_EXT = ".bin"
     DATA_FILE_PATHS = ["icon/icon.png"]
 
-VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--onefile"}
+VALID_NUITKA_ARGS = {"--mingw64", "--clang"}
 
 parser = ArgumentParser(
     description="Compiles Personal Image Viewer to an executable, must be run as root",
