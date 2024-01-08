@@ -13,7 +13,7 @@ except ImportError:
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
 TEMP_PATH: str = f"{WORKING_DIR}main.dist/"  # setup here, then copy to install path
-VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone"}
+VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--enable-console"}
 INSTALL_PATH: str
 EXECUTABLE_EXT: str
 DATA_FILE_PATHS: list[str]
@@ -51,6 +51,12 @@ if as_standalone:
             fp.read().strip().split("\n")
         )
 
+extra_args += (
+    " --enable-console"
+    if "--enable-console" in extra_args_list
+    else " --disable-console"
+)
+
 is_root: bool
 if os.name == "nt":
     is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
@@ -81,12 +87,11 @@ if args.python_path is None:
 
 # begin nuitka compilation in subprocess
 print("Starting compilation with nuitka")
-print("Using python install found at", args.python_path)
-cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
-    --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
+print("Using python install ", args.python_path)
+cmd_str = f'{args.python_path} -m nuitka --follow-import-to="helpers" \
     --follow-import-to="factories" --follow-import-to="util" \
-    --follow-import-to="viewer" --follow-import-to="managers"  \
-    --follow-import-to="helpers" {extra_args} \
+    --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
+    --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
     --python-flag="no_asserts,no_annotations,no_docstrings" \
     "{WORKING_DIR}image_viewer/main.py"'
 
