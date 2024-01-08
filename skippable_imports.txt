@@ -26,7 +26,6 @@
 "PIL.PcxImagePlugin"
 "PIL.PdfImagePlugin"
 "PIL.PixarImagePlugin"
-"PIL.PpmImagePlugin"
 "PIL.PsdImagePlugin"
 "PIL.QoiImagePlugin"
 "PIL.SgiImagePlugin"
