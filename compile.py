@@ -42,8 +42,9 @@ for extra_arg in extra_args_list:
         raise ValueError(f"Unkown arguement {extra_arg}")
 
 extra_args: str = " ".join(extra_args_list).strip()
+as_standalone: bool = "--standalone" in extra_args_list
 
-if "--standalone" in extra_args_list:
+if as_standalone:
     extra_args += " --enable-plugin=tk-inter"
     with open(os.path.join(WORKING_DIR, "skippable_imports.txt")) as fp:
         extra_args += " --nofollow-import-to=" + " --nofollow-import-to=".join(
@@ -114,7 +115,14 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
-    os.rename(f"{TEMP_PATH}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}")
+    if as_standalone:
+        os.rename(
+            f"{TEMP_PATH}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}"
+        )
+    else:
+        os.rename(
+            f"{WORKING_DIR}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}"
+        )
     shutil.rmtree(INSTALL_PATH, ignore_errors=True)
     os.rename(TEMP_PATH, INSTALL_PATH)
 finally:
