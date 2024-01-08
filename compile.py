@@ -2,7 +2,7 @@ import ctypes
 import os
 import shutil
 import subprocess
-from argparse import ArgumentParser
+from argparse import ArgumentParser, REMAINDER
 
 try:
     import nuitka  # noqa: F401
@@ -26,21 +26,25 @@ else:
     EXECUTABLE_EXT = ".bin"
     DATA_FILE_PATHS = ["icon/icon.png"]
 
+VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--onefile"}
+
 parser = ArgumentParser(
-    description="Compiles code in this repository to an executable, must be run as root"
+    description="Compiles Personal Image Viewer to an executable, must be run as root",
+    epilog=f"Some nuitka arguments are also accepted: {VALID_NUITKA_ARGS}\n",
 )
 parser.add_argument("-p", "--python-path", help="Python path to use in compilation")
 parser.add_argument(
     "--install-path", help=f"Path to install to, default is {INSTALL_PATH}"
 )
-parser.add_argument(
-    "--use-mingw64",
-    help="Adds mingw64 flag to nuitka",
-    action="store_const",
-    const=True,
-    default=False,
-)
-args = parser.parse_args()
+parser.add_argument("args", nargs=REMAINDER)
+args, extra_args_list = parser.parse_known_args()
+for extra_arg in extra_args_list:
+    if extra_arg not in VALID_NUITKA_ARGS:
+        raise ValueError(f"Unkown arguement {extra_arg}")
+
+# TODO: if --standalone, I should add no follows to things like Qt/PDF/tests/etc
+
+extra_args: str = " ".join(extra_args_list)
 
 if args.install_path:
     INSTALL_PATH = args.install_path
@@ -82,8 +86,7 @@ cmd_str = f'{args.python_path} -m nuitka --windows-disable-console \
     --follow-import-to="viewer" --follow-import-to="managers"  \
     --follow-import-to="helpers" "{WORKING_DIR}image_viewer/main.py"'
 
-if args.use_mingw64:
-    cmd_str += " --mingw64"
+cmd_str += f" {extra_args}"
 
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
