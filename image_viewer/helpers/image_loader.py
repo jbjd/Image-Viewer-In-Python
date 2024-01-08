@@ -94,7 +94,9 @@ class ImageLoader:
         try:
             # open even if in cache to throw error if user deleted it outside of program
             self.file_pointer = open_image(self.file_manager.path_to_current_image)
-        except (FileNotFoundError, UnidentifiedImageError):
+        except (FileNotFoundError, UnidentifiedImageError, ImportError):
+            # except import error since user might open file with inaccurate ext
+            # and trigger import that was excluded if they compiled as standalone
             return None
 
         image_kb_size: int = (
