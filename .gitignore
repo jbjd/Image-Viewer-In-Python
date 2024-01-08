@@ -8,6 +8,7 @@ __pycache__/
 *.exe
 *.cmd
 *.build/
+*.dist/
 
 # used in compile.py
 TEMP/

@@ -337,7 +337,7 @@ class ViewerApp:
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
-        exit(0)
+        raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
 
     def leave_hover_dropdown_toggle(self, _: Optional[Event] = None) -> None:
         self.canvas.itemconfig(
