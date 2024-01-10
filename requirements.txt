@@ -1,5 +1,5 @@
-Pillow == 10.1.0
+Pillow == 10.2.0
 send2trash == 1.8.2
 opencv-python == 4.9.0.80
-numpy == 1.26.2
+numpy == 1.26.3
 PyTurboJPEG == 1.7.3
