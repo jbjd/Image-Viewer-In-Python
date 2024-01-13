@@ -286,13 +286,13 @@ class ViewerApp:
             height=int(topbar_height * 0.75),
             anchor="nw",
         )
-        self.rename_entry: Entry = Entry(
-            self.app, font=FONT, bg="#FEFEFE", borderwidth=0
-        )
-        self.rename_entry.bind("<Return>", self.try_rename_or_convert)
+        rename_entry = Entry(self.app, font=FONT, bg="#FEFEFE", borderwidth=0)
+        rename_entry.bind("<Return>", self.try_rename_or_convert)
+        rename_entry.bind("<Control-c>", lambda _: self.app.update(), True)
         self.canvas.itemconfig(
-            self.rename_window_id, state="hidden", window=self.rename_entry
+            self.rename_window_id, state="hidden", window=rename_entry
         )
+        self.rename_entry: Entry = rename_entry
 
     def _make_topbar_button(
         self,

@@ -150,16 +150,17 @@ class ImageLoader:
         """Loads all frames starting from the second.
         Assumes the first will be loaded already"""
 
+        fp: Image = self.file_pointer
         for i in range(1, last_frame):
             # if user moved to new image, don't keep loading previous animated image
-            if self.file_pointer is not original_image:
+            if fp is not original_image:
                 return
             try:
-                self.file_pointer.seek(i)
+                fp.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.aniamtion_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(self.file_pointer),
+                    self.image_resizer.get_image_fit_to_screen(fp),
                     ms_until_next_frame,
                 )
             except Exception:
@@ -167,7 +168,7 @@ class ImageLoader:
                 # just break and close to kill thread
                 break
 
-        if self.file_pointer is original_image:
+        if fp is original_image:
             original_image.close()
 
     def reset(self) -> None:

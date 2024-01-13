@@ -63,10 +63,12 @@ class ImageFileManager:
         """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._current_index].name
 
+        image_directory = self.image_directory
+        VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = [
             image_path
-            for path in next(os.walk(self.image_directory), (None, None, []))[2]
-            if (image_path := ImagePath(path)).suffix in self.VALID_FILE_TYPES
+            for path in next(os.walk(image_directory), (None, None, []))[2]
+            if (image_path := ImagePath(path)).suffix in VALID_FILE_TYPES
         ]
 
         self._files.sort()
