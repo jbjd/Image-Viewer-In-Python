@@ -38,9 +38,9 @@ class ImageFileManager:
         first_image_data = ImagePath(os.path.basename(first_image_to_load))
 
         if not os.path.isfile(first_image_to_load):
-            raise ValueError("Could not find file specified")
+            raise ValueError("File doesn't exist or is a directory")
         if first_image_data.suffix not in self.VALID_FILE_TYPES:
-            raise ValueError("File not a valid image")
+            raise ValueError("File extension not supported")
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
         self._files: list[ImagePath] = [first_image_data]
@@ -92,7 +92,7 @@ class ImageFileManager:
     def remove_current_image(self, delete_from_disk: bool) -> None:
         # delete image from files array, cache, and optionally disk
         if delete_from_disk:
-            send2trash(os.path.abspath(self.path_to_current_image))
+            send2trash(os.path.normpath(self.path_to_current_image))
         self._clear_image_data()
 
         remaining_image_count: int = len(self._files)
