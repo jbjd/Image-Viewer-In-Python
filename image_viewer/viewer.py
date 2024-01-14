@@ -325,7 +325,7 @@ class ViewerApp:
         self.canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
         return button_id
 
-    def escape_button(self, _: Optional[Event] = None) -> None:
+    def escape_button(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
@@ -361,15 +361,16 @@ class ViewerApp:
         self.remove_image_and_move_to_next(True)
 
     def toggle_show_rename_window(self, _: Optional[Event] = None) -> None:
-        if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
+        canvas = self.canvas
+        if canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
 
-        if self.canvas.itemcget("topbar", "state") == "hidden":
+        if canvas.itemcget("topbar", "state") == "hidden":
             self.show_topbar()
 
-        self.canvas.itemconfig(self.rename_window_id, state="normal")
-        self.canvas.coords(
+        canvas.itemconfig(self.rename_window_id, state="normal")
+        canvas.coords(
             self.rename_window_id,
             self.rename_window_x_offset + self._scale_pixels_to_width(40),
             self._scale_pixels_to_height(4),
@@ -384,7 +385,7 @@ class ViewerApp:
         ):
             self.remove_image_and_move_to_next(True)
 
-    def try_rename_or_convert(self, _: Optional[Event] = None) -> None:
+    def try_rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.
         Trys to convert or rename based on input"""
         try:
@@ -498,7 +499,7 @@ class ViewerApp:
         self.animation_id = ""
         self.image_loader.reset()
 
-    def toggle_details_dropdown(self, event: Optional[Event] = None) -> None:
+    def toggle_details_dropdown(self, _: Event) -> None:
         self.dropdown_shown = not self.dropdown_shown
         self.hover_dropdown_toggle()  # fake mouse hover
         (
