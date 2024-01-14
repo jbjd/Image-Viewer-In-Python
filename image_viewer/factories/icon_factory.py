@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from PIL import ImageOps
 from PIL.Image import Image
 from PIL.Image import new as new_image
@@ -12,21 +14,20 @@ class IconFactory:
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
 
-    __slots__ = "icon_size"
+    __slots__ = "_scale_tuple_to_screen", "icon_size"
 
     def __init__(self, icon_size: int) -> None:
         self.icon_size: int = icon_size
 
-    def _scale_tuple_to_screen(
-        self, input: tuple[int, int, int, int]
-    ) -> tuple[int, int, int, int]:
         ratio: float = self.icon_size / 32
-        return tuple(i * ratio for i in input)  # type: ignore
+        self._scale_tuple_to_screen: Callable[[tuple], tuple] = lambda t: tuple(
+            i * ratio for i in t
+        )
 
     def _draw_line(
         self,
         image: ImageDraw,
-        xy: tuple[int, int, int, int],
+        xy: tuple[float, float, float, float],
         width: int,
     ) -> None:
         image.line(self._scale_tuple_to_screen(xy), self.LINE_RGB, width)
@@ -50,10 +51,9 @@ class IconFactory:
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
         """Returns tuple of icon and hovered icon base images"""
-        return Draw(
-            new_image("RGB", (self.icon_size, self.icon_size), self.ICON_RGB)
-        ), Draw(
-            new_image("RGB", (self.icon_size, self.icon_size), self.ICON_HOVERED_RGB)
+        icon_size = self.icon_size
+        return Draw(new_image("RGB", (icon_size, icon_size), self.ICON_RGB)), Draw(
+            new_image("RGB", (icon_size, icon_size), self.ICON_HOVERED_RGB)
         )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
@@ -98,7 +98,9 @@ class IconFactory:
 
     def _draw_rename_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.rectangle(
-            self._scale_tuple_to_screen((7, 10, 25, 22)), width=1, outline=self.LINE_RGB
+            self._scale_tuple_to_screen((7, 10, 25, 22)),  # type: ignore
+            width=1,
+            outline=self.LINE_RGB,
         )
         self._draw_line(draw, (7, 16, 16, 16), 3)
         self._draw_line(draw, (16, 8, 16, 24), 2)
@@ -112,7 +114,7 @@ class IconFactory:
             icon_default_alpha.copy()
         )
         draw_hovered.rectangle(
-            self._scale_tuple_to_screen((4, 5, 28, 27)),
+            self._scale_tuple_to_screen((4, 5, 28, 27)),  # type: ignore
             width=1,
             fill=self.ICON_HOVERED_RGB,
         )
