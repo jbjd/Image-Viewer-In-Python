@@ -1,5 +1,3 @@
-from collections.abc import Callable
-from functools import partial
 from PIL import ImageOps
 from PIL.Image import Image
 from PIL.Image import new as new_image
