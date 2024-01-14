@@ -91,22 +91,23 @@ class ImageLoader:
     def load_image(self) -> PhotoImage | None:
         """Loads an image and resizes it to fit on the screen
         Returns PhotoImage or None on failure to load"""
+
+        file_manager = self.file_manager
+        path_to_current_image: str = file_manager.path_to_current_image
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            self.file_pointer = open_image(self.file_manager.path_to_current_image)
+            self.file_pointer = open_image(path_to_current_image)
         except (FileNotFoundError, UnidentifiedImageError, ImportError):
             # except import error since user might open file with inaccurate ext
             # and trigger import that was excluded if they compiled as standalone
             return None
 
-        image_kb_size: int = (
-            os.stat(self.file_manager.path_to_current_image).st_size >> 10
-        )
+        image_kb_size: int = os.stat(path_to_current_image).st_size >> 10
         frame_count: int = getattr(self.file_pointer, "n_frames", 1)
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
-        cached_image_data = self.file_manager.get_cached_image_data()
+        cached_image_data = file_manager.get_cached_image_data()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
             self._finish_image_load(current_image, frame_count)
@@ -121,7 +122,7 @@ class ImageLoader:
             try:
                 if self.file_pointer.format == "JPEG":
                     current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                        self.file_pointer, self.file_manager.path_to_current_image
+                        self.file_pointer, path_to_current_image
                     )
                 else:
                     current_image = self.image_resizer.get_image_fit_to_screen(
@@ -132,7 +133,7 @@ class ImageLoader:
 
             self._finish_image_load(current_image, frame_count)
 
-            self.file_manager.cache_image(
+            file_manager.cache_image(
                 image_width,
                 image_height,
                 image_size,
