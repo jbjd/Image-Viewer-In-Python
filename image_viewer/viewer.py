@@ -58,35 +58,37 @@ class ViewerApp:
         self.animation_id: str = ""
 
         # application and canvas
-        self.app = Tk()
-        self.canvas = Canvas(self.app, bg="black", highlightthickness=0)
-        self.canvas.pack(anchor="nw", fill="both", expand=1)
-        self.app.attributes("-fullscreen", True)
+        app = Tk()
+        canvas = Canvas(app, bg="black", highlightthickness=0)
+        canvas.pack(anchor="nw", fill="both", expand=1)
+        app.attributes("-fullscreen", True)
+        self.app = app
+        self.canvas = canvas
 
         # Set icon and zoom state
         if os.name == "nt":
-            self.app.state("zoomed")
-            self.app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
+            app.state("zoomed")
+            app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
-            self.app.tk.call(
+            app.tk.call(
                 "wm",
                 "iconphoto",
-                self.app._w,  # type: ignore
+                app._w,  # type: ignore
                 tkinter.Image("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
             )
 
-        self.app.update()  # updates winfo width and height to the current size
-        screen_width: int = self.app.winfo_width()
-        screen_height: int = self.app.winfo_height()
+        app.update()  # updates winfo width and height to the current size
+        screen_width: int = app.winfo_width()
+        screen_height: int = app.winfo_height()
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
-        background = self.canvas.create_rectangle(
+        background = canvas.create_rectangle(
             0, 0, screen_width, screen_height, fill="black"
         )
-        self.image_display_id = self.canvas.create_image(
+        self.image_display_id = canvas.create_image(
             screen_width >> 1, screen_height >> 1, anchor="center"
         )
-        self.load_assests(screen_width, self._scale_pixels_to_height(32))
+        self.load_assests(app, canvas, screen_width, self._scale_pixels_to_height(32))
 
         # set up and draw first image, then get all image paths in directory
         self.image_loader = ImageLoader(
@@ -102,7 +104,7 @@ class ViewerApp:
         if current_image := self.image_loader.load_image():
             self.update_after_image_load(current_image)
 
-        self.app.update()
+        app.update()
         self.file_manager.fully_load_image_data()
 
         # if first load failed, load new one now that all images are loaded
@@ -111,28 +113,28 @@ class ViewerApp:
 
         init_font(self._scale_pixels_to_height(22))
 
-        self.canvas.tag_bind(background, "<Button-1>", self.handle_click)
-        self.canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
-        self.app.bind("<FocusIn>", self.redraw)
-        self.app.bind("<Escape>", self.escape_button)
-        self.app.bind("<KeyPress>", self.handle_keybinds_main)
-        self.app.bind("<KeyRelease>", self.handle_key_release)
-        self.app.bind("<Control-r>", self.refresh_image_list)
-        self.app.bind("<F2>", self.toggle_show_rename_window)
-        self.app.bind("<Up>", self.hide_topbar)
-        self.app.bind("<Down>", self.show_topbar)
-        self.app.bind("<Left>", self.lr_arrow)
-        self.app.bind("<Right>", self.lr_arrow)
+        canvas.tag_bind(background, "<Button-1>", self.handle_click)
+        canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
+        app.bind("<FocusIn>", self.redraw)
+        app.bind("<Escape>", self.escape_button)
+        app.bind("<KeyPress>", self.handle_keybinds_main)
+        app.bind("<KeyRelease>", self.handle_key_release)
+        app.bind("<Control-r>", self.refresh_image_list)
+        app.bind("<F2>", self.toggle_show_rename_window)
+        app.bind("<Up>", self.hide_topbar)
+        app.bind("<Down>", self.show_topbar)
+        app.bind("<Left>", self.lr_arrow)
+        app.bind("<Right>", self.lr_arrow)
 
         if os.name == "nt":
-            self.app.bind(
+            app.bind(
                 "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
             )
         else:
-            self.app.bind("<Button-4>", lambda _: self.move(-1))
-            self.app.bind("<Button-5>", lambda _: self.move(1))
+            app.bind("<Button-4>", lambda _: self.move(-1))
+            app.bind("<Button-5>", lambda _: self.move(1))
 
-        self.app.mainloop()
+        app.mainloop()
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
@@ -207,11 +209,44 @@ class ViewerApp:
             return
         self.load_image()
 
-    def load_assests(self, screen_width: int, topbar_height: int) -> None:
+    def load_assests(
+        self, app: Tk, canvas: Canvas, screen_width: int, topbar_height: int
+    ) -> None:
         """
         Load all assets on topbar from factory and create tkinter objects
         topbar_height: size to make icons/topbar
         """
+        def _make_topbar_button(
+            canvas: Canvas,
+            regular_image: PhotoImage,
+            hovered_image: PhotoImage,
+            anchor: str,
+            x_offset: int,
+            function_to_bind,
+        ) -> int:
+            """Default way to setup a button on the topbar"""
+            button_id: int = canvas.create_image(
+                x_offset,
+                0,
+                image=regular_image,
+                anchor=anchor,
+                tag="topbar",
+                state="hidden",
+            )
+
+            canvas.tag_bind(
+                button_id,
+                "<Enter>",
+                lambda _: canvas.itemconfig(button_id, image=hovered_image),
+            )
+            canvas.tag_bind(
+                button_id,
+                "<Leave>",
+                lambda _: canvas.itemconfig(button_id, image=regular_image),
+            )
+            canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
+            return button_id
+
         topbar_height += topbar_height % 2  # ensure even number
 
         # negative makes it an absolute size for consistency with different monitors
@@ -221,10 +256,10 @@ class ViewerApp:
 
         # create the topbar
         self.topbar = icon_factory.make_topbar(screen_width)
-        self.canvas.create_image(
+        canvas.create_image(
             0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
         )
-        self.file_name_text_id: int = self.canvas.create_text(
+        self.file_name_text_id: int = canvas.create_text(
             self._scale_pixels_to_width(36),
             self._scale_pixels_to_height(16),
             text="",
@@ -233,20 +268,25 @@ class ViewerApp:
             font=FONT,
             tags="topbar",
         )
-        self._make_topbar_button(  # type: ignore
-            *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
+        _make_topbar_button(  # type: ignore
+            canvas, *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
         )
-        self._make_topbar_button(  # type: ignore
+        _make_topbar_button(  # type: ignore
+            canvas,
             *icon_factory.make_minify_icons(),
             "ne",
             screen_width - topbar_height,
             self.minimize,
         )
-        self._make_topbar_button(  # type: ignore
-            *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
+        _make_topbar_button(  # type: ignore
+            canvas, *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
         )
-        self.rename_button_id: int = self._make_topbar_button(  # type: ignore
-            *icon_factory.make_rename_icons(), "nw", 0, self.toggle_show_rename_window
+        self.rename_button_id: int = _make_topbar_button(  # type: ignore
+            canvas,
+            *icon_factory.make_rename_icons(),
+            "nw",
+            0,
+            self.toggle_show_rename_window,
         )
 
         # details dropdown
@@ -257,7 +297,7 @@ class ViewerApp:
             self.dropdown_showing_icon_hovered,
         ) = icon_factory.make_dropdown_icons()
 
-        self.dropdown_button_id: int = self.canvas.create_image(
+        self.dropdown_button_id: int = canvas.create_image(
             screen_width - topbar_height - topbar_height,
             0,
             image=self.dropdown_hidden_icon,
@@ -265,65 +305,30 @@ class ViewerApp:
             tag="topbar",
             state="hidden",
         )
-        self.canvas.tag_bind(
+        canvas.tag_bind(
             self.dropdown_button_id, "<ButtonRelease-1>", self.toggle_details_dropdown
         )
-        self.canvas.tag_bind(
-            self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle
-        )
-        self.canvas.tag_bind(
+        canvas.tag_bind(self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle)
+        canvas.tag_bind(
             self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
         )
-        self.dropdown_id: int = self.canvas.create_image(
+        self.dropdown_id: int = canvas.create_image(
             screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
 
         # rename window
-        self.rename_window_id: int = self.canvas.create_window(
+        self.rename_window_id: int = canvas.create_window(
             0,
             0,
             width=self._scale_pixels_to_width(200),
             height=int(topbar_height * 0.75),
             anchor="nw",
         )
-        rename_entry = Entry(self.app, font=FONT, bg="#FEFEFE", borderwidth=0)
+        rename_entry = Entry(app, font=FONT, bg="#FEFEFE", borderwidth=0)
         rename_entry.bind("<Return>", self.try_rename_or_convert)
-        rename_entry.bind("<Control-c>", lambda _: self.app.update(), True)
-        self.canvas.itemconfig(
-            self.rename_window_id, state="hidden", window=rename_entry
-        )
+        rename_entry.bind("<Control-c>", lambda _: app.update(), True)
+        canvas.itemconfig(self.rename_window_id, state="hidden", window=rename_entry)
         self.rename_entry: Entry = rename_entry
-
-    def _make_topbar_button(
-        self,
-        regular_image: PhotoImage,
-        hovered_image: PhotoImage,
-        anchor: str,
-        x_offset: int,
-        function_to_bind,
-    ) -> int:
-        """Default way to setup a button on the topbar"""
-        button_id: int = self.canvas.create_image(
-            x_offset,
-            0,
-            image=regular_image,
-            anchor=anchor,
-            tag="topbar",
-            state="hidden",
-        )
-
-        self.canvas.tag_bind(
-            button_id,
-            "<Enter>",
-            lambda _: self.canvas.itemconfig(button_id, image=hovered_image),
-        )
-        self.canvas.tag_bind(
-            button_id,
-            "<Leave>",
-            lambda _: self.canvas.itemconfig(button_id, image=regular_image),
-        )
-        self.canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
-        return button_id
 
     def escape_button(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
