@@ -119,9 +119,6 @@ class ImageFileManager:
 
         new_path: str = self.construct_path_to_image(new_name)
 
-        if os.path.exists(new_path):
-            raise FileExistsError()
-
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
@@ -165,9 +162,12 @@ class ImageFileManager:
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when we think the cached image is still accurate.
         Not guaranteed to be correct, but thats not important for this case"""
-        return os.path.exists(self.path_to_current_image) and os.stat(
-            self.path_to_current_image
-        ).st_size == self.cache.get(self.current_image.name, 0)
+        try:
+            return os.stat(self.path_to_current_image).st_size == self.cache.get(
+                self.current_image.name, 0
+            )
+        except Exception:
+            return False
 
     def get_cached_image_data(self) -> CachedImageData | None:
         return self.cache.get(self.current_image.name, None)
