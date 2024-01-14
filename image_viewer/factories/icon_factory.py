@@ -1,5 +1,5 @@
 from collections.abc import Callable
-
+from functools import partial
 from PIL import ImageOps
 from PIL.Image import Image
 from PIL.Image import new as new_image
@@ -14,15 +14,17 @@ class IconFactory:
     ICON_RGB: tuple[int, int, int] = (100, 104, 102)
     ICON_HOVERED_RGB: tuple[int, int, int] = (95, 92, 88)
 
-    __slots__ = "_scale_tuple_to_screen", "icon_size"
+    __slots__ = "icon_size", "ratio"
 
     def __init__(self, icon_size: int) -> None:
         self.icon_size: int = icon_size
+        self.ratio: float = icon_size / 32
 
-        ratio: float = self.icon_size / 32
-        self._scale_tuple_to_screen: Callable[[tuple], tuple] = lambda t: tuple(
-            i * ratio for i in t
-        )
+    def _scale_tuple_to_screen(
+        self, input: tuple[float, float, float, float]
+    ) -> tuple[float, float, float, float]:
+        ratio = self.ratio
+        return tuple(i * ratio for i in input)  # type: ignore
 
     def _draw_line(
         self,
@@ -41,11 +43,12 @@ class IconFactory:
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple = (190, 40, 40)
         EXIT_HOVER_RGB: tuple = (180, 25, 20)
-        draw = Draw(new_image("RGB", (self.icon_size, self.icon_size), EXIT_HOVER_RGB))
+        icon_size = self.icon_size
+        draw = Draw(new_image("RGB", (icon_size, icon_size), EXIT_HOVER_RGB))
         self._draw_line(draw, (6, 6, 26, 26), 2)
         self._draw_line(draw, (6, 26, 26, 6), 2)
         return (
-            PhotoImage(new_image("RGB", (self.icon_size, self.icon_size), EXIT_RGB)),
+            PhotoImage(new_image("RGB", (icon_size, icon_size), EXIT_RGB)),
             PhotoImage(draw._image),  # type: ignore
         )
 
