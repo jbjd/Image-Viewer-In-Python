@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterator
 from re import sub
 
 if os.name == "nt":
@@ -18,3 +19,25 @@ else:  # linux / can't determine / unsupported OS
 
 def clean_str_for_OS_path(name: str) -> str:
     return sub(illegal_char, "", name)
+
+
+def walk_dir(directory_path: str) -> Iterator[str]:
+    """Copied from OS module and edited to yield each file
+    and only files instead of including dirs/extra info"""
+
+    scandir_iter = os.scandir(directory_path)
+
+    with scandir_iter:
+        while True:
+            try:
+                entry = next(scandir_iter)
+            except Exception:
+                return
+
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                is_dir = False
+
+            if not is_dir:
+                yield entry.name

@@ -216,6 +216,7 @@ class ViewerApp:
         Load all assets on topbar from factory and create tkinter objects
         topbar_height: size to make icons/topbar
         """
+
         def _make_topbar_button(
             canvas: Canvas,
             regular_image: PhotoImage,

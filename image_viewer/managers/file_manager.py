@@ -6,7 +6,7 @@ from send2trash import send2trash
 
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImageData, ImagePath
-from util.os import OS_name_cmp, clean_str_for_OS_path
+from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
 
 
 class ImageFileManager:
@@ -63,11 +63,10 @@ class ImageFileManager:
         """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._current_index].name
 
-        image_directory = self.image_directory
         VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = [
             image_path
-            for path in next(os.walk(image_directory), (None, None, []))[2]
+            for path in walk_dir(self.image_directory)
             if (image_path := ImagePath(path)).suffix in VALID_FILE_TYPES
         ]
 
