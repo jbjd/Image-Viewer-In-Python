@@ -1,8 +1,6 @@
 import os
-import tkinter
 from tkinter import Canvas, Entry, Event, Tk
 from tkinter.messagebox import askyesno
-from typing import Optional
 
 from PIL.ImageTk import PhotoImage
 
@@ -70,11 +68,13 @@ class ViewerApp:
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
+            from tkinter import Image as tkImage
+
             app.tk.call(
                 "wm",
                 "iconphoto",
                 app._w,  # type: ignore
-                tkinter.Image("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
+                tkImage("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
             )
 
         app.update()  # updates winfo width and height to the current size
@@ -338,14 +338,14 @@ class ViewerApp:
             return
         self.exit()
 
-    def exit(self, _: Optional[Event] = None) -> None:
+    def exit(self, _: Event | None = None) -> None:
         self.image_loader.reset()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
         raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
 
-    def leave_hover_dropdown_toggle(self, _: Optional[Event] = None) -> None:
+    def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
@@ -353,7 +353,7 @@ class ViewerApp:
             else self.dropdown_hidden_icon,
         )
 
-    def hover_dropdown_toggle(self, _: Optional[Event] = None) -> None:
+    def hover_dropdown_toggle(self, _: Event | None = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
@@ -361,12 +361,12 @@ class ViewerApp:
             else self.dropdown_hidden_icon_hovered,
         )
 
-    def trash_image(self, _: Optional[Event] = None) -> None:
+    def trash_image(self, _: Event | None = None) -> None:
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image_and_move_to_next(True)
 
-    def toggle_show_rename_window(self, _: Optional[Event] = None) -> None:
+    def toggle_show_rename_window(self, _: Event | None = None) -> None:
         canvas = self.canvas
         if canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
@@ -430,12 +430,12 @@ class ViewerApp:
 
         self.update_after_image_load(current_image)
 
-    def show_topbar(self, _: Optional[Event] = None) -> None:
+    def show_topbar(self, _: Event | None = None) -> None:
         self.topbar_shown = True
         self.canvas.itemconfig("topbar", state="normal")
         self.refresh_topbar()
 
-    def hide_topbar(self, _: Optional[Event] = None) -> None:
+    def hide_topbar(self, _: Event | None = None) -> None:
         self.app.focus()
         self.topbar_shown = False
         self.canvas.itemconfig("topbar", state="hidden")

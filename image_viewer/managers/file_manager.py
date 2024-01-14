@@ -1,5 +1,5 @@
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash

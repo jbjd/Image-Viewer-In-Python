@@ -33,14 +33,14 @@ class ImageLoader:
         screen_width: int,
         screen_height: int,
         path_to_exe: str,
-        animation_callback: Callable,
+        animation_callback: Callable[[int, int], None],
     ) -> None:
         self.file_manager: ImageFileManager = file_manager
         self.image_resizer = ImageResizer(screen_width, screen_height, path_to_exe)
 
         self.file_pointer: Image
 
-        self.animation_callback: Callable = animation_callback
+        self.animation_callback: Callable[[int, int], None] = animation_callback
         self.aniamtion_frames: list = []
         self.frame_index: int = 0
 
@@ -93,7 +93,7 @@ class ImageLoader:
         Returns PhotoImage or None on failure to load"""
 
         file_manager = self.file_manager
-        path_to_current_image: str = file_manager.path_to_current_image
+        path_to_current_image = file_manager.path_to_current_image
         try:
             # open even if in cache to throw error if user deleted it outside of program
             self.file_pointer = open_image(path_to_current_image)
