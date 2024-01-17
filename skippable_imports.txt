@@ -1,3 +1,4 @@
+"email*"
 "PIL.BlpImagePlugin"
 "PIL.BufrStubImagePlugin"
 "PIL.CurImagePlugin"
@@ -37,4 +38,4 @@
 "PIL.XpmImagePlugin"
 "PIL.XVThumbImagePlugin"
 "PIL.ImageQt"
-"email*"
+"PIL.ImageShow"
