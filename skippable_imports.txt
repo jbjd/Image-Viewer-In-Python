@@ -37,5 +37,6 @@
 "PIL.XbmImagePlugin"
 "PIL.XpmImagePlugin"
 "PIL.XVThumbImagePlugin"
+"PIL.ImageFilter"
 "PIL.ImageQt"
 "PIL.ImageShow"
