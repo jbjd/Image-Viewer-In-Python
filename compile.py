@@ -92,7 +92,7 @@ cmd_str = f'{args.python_path} -m nuitka --follow-import-to="helpers" \
     --follow-import-to="factories" --follow-import-to="util" \
     --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
     --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
-    --python-flag="no_asserts,no_annotations,no_docstrings" \
+    --python-flag="-OO,no_annotations,no_warnings" \
     "{WORKING_DIR}image_viewer/main.py"'
 
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
