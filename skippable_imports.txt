@@ -1,3 +1,4 @@
+"argparse"
 "email*"
 "PIL.BlpImagePlugin"
 "PIL.BufrStubImagePlugin"
