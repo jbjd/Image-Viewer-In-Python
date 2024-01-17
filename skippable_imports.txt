@@ -1,5 +1,6 @@
 "argparse"
 "email*"
+"getpass"
 "PIL.BlpImagePlugin"
 "PIL.BufrStubImagePlugin"
 "PIL.CurImagePlugin"
