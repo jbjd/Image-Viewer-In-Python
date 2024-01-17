@@ -41,3 +41,4 @@
 "PIL.ImageFilter"
 "PIL.ImageQt"
 "PIL.ImageShow"
+"py_compile"
