@@ -466,11 +466,11 @@ class ViewerApp:
         )
         self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
         self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
-        (
+
+        if self.dropdown_shown:
             self.create_details_dropdown()
-            if self.dropdown_shown
-            else self.canvas.itemconfig(self.dropdown_id, state="hidden")
-        )
+        else:
+            self.canvas.itemconfig(self.dropdown_id, state="hidden")
 
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
         self.animation_id = self.app.after(
