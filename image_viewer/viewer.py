@@ -142,7 +142,7 @@ class ViewerApp:
 
     def _scale_pixels_to_width(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
-        return int(original_pixels * self.height_ratio)
+        return int(original_pixels * self.width_ratio)
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
