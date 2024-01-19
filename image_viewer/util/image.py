@@ -28,9 +28,15 @@ class ImagePath:
         return OS_name_cmp(self.name, other.name)
 
 
-def init_font(font_size: int) -> None:
+def init_PIL(font_size: int) -> None:
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
+    from PIL import Image
+
+    # edit this so PIL will not waste time importing +20 useless modules
+    Image._plugins = [
+        "WebPImagePlugin",
+    ]
 
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:

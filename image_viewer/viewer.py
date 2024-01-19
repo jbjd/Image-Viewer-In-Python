@@ -7,7 +7,7 @@ from PIL.ImageTk import PhotoImage
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from managers.file_manager import ImageFileManager
-from util.image import CachedImageData, create_dropdown_image, init_font
+from util.image import CachedImageData, create_dropdown_image, init_PIL
 
 
 class ViewerApp:
@@ -111,7 +111,7 @@ class ViewerApp:
         if current_image is None:
             self.load_image()
 
-        init_font(self._scale_pixels_to_height(22))
+        init_PIL(self._scale_pixels_to_height(22))
 
         canvas.tag_bind(background, "<Button-1>", self.handle_click)
         canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
