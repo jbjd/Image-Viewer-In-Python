@@ -19,10 +19,10 @@ class IconFactory:
         self.ratio: float = icon_size / 32
 
     def _scale_tuple_to_screen(
-        self, input: tuple[float, float, float, float]
+        self, rgba: tuple[float, float, float, float]
     ) -> tuple[float, float, float, float]:
         ratio = self.ratio
-        return tuple(i * ratio for i in input)  # type: ignore
+        return tuple(i * ratio for i in rgba)  # type: ignore
 
     def _draw_line(
         self,

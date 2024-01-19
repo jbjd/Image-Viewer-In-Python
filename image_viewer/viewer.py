@@ -146,7 +146,7 @@ class ViewerApp:
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
-            if self.move_id and (event.keysym == "Left" or event.keysym == "Right"):
+            if self.move_id and event.keysym in ("Left", "Right"):
                 self.app.after_cancel(self.move_id)
                 self.move_id = ""
 
@@ -508,11 +508,10 @@ class ViewerApp:
     def toggle_details_dropdown(self, _: Event) -> None:
         self.dropdown_shown = not self.dropdown_shown
         self.hover_dropdown_toggle()  # fake mouse hover
-        (
+        if self.dropdown_shown:
             self.create_details_dropdown()
-            if self.dropdown_shown
-            else self.canvas.itemconfig(self.dropdown_id, state="hidden")
-        )
+        else:
+            self.canvas.itemconfig(self.dropdown_id, state="hidden")
 
     def create_details_dropdown(self) -> None:
         image_info: CachedImageData = self.file_manager.get_current_image_cache()
