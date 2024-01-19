@@ -43,6 +43,7 @@
 "PIL.ImageFilter"
 "PIL.ImageQt"
 "PIL.ImageShow"
+"PIL.ImageWin"
 "PIL.PyAccess"
 "py_compile"
 "yaml"
