@@ -7,7 +7,7 @@ from PIL.ImageTk import PhotoImage
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from managers.file_manager import ImageFileManager
-from util.image import CachedImageData, create_dropdown_image, init_PIL
+from util.image import CachedImageData, DropdownImage, create_dropdown_image, init_PIL
 
 
 class ViewerApp:
@@ -17,14 +17,13 @@ class ViewerApp:
         "animation_id",
         "app",
         "canvas",
+        "dropdown",
         "dropdown_button_id",
         "dropdown_hidden_icon",
         "dropdown_hidden_icon_hovered",
-        "dropdown_id",
-        "dropdown_image",
         "dropdown_showing_icon",
         "dropdown_showing_icon_hovered",
-        "dropdown_shown",
+        "show_dropdown",
         "file_manager",
         "file_name_text_id",
         "height_ratio",
@@ -46,9 +45,9 @@ class ViewerApp:
 
         # UI varaibles
         self.topbar_shown: bool
-        self.dropdown_shown: bool
+        self.show_dropdown: bool
         self.redraw_screen: bool
-        self.topbar_shown = self.dropdown_shown = self.redraw_screen = False
+        self.topbar_shown = self.show_dropdown = self.redraw_screen = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
 
@@ -68,7 +67,7 @@ class ViewerApp:
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
-            from tkinter import Image as tkImage
+            from tkinter import Image as tkImage  # noqa: C0415
 
             app.tk.call(
                 "wm",
@@ -82,13 +81,13 @@ class ViewerApp:
         screen_height: int = app.winfo_height()
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
-        background = canvas.create_rectangle(
-            0, 0, screen_width, screen_height, fill="black"
+        canvas.create_rectangle(
+            0, 0, screen_width, screen_height, fill="black", tag="back"
         )
         self.image_display_id = canvas.create_image(
-            screen_width >> 1, screen_height >> 1, anchor="center"
+            screen_width >> 1, screen_height >> 1, anchor="center", tag="back"
         )
-        self.load_assests(app, canvas, screen_width, self._scale_pixels_to_height(32))
+        self._load_assests(app, canvas, screen_width, self._scale_pixels_to_height(32))
 
         # set up and draw first image, then get all image paths in directory
         self.image_loader = ImageLoader(
@@ -113,8 +112,7 @@ class ViewerApp:
 
         init_PIL(self._scale_pixels_to_height(22))
 
-        canvas.tag_bind(background, "<Button-1>", self.handle_click)
-        canvas.tag_bind(self.image_display_id, "<Button-1>", self.handle_click)
+        canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.escape_button)
         app.bind("<KeyPress>", self.handle_keybinds_main)
@@ -164,12 +162,12 @@ class ViewerApp:
             move_amount: int = 1 + (event.state & 5)  # type: ignore
             if event.keysym == "Left":
                 move_amount = -move_amount
-            self.repeat_move(move_amount, 600)
+            self._repeat_move(move_amount, 600)
 
-    def repeat_move(self, move_amount: int, ms: int) -> None:
+    def _repeat_move(self, move_amount: int, ms: int) -> None:
         """Repeat move to next image while L/R key held"""
         self.move(move_amount)
-        self.move_id = self.app.after(ms, self.repeat_move, move_amount, 200)
+        self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
 
     def refresh_image_list(self, _: Event) -> None:
         """Get images in current directory and update internal list with them"""
@@ -192,6 +190,7 @@ class ViewerApp:
         """
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
+        self.dropdown.refresh = True
 
         self.load_image()
         if self.topbar_shown:
@@ -209,7 +208,7 @@ class ViewerApp:
             return
         self.load_image()
 
-    def load_assests(
+    def _load_assests(
         self, app: Tk, canvas: Canvas, screen_width: int, topbar_height: int
     ) -> None:
         """
@@ -307,14 +306,16 @@ class ViewerApp:
             state="hidden",
         )
         canvas.tag_bind(
-            self.dropdown_button_id, "<ButtonRelease-1>", self.toggle_details_dropdown
+            self.dropdown_button_id, "<ButtonRelease-1>", self.handle_dropdown
         )
         canvas.tag_bind(self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle)
         canvas.tag_bind(
             self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
         )
-        self.dropdown_id: int = canvas.create_image(
-            screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
+        self.dropdown = DropdownImage(
+            canvas.create_image(
+                screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
+            )
         )
 
         # rename window
@@ -339,6 +340,7 @@ class ViewerApp:
         self.exit()
 
     def exit(self, _: Event | None = None) -> None:
+        """Safely exits the program"""
         self.image_loader.reset()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
@@ -349,7 +351,7 @@ class ViewerApp:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
-            if self.dropdown_shown
+            if self.show_dropdown
             else self.dropdown_hidden_icon,
         )
 
@@ -357,11 +359,12 @@ class ViewerApp:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
-            if self.dropdown_shown
+            if self.show_dropdown
             else self.dropdown_hidden_icon_hovered,
         )
 
     def trash_image(self, _: Event | None = None) -> None:
+        """Move current image to trash and moves to next"""
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image_and_move_to_next(True)
@@ -421,7 +424,7 @@ class ViewerApp:
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
-        """Loads an image, resizes it to fit on the screen and updates display"""
+        """Loads an image and updates display"""
         self.clear_animation_variables()
 
         # When load fails, keep removing bad image and trying to load next
@@ -431,18 +434,23 @@ class ViewerApp:
         self.update_after_image_load(current_image)
 
     def show_topbar(self, _: Event | None = None) -> None:
+        """Shows all topbar elements and updates its display"""
         self.topbar_shown = True
         self.canvas.itemconfig("topbar", state="normal")
         self.refresh_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
-        self.app.focus()
+        """Hides/removes focus from all topbar elements"""
         self.topbar_shown = False
         self.canvas.itemconfig("topbar", state="hidden")
         self.hide_rename_window()
 
-    def handle_click(self, _: Event) -> None:
-        self.hide_topbar() if self.topbar_shown else self.show_topbar()
+    def handle_canvas_click(self, _: Event) -> None:
+        """toggles the display of topbar when non-topbar area clicked"""
+        if self.topbar_shown:
+            self.hide_topbar()
+        else:
+            self.show_topbar()
 
     def remove_image(self, delete_from_disk: bool) -> None:
         """Removes current image from internal image list"""
@@ -461,28 +469,23 @@ class ViewerApp:
             self.refresh_topbar()
 
     def refresh_topbar(self) -> None:
+        """Updates all elements on the topbar with current info"""
         self.canvas.itemconfig(
             self.file_name_text_id, text=self.file_manager.current_image.name
         )
         self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
         self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
 
-        if self.dropdown_shown:
-            self.create_details_dropdown()
-        else:
-            self.canvas.itemconfig(self.dropdown_id, state="hidden")
+        self.update_details_dropdown()
 
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
+        """Handles looping between animation frames"""
         self.animation_id = self.app.after(
             ms_until_next_frame, self.animate, ms_backoff
         )
 
     def animate(self, ms_backoff: int) -> None:
-        """
-        displays a frame on screen and recursively calls itself after a delay
-        frame_index: index of current frame to be displayed
-        speed: speed in ms until next frame
-        """
+        """displays a frame on screen and loops to next frame after a delay"""
         frame_and_speed = self.image_loader.get_next_frame()
 
         # if tried to show next frame before it is loaded
@@ -498,6 +501,7 @@ class ViewerApp:
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
     def clear_animation_variables(self) -> None:
+        """clears all animation data"""
         if self.animation_id == "":
             return
 
@@ -505,20 +509,24 @@ class ViewerApp:
         self.animation_id = ""
         self.image_loader.reset()
 
-    def toggle_details_dropdown(self, _: Event) -> None:
-        self.dropdown_shown = not self.dropdown_shown
+    def handle_dropdown(self, _: Event) -> None:
+        self.show_dropdown = not self.show_dropdown
         self.hover_dropdown_toggle()  # fake mouse hover
-        if self.dropdown_shown:
-            self.create_details_dropdown()
+        self.update_details_dropdown()
+
+    def update_details_dropdown(self) -> None:
+        """Updates the infomation and state of dropdown image"""
+        dropdown = self.dropdown
+        if self.show_dropdown:
+            if dropdown.refresh:
+                image_info: CachedImageData = (
+                    self.file_manager.get_current_image_cache()
+                )
+                dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
+                size_text: str = f"Size: {image_info.dimensions}"
+
+                dropdown.image = create_dropdown_image(dimension_text, size_text)
+
+            self.canvas.itemconfig(dropdown.id, image=dropdown.image, state="normal")
         else:
-            self.canvas.itemconfig(self.dropdown_id, state="hidden")
-
-    def create_details_dropdown(self) -> None:
-        image_info: CachedImageData = self.file_manager.get_current_image_cache()
-        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
-        size_text: str = f"Size: {image_info.dimensions}"
-
-        self.dropdown_image = create_dropdown_image(dimension_text, size_text)
-        self.canvas.itemconfig(
-            self.dropdown_id, image=self.dropdown_image, state="normal"
-        )
+            self.canvas.itemconfig(dropdown.id, state="hidden")

@@ -28,6 +28,17 @@ class ImagePath:
         return OS_name_cmp(self.name, other.name)
 
 
+class DropdownImage:
+    """The dropdown image containing metadata on the open image file"""
+
+    __slots__ = "id", "image", "refresh"
+
+    def __init__(self, id: int) -> None:
+        self.id: int = id
+        self.refresh: bool = True
+        self.image: PhotoImage
+
+
 def init_PIL(font_size: int) -> None:
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing

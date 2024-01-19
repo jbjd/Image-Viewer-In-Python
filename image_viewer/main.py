@@ -1,3 +1,7 @@
+"""
+A lightweight image viewer app to be called like "python main.py path/to/your/image"
+"""
+
 import os
 from sys import argv
 
