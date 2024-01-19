@@ -67,7 +67,7 @@ class ViewerApp:
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
-            from tkinter import Image as tkImage  # noqa: C0415
+            from tkinter import Image as tkImage
 
             app.tk.call(
                 "wm",

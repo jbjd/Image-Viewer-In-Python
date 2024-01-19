@@ -7,6 +7,8 @@ from util.os import OS_name_cmp
 
 
 class CachedImageData:
+    """Information stored to skip resizing/system calls on repeated opening"""
+
     __slots__ = ("dimensions", "height", "image", "kb_size", "width")
 
     def __init__(self, width, height, dimensions, image, kb_size) -> None:
@@ -18,6 +20,8 @@ class CachedImageData:
 
 
 class ImagePath:
+    """Full name and suffix of loaded image files"""
+
     __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
@@ -31,7 +35,7 @@ class ImagePath:
 class DropdownImage:
     """The dropdown image containing metadata on the open image file"""
 
-    __slots__ = "id", "image", "refresh"
+    __slots__ = ("id", "image", "refresh")
 
     def __init__(self, id: int) -> None:
         self.id: int = id
@@ -40,10 +44,11 @@ class DropdownImage:
 
 
 def init_PIL(font_size: int) -> None:
-    ImageDraw.font = truetype("arial.ttf", font_size)
-    ImageDraw.fontmode = "L"  # antialiasing
+    """Sets up font and PIL's internal list of plugins to load"""
     from PIL import Image
 
+    ImageDraw.font = truetype("arial.ttf", font_size)
+    ImageDraw.fontmode = "L"  # antialiasing
     # edit this so PIL will not waste time importing +20 useless modules
     Image._plugins = [
         "WebPImagePlugin",

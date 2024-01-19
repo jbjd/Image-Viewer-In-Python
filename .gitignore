@@ -9,3 +9,4 @@ __pycache__/
 *.cmd
 *.build/
 *.dist/
+compilation-report.xml
