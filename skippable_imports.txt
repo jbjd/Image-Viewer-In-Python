@@ -45,3 +45,4 @@
 "PIL.ImageShow"
 "PIL.PyAccess"
 "py_compile"
+"yaml"
