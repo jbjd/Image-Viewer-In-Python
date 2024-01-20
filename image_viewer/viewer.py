@@ -23,7 +23,7 @@ class ViewerApp:
         "dropdown_hidden_icon_hovered",
         "dropdown_showing_icon",
         "dropdown_showing_icon_hovered",
-        "show_dropdown",
+        "dropdown_shown",
         "file_manager",
         "file_name_text_id",
         "height_ratio",
@@ -45,9 +45,9 @@ class ViewerApp:
 
         # UI varaibles
         self.topbar_shown: bool
-        self.show_dropdown: bool
+        self.dropdown_shown: bool
         self.redraw_screen: bool
-        self.topbar_shown = self.show_dropdown = self.redraw_screen = False
+        self.topbar_shown = self.dropdown_shown = self.redraw_screen = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
 
@@ -114,15 +114,15 @@ class ViewerApp:
 
         canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         app.bind("<FocusIn>", self.redraw)
-        app.bind("<Escape>", self.escape_button)
-        app.bind("<KeyPress>", self.handle_keybinds_main)
+        app.bind("<Escape>", self.handle_esc)
+        app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
-        app.bind("<Control-r>", self.refresh_image_list)
+        app.bind("<Control-r>", self.refresh)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Left>", self.lr_arrow)
-        app.bind("<Right>", self.lr_arrow)
+        app.bind("<Left>", self.handle_lr_arrow)
+        app.bind("<Right>", self.handle_lr_arrow)
 
         if os.name == "nt":
             app.bind(
@@ -133,80 +133,6 @@ class ViewerApp:
             app.bind("<Button-5>", lambda _: self.move(1))
 
         app.mainloop()
-
-    def _scale_pixels_to_height(self, original_pixels: int) -> int:
-        """Normalize all pixels relative to a 1080 pixel tall screen"""
-        return int(original_pixels * self.height_ratio)
-
-    def _scale_pixels_to_width(self, original_pixels: int) -> int:
-        """Normalize all pixels relative to a 1080 pixel tall screen"""
-        return int(original_pixels * self.width_ratio)
-
-    def handle_key_release(self, event: Event) -> None:
-        if event.widget is self.app:
-            if self.move_id and event.keysym in ("Left", "Right"):
-                self.app.after_cancel(self.move_id)
-                self.move_id = ""
-
-    def handle_keybinds_main(self, event: Event) -> None:
-        """Key binds on main screen"""
-        if event.widget is self.app:
-            if event.keysym == "r":
-                self.toggle_show_rename_window(event)
-
-    def lr_arrow(self, event: Event) -> None:
-        """Handle L/R arrow key input
-        Doesn't move when main window unfocused"""
-        if event.widget is self.app and self.move_id == "":
-            # move +4 when ctrl held, +1 when shift held
-            move_amount: int = 1 + (event.state & 5)  # type: ignore
-            if event.keysym == "Left":
-                move_amount = -move_amount
-            self._repeat_move(move_amount, 600)
-
-    def _repeat_move(self, move_amount: int, ms: int) -> None:
-        """Repeat move to next image while L/R key held"""
-        self.move(move_amount)
-        self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
-
-    def refresh_image_list(self, _: Event) -> None:
-        """Get images in current directory and update internal list with them"""
-        self.clear_animation_variables()
-        try:
-            self.file_manager.refresh_image_list()
-        except IndexError:
-            self.exit()
-
-        self.load_image()
-
-    def hide_rename_window(self) -> None:
-        self.canvas.itemconfig(self.rename_window_id, state="hidden")
-        self.app.focus()
-
-    def move(self, amount: int) -> None:
-        """
-        Move to different image
-        amount: any non-zero value indicating movement to next or previous
-        """
-        self.hide_rename_window()
-        self.file_manager.move_current_index(amount)
-        self.dropdown.refresh = True
-
-        self.load_image()
-        if self.topbar_shown:
-            self.refresh_topbar()
-
-    def redraw(self, event: Event) -> None:
-        """
-        Redraws screen if current image has a diffent size than when it was loaded
-        This implys it was edited outside of the program
-        """
-        if event.widget is not self.app or not self.redraw_screen:
-            return
-        self.redraw_screen = False
-        if self.file_manager.current_image_cache_still_fresh():
-            return
-        self.load_image()
 
     def _load_assests(
         self, app: Tk, canvas: Canvas, screen_width: int, topbar_height: int
@@ -332,12 +258,64 @@ class ViewerApp:
         canvas.itemconfig(self.rename_window_id, state="hidden", window=rename_entry)
         self.rename_entry: Entry = rename_entry
 
-    def escape_button(self, _: Event) -> None:
+    def _scale_pixels_to_height(self, original_pixels: int) -> int:
+        """Normalize all pixels relative to a 1080 pixel tall screen"""
+        return int(original_pixels * self.height_ratio)
+
+    def _scale_pixels_to_width(self, original_pixels: int) -> int:
+        """Normalize all pixels relative to a 1080 pixel tall screen"""
+        return int(original_pixels * self.width_ratio)
+
+    # Functions handling user input
+
+    def handle_canvas_click(self, _: Event) -> None:
+        """toggles the display of topbar when non-topbar area clicked"""
+        if self.topbar_shown:
+            self.hide_topbar()
+        else:
+            self.show_topbar()
+
+    def handle_key(self, event: Event) -> None:
+        """Key binds on main screen"""
+        if event.widget is self.app:
+            if event.keysym == "r":
+                self.toggle_show_rename_window(event)
+
+    def handle_key_release(self, event: Event) -> None:
+        if event.widget is self.app:
+            if self.move_id and event.keysym in ("Left", "Right"):
+                self.app.after_cancel(self.move_id)
+                self.move_id = ""
+
+    def handle_lr_arrow(self, event: Event) -> None:
+        """Handle L/R arrow key input
+        Doesn't move when main window unfocused"""
+        if event.widget is self.app and self.move_id == "":
+            # move +4 when ctrl held, +1 when shift held
+            move_amount: int = 1 + (event.state & 5)  # type: ignore
+            if event.keysym == "Left":
+                move_amount = -move_amount
+            self._repeat_move(move_amount, 600)
+
+    def _repeat_move(self, move_amount: int, ms: int) -> None:
+        """Repeat move to next image while L/R key held"""
+        self.move(move_amount)
+        self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
+
+    def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
         if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
             return
         self.exit()
+
+    def handle_dropdown(self, _: Event) -> None:
+        """Handle when user clicks on the dropdown arrow"""
+        self.dropdown_shown = not self.dropdown_shown
+        self.hover_dropdown_toggle()  # fake mouse hover
+        self.update_details_dropdown()
+
+    # End functions handling user input
 
     def exit(self, _: Event | None = None) -> None:
         """Safely exits the program"""
@@ -347,11 +325,61 @@ class ViewerApp:
         self.app.destroy()
         raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
 
+    def minimize(self, _: Event) -> None:
+        """Minimizes the app and sets flag to redraw current image when opened again"""
+        self.redraw_screen = True
+        self.app.iconify()
+
+    def refresh(self, _: Event) -> None:
+        """Get images in current directory and update internal list with them"""
+        self.clear_animation_variables()
+        try:
+            self.file_manager.refresh_image_list()
+        except IndexError:
+            self.exit()
+
+        self.load_image()
+
+    def move(self, amount: int) -> None:
+        """
+        Move to different image
+        amount: any non-zero value indicating movement to next or previous
+        """
+        self.hide_rename_window()
+        self.file_manager.move_current_index(amount)
+        self.dropdown.refresh = True
+
+        self.load_image()
+        if self.topbar_shown:
+            self.refresh_topbar()
+
+    def redraw(self, event: Event) -> None:
+        """
+        Redraws screen if current image has a diffent size than when it was loaded
+        This implys it was edited outside of the program
+        """
+        if event.widget is not self.app or not self.redraw_screen:
+            return
+        self.redraw_screen = False
+        if self.file_manager.current_image_cache_still_fresh():
+            return
+        self.load_image()
+
+    def trash_image(self, _: Event | None = None) -> None:
+        """Move current image to trash and moves to next"""
+        self.clear_animation_variables()
+        self.hide_rename_window()
+        self.remove_image_and_move_to_next(True)
+
+    def hide_rename_window(self) -> None:
+        self.canvas.itemconfig(self.rename_window_id, state="hidden")
+        self.app.focus()
+
     def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
-            if self.show_dropdown
+            if self.dropdown_shown
             else self.dropdown_hidden_icon,
         )
 
@@ -359,15 +387,9 @@ class ViewerApp:
         self.canvas.itemconfig(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
-            if self.show_dropdown
+            if self.dropdown_shown
             else self.dropdown_hidden_icon_hovered,
         )
-
-    def trash_image(self, _: Event | None = None) -> None:
-        """Move current image to trash and moves to next"""
-        self.clear_animation_variables()
-        self.hide_rename_window()
-        self.remove_image_and_move_to_next(True)
 
     def toggle_show_rename_window(self, _: Event | None = None) -> None:
         canvas = self.canvas
@@ -413,11 +435,6 @@ class ViewerApp:
         self.load_image()
         self.refresh_topbar()
 
-    def minimize(self, _: Event) -> None:
-        """Minimizes the app and sets flag to redraw current image when opened again"""
-        self.redraw_screen = True
-        self.app.iconify()
-
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
         self.canvas.itemconfig(self.image_display_id, image=current_image)
@@ -444,13 +461,6 @@ class ViewerApp:
         self.topbar_shown = False
         self.canvas.itemconfig("topbar", state="hidden")
         self.hide_rename_window()
-
-    def handle_canvas_click(self, _: Event) -> None:
-        """toggles the display of topbar when non-topbar area clicked"""
-        if self.topbar_shown:
-            self.hide_topbar()
-        else:
-            self.show_topbar()
 
     def remove_image(self, delete_from_disk: bool) -> None:
         """Removes current image from internal image list"""
@@ -501,7 +511,7 @@ class ViewerApp:
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
     def clear_animation_variables(self) -> None:
-        """clears all animation data"""
+        """Clears all animation data"""
         if self.animation_id == "":
             return
 
@@ -509,15 +519,10 @@ class ViewerApp:
         self.animation_id = ""
         self.image_loader.reset()
 
-    def handle_dropdown(self, _: Event) -> None:
-        self.show_dropdown = not self.show_dropdown
-        self.hover_dropdown_toggle()  # fake mouse hover
-        self.update_details_dropdown()
-
     def update_details_dropdown(self) -> None:
         """Updates the infomation and state of dropdown image"""
         dropdown = self.dropdown
-        if self.show_dropdown:
+        if self.dropdown_shown:
             if dropdown.refresh:
                 image_info: CachedImageData = (
                     self.file_manager.get_current_image_cache()
