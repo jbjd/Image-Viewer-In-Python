@@ -11,6 +11,7 @@ class RenameEntry(Entry):
 
     def __init__(self, master: Tk, font: str) -> None:
         super().__init__(master, font=font, bg=self.BG_COLOR, borderwidth=0)
+        # ensure ctrl+c is processed outside of this program
         self.bind("<Control-c>", lambda _: self.master.update(), True)
 
     def get(self) -> str:

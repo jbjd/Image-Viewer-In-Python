@@ -55,7 +55,7 @@ class ViewerApp:
         # Animation variables
         self.animation_id: str = ""
 
-        # application and canvas
+        # Application and canvas
         app = Tk()
         canvas = Canvas(app, bg="black", highlightthickness=0)
         canvas.pack(anchor="nw", fill="both", expand=1)
@@ -63,8 +63,8 @@ class ViewerApp:
         self.app = app
         self.canvas = canvas
 
-        # Set icon and zoom state
-        if os.name == "nt":
+        is_windows: bool = os.name == "nt"
+        if is_windows:
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
@@ -125,7 +125,7 @@ class ViewerApp:
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
 
-        if os.name == "nt":
+        if is_windows:
             app.bind(
                 "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
             )
