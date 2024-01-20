@@ -1,5 +1,5 @@
 import os
-from tkinter import Canvas, Entry, Event, Tk
+from tkinter import Canvas, Event, Tk
 from tkinter.messagebox import askyesno
 
 from PIL.ImageTk import PhotoImage
@@ -7,6 +7,7 @@ from PIL.ImageTk import PhotoImage
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from managers.file_manager import ImageFileManager
+from ui.rename_entry import RenameEntry
 from util.image import CachedImageData, DropdownImage, create_dropdown_image, init_PIL
 
 
@@ -224,7 +225,7 @@ class ViewerApp:
         ) = icon_factory.make_dropdown_icons()
 
         self.dropdown_button_id: int = canvas.create_image(
-            screen_width - topbar_height - topbar_height,
+            screen_width - (topbar_height << 1),
             0,
             image=self.dropdown_hidden_icon,
             anchor="ne",
@@ -252,11 +253,11 @@ class ViewerApp:
             height=int(topbar_height * 0.75),
             anchor="nw",
         )
-        rename_entry = Entry(app, font=FONT, bg="#FEFEFE", borderwidth=0)
-        rename_entry.bind("<Return>", self.try_rename_or_convert)
-        rename_entry.bind("<Control-c>", lambda _: app.update(), True)
-        canvas.itemconfig(self.rename_window_id, state="hidden", window=rename_entry)
-        self.rename_entry: Entry = rename_entry
+        self.rename_entry = RenameEntry(app, font=FONT)
+        self.rename_entry.bind("<Return>", self.try_rename_or_convert)
+        canvas.itemconfig(
+            self.rename_window_id, state="hidden", window=self.rename_entry
+        )
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
@@ -421,13 +422,11 @@ class ViewerApp:
         Trys to convert or rename based on input"""
         try:
             self.file_manager.rename_or_convert_current_image(
-                self.rename_entry.get().strip(),
+                self.rename_entry.get(),
                 self._ask_delete_after_convert,
             )
         except Exception:
-            # flash red to tell user rename failed
-            self.rename_entry.config(bg="#e6505f")
-            self.app.after(400, lambda: self.rename_entry.config(bg="white"))
+            self.rename_entry.error_flash()
             return
 
         # Cleanup after successful rename

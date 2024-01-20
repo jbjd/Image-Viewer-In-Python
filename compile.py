@@ -89,11 +89,10 @@ if args.python_path is None:
 print("Starting compilation with nuitka")
 print("Using python install ", args.python_path)
 cmd_str = f'{args.python_path} -m nuitka --follow-import-to="helpers" \
-    --follow-import-to="factories" --follow-import-to="util" \
+    --follow-import-to="factories" --follow-import-to="util" --follow-import-to="ui" \
     --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
     --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
-    --python-flag="-OO,no_annotations,no_warnings" \
-    "{WORKING_DIR}image_viewer/main.py"'
+    --python-flag="-OO,no_annotations,no_warnings" "{WORKING_DIR}image_viewer/main.py"'
 
 process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
