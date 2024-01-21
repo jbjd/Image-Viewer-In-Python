@@ -1,5 +1,4 @@
 import os
-from functools import cache
 
 import cv2
 from numpy import asarray
@@ -66,7 +65,6 @@ class ImageResizer:
             *image.size,
         )
 
-    @cache
     def dimension_finder(
         self, image_width: int, image_height: int
     ) -> tuple[tuple[int, int], int]:
