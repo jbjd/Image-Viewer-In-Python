@@ -26,7 +26,7 @@ class CommandHandler:
 
     def _convert(self, command_args: list[str]) -> str:
         if "-h" in command_args:
-            return "Example description"
+            return "Converts current image to a new format"
 
         parser = argparse.ArgumentParser(add_help=False)
         parser.add_argument("format")
