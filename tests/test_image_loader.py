@@ -7,8 +7,8 @@ from image_viewer.helpers.image_loader import ImageLoader
 
 
 @pytest.fixture
-def mock_image_loader():
-    module_path: str = os.path.dirname(os.path.dirname(__file__)) + "/image_viewer"
+def mock_image_loader(working_dir):
+    module_path: str = os.path.join(os.path.dirname(working_dir), "image_viewer")
     image_loader = ImageLoader(None, 0, 0, module_path, lambda *_: None)  # type: ignore
     # file_pointer will (and must) exist before calling reset
     # since first thing done is loading an image where its normally set

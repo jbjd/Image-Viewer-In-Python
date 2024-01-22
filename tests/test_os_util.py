@@ -10,9 +10,7 @@ def test_clean_str_for_OS_path():
     assert good_name == "StringWithIllegalCharacters.png"
 
 
-def test_walk_dir():
+def test_walk_dir(working_dir):
     """Test that walk_dir behaves like expected"""
-    files = [
-        p for p in walk_dir(os.path.join(os.path.dirname(__file__), "example_images"))
-    ]
+    files = [p for p in walk_dir(os.path.join(working_dir, "example_images"))]
     assert len(files) == 5

@@ -50,7 +50,17 @@ def test_bad_path():
 
 
 def test_caching(manager: ImageFileManager):
+    """Test various caching methods to ensure they act as expected"""
     manager.cache_image(20, 20, "20x20", None, 0)
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
     assert manager.current_image_cache_still_fresh()
+    # clear cache to make it not fresh
+    manager.refresh_image_list()
+    assert not manager.current_image_cache_still_fresh()
+
+
+def test_move_current_index(manager: ImageFileManager):
+    """Test moving to an index thats too large"""
+    manager.move_current_index(999)
+    assert manager._current_index == 0
