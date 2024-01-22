@@ -6,7 +6,7 @@ from PIL.ImageTk import PhotoImage
 from util.os import OS_name_cmp
 
 
-class CachedImageData:
+class CachedImageData:  # pragma: no cover
     """Information stored to skip resizing/system calls on repeated opening"""
 
     __slots__ = ("dimensions", "height", "image", "kb_size", "width")
@@ -32,7 +32,7 @@ class ImagePath:
         return OS_name_cmp(self.name, other.name)
 
 
-class DropdownImage:
+class DropdownImage:  # pragma: no cover
     """The dropdown image containing metadata on the open image file"""
 
     __slots__ = ("id", "image", "refresh")
