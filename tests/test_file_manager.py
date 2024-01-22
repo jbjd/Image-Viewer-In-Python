@@ -1,4 +1,5 @@
 import os
+import tempfile
 from unittest import mock
 
 import pytest
@@ -28,7 +29,7 @@ def test_image_file_manager(manager: ImageFileManager):
 
     # Try to rename a.png mocking the os call away should pass
     with mock.patch("os.rename", lambda *_: None):
-        manager.rename_or_convert_current_image("example.png", lambda _: None)
+        manager.rename_or_convert_current_image("example.test", lambda _: None)
 
     # test remove_current_image fuctionality
     for _ in range(4):
@@ -64,3 +65,15 @@ def test_move_current_index(manager: ImageFileManager):
     """Test moving to an index thats too large"""
     manager.move_current_index(999)
     assert manager._current_index == 0
+
+
+def test_delete_file(manager: ImageFileManager):
+    """Tests deleting a file from disk via file manager"""
+
+    # add one extra image so it doesn't error after removing the only file
+    manager.add_new_image("Some_image.png")
+
+    with tempfile.NamedTemporaryFile() as tmp:
+        manager.path_to_current_image = tmp.name
+        manager.remove_current_image(True)
+        assert len(manager._files) == 1
