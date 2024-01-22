@@ -30,13 +30,11 @@ class ImageLoader:
     def __init__(
         self,
         file_manager: ImageFileManager,
-        screen_width: int,
-        screen_height: int,
-        path_to_exe: str,
+        image_resizer: ImageResizer,
         animation_callback: Callable[[int, int], None],
     ) -> None:
         self.file_manager: ImageFileManager = file_manager
-        self.image_resizer = ImageResizer(screen_width, screen_height, path_to_exe)
+        self.image_resizer: ImageResizer = image_resizer
 
         self.file_pointer: Image
 

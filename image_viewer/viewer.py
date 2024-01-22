@@ -6,6 +6,7 @@ from PIL.ImageTk import PhotoImage
 
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
+from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from ui.rename_entry import RenameEntry
 from util.image import CachedImageData, DropdownImage, create_dropdown_image, init_PIL
@@ -91,11 +92,10 @@ class ViewerApp:
         self._load_assests(app, canvas, screen_width, self._scale_pixels_to_height(32))
 
         # set up and draw first image, then get all image paths in directory
+
         self.image_loader = ImageLoader(
             self.file_manager,
-            screen_width,
-            screen_height,
-            path_to_exe,
+            ImageResizer(screen_width, screen_height, path_to_exe),
             self.animation_loop,
         )
 

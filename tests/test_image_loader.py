@@ -1,15 +1,13 @@
-import os
-
 import pytest
 from PIL import Image
 
 from image_viewer.helpers.image_loader import ImageLoader
+from image_viewer.helpers.image_resizer import ImageResizer
 
 
 @pytest.fixture
-def mock_image_loader(working_dir):
-    module_path: str = os.path.join(os.path.dirname(working_dir), "image_viewer")
-    image_loader = ImageLoader(None, 0, 0, module_path, lambda *_: None)  # type: ignore
+def mock_image_loader(image_resizer: ImageResizer):
+    image_loader = ImageLoader(None, image_resizer, lambda *_: None)  # type: ignore
     # file_pointer will (and must) exist before calling reset
     # since first thing done is loading an image where its normally set
     image_loader.file_pointer = Image.new("RGB", (10, 10))
