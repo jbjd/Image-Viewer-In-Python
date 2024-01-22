@@ -4,9 +4,9 @@
 __pycache__/
 
 # nuitka artifacts
+*.bin
 *.exe
 *.cmd
 *.build/
-
-# used in compile.py
-TEMP/
+*.dist/
+compilation-report.xml

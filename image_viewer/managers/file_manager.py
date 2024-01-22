@@ -1,46 +1,46 @@
 import os
-from typing import Callable
+from collections.abc import Callable
 
 from PIL.ImageTk import PhotoImage
 from send2trash import send2trash
 
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImageData, ImagePath
-from util.os import OS_name_cmp, OSFileSortKey, clean_str_for_OS_path
+from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
 
 
 class ImageFileManager:
     """Manages internal list of images"""
 
     VALID_FILE_TYPES: set[str] = {
-        ".png",
+        ".bmp",
+        ".gif",
         ".jpg",
         ".jpeg",
+        ".jpe",
         ".jfif",
         ".jif",
-        ".jpe",
+        ".png",
         ".webp",
-        ".gif",
-        ".bmp",
     }
 
     __slots__ = (
-        "_files",
         "_current_index",
-        "image_directory",
+        "_files",
         "cache",
         "current_image",
+        "image_directory",
         "path_to_current_image",
     )
 
     def __init__(self, first_image_to_load: str) -> None:
         """Load single file for display before we load the rest"""
         first_image_data = ImagePath(os.path.basename(first_image_to_load))
-        if (
-            not os.path.isfile(first_image_to_load)
-            or first_image_data.suffix not in self.VALID_FILE_TYPES
-        ):
-            raise ValueError("File not a valid image")
+
+        if not os.path.isfile(first_image_to_load):
+            raise ValueError("File doesn't exist or is a directory")
+        if first_image_data.suffix not in self.VALID_FILE_TYPES:
+            raise ValueError("File extension not supported")
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
         self._files: list[ImagePath] = [first_image_data]
@@ -63,23 +63,25 @@ class ImageFileManager:
         """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._current_index].name
 
+        VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = [
             image_path
-            for path in next(os.walk(self.image_directory), (None, None, []))[2]
-            if (image_path := ImagePath(path)).suffix in self.VALID_FILE_TYPES
+            for path in walk_dir(self.image_directory)
+            if (image_path := ImagePath(path)).suffix in VALID_FILE_TYPES
         ]
 
-        self._files.sort(key=OSFileSortKey)
+        self._files.sort()
         self._current_index = self._binary_search(image_to_start_at)
         self._populate_data_attributes()
 
+    def refresh_image_list(self) -> None:
+        """Clears cache and updates internal image list with current
+        images in direcrory"""
+        self.cache.clear()
+        self.fully_load_image_data()
+
     def move_current_index(self, amount: int) -> None:
-        self._current_index += amount
-        if (
-            self._current_index >= (length := len(self._files))
-            or self._current_index < 0
-        ):
-            self._current_index %= length
+        self._current_index = (self._current_index + amount) % len(self._files)
 
         self._populate_data_attributes()
 
@@ -89,7 +91,7 @@ class ImageFileManager:
     def remove_current_image(self, delete_from_disk: bool) -> None:
         # delete image from files array, cache, and optionally disk
         if delete_from_disk:
-            send2trash(os.path.abspath(self.path_to_current_image))
+            send2trash(os.path.normpath(self.path_to_current_image))
         self._clear_image_data()
 
         remaining_image_count: int = len(self._files)
@@ -115,9 +117,6 @@ class ImageFileManager:
             new_image_data = ImagePath(new_name)
 
         new_path: str = self.construct_path_to_image(new_name)
-
-        if os.path.isfile(new_path) or os.path.isdir(new_path):
-            raise FileExistsError()
 
         if (
             new_image_data.suffix != self.current_image.suffix
@@ -162,9 +161,12 @@ class ImageFileManager:
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when we think the cached image is still accurate.
         Not guaranteed to be correct, but thats not important for this case"""
-        return os.path.isfile(self.path_to_current_image) and os.path.getsize(
-            self.path_to_current_image
-        ) == self.cache.get(self.current_image.name, 0)
+        try:
+            return os.stat(self.path_to_current_image).st_size == self.cache.get(
+                self.current_image.name, 0
+            )
+        except Exception:
+            return False
 
     def get_cached_image_data(self) -> CachedImageData | None:
         return self.cache.get(self.current_image.name, None)
@@ -172,11 +174,12 @@ class ImageFileManager:
     def _binary_search(self, target_image: str) -> int:
         """Finds index of image in the sorted list of all images in the directory.
         target_image: name of image file to find"""
+        files = self._files
         low: int = 0
-        high: int = len(self._files) - 1
+        high: int = len(files) - 1
         while low <= high:
             mid: int = (low + high) >> 1
-            current_image = self._files[mid].name
+            current_image = files[mid].name
             if target_image == current_image:
                 return mid
             if OS_name_cmp(target_image, current_image):

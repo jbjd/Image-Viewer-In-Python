@@ -1,7 +1,6 @@
 import os
+from collections.abc import Iterator
 from re import sub
-
-from util.image import ImagePath
 
 if os.name == "nt":
     from ctypes import windll
@@ -11,7 +10,7 @@ if os.name == "nt":
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
-else:  # if can't determine / unsupported OS
+else:  # linux / can't determine / unsupported OS
     illegal_char = r"[/]"
 
     def OS_name_cmp(a: str, b: str) -> bool:
@@ -22,13 +21,23 @@ def clean_str_for_OS_path(name: str) -> str:
     return sub(illegal_char, "", name)
 
 
-class OSFileSortKey:
-    """Key for sorting files the same way the current OS does"""
+def walk_dir(directory_path: str) -> Iterator[str]:
+    """Copied from OS module and edited to yield each file
+    and only files instead of including dirs/extra info"""
 
-    __slots__ = "name"
+    scandir_iter = os.scandir(directory_path)
 
-    def __init__(self, image: ImagePath) -> None:
-        self.name: str = image.name
+    with scandir_iter:
+        while True:
+            try:
+                entry = next(scandir_iter)
+            except Exception:
+                return
 
-    def __lt__(self, other: ImagePath) -> bool:
-        return OS_name_cmp(self.name, other.name)
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                is_dir = False
+
+            if not is_dir:
+                yield entry.name

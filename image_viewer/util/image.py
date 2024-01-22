@@ -3,10 +3,13 @@ from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
 
+from util.os import OS_name_cmp
 
-# for some reason this stores less data than a regular tuple based on my tests
+
 class CachedImageData:
-    __slots__ = ("width", "height", "dimensions", "image", "kb_size")
+    """Information stored to skip resizing/system calls on repeated opening"""
+
+    __slots__ = ("dimensions", "height", "image", "kb_size", "width")
 
     def __init__(self, width, height, dimensions, image, kb_size) -> None:
         self.width: int = width
@@ -17,16 +20,39 @@ class CachedImageData:
 
 
 class ImagePath:
-    __slots__ = ("suffix", "name")
+    """Full name and suffix of loaded image files"""
+
+    __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
         self.suffix = name[name.rfind(".") :].lower()
         self.name = name
 
+    def __lt__(self, other) -> bool:
+        return OS_name_cmp(self.name, other.name)
 
-def init_font(font_size: int) -> None:
+
+class DropdownImage:
+    """The dropdown image containing metadata on the open image file"""
+
+    __slots__ = ("id", "image", "refresh")
+
+    def __init__(self, id: int) -> None:
+        self.id: int = id
+        self.refresh: bool = True
+        self.image: PhotoImage
+
+
+def init_PIL(font_size: int) -> None:
+    """Sets up font and PIL's internal list of plugins to load"""
+    from PIL import Image
+
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
+    # edit this so PIL will not waste time importing +20 useless modules
+    Image._plugins = [
+        "WebPImagePlugin",
+    ]
 
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:

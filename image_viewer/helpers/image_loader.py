@@ -19,12 +19,12 @@ class ImageLoader:
     ANIMATION_SPEED_FACTOR: float = 0.75
 
     __slots__ = (
-        "file_manager",
-        "image_resizer",
-        "file_pointer",
         "aniamtion_frames",
         "animation_callback",
+        "file_manager",
+        "file_pointer",
         "frame_index",
+        "image_resizer",
     )
 
     def __init__(
@@ -33,16 +33,16 @@ class ImageLoader:
         screen_width: int,
         screen_height: int,
         path_to_exe: str,
-        animation_callback: Callable,
+        animation_callback: Callable[[int, int], None],
     ) -> None:
         self.file_manager: ImageFileManager = file_manager
         self.image_resizer = ImageResizer(screen_width, screen_height, path_to_exe)
 
         self.file_pointer: Image
 
-        self.animation_callback: Callable = animation_callback
+        self.animation_callback: Callable[[int, int], None] = animation_callback
         self.aniamtion_frames: list = []
-        self.frame_index = 0
+        self.frame_index: int = 0
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
         self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
@@ -80,8 +80,8 @@ class ImageLoader:
         self.aniamtion_frames[0] = current_image, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
-            target=self.load_frame,
-            args=(self.file_pointer, 1, frame_count),
+            target=self.load_remaining_frames,
+            args=(self.file_pointer, frame_count),
             daemon=True,
         ).start()
 
@@ -91,21 +91,23 @@ class ImageLoader:
     def load_image(self) -> PhotoImage | None:
         """Loads an image and resizes it to fit on the screen
         Returns PhotoImage or None on failure to load"""
+
+        file_manager = self.file_manager
+        path_to_current_image = file_manager.path_to_current_image
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            self.file_pointer = open_image(self.file_manager.path_to_current_image)
-        except (FileNotFoundError, UnidentifiedImageError):
+            self.file_pointer = open_image(path_to_current_image)
+        except (FileNotFoundError, UnidentifiedImageError, ImportError):
+            # except import error since user might open file with inaccurate ext
+            # and trigger import that was excluded if they compiled as standalone
             return None
 
-        image_kb_size: int = (
-            os.stat(self.file_manager.path_to_current_image).st_size >> 10
-        )
+        image_kb_size: int = os.stat(path_to_current_image).st_size >> 10
         frame_count: int = getattr(self.file_pointer, "n_frames", 1)
 
-        current_image: PhotoImage
-
         # check if was cached and not changed outside of program
-        cached_image_data = self.file_manager.get_cached_image_data()
+        current_image: PhotoImage
+        cached_image_data = file_manager.get_cached_image_data()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
             self._finish_image_load(current_image, frame_count)
@@ -120,7 +122,7 @@ class ImageLoader:
             try:
                 if self.file_pointer.format == "JPEG":
                     current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                        self.file_pointer, self.file_manager.path_to_current_image
+                        self.file_pointer, path_to_current_image
                     )
                 else:
                     current_image = self.image_resizer.get_image_fit_to_screen(
@@ -131,7 +133,7 @@ class ImageLoader:
 
             self._finish_image_load(current_image, frame_count)
 
-            self.file_manager.cache_image(
+            file_manager.cache_image(
                 image_width,
                 image_height,
                 image_size,
@@ -141,30 +143,33 @@ class ImageLoader:
 
         return current_image
 
-    def load_frame(
+    def load_remaining_frames(
         self,
         original_image: Image,
-        frame_index: int,
         last_frame: int,
     ) -> None:
-        # if user moved to new image, don't keep loading previous animated image
-        if self.file_pointer is not original_image:
-            return
-        try:
-            self.file_pointer.seek(frame_index)
-            ms_until_next_frame: int = self.get_ms_until_next_frame()
+        """Loads all frames starting from the second.
+        Assumes the first will be loaded already"""
 
-            self.aniamtion_frames[frame_index] = (
-                self.image_resizer.get_image_fit_to_screen(self.file_pointer),
-                ms_until_next_frame,
-            )
-        except Exception:
-            # changing images during load causes a variety of errors
-            pass
-        frame_index += 1
-        if frame_index < last_frame:
-            self.load_frame(original_image, frame_index, last_frame)
-        else:
+        fp: Image = self.file_pointer
+        for i in range(1, last_frame):
+            # if user moved to new image, don't keep loading previous animated image
+            if fp is not original_image:
+                return
+            try:
+                fp.seek(i)
+                ms_until_next_frame: int = self.get_ms_until_next_frame()
+
+                self.aniamtion_frames[i] = (
+                    self.image_resizer.get_image_fit_to_screen(fp),
+                    ms_until_next_frame,
+                )
+            except Exception:
+                # moving to new image during this function causes a variety of errors
+                # just break and close to kill thread
+                break
+
+        if fp is original_image:
             original_image.close()
 
     def reset(self) -> None:
