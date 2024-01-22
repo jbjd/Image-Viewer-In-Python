@@ -151,22 +151,23 @@ class ImageFileManager:
         height: int,
         dimensions: str,
         photo_image: PhotoImage,
-        bit_size: int,
+        kb_size: int,
     ) -> None:
         self.cache[self.current_image.name] = CachedImageData(
             width,
             height,
             dimensions,
             photo_image,
-            bit_size,
+            kb_size,
         )
 
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when we think the cached image is still accurate.
         Not guaranteed to be correct, but thats not important for this case"""
         try:
-            return os.stat(self.path_to_current_image).st_size == self.cache.get(
-                self.current_image.name, 0
+            return (
+                os.stat(self.path_to_current_image).st_size
+                == self.cache[self.current_image.name].kb_size
             )
         except Exception:
             return False

@@ -6,10 +6,6 @@ import pytest
 from image_viewer.managers.file_manager import ImageFileManager
 
 
-# class MockPhotoImage:
-#     pass
-
-
 @pytest.fixture
 def manager() -> ImageFileManager:
     return ImageFileManager(os.path.abspath("tests/example_images/a.png"))
@@ -45,8 +41,10 @@ def test_image_file_manager(manager: ImageFileManager):
 
 
 def test_bad_path():
+    # doesn't exist
     with pytest.raises(ValueError):
         ImageFileManager("bad/path")
+    # wrong file type
     with pytest.raises(ValueError):
         ImageFileManager(os.path.abspath("tests/example_images/not_an_image.txt"))
 
@@ -55,3 +53,4 @@ def test_caching(manager: ImageFileManager):
     manager.cache_image(20, 20, "20x20", None, 0)
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
+    assert manager.current_image_cache_still_fresh()
