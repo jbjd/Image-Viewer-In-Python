@@ -95,11 +95,12 @@ class ImageFileManager:
         self._clear_image_data()
 
         remaining_image_count: int = len(self._files)
-        if remaining_image_count == 0:
-            raise IndexError()
 
         if self._current_index >= remaining_image_count:
             self._current_index = remaining_image_count - 1
+
+        if remaining_image_count == 0:
+            raise IndexError()
 
         self._populate_data_attributes()
 
@@ -127,7 +128,12 @@ class ImageFileManager:
                 new_image_data,
             )
         ):
+            was_last_image: bool = self._current_index == len(self._files) - 1
             ask_delete_after_convert(new_image_data.suffix)
+            # weird case, previous function can reduce index by one
+            # when image was the last file in list due to temp removal
+            if was_last_image:
+                self._current_index += 1
         else:
             os.rename(self.path_to_current_image, new_path)
             self._clear_image_data()

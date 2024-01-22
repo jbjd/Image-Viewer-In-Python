@@ -368,7 +368,8 @@ class ViewerApp:
         """Move current image to trash and moves to next"""
         self.clear_animation_variables()
         self.hide_rename_window()
-        self.remove_image_and_move_to_next(True)
+        self.remove_image(True)
+        self.load_image_and_refresh()
 
     def hide_rename_window(self) -> None:
         self.canvas.itemconfig(self.rename_window_id, state="hidden")
@@ -413,7 +414,10 @@ class ViewerApp:
             "Confirm deletion",
             f"Converted file to {new_format}, delete old file?",
         ):
-            self.remove_image_and_move_to_next(True)
+            try:
+                self.file_manager.remove_current_image(True)
+            except IndexError:
+                pass  # even if no images left, a new one will be added after this
 
     def try_rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.
@@ -471,13 +475,6 @@ class ViewerApp:
             self.file_manager.remove_current_image(delete_from_disk)
         except IndexError:
             self.exit()
-
-    def remove_image_and_move_to_next(self, delete_from_disk: bool) -> None:
-        """Removes current image from internal image list
-        and optionaly deletes it from disk"""
-        self.remove_image(delete_from_disk)
-
-        self.load_image_and_refresh()
 
     def refresh_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
