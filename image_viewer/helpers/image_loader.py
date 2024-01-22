@@ -107,7 +107,7 @@ class ImageLoader:
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
-        cached_image_data = file_manager.get_cached_image_data()
+        cached_image_data = file_manager.get_current_image_cache()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
             self._finish_image_load(current_image, frame_count)

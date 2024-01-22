@@ -522,9 +522,11 @@ class ViewerApp:
         dropdown = self.dropdown
         if self.dropdown_shown:
             if dropdown.refresh:
-                image_info: CachedImageData = (
+                image_info: CachedImageData | None = (
                     self.file_manager.get_current_image_cache()
                 )
+                if image_info is None:
+                    return
                 dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
                 size_text: str = f"Size: {image_info.dimensions}"
 

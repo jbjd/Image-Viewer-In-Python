@@ -161,9 +161,6 @@ class ImageFileManager:
             bit_size,
         )
 
-    def get_current_image_cache(self) -> CachedImageData:
-        return self.cache[self.current_image.name]
-
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when we think the cached image is still accurate.
         Not guaranteed to be correct, but thats not important for this case"""
@@ -174,7 +171,7 @@ class ImageFileManager:
         except Exception:
             return False
 
-    def get_cached_image_data(self) -> CachedImageData | None:
+    def get_current_image_cache(self) -> CachedImageData | None:
         return self.cache.get(self.current_image.name, None)
 
     def _binary_search(self, target_image: str) -> int:

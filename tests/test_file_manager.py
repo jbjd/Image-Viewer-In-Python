@@ -6,9 +6,17 @@ import pytest
 from image_viewer.managers.file_manager import ImageFileManager
 
 
-def test_image_file_manager():
+# class MockPhotoImage:
+#     pass
+
+
+@pytest.fixture
+def manager() -> ImageFileManager:
+    return ImageFileManager(os.path.abspath("tests/example_images/a.png"))
+
+
+def test_image_file_manager(manager: ImageFileManager):
     """Test various functions of the file manager with empty image files"""
-    manager = ImageFileManager(os.path.abspath("tests/example_images/a.png"))
     assert len(manager._files) == 1
 
     manager.fully_load_image_data()
@@ -34,3 +42,16 @@ def test_image_file_manager():
     # Should raise index error after last file removed
     with pytest.raises(IndexError):
         manager.remove_current_image(False)
+
+
+def test_bad_path():
+    with pytest.raises(ValueError):
+        ImageFileManager("bad/path")
+    with pytest.raises(ValueError):
+        ImageFileManager(os.path.abspath("tests/example_images/not_an_image.txt"))
+
+
+def test_caching(manager: ImageFileManager):
+    manager.cache_image(20, 20, "20x20", None, 0)
+    assert len(manager.cache) == 1
+    assert manager.get_current_image_cache() is not None
