@@ -1,5 +1,3 @@
-import os
-
 from image_viewer.util.os import clean_str_for_OS_path, walk_dir
 
 
@@ -10,7 +8,7 @@ def test_clean_str_for_OS_path():
     assert good_name == "StringWithIllegalCharacters.png"
 
 
-def test_walk_dir(working_dir):
+def test_walk_dir(img_dir: str):
     """Test that walk_dir behaves like expected"""
-    files = [p for p in walk_dir(os.path.join(working_dir, "example_images"))]
+    files = [p for p in walk_dir(img_dir)]
     assert len(files) == 5

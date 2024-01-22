@@ -39,9 +39,9 @@ def mock_open_animated_image(_: str) -> MockImage:
 def get_vars_for_test(
     dir: str, old_name: str, new_name: str
 ) -> tuple[str, str, str, str]:
-    old_path: str = os.path.join(dir, f"example_images/{old_name}")
+    old_path: str = os.path.join(dir, f"{old_name}")
     old_data = ImagePath(old_name)
-    new_path: str = os.path.join(dir, f"example_images/{new_name}")
+    new_path: str = os.path.join(dir, f"{new_name}")
     new_data = ImagePath(new_name)
     return (old_path, old_data, new_path, new_data)
 
@@ -54,16 +54,16 @@ def test_animated_to_not_animated():
             )
 
 
-def test_convert_jpeg(working_dir: str):
+def test_convert_jpeg(img_dir: str):
     with pytest.raises(FileExistsError):
-        try_convert_file_and_save_new(*get_vars_for_test(working_dir, "b.jpe", "d.jpg"))
+        try_convert_file_and_save_new(*get_vars_for_test(img_dir, "b.jpe", "d.jpg"))
 
     with mock.patch("image_viewer.util.convert.open_image", mock_open_image):
         # will not covert if jpeg varient
         assert not try_convert_file_and_save_new(
-            *get_vars_for_test(working_dir, "old.jpe", "new.jpg")
+            *get_vars_for_test(img_dir, "old.jpe", "new.jpg")
         )
         # otherwise will succeed
         assert try_convert_file_and_save_new(
-            *get_vars_for_test(working_dir, "old.png", "new.jpg")
+            *get_vars_for_test(img_dir, "old.png", "new.jpg")
         )

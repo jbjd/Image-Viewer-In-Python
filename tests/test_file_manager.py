@@ -8,8 +8,8 @@ from image_viewer.managers.file_manager import ImageFileManager
 
 
 @pytest.fixture
-def manager() -> ImageFileManager:
-    return ImageFileManager(os.path.abspath("tests/example_images/a.png"))
+def manager(img_dir: str) -> ImageFileManager:
+    return ImageFileManager(os.path.join(img_dir, "a.png"))
 
 
 def test_image_file_manager(manager: ImageFileManager):
@@ -41,13 +41,13 @@ def test_image_file_manager(manager: ImageFileManager):
         manager.remove_current_image(False)
 
 
-def test_bad_path():
+def test_bad_path(img_dir: str):
     # doesn't exist
     with pytest.raises(ValueError):
         ImageFileManager("bad/path")
     # wrong file type
     with pytest.raises(ValueError):
-        ImageFileManager(os.path.abspath("tests/example_images/not_an_image.txt"))
+        ImageFileManager(os.path.join(img_dir, "not_an_image.txt"))
 
 
 def test_caching(manager: ImageFileManager):
