@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.convert import try_convert_file_and_save_new
 from image_viewer.util.image import ImagePath
 
@@ -11,6 +12,7 @@ class MockImage:
     """Mocks PIL Image for testing"""
 
     mode = "P"
+    info = {}
 
     def convert(self, new_mode: str):
         self.mode = new_mode
@@ -67,3 +69,18 @@ def test_convert_jpeg(img_dir: str):
         assert try_convert_file_and_save_new(
             *get_vars_for_test(img_dir, "old.png", "new.jpg")
         )
+
+
+def test_all_valid_types():
+    """Tries to get to Image.save() for all valid types"""
+    valid_types: set[str] = ImageFileManager.VALID_FILE_TYPES
+
+    with mock.patch("image_viewer.util.convert.open_image", mock_open_image):
+        for type in valid_types:
+            result = try_convert_file_and_save_new(
+                *get_vars_for_test("", "old.png", f"new.{type}")
+            )
+            if type == ".bmp":
+                # bmp is only valid type that I decided to not allow conversion for
+                result = not result
+            assert result
