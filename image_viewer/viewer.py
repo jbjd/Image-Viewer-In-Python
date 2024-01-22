@@ -332,27 +332,24 @@ class ViewerApp:
         self.app.iconify()
 
     def refresh(self, _: Event) -> None:
-        """Get images in current directory and update internal list with them"""
+        """Gets images in current directory and update internal list with them"""
         self.clear_animation_variables()
         try:
             self.file_manager.refresh_image_list()
         except IndexError:
             self.exit()
-
-        self.load_image()
+        self.dropdown.refresh = True
+        self.load_image_and_refresh()
 
     def move(self, amount: int) -> None:
         """
-        Move to different image
+        Moves to different image
         amount: any non-zero value indicating movement to next or previous
         """
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
         self.dropdown.refresh = True
-
-        self.load_image()
-        if self.topbar_shown:
-            self.refresh_topbar()
+        self.load_image_and_refresh()
 
     def redraw(self, event: Event) -> None:
         """
@@ -364,7 +361,8 @@ class ViewerApp:
         self.redraw_screen = False
         if self.file_manager.current_image_cache_still_fresh():
             return
-        self.load_image()
+        self.dropdown.refresh = True
+        self.load_image_and_refresh()
 
     def trash_image(self, _: Event | None = None) -> None:
         """Move current image to trash and moves to next"""
@@ -449,6 +447,12 @@ class ViewerApp:
 
         self.update_after_image_load(current_image)
 
+    def load_image_and_refresh(self) -> None:
+        """Both loads a new image and refreshes topbar"""
+        self.load_image()
+        if self.topbar_shown:
+            self.refresh_topbar()
+
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
         self.topbar_shown = True
@@ -473,9 +477,7 @@ class ViewerApp:
         and optionaly deletes it from disk"""
         self.remove_image(delete_from_disk)
 
-        self.load_image()
-        if self.topbar_shown:
-            self.refresh_topbar()
+        self.load_image_and_refresh()
 
     def refresh_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
