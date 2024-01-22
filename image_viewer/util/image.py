@@ -6,7 +6,7 @@ from PIL.ImageTk import PhotoImage
 from util.os import OS_name_cmp
 
 
-class CachedImageData:  # pragma: no cover
+class CachedImageData:
     """Information stored to skip resizing/system calls on repeated opening"""
 
     __slots__ = ("dimensions", "height", "image", "kb_size", "width")
