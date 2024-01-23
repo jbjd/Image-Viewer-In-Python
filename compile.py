@@ -68,8 +68,8 @@ else:
     # On windows, mypy complains
     is_root = os.geteuid() == 0  # type: ignore
 
-# if not is_root:
-#     raise Exception("compile.py needs root privileges to run")
+if not is_root:
+    raise Exception("compile.py needs root privileges to run")
 
 if args.python_path is None:
     if os.name == "nt":
@@ -137,6 +137,7 @@ class TypeHintRemover(ast._Unparser):
 
 
 # Before compiling, copy to tmp dir and remove type-hints
+# I thought nuitka would handle this, but I guess not?
 TYPE_HINT_RE: str = r": ?[a-zA-Z][a-zA-Z0-9 \t|]*[ \t]*"
 try:
     TMP_DIR: str = f"{WORKING_DIR}tmp/"
