@@ -1,8 +1,11 @@
+import ast
 import ctypes
 import os
 import shutil
 import subprocess
+from _ast import Name
 from argparse import REMAINDER, ArgumentParser
+from glob import glob
 
 try:
     import nuitka  # noqa: F401
@@ -12,7 +15,8 @@ except ImportError:
     )
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
-TEMP_PATH: str = f"{WORKING_DIR}main.dist/"  # setup here, then copy to install path
+CODE_DIR: str = f"{WORKING_DIR}image_viewer/"
+COMPILE_DIR: str = f"{WORKING_DIR}main.dist/"  # setup here, then copy to install path
 VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--enable-console"}
 INSTALL_PATH: str
 EXECUTABLE_EXT: str
@@ -64,8 +68,8 @@ else:
     # On windows, mypy complains
     is_root = os.geteuid() == 0  # type: ignore
 
-if not is_root:
-    raise Exception("compile.py needs root privileges to run")
+# if not is_root:
+#     raise Exception("compile.py needs root privileges to run")
 
 if args.python_path is None:
     if os.name == "nt":
@@ -85,26 +89,83 @@ if args.python_path is None:
     else:
         args.python_path = "python3"
 
-# begin nuitka compilation in subprocess
-print("Starting compilation with nuitka")
-print("Using python install ", args.python_path)
-cmd_str = f'{args.python_path} -m nuitka --follow-import-to="helpers" \
-    --follow-import-to="factories" --follow-import-to="util" --follow-import-to="ui" \
-    --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
-    --windows-icon-from-ico="{WORKING_DIR}image_viewer/icon/icon.ico" \
-    --python-flag="-OO,no_annotations,no_warnings" "{WORKING_DIR}image_viewer/main.py"'
 
-process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
-
-
-def cleanup_after_compile() -> None:
+def clean_up() -> None:
     shutil.rmtree(f"{WORKING_DIR}main.build/", ignore_errors=True)
     shutil.rmtree(f"{WORKING_DIR}main.dist/", ignore_errors=True)
+    shutil.rmtree(f"{WORKING_DIR}tmp/", ignore_errors=True)
     try:
         os.remove(f"{WORKING_DIR}main.cmd")
     except FileNotFoundError:
         pass
 
+
+class TypeHintRemover(ast._Unparser):
+    """Functions copied from base class, edited to remove type hints"""
+
+    def visit_FunctionDef(self, node):
+        self.maybe_newline()
+        for deco in node.decorator_list:
+            self.fill("@")
+            self.traverse(deco)
+        self.fill(f"def {node.name}")
+        if node.args.args:
+            for arg in node.args.args:
+                arg.annotation = None
+        with self.delimit("(", ")"):
+            self.traverse(node.args)
+        with self.block(extra=self.get_type_comment(node)):
+            self._write_docstring_and_traverse_body(node)
+
+    def visit_AnnAssign(self, node):
+        if node.value:
+            self.fill()
+            with self.delimit_if(
+                "(", ")", not node.simple and isinstance(node.target, Name)
+            ):
+                self.traverse(node.target)
+            self.write(" = ")
+            self.traverse(node.value)
+
+    def visit_Import(self, node):
+        if [n for n in node.names if n.name != "typing" and n.name != "collections"]:
+            super().visit_Import(node)
+
+    def visit_ImportFrom(self, node):
+        if node.module != "typing" and node.module != "collections.abc":
+            super().visit_ImportFrom(node)
+
+
+# Before compiling, copy to tmp dir and remove type-hints
+TYPE_HINT_RE: str = r": ?[a-zA-Z][a-zA-Z0-9 \t|]*[ \t]*"
+try:
+    TMP_DIR: str = f"{WORKING_DIR}tmp/"
+    for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
+        new_path: str = python_file.replace("image_viewer", "tmp/image_viewer")
+
+        with open(python_file) as fp:
+            parsed_source = ast.parse(fp.read())
+        contents: str = TypeHintRemover().visit(
+            ast.NodeTransformer().visit(parsed_source)
+        )
+
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        with open(new_path, "w") as fp:
+            fp.write(contents)
+
+    # Begin nuitka compilation in subprocess
+    print("Starting compilation with nuitka")
+    print("Using python install ", args.python_path)
+    cmd_str = f'{args.python_path} -m nuitka --follow-import-to="factories" \
+        --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
+        --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
+        --windows-icon-from-ico="{CODE_DIR}icon/icon.ico" \
+        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}image_viewer/main.py"'
+
+    process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
+except Exception as e:
+    clean_up()
+    raise e
 
 if args.install_path:
     INSTALL_PATH = args.install_path
@@ -115,23 +176,23 @@ process.wait()
 
 try:
     for data_file_path in DATA_FILE_PATHS:
-        old_path = f"{WORKING_DIR}image_viewer/{data_file_path}"
-        new_path = f"{TEMP_PATH}{data_file_path}"
+        old_path = f"{CODE_DIR}{data_file_path}"
+        new_path = f"{COMPILE_DIR}{data_file_path}"
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
     if as_standalone:
         os.rename(
-            f"{TEMP_PATH}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}"
+            f"{COMPILE_DIR}main{EXECUTABLE_EXT}", f"{COMPILE_DIR}viewer{EXECUTABLE_EXT}"
         )
     else:
         os.rename(
-            f"{WORKING_DIR}main{EXECUTABLE_EXT}", f"{TEMP_PATH}viewer{EXECUTABLE_EXT}"
+            f"{WORKING_DIR}main{EXECUTABLE_EXT}", f"{COMPILE_DIR}viewer{EXECUTABLE_EXT}"
         )
     shutil.rmtree(INSTALL_PATH, ignore_errors=True)
-    os.rename(TEMP_PATH, INSTALL_PATH)
+    os.rename(COMPILE_DIR, INSTALL_PATH)
 finally:
-    cleanup_after_compile()
+    clean_up()
 
 print("\nFinished")
 print("Installed to", INSTALL_PATH)
