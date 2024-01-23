@@ -138,7 +138,6 @@ class TypeHintRemover(ast._Unparser):
 
 # Before compiling, copy to tmp dir and remove type-hints
 # I thought nuitka would handle this, but I guess not?
-TYPE_HINT_RE: str = r": ?[a-zA-Z][a-zA-Z0-9 \t|]*[ \t]*"
 try:
     TMP_DIR: str = f"{WORKING_DIR}tmp/"
     for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
