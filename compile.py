@@ -147,8 +147,8 @@ class TypeHintRemover(ast._Unparser):
 
 # Before compiling, copy to tmp dir and remove type-hints
 # I thought nuitka would handle this, but I guess not?
+TMP_DIR: str = f"{WORKING_DIR}tmp/"
 try:
-    TMP_DIR: str = f"{WORKING_DIR}tmp/"
     for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
         new_path: str = python_file.replace("image_viewer", "tmp/image_viewer")
 
@@ -178,21 +178,18 @@ try:
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
         --windows-icon-from-ico="{CODE_DIR}icon/icon.ico" \
+        --warn-implicit-exceptions --warn-unusual-code \
         --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}image_viewer/main.py"'
 
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
-except Exception as e:
-    clean_up()
-    raise e
 
-if args.install_path:
-    INSTALL_PATH = args.install_path
-os.makedirs(INSTALL_PATH, exist_ok=True)
+    if args.install_path:
+        INSTALL_PATH = args.install_path
+    os.makedirs(INSTALL_PATH, exist_ok=True)
 
-print("Waiting for nuitka compilation...")
-process.wait()
+    print("Waiting for nuitka compilation...")
+    process.wait()
 
-try:
     for data_file_path in DATA_FILE_PATHS:
         old_path = f"{CODE_DIR}{data_file_path}"
         new_path = f"{COMPILE_DIR}{data_file_path}"
