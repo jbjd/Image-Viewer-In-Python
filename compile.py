@@ -8,6 +8,15 @@ from argparse import REMAINDER, ArgumentParser
 from glob import glob
 
 try:
+    import autoflake
+except ImportError:
+    print(
+        "You do not have the autoflake package installed.",
+        "Installing it will allow for a slightly smaller output\n",
+    )
+    autoflake = None
+
+try:
     import nuitka  # noqa: F401
 except ImportError:
     raise ImportError(
@@ -148,6 +157,15 @@ try:
         contents: str = TypeHintRemover().visit(
             ast.NodeTransformer().visit(parsed_source)
         )
+
+        if autoflake:
+            contents = autoflake.fix_code(
+                contents,
+                remove_all_unused_imports=True,
+                remove_duplicate_keys=True,
+                remove_unused_variables=True,
+                remove_rhs_for_unused_variables=True,
+            )
 
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         with open(new_path, "w") as fp:
