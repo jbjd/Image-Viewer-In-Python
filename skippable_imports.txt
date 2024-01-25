@@ -48,6 +48,7 @@
 "PIL.PyAccess"
 "py_compile"
 "pydoc"
+"send2trash.win.modern"
 "urllib.error"
 "urllib.request"
 "yaml"
