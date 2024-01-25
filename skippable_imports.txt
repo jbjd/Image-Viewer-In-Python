@@ -48,4 +48,6 @@
 "PIL.PyAccess"
 "py_compile"
 "pydoc"
+"urllib.error"
+"urllib.request"
 "yaml"
