@@ -46,4 +46,5 @@
 "PIL.ImageWin"
 "PIL.PyAccess"
 "py_compile"
+"pydoc"
 "yaml"

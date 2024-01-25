@@ -1,11 +1,14 @@
 import ast
-import ctypes
 import os
 import shutil
 import subprocess
 from _ast import Name
 from argparse import REMAINDER, ArgumentParser
 from glob import glob
+
+is_windows: bool = os.name == "nt"
+if is_windows:
+    import ctypes
 
 try:
     import autoflake
@@ -31,7 +34,7 @@ INSTALL_PATH: str
 EXECUTABLE_EXT: str
 DATA_FILE_PATHS: list[str]
 
-if os.name == "nt":
+if is_windows:
     INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
     EXECUTABLE_EXT = ".exe"
     DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
@@ -48,6 +51,20 @@ parser.add_argument("-p", "--python-path", help="Python path to use in compilati
 parser.add_argument(
     "--install-path", help=f"Path to install to, default is {INSTALL_PATH}"
 )
+parser.add_argument(
+    "--report",
+    action="store_true",
+    help="Adds --report=compilation-report.xml flag to nuitka",
+)
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help=(
+        "Doesn't move compiled code to install path, doesn't check for root, "
+        "doesn't pass Go, doesn't collect $200, "
+        "adds --enable-console and --report=compilation-report.xml flags to nuitka"
+    ),
+)
 parser.add_argument("args", nargs=REMAINDER)
 args, extra_args_list = parser.parse_known_args()
 for extra_arg in extra_args_list:
@@ -56,6 +73,11 @@ for extra_arg in extra_args_list:
 
 extra_args: str = " ".join(extra_args_list).strip()
 as_standalone: bool = "--standalone" in extra_args_list
+
+if args.report or args.debug:
+    extra_args += " --report=compilation-report.xml"
+    if args.debug and "--enable-console" not in extra_args_list:
+        extra_args += " --enable-console"
 
 if as_standalone:
     extra_args += " --enable-plugin=tk-inter"
@@ -70,18 +92,19 @@ extra_args += (
     else " --disable-console"
 )
 
-is_root: bool
-if os.name == "nt":
-    is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
-else:
-    # On windows, mypy complains
-    is_root = os.geteuid() == 0  # type: ignore
+if not args.debug:
+    is_root: bool
+    if is_windows:
+        is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    else:
+        # On windows, mypy complains
+        is_root = os.geteuid() == 0  # type: ignore
 
-if not is_root:
-    raise Exception("compile.py needs root privileges to run")
+    if not is_root:
+        raise Exception("compile.py needs root privileges to run")
 
 if args.python_path is None:
-    if os.name == "nt":
+    if is_windows:
         # if not provided, try to find with where
         args.python_path = (
             subprocess.run("where python", shell=True, stdout=subprocess.PIPE)
@@ -196,6 +219,9 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
+    if args.debug:
+        exit(0)
+
     if as_standalone:
         os.rename(
             f"{COMPILE_DIR}main{EXECUTABLE_EXT}", f"{COMPILE_DIR}viewer{EXECUTABLE_EXT}"
@@ -207,7 +233,8 @@ try:
     shutil.rmtree(INSTALL_PATH, ignore_errors=True)
     os.rename(COMPILE_DIR, INSTALL_PATH)
 finally:
-    clean_up()
+    if not args.debug:
+        clean_up()
 
 print("\nFinished")
 print("Installed to", INSTALL_PATH)
