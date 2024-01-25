@@ -1,6 +1,7 @@
 "argparse"
 "email*"
 "getpass"
+"numpy.testing"
 "PIL.BlpImagePlugin"
 "PIL.BufrStubImagePlugin"
 "PIL.CurImagePlugin"
