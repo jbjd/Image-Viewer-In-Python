@@ -11,6 +11,19 @@
             ],
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Compile",
+            "type": "python",
+            "request": "launch",
+            "program": "C:/Python/Viewer/compile.py",
+            "args": [
+                "--debug",
+                "--mingw64",
+                "--standalone"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
