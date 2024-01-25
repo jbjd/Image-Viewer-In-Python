@@ -1,4 +1,5 @@
 import ast
+import importlib
 import os
 import shutil
 import subprocess
@@ -27,6 +28,7 @@ except ImportError:
     )
 
 WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
+TMP_DIR: str = f"{WORKING_DIR}tmp/"
 CODE_DIR: str = f"{WORKING_DIR}image_viewer/"
 COMPILE_DIR: str = f"{WORKING_DIR}main.dist/"  # setup here, then copy to install path
 VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--enable-console"}
@@ -62,7 +64,8 @@ parser.add_argument(
     help=(
         "Doesn't move compiled code to install path, doesn't check for root, "
         "doesn't pass Go, doesn't collect $200, "
-        "adds --enable-console and --report=compilation-report.xml flags to nuitka"
+        "adds --enable-console, --warn-implicit-exceptions, --warn-unusual-code,"
+        " --report=compilation-report.xml flags to nuitka"
     ),
 )
 parser.add_argument("args", nargs=REMAINDER)
@@ -76,8 +79,10 @@ as_standalone: bool = "--standalone" in extra_args_list
 
 if args.report or args.debug:
     extra_args += " --report=compilation-report.xml"
-    if args.debug and "--enable-console" not in extra_args_list:
-        extra_args += " --enable-console"
+    if args.debug:
+        extra_args += " --warn-implicit-exceptions --warn-unusual-code"
+        if "--enable-console" not in extra_args_list:
+            extra_args += " --enable-console"
 
 if as_standalone:
     extra_args += " --enable-plugin=tk-inter"
@@ -124,8 +129,8 @@ if args.python_path is None:
 
 def clean_up() -> None:
     shutil.rmtree(f"{WORKING_DIR}main.build/", ignore_errors=True)
-    shutil.rmtree(f"{WORKING_DIR}main.dist/", ignore_errors=True)
-    shutil.rmtree(f"{WORKING_DIR}tmp/", ignore_errors=True)
+    shutil.rmtree(COMPILE_DIR, ignore_errors=True)
+    shutil.rmtree(TMP_DIR, ignore_errors=True)
     try:
         os.remove(f"{WORKING_DIR}main.cmd")
     except FileNotFoundError:
@@ -167,32 +172,44 @@ class TypeHintRemover(ast._Unparser):
         if node.module != "typing" and node.module != "collections.abc":
             super().visit_ImportFrom(node)
 
+    # TODO: remove __author__ and if __name__ == "__main__":
 
-# Before compiling, copy to tmp dir and remove type-hints
-# I thought nuitka would handle this, but I guess not?
-TMP_DIR: str = f"{WORKING_DIR}tmp/"
-try:
-    for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
-        new_path: str = python_file.replace("image_viewer", "tmp/image_viewer")
 
-        with open(python_file) as fp:
-            parsed_source = ast.parse(fp.read())
-        contents: str = TypeHintRemover().visit(
-            ast.NodeTransformer().visit(parsed_source)
+def clean_file_and_copy(path: str, new_path: str) -> None:
+    with open(path) as fp:
+        parsed_source = ast.parse(fp.read())
+    contents: str = TypeHintRemover().visit(ast.NodeTransformer().visit(parsed_source))
+
+    if autoflake:
+        contents = autoflake.fix_code(
+            contents,
+            remove_all_unused_imports=True,
+            remove_duplicate_keys=True,
+            remove_unused_variables=True,
+            remove_rhs_for_unused_variables=True,
         )
 
-        if autoflake:
-            contents = autoflake.fix_code(
-                contents,
-                remove_all_unused_imports=True,
-                remove_duplicate_keys=True,
-                remove_unused_variables=True,
-                remove_rhs_for_unused_variables=True,
-            )
+    os.makedirs(os.path.dirname(new_path), exist_ok=True)
+    with open(new_path, "w") as fp:
+        fp.write(contents)
 
-        os.makedirs(os.path.dirname(new_path), exist_ok=True)
-        with open(new_path, "w") as fp:
-            fp.write(contents)
+
+# Before compiling, copy to tmp dir and remove type-hints/clean code
+# I thought nuitka would handle this, but I guess not?
+try:
+    for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
+        new_path: str = python_file.replace("image_viewer", "tmp")
+        clean_file_and_copy(python_file, new_path)
+
+    for mod_name in ["turbojpeg"]:  # TODO: add more
+        module = importlib.import_module(mod_name)
+        base_file_name: str = os.path.basename(module.__file__)
+        if base_file_name == "__init__.py":
+            # its really a folder
+            pass
+        else:
+            # its just one file
+            clean_file_and_copy(module.__file__, TMP_DIR + base_file_name)
 
     # Begin nuitka compilation in subprocess
     print("Starting compilation with nuitka")
@@ -201,8 +218,7 @@ try:
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
         --windows-icon-from-ico="{CODE_DIR}icon/icon.ico" \
-        --warn-implicit-exceptions --warn-unusual-code \
-        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}image_viewer/main.py"'
+        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}main.py"'
 
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
