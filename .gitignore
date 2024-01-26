@@ -11,4 +11,5 @@ __pycache__/
 *.build/
 *.dist/
 compilation-report.xml
+nuitka-crash-report.xml
 *tmp/
