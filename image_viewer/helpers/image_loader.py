@@ -16,7 +16,7 @@ class ImageLoader:
     """Handles loading images from disk"""
 
     DEFAULT_GIF_SPEED: int = 100
-    ANIMATION_SPEED_FACTOR: float = 0.75
+    ANIMATION_SPEED_FACTOR: float = 0.82
 
     __slots__ = (
         "aniamtion_frames",
