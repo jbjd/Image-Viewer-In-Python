@@ -27,10 +27,10 @@ except ImportError:
         "Nuitka is not installed on your system, it must be installed to compile"
     )
 
-WORKING_DIR: str = f"{os.path.dirname(os.path.realpath(__file__))}/"
-TMP_DIR: str = f"{WORKING_DIR}tmp/"
-CODE_DIR: str = f"{WORKING_DIR}image_viewer/"
-COMPILE_DIR: str = f"{WORKING_DIR}main.dist/"  # setup here, then copy to install path
+WORKING_DIR: str = os.path.abspath(os.path.dirname(__file__))
+TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
+CODE_DIR: str = os.path.join(WORKING_DIR, "image_viewer")
+COMPILE_DIR: str = os.path.join(WORKING_DIR, "main.dist")
 VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--enable-console"}
 INSTALL_PATH: str
 EXECUTABLE_EXT: str
@@ -128,11 +128,11 @@ if args.python_path is None:
 
 
 def clean_up() -> None:
-    shutil.rmtree(f"{WORKING_DIR}main.build/", ignore_errors=True)
+    shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
     shutil.rmtree(COMPILE_DIR, ignore_errors=True)
     shutil.rmtree(TMP_DIR, ignore_errors=True)
     try:
-        os.remove(f"{WORKING_DIR}main.cmd")
+        os.remove(os.path.join(WORKING_DIR, "main.cmd"))
     except FileNotFoundError:
         pass
 
@@ -172,8 +172,6 @@ class TypeHintRemover(ast._Unparser):
         if node.module != "typing" and node.module != "collections.abc":
             super().visit_ImportFrom(node)
 
-    # TODO: remove __author__ and if __name__ == "__main__":
-
 
 def clean_file_and_copy(path: str, new_path: str) -> None:
     with open(path) as fp:
@@ -194,22 +192,33 @@ def clean_file_and_copy(path: str, new_path: str) -> None:
         fp.write(contents)
 
 
-# Before compiling, copy to tmp dir and remove type-hints/clean code
-# I thought nuitka would handle this, but I guess not?
-try:
-    for python_file in glob(f"{CODE_DIR}**/*.py", recursive=True):
-        new_path: str = python_file.replace("image_viewer", "tmp")
+def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = ""):
+    for python_file in glob(f"{dir}/**/*.py", recursive=True):
+        if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
+            continue
+        python_file = os.path.abspath(python_file)
+        relative_path: str = os.path.join(
+            mod_prefix, python_file.replace(dir, "").strip("/\\")
+        )
+        new_path: str = os.path.join(TMP_DIR, relative_path)
         clean_file_and_copy(python_file, new_path)
 
-    for mod_name in ["turbojpeg"]:  # TODO: add more
+
+# Before compiling, copy to tmp dir and remove type-hints/clean code
+# I thought nuitka would handle this, but I guess not?
+shutil.rmtree(TMP_DIR, ignore_errors=True)
+try:
+    move_files_to_tmp_and_clean(CODE_DIR)
+
+    for mod_name in ["turbojpeg", "send2trash"]:  # TODO: add more
         module = importlib.import_module(mod_name)
         base_file_name: str = os.path.basename(module.__file__)
         if base_file_name == "__init__.py":
             # its really a folder
-            pass
+            move_files_to_tmp_and_clean(os.path.dirname(module.__file__), mod_name)
         else:
             # its just one file
-            clean_file_and_copy(module.__file__, TMP_DIR + base_file_name)
+            clean_file_and_copy(module.__file__, os.path.join(TMP_DIR, base_file_name))
 
     # Begin nuitka compilation in subprocess
     print("Starting compilation with nuitka")
@@ -217,8 +226,8 @@ try:
     cmd_str = f'{args.python_path} -m nuitka --follow-import-to="factories" \
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
-        --windows-icon-from-ico="{CODE_DIR}icon/icon.ico" \
-        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}main.py"'
+        --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" \
+        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/main.py"'
 
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
@@ -230,22 +239,19 @@ try:
     process.wait()
 
     for data_file_path in DATA_FILE_PATHS:
-        old_path = f"{CODE_DIR}{data_file_path}"
-        new_path = f"{COMPILE_DIR}{data_file_path}"
+        old_path = os.path.join(CODE_DIR, data_file_path)
+        new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
     if args.debug:
         exit(0)
 
-    if as_standalone:
-        os.rename(
-            f"{COMPILE_DIR}main{EXECUTABLE_EXT}", f"{COMPILE_DIR}viewer{EXECUTABLE_EXT}"
-        )
-    else:
-        os.rename(
-            f"{WORKING_DIR}main{EXECUTABLE_EXT}", f"{COMPILE_DIR}viewer{EXECUTABLE_EXT}"
-        )
+    dest: str = os.path.join(COMPILE_DIR, f"viewer{EXECUTABLE_EXT}")
+    src: str = os.path.join(
+        COMPILE_DIR if as_standalone else WORKING_DIR, f"main{EXECUTABLE_EXT}"
+    )
+    os.rename(src, dest)
     shutil.rmtree(INSTALL_PATH, ignore_errors=True)
     os.rename(COMPILE_DIR, INSTALL_PATH)
 finally:
