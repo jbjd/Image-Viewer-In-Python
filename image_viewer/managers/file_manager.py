@@ -7,7 +7,6 @@ from util.convert import try_convert_file_and_save_new
 from util.image import CachedImageData, ImagePath
 from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
 
-
 if os.name == "nt":
     from send2trash.win.legacy import send2trash
 else:
