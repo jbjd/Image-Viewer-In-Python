@@ -32,7 +32,7 @@ class ViewerApp:
         "image_display_id",
         "image_loader",
         "move_id",
-        "redraw_screen",
+        "redraw_flag",
         "rename_button_id",
         "rename_entry",
         "rename_window_id",
@@ -48,8 +48,8 @@ class ViewerApp:
         # UI varaibles
         self.topbar_shown: bool
         self.dropdown_shown: bool
-        self.redraw_screen: bool
-        self.topbar_shown = self.dropdown_shown = self.redraw_screen = False
+        self.redraw_flag: bool
+        self.topbar_shown = self.dropdown_shown = self.redraw_flag = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
 
@@ -164,12 +164,12 @@ class ViewerApp:
             canvas.tag_bind(
                 button_id,
                 "<Enter>",
-                lambda _: canvas.itemconfig(button_id, image=hovered_image),
+                lambda _: canvas.itemconfigure(button_id, image=hovered_image),
             )
             canvas.tag_bind(
                 button_id,
                 "<Leave>",
-                lambda _: canvas.itemconfig(button_id, image=regular_image),
+                lambda _: canvas.itemconfigure(button_id, image=regular_image),
             )
             canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
             return button_id
@@ -255,7 +255,7 @@ class ViewerApp:
         )
         self.rename_entry = RenameEntry(app, font=FONT)
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
-        canvas.itemconfig(
+        canvas.itemconfigure(
             self.rename_window_id, state="hidden", window=self.rename_entry
         )
 
@@ -284,7 +284,7 @@ class ViewerApp:
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
-            if self.move_id and event.keysym in ("Left", "Right"):
+            if self.move_id and event.keycode in (37, 39):  # Left/Right
                 self.app.after_cancel(self.move_id)
                 self.move_id = ""
 
@@ -328,8 +328,10 @@ class ViewerApp:
 
     def minimize(self, _: Event) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
-        self.redraw_screen = True
+        self.redraw_flag = True
         self.app.iconify()
+        if self.move_id:
+            self.app.after_cancel(self.move_id)
 
     def refresh(self, _: Event) -> None:
         """Gets images in current directory and update internal list with them"""
@@ -356,9 +358,9 @@ class ViewerApp:
         Redraws screen if current image has a diffent size than when it was loaded
         This implys it was edited outside of the program
         """
-        if event.widget is not self.app or not self.redraw_screen:
+        if event.widget is not self.app or not self.redraw_flag:
             return
-        self.redraw_screen = False
+        self.redraw_flag = False
         if self.file_manager.current_image_cache_still_fresh():
             return
         self.dropdown.refresh = True
@@ -372,11 +374,11 @@ class ViewerApp:
         self.load_image_and_refresh()
 
     def hide_rename_window(self) -> None:
-        self.canvas.itemconfig(self.rename_window_id, state="hidden")
+        self.canvas.itemconfigure(self.rename_window_id, state="hidden")
         self.app.focus()
 
     def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
-        self.canvas.itemconfig(
+        self.canvas.itemconfigure(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon
             if self.dropdown_shown
@@ -384,7 +386,7 @@ class ViewerApp:
         )
 
     def hover_dropdown_toggle(self, _: Event | None = None) -> None:
-        self.canvas.itemconfig(
+        self.canvas.itemconfigure(
             self.dropdown_button_id,
             image=self.dropdown_showing_icon_hovered
             if self.dropdown_shown
@@ -400,7 +402,7 @@ class ViewerApp:
         if canvas.itemcget("topbar", "state") == "hidden":
             self.show_topbar()
 
-        canvas.itemconfig(self.rename_window_id, state="normal")
+        canvas.itemconfigure(self.rename_window_id, state="normal")
         canvas.coords(
             self.rename_window_id,
             self.rename_window_x_offset + self._scale_pixels_to_width(40),
@@ -438,7 +440,7 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.itemconfig(self.image_display_id, image=current_image)
+        self.canvas.itemconfigure(self.image_display_id, image=current_image)
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
@@ -460,13 +462,13 @@ class ViewerApp:
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
         self.topbar_shown = True
-        self.canvas.itemconfig("topbar", state="normal")
+        self.canvas.itemconfigure("topbar", state="normal")
         self.refresh_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
         self.topbar_shown = False
-        self.canvas.itemconfig("topbar", state="hidden")
+        self.canvas.itemconfigure("topbar", state="hidden")
         self.hide_rename_window()
 
     def remove_image(self, delete_from_disk: bool) -> None:
@@ -478,7 +480,7 @@ class ViewerApp:
 
     def refresh_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
-        self.canvas.itemconfig(
+        self.canvas.itemconfigure(
             self.file_name_text_id, text=self.file_manager.current_image.name
         )
         self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
@@ -503,7 +505,7 @@ class ViewerApp:
             ms_backoff = int(ms_backoff * 1.4)
             ms_until_next_frame = ms_backoff
         else:
-            self.canvas.itemconfig(self.image_display_id, image=frame_and_speed[0])
+            self.canvas.itemconfigure(self.image_display_id, image=frame_and_speed[0])
             ms_until_next_frame = frame_and_speed[1]
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
@@ -532,6 +534,6 @@ class ViewerApp:
 
                 dropdown.image = create_dropdown_image(dimension_text, size_text)
 
-            self.canvas.itemconfig(dropdown.id, image=dropdown.image, state="normal")
+            self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
-            self.canvas.itemconfig(dropdown.id, state="hidden")
+            self.canvas.itemconfigure(dropdown.id, state="hidden")
