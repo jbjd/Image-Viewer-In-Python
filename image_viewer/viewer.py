@@ -118,10 +118,10 @@ class ViewerApp:
         app.bind("<Down>", self.show_topbar)
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
-        app.bind("<Control-Left>", self.handle_ctrl_arrow_keys)
-        app.bind("<Control-Right>", self.handle_ctrl_arrow_keys)
-        app.bind("<Control-Up>", self.handle_ctrl_arrow_keys)
-        app.bind("<Control-Down>", self.handle_ctrl_arrow_keys)
+        app.bind("<Alt-Left>", self.handle_ctrl_arrow_keys)
+        app.bind("<Alt-Right>", self.handle_ctrl_arrow_keys)
+        app.bind("<Alt-Up>", self.handle_ctrl_arrow_keys)
+        app.bind("<Alt-Down>", self.handle_ctrl_arrow_keys)
 
         if is_windows:
             app.bind(
