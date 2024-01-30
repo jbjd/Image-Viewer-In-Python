@@ -7,8 +7,18 @@ from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 
 
+def _image_to_array(image: Image):
+    """Turns a PIL Image into a Numpy array"""
+    return asarray(
+        image if image.mode != "P" else image.convert("RGB"),
+        order="C",
+    )
+
+
 class ImageResizer:
     """Handles resizing images to fit to the screen"""
+
+    ZOOM_MIN: float = 2.0
 
     def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
         self.screen_width: int = screen_width
@@ -21,12 +31,32 @@ class ImageResizer:
         )
 
     def _array_to_photoimage(
-        self, array, image_width: int, image_height: int
+        self, array, dimensions: tuple[int, int], interpolation: int
     ) -> PhotoImage:
         """Converts and resizes a matrix-like into a PhotoImage fit to the screen"""
-        dimensions, interpolation = self.dimension_finder(image_width, image_height)
         return PhotoImage(
             fromarray(cv2.resize(array, dimensions, interpolation=interpolation))
+        )
+
+    def get_zoomed_image(self, image: Image, zoom_factor: float) -> PhotoImage | None:
+        """Resizes image using the provided zoom_factor.
+        Returns None when max zoom reached"""
+        dimensions, interpolation = self.dimension_finder(*image.size)
+        dimensions = (
+            int(dimensions[0] * zoom_factor),
+            int(dimensions[1] * zoom_factor),
+        )
+        if (
+            dimensions[0] > self.screen_width
+            and dimensions[1] > self.screen_height
+            and zoom_factor > self.ZOOM_MIN
+        ):
+            return None
+
+        return self._array_to_photoimage(
+            _image_to_array(image),
+            dimensions,
+            interpolation,
         )
 
     def _get_jpeg_scale_factor(
@@ -52,17 +82,16 @@ class ImageResizer:
                 self._get_jpeg_scale_factor(image_width, image_height),
                 0,
             )
-            return self._array_to_photoimage(image_as_array, image_width, image_height)
+            return self._array_to_photoimage(
+                image_as_array, *self.dimension_finder(image_width, image_height)
+            )
 
     def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
         # cv2 resize is faster than PIL, but convert to RGB then resize is slower
         # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
         return self._array_to_photoimage(
-            asarray(
-                image if image.mode != "P" else image.convert("RGB"),
-                order="C",
-            ),
-            *image.size,
+            _image_to_array(image),
+            *self.dimension_finder(*image.size),
         )
 
     def dimension_finder(

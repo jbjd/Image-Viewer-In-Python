@@ -122,6 +122,8 @@ class ViewerApp:
         app.bind("<Control-Right>", wrapper)
         app.bind("<Control-Up>", wrapper)
         app.bind("<Control-Down>", wrapper)
+        app.bind("=", self.handle_zoom)
+        app.bind("-", self.handle_zoom)
 
         if is_windows:
             app.bind(
@@ -309,6 +311,15 @@ class ViewerApp:
         self.dropdown_shown = not self.dropdown_shown
         self.hover_dropdown_toggle()  # fake mouse hover
         self.update_details_dropdown()
+
+    def handle_zoom(self, event: Event) -> None:
+        """Handle user input of zooming in or out"""
+        if self.animation_id != "":
+            return
+
+        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(event.keycode)
+        if new_image is not None:
+            self.canvas.update_img_display(new_image)
 
     # End functions handling user input
 
