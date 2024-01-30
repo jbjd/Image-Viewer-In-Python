@@ -92,6 +92,8 @@ class ViewerApp:
             self.animation_loop,
         )
 
+        init_PIL(self._scale_pixels_to_height(22))
+
         # Don't call load_image for first image since if it fails to load, don't exit
         # until we load the rest of the images and try to display them as well
         if current_image := self.image_loader.load_image():
@@ -103,8 +105,6 @@ class ViewerApp:
         # if first load failed, load new one now that all images are loaded
         if current_image is None:
             self.load_image()
-
-        init_PIL(self._scale_pixels_to_height(22))
 
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         app.bind("<FocusIn>", self.redraw)

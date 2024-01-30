@@ -17,7 +17,6 @@ class ImageFileManager:
     """Manages internal list of images"""
 
     VALID_FILE_TYPES: set[str] = {
-        ".bmp",
         ".gif",
         ".jpg",
         ".jpeg",
