@@ -112,18 +112,16 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
+        app.bind("<Control-d>", lambda _: self.load_image_and_refresh())
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
-        wrapper = lambda e: self.canvas.handle_ctrl_arrow_keys(e)  # noqa: E731
-        app.bind("<Control-Left>", wrapper)
-        app.bind("<Control-Right>", wrapper)
-        app.bind("<Control-Up>", wrapper)
-        app.bind("<Control-Down>", wrapper)
-        app.bind("=", self.handle_zoom)
-        app.bind("-", self.handle_zoom)
+        app.bind("<Control-Left>", self.handle_ctrl_arrow_keys)
+        app.bind("<Control-Right>", self.handle_ctrl_arrow_keys)
+        app.bind("<Control-Up>", self.handle_ctrl_arrow_keys)
+        app.bind("<Control-Down>", self.handle_ctrl_arrow_keys)
 
         if is_windows:
             app.bind(
@@ -277,6 +275,8 @@ class ViewerApp:
         if event.widget is self.app:
             if event.keysym == "r":
                 self.toggle_show_rename_window(event)
+            if event.char in ("-", "="):
+                self.handle_zoom(event)
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
@@ -298,6 +298,11 @@ class ViewerApp:
         """Repeat move to next image while L/R key held"""
         self.move(move_amount)
         self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
+
+    def handle_ctrl_arrow_keys(self, event: Event) -> None:
+        """Wraps canvas's event handler if app is focused"""
+        if event.widget is self.app:
+            self.canvas.handle_ctrl_arrow_keys(event)
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
@@ -376,6 +381,7 @@ class ViewerApp:
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image(True)
+        self.dropdown.refresh = True
         self.load_image_and_refresh()
 
     def hide_rename_window(self) -> None:
