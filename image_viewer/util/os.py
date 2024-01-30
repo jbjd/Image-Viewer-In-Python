@@ -1,8 +1,8 @@
-import os
 from collections.abc import Iterator
+from os import name, scandir
 from re import sub
 
-if os.name == "nt":
+if name == "nt":
     from ctypes import windll
 
     illegal_char = r'[\\/<>:"|?*]'
@@ -25,7 +25,7 @@ def walk_dir(directory_path: str) -> Iterator[str]:
     """Copied from OS module and edited to yield each file
     and only files instead of including dirs/extra info"""
 
-    scandir_iter = os.scandir(directory_path)
+    scandir_iter = scandir(directory_path)
 
     with scandir_iter:
         while True:

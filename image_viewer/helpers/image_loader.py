@@ -64,7 +64,7 @@ class ImageLoader:
             if speed < 1:
                 speed = self.DEFAULT_GIF_SPEED
         except (KeyError, AttributeError):
-            speed = self.DEFAULT_GIF_SPEED
+            return self.DEFAULT_GIF_SPEED
 
         return speed
 
@@ -105,9 +105,10 @@ class ImageLoader:
             # except import error since user might open file with inaccurate ext
             # and trigger import that was excluded if they compiled as standalone
             return None
+        file_pointer = self.file_pointer
 
         image_kb_size: int = stat(path_to_current_image).st_size >> 10
-        frame_count: int = getattr(self.file_pointer, "n_frames", 1)
+        frame_count: int = getattr(file_pointer, "n_frames", 1)
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
@@ -116,7 +117,7 @@ class ImageLoader:
             current_image = cached_image_data.image
             self._finish_image_load(current_image, frame_count)
         else:
-            image_width, image_height = self.file_pointer.size
+            image_width, image_height = file_pointer.size
             image_size: str = (
                 f"{round(image_kb_size/10.24)/100}mb"
                 if image_kb_size > 999
@@ -124,13 +125,13 @@ class ImageLoader:
             )
 
             try:
-                if self.file_pointer.format == "JPEG":
+                if file_pointer.format == "JPEG":
                     current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                        self.file_pointer, path_to_current_image
+                        file_pointer, path_to_current_image
                     )
                 else:
                     current_image = self.image_resizer.get_image_fit_to_screen(
-                        self.file_pointer
+                        file_pointer
                     )
             except ResizeException:
                 return None
@@ -153,9 +154,9 @@ class ImageLoader:
         """Handles getting and caching zoomed versions of the current image"""
         # determine new zoom factor
         previous_zoom: float = self.zoom_factor
-        if event_keycode == 189 and self.zoom_factor > 1.0:  # -
+        if event_keycode == 189 and previous_zoom > 1.0:  # -
             self.zoom_factor -= 0.25
-        elif event_keycode == 187 and self.zoom_factor < self.zoom_cap:  # =
+        elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # =
             self.zoom_factor += 0.25
         if previous_zoom == self.zoom_factor:
             return

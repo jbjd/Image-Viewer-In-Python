@@ -302,7 +302,7 @@ class ViewerApp:
     def handle_ctrl_arrow_keys(self, event: Event) -> None:
         """Wraps canvas's event handler if app is focused"""
         if event.widget is self.app:
-            self.canvas.handle_ctrl_arrow_keys(event)
+            self.canvas.handle_ctrl_arrow_keys(event.keycode)
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""

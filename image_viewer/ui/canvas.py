@@ -1,4 +1,4 @@
-from tkinter import Canvas, Event
+from tkinter import Canvas
 
 from PIL.ImageTk import PhotoImage
 
@@ -51,34 +51,32 @@ class CustomCanvas(Canvas):
         self.move_x = 0
         self.move_y = 0
 
-    def handle_ctrl_arrow_keys(self, event: Event) -> None:
+    def handle_ctrl_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""
         bbox: tuple = self.bbox(self.image_display_id)
-        match event.keycode:
+        match keycode:
             case 37:  # Left
                 x = -10
                 y = 0
                 if (not bbox[2] > self.screen_width) and (bbox[0] + x) < 0:
                     return
-                self.move_x += 10
             case 38:  # Up
                 x = 0
                 y = -10
                 if (bbox[1] + y) < 0 and (not bbox[3] > self.screen_height):
                     return
-                self.move_y += 10
             case 39:  # Right
                 x = 10
                 y = 0
                 if (bbox[2] + x) > self.screen_width and (not bbox[0] < 0):
                     return
-                self.move_x -= 10
             case _:  # Down
                 x = 0
                 y = 10
                 if (bbox[3] + y) > self.screen_height and (not bbox[1] < 0):
                     return
-                self.move_y -= 10
+        self.move_x -= x
+        self.move_y -= y
 
         # TODO: find a good way to handle scaling 10px to screen, don't
         # really want to call the internal scale function each time...
