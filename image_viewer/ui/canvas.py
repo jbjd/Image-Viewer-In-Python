@@ -56,22 +56,22 @@ class CustomCanvas(Canvas):
             case 37:  # Left
                 x = -10
                 y = 0
-                if bbox[2] > self.screen_width or (bbox[0] + x) < 0:
+                if (not bbox[2] > self.screen_width) and (bbox[0] + x) < 0:
                     return
             case 38:  # Up
                 x = 0
                 y = -10
-                if (bbox[1] + y) < 0 or bbox[3] > self.screen_height:
+                if (bbox[1] + y) < 0 and (not bbox[3] > self.screen_height):
                     return
             case 39:  # Right
                 x = 10
                 y = 0
-                if (bbox[2] + x) > self.screen_width or bbox[0] < 0:
+                if (bbox[2] + x) > self.screen_width and (not bbox[0] < 0):
                     return
             case _:  # Down
                 x = 0
                 y = 10
-                if (bbox[3] + y) > self.screen_height or bbox[1] < 0:
+                if (bbox[3] + y) > self.screen_height and (not bbox[1] < 0):
                     return
 
         if self.old_location is None:
