@@ -8,6 +8,7 @@ from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
+from ui.canvas import CustomCanvas
 from ui.rename_entry import RenameEntry
 from util.image import CachedImageData, DropdownImage, create_dropdown_image, init_PIL
 
@@ -29,7 +30,6 @@ class ViewerApp:
         "file_manager",
         "file_name_text_id",
         "height_ratio",
-        "image_display_id",
         "image_loader",
         "move_id",
         "redraw_flag",
@@ -58,11 +58,9 @@ class ViewerApp:
 
         # Application and canvas
         app = Tk()
-        canvas = Canvas(app, bg="black", highlightthickness=0)
-        canvas.pack(anchor="nw", fill="both", expand=1)
-        app.attributes("-fullscreen", True)
         self.app = app
-        self.canvas = canvas
+        app.attributes("-fullscreen", True)
+        self.canvas = CustomCanvas(app)
 
         is_windows: bool = os.name == "nt"
         if is_windows:
@@ -83,16 +81,13 @@ class ViewerApp:
         screen_height: int = app.winfo_height()
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
-        canvas.create_rectangle(
-            0, 0, screen_width, screen_height, fill="black", tag="back"
+
+        self.canvas.finish_init(screen_width, screen_height)
+        self._load_assests(
+            app, self.canvas, screen_width, self._scale_pixels_to_height(32)
         )
-        self.image_display_id = canvas.create_image(
-            screen_width >> 1, screen_height >> 1, anchor="center", tag="back"
-        )
-        self._load_assests(app, canvas, screen_width, self._scale_pixels_to_height(32))
 
         # set up and draw first image, then get all image paths in directory
-
         self.image_loader = ImageLoader(
             self.file_manager,
             ImageResizer(screen_width, screen_height, path_to_exe),
@@ -113,7 +108,7 @@ class ViewerApp:
 
         init_PIL(self._scale_pixels_to_height(22))
 
-        canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
+        self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
         app.bind("<KeyPress>", self.handle_key)
@@ -124,6 +119,11 @@ class ViewerApp:
         app.bind("<Down>", self.show_topbar)
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
+        wrapper = lambda e: self.canvas.handle_ctrl_arrow_keys(e)  # noqa: E731
+        app.bind("<Control-Left>", wrapper)
+        app.bind("<Control-Right>", wrapper)
+        app.bind("<Control-Up>", wrapper)
+        app.bind("<Control-Down>", wrapper)
 
         if is_windows:
             app.bind(
@@ -135,7 +135,7 @@ class ViewerApp:
 
         app.mainloop()
 
-    def _load_assests(
+    def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: Canvas, screen_width: int, topbar_height: int
     ) -> None:
         """
@@ -440,7 +440,8 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.itemconfigure(self.image_display_id, image=current_image)
+        self.canvas.update_img_coords()
+        self.canvas.update_img_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
@@ -505,7 +506,7 @@ class ViewerApp:
             ms_backoff = int(ms_backoff * 1.4)
             ms_until_next_frame = ms_backoff
         else:
-            self.canvas.itemconfigure(self.image_display_id, image=frame_and_speed[0])
+            self.canvas.update_img_display(frame_and_speed[0])
             ms_until_next_frame = frame_and_speed[1]
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
