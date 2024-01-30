@@ -1,5 +1,6 @@
 Standard Priority:
-    Investigate a console for entering commands into such as 'jump abc.png' or 'convert webp'
+    Documentation
 
 Low Priority:
-    cropping images with preview
+    Moving images to a different directory
+    Cropping images with preview
