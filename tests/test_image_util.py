@@ -15,7 +15,7 @@ def test_image_path():
 def test_PIL_functions():
     """Ensure no error with font and that PIL.Image gets modified"""
     init_PIL(20)
-    assert len(Image._plugins) == 1
+    assert len(Image._plugins) == 0
 
     # create_dropdown_image needs Tk to be initialized before calling
     _ = Tk()
