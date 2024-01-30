@@ -7,7 +7,7 @@ from PIL.ImageTk import PhotoImage
 class CustomCanvas(Canvas):
     """Custom version of tkinter's canvas to support internal methods"""
 
-    __slots__ = "coord_outside_of_image", "image_display_id", "old_location"
+    __slots__ = "coord_outside_of_image", "image_display_id", "old_location", "topbar"
 
     def __init__(self, master) -> None:
         super().__init__(master, bg="black", highlightthickness=0)
@@ -28,6 +28,13 @@ class CustomCanvas(Canvas):
             or (bbox[1] + y) < 0
             or (bbox[2] + x) > screen_width
             or (bbox[3] + y) > screen_height
+        )
+
+    def create_topbar(self, topbar_img: PhotoImage) -> None:
+        """Creates the topbar and stores it"""
+        self.topbar = topbar_img  # need to do this so garbage collector doesn't kill it
+        self.create_image(
+            0, 0, image=topbar_img, anchor="nw", tag="topbar", state="hidden"
         )
 
     def update_img_coords(self) -> None:

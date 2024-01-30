@@ -36,7 +36,6 @@ class ViewerApp:
         "rename_entry",
         "rename_window_id",
         "rename_window_x_offset",
-        "topbar",
         "topbar_shown",
         "width_ratio",
     )
@@ -180,11 +179,7 @@ class ViewerApp:
 
         icon_factory = IconFactory(topbar_height)
 
-        # create the topbar
-        self.topbar = icon_factory.make_topbar(screen_width)
-        canvas.create_image(
-            0, 0, image=self.topbar, anchor="nw", tag="topbar", state="hidden"
-        )
+        canvas.create_topbar(icon_factory.make_topbar(screen_width))
         self.file_name_text_id: int = canvas.create_text(
             self._scale_pixels_to_width(36),
             self._scale_pixels_to_height(16),
