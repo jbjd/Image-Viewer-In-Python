@@ -20,6 +20,8 @@ class ImageResizer:
 
     ZOOM_MIN: float = 2.0
 
+    __slots__ = "jpeg_helper", "screen_height", "screen_width"
+
     def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
         self.screen_width: int = screen_width
         self.screen_height: int = screen_height
