@@ -1,6 +1,6 @@
 import os
 
-import cv2
+from cv2 import INTER_AREA, INTER_CUBIC, resize
 from numpy import asarray
 from PIL.Image import Image, fromarray
 from PIL.ImageTk import PhotoImage
@@ -35,7 +35,7 @@ class ImageResizer:
     ) -> PhotoImage:
         """Converts and resizes a matrix-like into a PhotoImage fit to the screen"""
         return PhotoImage(
-            fromarray(cv2.resize(array, dimensions, interpolation=interpolation))
+            fromarray(resize(array, dimensions, interpolation=interpolation))
         )
 
     def get_zoomed_image(self, image: Image, zoom_factor: float) -> PhotoImage | None:
@@ -101,9 +101,9 @@ class ImageResizer:
         else fit to width and let height go off screen
         returns: new width, new height, and interpolation to use"""
         interpolation: int = (
-            cv2.INTER_AREA
+            INTER_AREA
             if image_height > self.screen_height or image_width > self.screen_width
-            else cv2.INTER_CUBIC
+            else INTER_CUBIC
         )
         width: int = round(image_width * (self.screen_height / image_height))
 
