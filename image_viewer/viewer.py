@@ -273,9 +273,9 @@ class ViewerApp:
     def handle_key(self, event: Event) -> None:
         """Key binds on main screen"""
         if event.widget is self.app:
-            if event.keysym == "r":
+            if event.keycode == 82:  # r
                 self.toggle_show_rename_window(event)
-            if event.char in ("-", "="):
+            if event.keycode in (187, 189):  # - or =
                 self.handle_zoom(event)
 
     def handle_key_release(self, event: Event) -> None:
