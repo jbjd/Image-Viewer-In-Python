@@ -38,16 +38,17 @@ class CustomCanvas(Canvas):
             0, 0, image=topbar_img, anchor="nw", tag="topbar", state="hidden"
         )
 
-    def update_img_coords(self) -> None:
-        """Updates dispalyed image's coords if user previously moved it"""
-        if self.old_location is not None:
-            # user moved last image, so move it back to center
-            self.moveto(self.image_display_id, *self.old_location)
-            self.old_location = None
-
     def update_img_display(self, new_image: PhotoImage) -> None:
         """Updates dispalyed with a new image"""
         self.itemconfigure(self.image_display_id, image=new_image)
+
+    def update_img_display_and_location(self, new_image: PhotoImage) -> None:
+        """Updates dispalyed with a new image and internal location metric"""
+
+        self.update_img_display(new_image)
+        if self.old_location is not None:
+            self.moveto(self.image_display_id, *self.old_location)
+        self.old_location = self.bbox(self.image_display_id)[:2]
 
     def handle_ctrl_arrow_keys(self, event: Event) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""
@@ -73,9 +74,6 @@ class CustomCanvas(Canvas):
                 y = 10
                 if (bbox[3] + y) > self.screen_height and (not bbox[1] < 0):
                     return
-
-        if self.old_location is None:
-            self.old_location = (bbox[0], bbox[1])
 
         # TODO: find a good way to handle scaling 10px to screen, don't
         # really want to call the internal scale function each time...

@@ -437,8 +437,7 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.update_img_coords()
-        self.canvas.update_img_display(current_image)
+        self.canvas.update_img_display_and_location(current_image)
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
