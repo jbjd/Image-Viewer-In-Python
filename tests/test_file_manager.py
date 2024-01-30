@@ -25,11 +25,16 @@ def test_image_file_manager(manager: ImageFileManager):
 
     # Should not try to rename/convert when file with that name already exists
     with pytest.raises(FileExistsError):
-        manager.rename_or_convert_current_image("c.webp", lambda _: None)
+        manager.rename_or_convert_current_image("c.webp")
 
     # Try to rename a.png mocking the os call away should pass
     with mock.patch("os.rename", lambda *_: None):
-        manager.rename_or_convert_current_image("example.test", lambda _: None)
+        with mock.patch.object(
+            ImageFileManager,
+            "_ask_delete_after_convert",
+            lambda *_: None,
+        ):
+            manager.rename_or_convert_current_image("example.test")
 
     # test remove_current_image fuctionality
     for _ in range(4):

@@ -1,4 +1,4 @@
-import os
+from os.path import exists
 
 from PIL.Image import open as open_image
 
@@ -14,7 +14,7 @@ def try_convert_file_and_save_new(
     """Trys to convert to new file format.
     Return: bool if file was converted and a new file was created"""
 
-    if os.path.exists(new_path):
+    if exists(new_path):
         raise FileExistsError()
 
     with open_image(old_path) as temp_img:

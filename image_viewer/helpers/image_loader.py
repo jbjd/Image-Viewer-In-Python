@@ -1,5 +1,5 @@
-import os
 from collections.abc import Callable
+from os import stat
 from threading import Thread
 
 from cv2 import error as ResizeException
@@ -106,7 +106,7 @@ class ImageLoader:
             # and trigger import that was excluded if they compiled as standalone
             return None
 
-        image_kb_size: int = os.stat(path_to_current_image).st_size >> 10
+        image_kb_size: int = stat(path_to_current_image).st_size >> 10
         frame_count: int = getattr(self.file_pointer, "n_frames", 1)
 
         # check if was cached and not changed outside of program
