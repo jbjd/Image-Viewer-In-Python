@@ -1,6 +1,5 @@
 import os
 from tkinter import Canvas, Event, Tk
-from tkinter.messagebox import askyesno
 
 from PIL.ImageTk import PhotoImage
 
@@ -410,25 +409,11 @@ class ViewerApp:
         )
         self.rename_entry.focus()
 
-    def _ask_delete_after_convert(self, new_format: str) -> None:
-        """Used as callback function for after a succecssful file conversion"""
-        if askyesno(
-            "Confirm deletion",
-            f"Converted file to {new_format}, delete old file?",
-        ):
-            try:
-                self.file_manager.remove_current_image(True)
-            except IndexError:
-                pass  # even if no images left, a new one will be added after this
-
     def try_rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.
         Trys to convert or rename based on input"""
         try:
-            self.file_manager.rename_or_convert_current_image(
-                self.rename_entry.get(),
-                self._ask_delete_after_convert,
-            )
+            self.file_manager.rename_or_convert_current_image(self.rename_entry.get())
         except Exception:
             self.rename_entry.error_flash()
             return

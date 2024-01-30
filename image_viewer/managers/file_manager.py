@@ -1,5 +1,5 @@
 import os
-from collections.abc import Callable
+from tkinter.messagebox import askyesno
 
 from PIL.ImageTk import PhotoImage
 
@@ -108,11 +108,18 @@ class ImageFileManager:
 
         self._populate_data_attributes()
 
-    def rename_or_convert_current_image(
-        self,
-        new_name: str,
-        ask_delete_after_convert: Callable[[str], None],
-    ) -> None:
+    def _ask_delete_after_convert(self, new_format: str) -> None:
+        """Used as callback function for after a succecssful file conversion"""
+        if askyesno(
+            "Confirm deletion",
+            f"Converted file to {new_format}, delete old file?",
+        ):
+            try:
+                self.remove_current_image(True)
+            except IndexError:
+                pass  # even if no images left, a new one will be added after this
+
+    def rename_or_convert_current_image(self, new_name: str) -> None:
         """try to either rename or convert based on user input.
         ask_delete_after_convert lets user choose to delete old file"""
         new_name = clean_str_for_OS_path(new_name)
@@ -133,7 +140,7 @@ class ImageFileManager:
             )
         ):
             was_last_image: bool = self._current_index == len(self._files) - 1
-            ask_delete_after_convert(new_image_data.suffix)
+            self._ask_delete_after_convert(new_image_data.suffix)
             # weird case, previous function can reduce index by one
             # when image was the last file in list due to temp removal
             if was_last_image:
