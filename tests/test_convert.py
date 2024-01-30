@@ -80,7 +80,4 @@ def test_all_valid_types():
             result = try_convert_file_and_save_new(
                 *get_vars_for_test("", "old.png", f"new.{type}")
             )
-            if type == ".bmp":
-                # bmp is only valid type that I decided to not allow conversion for
-                result = not result
             assert result

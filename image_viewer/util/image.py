@@ -52,20 +52,7 @@ def init_PIL(font_size: int) -> None:
     ImageDraw.fontmode = "L"  # antialiasing
 
     # edit these so PIL will not waste time importing +20 useless modules
-    Image._plugins = []
-
-    def preinit():
-        if Image._initialized >= 1:
-            return
-
-        from PIL import GifImagePlugin  # noqa: F401
-        from PIL import JpegImagePlugin  # noqa: F401
-        from PIL import PngImagePlugin  # noqa: F401
-        from PIL import WebPImagePlugin  # noqa: F401
-
-        Image._initialized = 1
-
-    Image.preinit = preinit
+    Image._plugins = ["WebPImagePlugin"]
 
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:

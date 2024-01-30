@@ -81,8 +81,6 @@ if args.report or args.debug:
     extra_args += " --report=compilation-report.xml"
     if args.debug:
         extra_args += " --warn-implicit-exceptions --warn-unusual-code"
-        if "--enable-console" not in extra_args_list:
-            extra_args += " --enable-console"
 
 if as_standalone:
     extra_args += " --enable-plugin=tk-inter"
@@ -93,7 +91,7 @@ if as_standalone:
 
 extra_args += (
     " --enable-console"
-    if "--enable-console" in extra_args_list
+    if "--enable-console" in extra_args_list or args.debug
     else " --disable-console"
 )
 
