@@ -1,4 +1,5 @@
 argparse
+cffi
 csv
 defusedxml
 email*
