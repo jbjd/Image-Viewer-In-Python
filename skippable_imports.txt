@@ -4,6 +4,7 @@ email*
 getpass
 numpy.testing
 PIL.BlpImagePlugin
+PIL.BmpImagePlugin
 PIL.BufrStubImagePlugin
 PIL.CurImagePlugin
 PIL.DcxImagePlugin
@@ -31,6 +32,7 @@ PIL.PcdImagePlugin
 PIL.PcxImagePlugin
 PIL.PdfImagePlugin
 PIL.PixarImagePlugin
+PIL.PpmImagePlugin
 PIL.PsdImagePlugin
 PIL.QoiImagePlugin
 PIL.SgiImagePlugin
