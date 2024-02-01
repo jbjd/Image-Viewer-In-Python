@@ -46,6 +46,7 @@ PIL.WmfImagePlugin
 PIL.XbmImagePlugin
 PIL.XpmImagePlugin
 PIL.XVThumbImagePlugin
+PIL.ImageCms
 PIL.ImageDraw2
 PIL.ImageFilter
 PIL.ImageQt
