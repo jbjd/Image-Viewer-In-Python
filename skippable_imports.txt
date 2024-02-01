@@ -1,6 +1,7 @@
 argparse
 cffi
 csv
+cv2.version
 defusedxml
 email*
 getpass
@@ -58,6 +59,7 @@ pydoc
 selectors
 send2trash.win.modern
 socket
+statistics
 urllib.error
 urllib.request
 yaml
