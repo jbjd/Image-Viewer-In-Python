@@ -55,7 +55,9 @@ PIL.ImageWin
 PIL.PyAccess
 py_compile
 pydoc
+selectors
 send2trash.win.modern
+socket
 urllib.error
 urllib.request
 yaml
