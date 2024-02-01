@@ -1,8 +1,10 @@
 argparse
 csv
+defusedxml
 email*
 getpass
 numpy.testing
+packaging
 PIL.BlpImagePlugin
 PIL.BmpImagePlugin
 PIL.BufrStubImagePlugin
