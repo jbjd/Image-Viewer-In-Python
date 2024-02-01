@@ -6,6 +6,7 @@ import subprocess
 from _ast import Name
 from argparse import REMAINDER, ArgumentParser
 from glob import glob
+from sys import version_info
 
 is_windows: bool = os.name == "nt"
 if is_windows:
@@ -21,11 +22,19 @@ except ImportError:
     autoflake = None
 
 try:
-    import nuitka  # noqa: F401
+    from nuitka import PythonVersions
 except ImportError:
     raise ImportError(
         "Nuitka is not installed on your system, it must be installed to compile"
     )
+
+if version_info[:2] < (3, 10):
+    raise Exception("Python 3.10 or higher required")
+
+if (
+    version := f"{version_info[0]}.{version_info[1]}"
+) in PythonVersions.getNotYetSupportedPythonVersions():
+    raise Exception(f"{version} not supported by Nuitka yet")
 
 WORKING_DIR: str = os.path.abspath(os.path.dirname(__file__))
 TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
