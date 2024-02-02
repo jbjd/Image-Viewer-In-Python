@@ -1,5 +1,5 @@
 import os
-from tkinter import Canvas, Event, Tk
+from tkinter import Event, Tk
 
 from PIL.ImageTk import PhotoImage
 
@@ -134,7 +134,7 @@ class ViewerApp:
         app.mainloop()
 
     def _load_assests(  # TODO: port this into canvas.py?
-        self, app: Tk, canvas: Canvas, screen_width: int, topbar_height: int
+        self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
     ) -> None:
         """
         Load all assets on topbar from factory and create tkinter objects
@@ -142,7 +142,7 @@ class ViewerApp:
         """
 
         def _make_topbar_button(
-            canvas: Canvas,
+            canvas: CustomCanvas,
             regular_image: PhotoImage,
             hovered_image: PhotoImage,
             anchor: str,
@@ -391,17 +391,21 @@ class ViewerApp:
     def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(
             self.dropdown_button_id,
-            image=self.dropdown_showing_icon
-            if self.dropdown_shown
-            else self.dropdown_hidden_icon,
+            image=(
+                self.dropdown_showing_icon
+                if self.dropdown_shown
+                else self.dropdown_hidden_icon
+            ),
         )
 
     def hover_dropdown_toggle(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(
             self.dropdown_button_id,
-            image=self.dropdown_showing_icon_hovered
-            if self.dropdown_shown
-            else self.dropdown_hidden_icon_hovered,
+            image=(
+                self.dropdown_showing_icon_hovered
+                if self.dropdown_shown
+                else self.dropdown_hidden_icon_hovered
+            ),
         )
 
     def toggle_show_rename_window(self, _: Event | None = None) -> None:

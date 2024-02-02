@@ -25,7 +25,7 @@ class CustomCanvas(Canvas):
     def finish_init(self, screen_width: int, screen_height: int) -> None:
         """Finishes init since screen size not known before canvas needs to display"""
         self.create_rectangle(
-            0, 0, screen_width, screen_height, fill="black", tag="back"
+            0, 0, screen_width, screen_height, fill="black", tags="back"
         )
         self.image_display_id = self.create_image(
             screen_width >> 1, screen_height >> 1, anchor="center", tag="back"
@@ -48,8 +48,7 @@ class CustomCanvas(Canvas):
         """Updates dispalyed with a new image and internal location metric"""
         self.move(self.image_display_id, self.move_x, self.move_y)
         self.update_img_display(new_image)
-        self.move_x = 0
-        self.move_y = 0
+        self.move_x = self.move_y = 0
 
     def handle_ctrl_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""

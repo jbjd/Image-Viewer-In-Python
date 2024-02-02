@@ -25,9 +25,7 @@ def walk_dir(directory_path: str) -> Iterator[str]:
     """Copied from OS module and edited to yield each file
     and only files instead of including dirs/extra info"""
 
-    scandir_iter = scandir(directory_path)
-
-    with scandir_iter:
+    with scandir(directory_path) as scandir_iter:
         while True:
             try:
                 entry = next(scandir_iter)

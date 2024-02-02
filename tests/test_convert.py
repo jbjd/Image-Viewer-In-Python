@@ -12,16 +12,19 @@ class MockImage:
     """Mocks PIL Image for testing"""
 
     mode = "P"
-    info = {}
+    info: dict = {}
 
-    def convert(self, new_mode: str):
+    def __init__(self, n_frames: int = 1) -> None:
+        self.n_frames: int = n_frames
+
+    def convert(self, new_mode: str) -> "MockImage":
         self.mode = new_mode
         return self
 
     def save(self, *_, **kwargs) -> None:
         pass
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> "MockImage":
         return self
 
     def __exit__(self, *_) -> None:
@@ -33,14 +36,12 @@ def mock_open_image(_: str) -> MockImage:
 
 
 def mock_open_animated_image(_: str) -> MockImage:
-    img = MockImage()
-    img.n_frames = 8
-    return img
+    return MockImage(8)
 
 
 def get_vars_for_test(
     dir: str, old_name: str, new_name: str
-) -> tuple[str, str, str, str]:
+) -> tuple[str, ImagePath, str, ImagePath]:
     old_path: str = os.path.join(dir, f"{old_name}")
     old_data = ImagePath(old_name)
     new_path: str = os.path.join(dir, f"{new_name}")

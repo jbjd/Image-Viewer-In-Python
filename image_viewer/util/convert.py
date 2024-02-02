@@ -18,7 +18,7 @@ def try_convert_file_and_save_new(
         raise FileExistsError()
 
     with open_image(old_path) as temp_img:
-        is_animated: bool = getattr(temp_img, "n_frames", 1) > 1
+        is_animated: bool = getattr(temp_img, "is_animated", False)
         if is_animated and new_image_data.suffix not in (".webp", ".gif", ".png"):
             raise ValueError()
 

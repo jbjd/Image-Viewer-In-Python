@@ -15,7 +15,7 @@ class IconFactory:
     __slots__ = "icon_size", "ratio"
 
     def __init__(self, icon_size: int) -> None:
-        self.icon_size: int = icon_size
+        self.icon_size: tuple[int, int] = (icon_size, icon_size)
         self.ratio: float = icon_size / 32
 
     def _scale_tuple_to_screen(
@@ -35,26 +35,24 @@ class IconFactory:
     def make_topbar(self, screen_width: int) -> PhotoImage:
         TOPBAR_RGBA: tuple = (60, 60, 60, 170)
         return PhotoImage(
-            new_image("RGBA", (screen_width, self.icon_size), TOPBAR_RGBA)
+            new_image("RGBA", (screen_width, self.icon_size[0]), TOPBAR_RGBA)
         )
 
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple = (190, 40, 40)
         EXIT_HOVER_RGB: tuple = (180, 25, 20)
-        icon_size = self.icon_size
-        draw = Draw(new_image("RGB", (icon_size, icon_size), EXIT_HOVER_RGB))
+        draw = Draw(new_image("RGB", self.icon_size, EXIT_HOVER_RGB))
         self._draw_line(draw, (6, 6, 26, 26), 2)
         self._draw_line(draw, (6, 26, 26, 6), 2)
         return (
-            PhotoImage(new_image("RGB", (icon_size, icon_size), EXIT_RGB)),
+            PhotoImage(new_image("RGB", self.icon_size, EXIT_RGB)),
             PhotoImage(draw._image),  # type: ignore
         )
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
         """Returns tuple of icon and hovered icon base images"""
-        icon_size = self.icon_size
-        return Draw(new_image("RGB", (icon_size, icon_size), self.ICON_RGB)), Draw(
-            new_image("RGB", (icon_size, icon_size), self.ICON_HOVERED_RGB)
+        return Draw(new_image("RGB", self.icon_size, self.ICON_RGB)), Draw(
+            new_image("RGB", self.icon_size, self.ICON_HOVERED_RGB)
         )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
@@ -108,9 +106,7 @@ class IconFactory:
         return PhotoImage(draw._image)  # type: ignore
 
     def make_rename_icons(self) -> tuple[PhotoImage, PhotoImage]:
-        icon_default_alpha = new_image(
-            "RGBA", (self.icon_size, self.icon_size), (0, 0, 0, 0)
-        )
+        icon_default_alpha = new_image("RGBA", self.icon_size, (0, 0, 0, 0))
         draw, draw_hovered = Draw(icon_default_alpha.copy()), Draw(
             icon_default_alpha.copy()
         )

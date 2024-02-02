@@ -38,10 +38,11 @@ class ImageFileManager:
 
     def __init__(self, first_image_to_load: str) -> None:
         """Load single file for display before we load the rest"""
-        first_image_data = ImagePath(os.path.basename(first_image_to_load))
 
         if not os.path.isfile(first_image_to_load):
             raise ValueError("File doesn't exist or is a directory")
+
+        first_image_data = ImagePath(os.path.basename(first_image_to_load))
         if first_image_data.suffix not in self.VALID_FILE_TYPES:
             raise ValueError("File extension not supported")
 
@@ -80,10 +81,11 @@ class ImageFileManager:
     def refresh_image_list(self) -> None:
         """Clears cache and updates internal image list with current
         images in direcrory"""
-        self.cache.clear()
+        self.cache = {}
         self.fully_load_image_data()
 
     def move_current_index(self, amount: int) -> None:
+        """Moves internal index with safe wrap around"""
         self._current_index = (self._current_index + amount) % len(self._files)
 
         self._populate_data_attributes()
@@ -102,6 +104,8 @@ class ImageFileManager:
         if self._current_index >= remaining_image_count:
             self._current_index = remaining_image_count - 1
 
+        # This needs to be after index check if we catch IndexError and add
+        # a new image, we can safely increment index from -1 -> 0
         if remaining_image_count == 0:
             raise IndexError()
 
@@ -119,7 +123,7 @@ class ImageFileManager:
                 pass  # even if no images left, a new one will be added after this
 
     def rename_or_convert_current_image(self, new_name: str) -> None:
-        """try to either rename or convert based on user input.
+        """Try to either rename or convert based on user input.
         ask_delete_after_convert lets user choose to delete old file"""
         new_name = clean_str_for_OS_path(new_name)
         new_image_data = ImagePath(new_name)
@@ -172,7 +176,7 @@ class ImageFileManager:
         )
 
     def current_image_cache_still_fresh(self) -> bool:
-        """Returns true when we think the cached image is still accurate.
+        """Returns true when it seems the cached image is still accurate.
         Not guaranteed to be correct, but thats not important for this case"""
         try:
             return (
@@ -186,8 +190,7 @@ class ImageFileManager:
         return self.cache.get(self.current_image.name, None)
 
     def _binary_search(self, target_image: str) -> int:
-        """Finds index of image in the sorted list of all images in the directory.
-        target_image: name of image file to find"""
+        """Finds index of target_image in internal list"""
         files = self._files
         low: int = 0
         high: int = len(files) - 1

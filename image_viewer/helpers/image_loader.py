@@ -45,8 +45,8 @@ class ImageLoader:
         self.aniamtion_frames: list = []
         self.frame_index: int = 0
         self.zoom_factor: float = 1.0
-        self.zoom_cap: bool = 128.0
-        self.zoomed_image_cache = []
+        self.zoom_cap: float = 128.0
+        self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
         self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
@@ -57,23 +57,10 @@ class ImageLoader:
 
     def get_ms_until_next_frame(self) -> int:
         """Returns time until next frame for animated images"""
-        try:
-            speed = int(
-                self.file_pointer.info["duration"] * self.ANIMATION_SPEED_FACTOR
-            )
-            if speed < 1:
-                speed = self.DEFAULT_GIF_SPEED
-        except (KeyError, AttributeError):
-            return self.DEFAULT_GIF_SPEED
-
-        return speed
-
-    def _finish_image_load(self, current_image: PhotoImage, frame_count: int) -> None:
-        """Begins animations if multiple frames are present, otherwise closes file"""
-        if frame_count > 1:
-            self.begin_animation(current_image, frame_count)
-        else:
-            self.file_pointer.close()
+        return int(
+            self.file_pointer.info.get("duration", self.DEFAULT_GIF_SPEED)
+            * self.ANIMATION_SPEED_FACTOR
+        )
 
     def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
         """Begins new thread to handle dispalying frames of an aniamted image"""
@@ -93,8 +80,10 @@ class ImageLoader:
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
 
     def load_image(self) -> PhotoImage | None:
-        """Loads an image and resizes it to fit on the screen
-        Returns PhotoImage or None on failure to load"""
+        """
+        Loads an image and resizes it to fit on the screen
+        Returns PhotoImage or None on failure to load
+        """
 
         file_manager = self.file_manager
         path_to_current_image = file_manager.path_to_current_image
@@ -115,15 +104,7 @@ class ImageLoader:
         cached_image_data = file_manager.get_current_image_cache()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
-            self._finish_image_load(current_image, frame_count)
         else:
-            image_width, image_height = file_pointer.size
-            image_size: str = (
-                f"{round(image_kb_size/10.24)/100}mb"
-                if image_kb_size > 999
-                else f"{image_kb_size}kb"
-            )
-
             try:
                 if file_pointer.format == "JPEG":
                     current_image = self.image_resizer.get_jpeg_fit_to_screen(
@@ -136,15 +117,24 @@ class ImageLoader:
             except ResizeException:
                 return None
 
-            self._finish_image_load(current_image, frame_count)
+            dimension_display: str = (
+                f"{round(image_kb_size/10.24)/100}mb"
+                if image_kb_size > 999
+                else f"{image_kb_size}kb"
+            )
 
             file_manager.cache_image(
-                image_width,
-                image_height,
-                image_size,
+                *file_pointer.size,
+                dimension_display,
                 current_image,
                 image_kb_size,
             )
+
+        if frame_count > 1:
+            # file pointer will be closed when animation finised loading
+            self.begin_animation(current_image, frame_count)
+        else:
+            self.file_pointer.close()
 
         self.zoomed_image_cache = [current_image]  # zoom 1.0 is same as current
 
@@ -159,7 +149,7 @@ class ImageLoader:
         elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # =
             self.zoom_factor += 0.25
         if previous_zoom == self.zoom_factor:
-            return
+            return None
         # Check cache
         index = round(self.zoom_factor * 4) - 4  # round in case float weirdness
         if index < len(self.zoomed_image_cache):
@@ -182,8 +172,7 @@ class ImageLoader:
         original_image: Image,
         last_frame: int,
     ) -> None:
-        """Loads all frames starting from the second.
-        Assumes the first will be loaded already"""
+        """Loads all frames starting from the second"""
 
         fp: Image = self.file_pointer
         for i in range(1, last_frame):
@@ -207,11 +196,10 @@ class ImageLoader:
             original_image.close()
 
     def reset(self) -> None:
-        """Clears all animation frames and closes previous image pointer
-        if its still open"""
-        self.aniamtion_frames.clear()
+        """Resets zoom, animation frames, and closes previous image"""
+        self.aniamtion_frames = []
         self.frame_index = 0
         self.file_pointer.close()
         self.zoom_factor = 1.0
         self.zoom_cap = 128.0
-        self.zoomed_image_cache.clear()
+        self.zoomed_image_cache = []

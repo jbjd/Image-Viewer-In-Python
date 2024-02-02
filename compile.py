@@ -133,18 +133,7 @@ if args.python_path is None:
     else:
         args.python_path = "python3"
 
-
-def clean_up() -> None:
-    shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
-    shutil.rmtree(COMPILE_DIR, ignore_errors=True)
-    shutil.rmtree(TMP_DIR, ignore_errors=True)
-    try:
-        os.remove(os.path.join(WORKING_DIR, "main.cmd"))
-    except FileNotFoundError:
-        pass
-
-
-skip_repo = {
+skip_repo: dict[str, tuple] = {
     "turbojpeg": (
         {},
         {"crop_multiple", "scale_with_quality", "decode_to_yuv_planes"},
@@ -152,7 +141,7 @@ skip_repo = {
 }
 
 
-class TypeHintRemover(ast._Unparser):
+class TypeHintRemover(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
 
     def __init__(self, module_name: str = "", **kwargs) -> None:
@@ -249,6 +238,9 @@ try:
 
     for mod_name in ["turbojpeg", "send2trash"]:  # TODO: add more
         module = importlib.import_module(mod_name)
+        if module.__file__ is None:
+            print(f"Error getting module {mod_name}'s filepath")
+            continue
         base_file_name: str = os.path.basename(module.__file__)
         if base_file_name == "__init__.py":
             # its really a folder
@@ -297,7 +289,13 @@ try:
     os.rename(COMPILE_DIR, INSTALL_PATH)
 finally:
     if not args.debug:
-        clean_up()
+        shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
+        shutil.rmtree(COMPILE_DIR, ignore_errors=True)
+        shutil.rmtree(TMP_DIR, ignore_errors=True)
+        try:
+            os.remove(os.path.join(WORKING_DIR, "main.cmd"))
+        except FileNotFoundError:
+            pass
 
 print("\nFinished")
 print("Installed to", INSTALL_PATH)
