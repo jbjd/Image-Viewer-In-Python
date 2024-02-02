@@ -144,10 +144,29 @@ def clean_up() -> None:
         pass
 
 
+skip_repo = {
+    "turbojpeg": (
+        {},
+        {"crop_multiple", "scale_with_quality", "decode_to_yuv_planes"},
+    )
+}
+
+
 class TypeHintRemover(ast._Unparser):
-    """Functions copied from base class, edited to remove type hints"""
+    """Functions copied from base class, mainly edited to remove type hints"""
+
+    def __init__(self, module_name: str = "", **kwargs) -> None:
+        super().__init__(**kwargs)
+        if module_name in skip_repo:
+            self.vars_to_skip, self.func_to_skip = skip_repo[module_name]
+        else:
+            self.vars_to_skip = {}
+            self.func_to_skip = {}
 
     def visit_FunctionDef(self, node):
+        """Removes type hints from functions"""
+        if node.name in self.func_to_skip:
+            return
         self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
@@ -161,7 +180,14 @@ class TypeHintRemover(ast._Unparser):
         with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
 
+    def visit_Assign(self, node):
+        """Skips over some variables"""
+        var_name: str = getattr(node.targets[0], "id", "")
+        if var_name not in self.vars_to_skip:
+            super().visit_Assign(node)
+
     def visit_AnnAssign(self, node):
+        """Remove var annotations and declares like 'var: type' without an = after"""
         if node.value:
             self.fill()
             with self.delimit_if(
@@ -172,18 +198,22 @@ class TypeHintRemover(ast._Unparser):
             self.traverse(node.value)
 
     def visit_Import(self, node):
+        """Skips writing type hinting imports"""
         if [n for n in node.names if n.name != "typing" and n.name != "collections"]:
             super().visit_Import(node)
 
     def visit_ImportFrom(self, node):
+        """Skips writing type hinting imports"""
         if node.module != "typing" and node.module != "collections.abc":
             super().visit_ImportFrom(node)
 
 
-def clean_file_and_copy(path: str, new_path: str) -> None:
+def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
     with open(path) as fp:
         parsed_source = ast.parse(fp.read())
-    contents: str = TypeHintRemover().visit(ast.NodeTransformer().visit(parsed_source))
+    contents: str = TypeHintRemover(module_name).visit(
+        ast.NodeTransformer().visit(parsed_source)
+    )
 
     if autoflake:
         contents = autoflake.fix_code(
@@ -225,7 +255,11 @@ try:
             move_files_to_tmp_and_clean(os.path.dirname(module.__file__), mod_name)
         else:
             # its just one file
-            clean_file_and_copy(module.__file__, os.path.join(TMP_DIR, base_file_name))
+            clean_file_and_copy(
+                module.__file__,
+                os.path.join(TMP_DIR, base_file_name),
+                mod_name,
+            )
 
     # Begin nuitka compilation in subprocess
     print("Starting compilation with nuitka")

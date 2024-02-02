@@ -55,10 +55,10 @@ def init_PIL(font_size: int) -> None:
     Image._plugins = []
 
     def preinit():
-        __import__("PIL.JpegImagePlugin", globals(), locals(), [])
-        __import__("PIL.GifImagePlugin", globals(), locals(), [])
-        __import__("PIL.PngImagePlugin", globals(), locals(), [])
-        __import__("PIL.WebPImagePlugin", globals(), locals(), [])
+        __import__("PIL.JpegImagePlugin", globals(), locals(), ())
+        __import__("PIL.GifImagePlugin", globals(), locals(), ())
+        __import__("PIL.PngImagePlugin", globals(), locals(), ())
+        __import__("PIL.WebPImagePlugin", globals(), locals(), ())
 
     Image.preinit = preinit
 
