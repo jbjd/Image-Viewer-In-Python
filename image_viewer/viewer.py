@@ -111,7 +111,7 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind("<Control-d>", lambda _: self.load_image_and_refresh())
+        app.bind("<Control-d>", lambda _: self.load_image_unblocking())
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
@@ -350,16 +350,14 @@ class ViewerApp:
             self.file_manager.refresh_image_list()
         except IndexError:
             self.exit()
-        self.dropdown.refresh = True
-        self.load_image_and_refresh()
+        self.load_image_unblocking()
 
     def move(self, amount: int) -> None:
         """Moves to different image
         amount: any non-zero value indicating movement to next or previous"""
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
-        self.dropdown.refresh = True
-        self.load_image_and_refresh()
+        self.load_image_unblocking()
 
     def redraw(self, event: Event) -> None:
         """Redraws screen if current image has a diffent size than when it was loaded,
@@ -369,16 +367,14 @@ class ViewerApp:
         self.redraw_flag = False
         if self.file_manager.current_image_cache_still_fresh():
             return
-        self.dropdown.refresh = True
-        self.load_image_and_refresh()
+        self.load_image_unblocking()
 
     def trash_image(self, _: Event | None = None) -> None:
         """Move current image to trash and moves to next"""
         self.clear_animation_variables()
         self.hide_rename_window()
         self.remove_image(True)
-        self.dropdown.refresh = True
-        self.load_image_and_refresh()
+        self.load_image_unblocking()
 
     def hide_rename_window(self) -> None:
         self.canvas.itemconfigure(self.rename_window_id, state="hidden")
@@ -449,15 +445,16 @@ class ViewerApp:
             self.remove_image(False)
 
         self.update_after_image_load(current_image)
+        if self.topbar_shown:
+            self.refresh_topbar()
         self.image_load_id = ""
 
-    def load_image_and_refresh(self) -> None:
-        """Both loads a new image and refreshes topbar"""
+    def load_image_unblocking(self) -> None:
+        """Loads an image without blocking main thread"""
+        self.dropdown.refresh = True
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
         self.image_load_id = self.app.after(0, self.load_image)
-        if self.topbar_shown:
-            self.refresh_topbar()
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
