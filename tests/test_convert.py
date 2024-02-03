@@ -38,7 +38,7 @@ def mock_open_image(_: str) -> MockImage:
 def mock_open_animated_image(_: str) -> MockImage:
     image = MockImage(8)
     # is_animated only exists on file types that can be animated in PIL module
-    image.is_animated = True
+    image.is_animated = True  # type: ignore
     return image
 
 

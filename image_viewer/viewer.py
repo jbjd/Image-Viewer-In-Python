@@ -137,37 +137,6 @@ class ViewerApp:
         topbar_height: size to make icons/topbar
         """
 
-        def _make_topbar_button(
-            canvas: CustomCanvas,
-            regular_image: PhotoImage,
-            hovered_image: PhotoImage,
-            anchor: str,
-            x_offset: int,
-            function_to_bind,
-        ) -> int:
-            """Default way to setup a button on the topbar"""
-            button_id: int = canvas.create_image(
-                x_offset,
-                0,
-                image=regular_image,
-                anchor=anchor,
-                tag="topbar",
-                state="hidden",
-            )
-
-            canvas.tag_bind(
-                button_id,
-                "<Enter>",
-                lambda _: canvas.itemconfigure(button_id, image=hovered_image),
-            )
-            canvas.tag_bind(
-                button_id,
-                "<Leave>",
-                lambda _: canvas.itemconfigure(button_id, image=regular_image),
-            )
-            canvas.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
-            return button_id
-
         topbar_height += topbar_height % 2  # ensure even number
 
         # negative makes it an absolute size for consistency with different monitors
@@ -185,21 +154,19 @@ class ViewerApp:
             font=FONT,
             tags="topbar",
         )
-        _make_topbar_button(  # type: ignore
-            canvas, *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
+        canvas.make_topbar_button(  # type: ignore
+            *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
         )
-        _make_topbar_button(  # type: ignore
-            canvas,
+        canvas.make_topbar_button(  # type: ignore
             *icon_factory.make_minify_icons(),
             "ne",
             screen_width - topbar_height,
             self.minimize,
         )
-        _make_topbar_button(  # type: ignore
-            canvas, *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
+        canvas.make_topbar_button(  # type: ignore
+            *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
         )
-        self.rename_button_id: int = _make_topbar_button(  # type: ignore
-            canvas,
+        self.rename_button_id: int = canvas.make_topbar_button(  # type: ignore
             *icon_factory.make_rename_icons(),
             "nw",
             0,

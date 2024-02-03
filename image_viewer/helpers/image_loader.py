@@ -42,9 +42,12 @@ class ImageLoader:
         self.file_pointer = Image()
 
         self.animation_callback: Callable[[int, int], None] = animation_callback
-        # many members init'ed in reset since we need to
-        # set them to the same values before each image load anyway
-        self.reset_and_setup()
+
+        self.aniamtion_frames: list = []
+        self.frame_index: int = 0
+        self.zoom_factor: float = 1.0
+        self.zoom_cap: float = 128.0
+        self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
         """Gets next frame of animated image, will error otherwise"""
