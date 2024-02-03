@@ -32,15 +32,20 @@ class ImagePath:
         return OS_name_cmp(self.name, other.name)
 
 
-class DropdownImage:  # pragma: no cover
+class DropdownImage:
     """The dropdown image containing metadata on the open image file"""
 
-    __slots__ = ("id", "image", "refresh")
+    __slots__ = ("id", "image", "need_refresh", "showing")
 
     def __init__(self, id: int) -> None:
         self.id: int = id
-        self.refresh: bool = True
+        self.need_refresh: bool = True
+        self.showing: bool = False
         self.image: PhotoImage
+
+    def toggle_display(self) -> None:
+        """Flips if showing is true or false"""
+        self.showing = not self.showing
 
 
 def init_PIL(font_size: int) -> None:

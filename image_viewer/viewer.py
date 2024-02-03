@@ -25,7 +25,6 @@ class ViewerApp:
         "dropdown_hidden_icon_hovered",
         "dropdown_showing_icon",
         "dropdown_showing_icon_hovered",
-        "dropdown_shown",
         "file_manager",
         "height_ratio",
         "image_loader",
@@ -42,7 +41,6 @@ class ViewerApp:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
-        self.dropdown_shown: bool = False
         self.redraw_flag: bool = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
@@ -188,11 +186,10 @@ class ViewerApp:
         canvas.tag_bind(
             self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
         )
-        self.dropdown = DropdownImage(
-            canvas.create_image(
-                screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
-            )
+        dropdown_id: int = canvas.create_image(
+            screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
+        self.dropdown = DropdownImage(dropdown_id)
 
         rename_id: int = canvas.create_window(
             0,
@@ -268,7 +265,7 @@ class ViewerApp:
 
     def handle_dropdown(self, _: Event) -> None:
         """Handle when user clicks on the dropdown arrow"""
-        self.dropdown_shown = not self.dropdown_shown
+        self.dropdown.toggle_display()
         self.hover_dropdown_toggle()  # fake mouse hover
         self.update_details_dropdown()
 
@@ -340,7 +337,7 @@ class ViewerApp:
             self.dropdown_button_id,
             image=(
                 self.dropdown_showing_icon
-                if self.dropdown_shown
+                if self.dropdown.showing
                 else self.dropdown_hidden_icon
             ),
         )
@@ -350,7 +347,7 @@ class ViewerApp:
             self.dropdown_button_id,
             image=(
                 self.dropdown_showing_icon_hovered
-                if self.dropdown_shown
+                if self.dropdown.showing
                 else self.dropdown_hidden_icon_hovered
             ),
         )
@@ -406,7 +403,7 @@ class ViewerApp:
 
     def load_image_unblocking(self) -> None:
         """Loads an image without blocking main thread"""
-        self.dropdown.refresh = True
+        self.dropdown.need_refresh = True
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
         self.image_load_id = self.app.after(0, self.load_image)
@@ -471,8 +468,8 @@ class ViewerApp:
     def update_details_dropdown(self) -> None:
         """Updates the infomation and state of dropdown image"""
         dropdown = self.dropdown
-        if self.dropdown_shown:
-            if dropdown.refresh:
+        if dropdown.showing:
+            if dropdown.need_refresh:
                 image_info: CachedImageData | None = (
                     self.file_manager.get_current_image_cache()
                 )

@@ -3,7 +3,12 @@ from tkinter import Tk
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from image_viewer.util.image import ImagePath, create_dropdown_image, init_PIL
+from image_viewer.util.image import (
+    DropdownImage,
+    ImagePath,
+    create_dropdown_image,
+    init_PIL,
+)
 
 
 def test_image_path():
@@ -20,3 +25,10 @@ def test_PIL_functions():
     # create_dropdown_image needs Tk to be initialized before calling
     _ = Tk()
     assert isinstance(create_dropdown_image("test", "test"), PhotoImage)
+
+
+def test_dropdown_image():
+    """Ensures basic functionality of dropdown image container"""
+    dropdown = DropdownImage(123)
+    dropdown.toggle_display()
+    assert dropdown.showing
