@@ -96,10 +96,10 @@ class ViewerApp:
 
         # Don't call load_image for first image since if it fails to load, don't exit
         # until we load the rest of the images and try to display them as well
-        if current_image := self.image_loader.load_image():
+        if (current_image := self.image_loader.load_image()) is not None:
             self.update_after_image_load(current_image)
+            app.update()
 
-        app.update()
         self.file_manager.fully_load_image_data()
 
         # if first load failed, load new one now that all images are loaded
@@ -330,7 +330,7 @@ class ViewerApp:
 
     def exit(self, _: Event | None = None) -> None:
         """Safely exits the program"""
-        self.image_loader.reset()
+        self.image_loader.reset_and_setup()
         self.canvas.delete(self.file_name_text_id)
         self.app.quit()
         self.app.destroy()
@@ -514,7 +514,7 @@ class ViewerApp:
 
         self.app.after_cancel(self.animation_id)
         self.animation_id = ""
-        self.image_loader.reset()
+        self.image_loader.reset_and_setup()
 
     def update_details_dropdown(self) -> None:
         """Updates the infomation and state of dropdown image"""

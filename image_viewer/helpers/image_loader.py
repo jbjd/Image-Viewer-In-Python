@@ -39,14 +39,12 @@ class ImageLoader:
         self.file_manager: ImageFileManager = file_manager
         self.image_resizer: ImageResizer = image_resizer
 
-        self.file_pointer: Image
+        self.file_pointer = Image()
 
         self.animation_callback: Callable[[int, int], None] = animation_callback
-        self.aniamtion_frames: list = []
-        self.frame_index: int = 0
-        self.zoom_factor: float = 1.0
-        self.zoom_cap: float = 128.0
-        self.zoomed_image_cache: list[PhotoImage] = []
+        # many members init'ed in reset since we need to
+        # set them to the same values before each image load anyway
+        self.reset_and_setup()
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
         """Gets next frame of animated image, will error otherwise"""
@@ -77,7 +75,7 @@ class ImageLoader:
             daemon=True,
         ).start()
 
-        # Params: ms_until_next_frame, backoff time to help loading
+        # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
 
     def load_image(self) -> PhotoImage | None:
@@ -194,8 +192,9 @@ class ImageLoader:
         if fp is original_image:
             original_image.close()
 
-    def reset(self) -> None:
-        """Resets zoom, animation frames, and closes previous image"""
+    def reset_and_setup(self) -> None:
+        """Resets zoom, animation frames, and closes previous image
+        to setup for next image load"""
         self.aniamtion_frames = []
         self.frame_index = 0
         self.file_pointer.close()

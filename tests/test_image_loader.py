@@ -35,6 +35,6 @@ def test_next_frame(image_loader: ImageLoader):
     assert image_loader.frame_index == 1
 
     # reset should set all animation variables to defaults
-    image_loader.reset()
+    image_loader.reset_and_setup()
     assert len(image_loader.aniamtion_frames) == 0
     assert image_loader.frame_index == 0
