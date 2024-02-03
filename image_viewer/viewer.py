@@ -27,7 +27,6 @@ class ViewerApp:
         "dropdown_showing_icon_hovered",
         "dropdown_shown",
         "file_manager",
-        "file_name_text_id",
         "height_ratio",
         "image_loader",
         "image_load_id",
@@ -36,7 +35,6 @@ class ViewerApp:
         "rename_button_id",
         "rename_entry",
         "rename_window_x_offset",
-        "topbar_shown",
         "width_ratio",
     )
 
@@ -44,7 +42,6 @@ class ViewerApp:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
-        self.topbar_shown: bool = False
         self.dropdown_shown: bool = False
         self.redraw_flag: bool = False
         self.rename_window_x_offset: int = 0
@@ -145,15 +142,10 @@ class ViewerApp:
         icon_factory = IconFactory(topbar_height)
 
         canvas.create_topbar(icon_factory.make_topbar(screen_width))
-        self.file_name_text_id: int = canvas.create_text(
-            self._scale_pixels_to_width(36),
-            self._scale_pixels_to_height(16),
-            text="",
-            fill="white",
-            anchor="w",
-            font=FONT,
-            tags="topbar",
+        canvas.create_name_text(
+            self._scale_pixels_to_width(36), self._scale_pixels_to_height(16), FONT
         )
+
         canvas.make_topbar_button(  # type: ignore
             *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
         )
@@ -225,7 +217,7 @@ class ViewerApp:
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
-        if self.topbar_shown:
+        if self.canvas.is_widget_visible("topbar"):
             self.hide_topbar()
         else:
             self.show_topbar()
@@ -269,7 +261,7 @@ class ViewerApp:
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
-        if self.canvas.itemcget(self.rename_entry.id, "state") == "normal":
+        if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
             return
         self.exit()
@@ -294,7 +286,7 @@ class ViewerApp:
     def exit(self, _: Event | None = None) -> None:
         """Safely exits the program"""
         self.image_loader.reset_and_setup()
-        self.canvas.delete(self.file_name_text_id)
+        self.canvas.delete(self.canvas.file_name_text_id)
         self.app.quit()
         self.app.destroy()
         raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
@@ -365,11 +357,11 @@ class ViewerApp:
 
     def toggle_show_rename_window(self, _: Event) -> None:
         canvas = self.canvas
-        if canvas.itemcget(self.rename_entry.id, "state") == "normal":
+        if canvas.is_widget_visible(self.rename_entry.id, "state"):
             self.hide_rename_window()
             return
 
-        if canvas.itemcget("topbar", "state") == "hidden":
+        if not canvas.is_widget_visible("topbar"):
             self.show_topbar()
 
         canvas.itemconfigure(self.rename_entry.id, state="normal")
@@ -408,7 +400,7 @@ class ViewerApp:
             self.remove_image(False)
 
         self.update_after_image_load(current_image)
-        if self.topbar_shown:
+        if self.canvas.is_widget_visible("topbar"):
             self.refresh_topbar()
         self.image_load_id = ""
 
@@ -421,13 +413,11 @@ class ViewerApp:
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
-        self.topbar_shown = True
         self.canvas.itemconfigure("topbar", state="normal")
         self.refresh_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
-        self.topbar_shown = False
         self.canvas.itemconfigure("topbar", state="hidden")
         self.hide_rename_window()
 
@@ -440,10 +430,9 @@ class ViewerApp:
 
     def refresh_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
-        self.canvas.itemconfigure(
-            self.file_name_text_id, text=self.file_manager.current_image.name
+        self.rename_window_x_offset = self.canvas.refresh_text(
+            self.file_manager.current_image.name
         )
-        self.rename_window_x_offset = self.canvas.bbox(self.file_name_text_id)[2]
         self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
 
         self.update_details_dropdown()

@@ -8,6 +8,7 @@ class CustomCanvas(Canvas):
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
+        "file_name_text_id",
         "image_display_id",
         "move_x",
         "move_y",
@@ -72,6 +73,18 @@ class CustomCanvas(Canvas):
             0, 0, image=topbar_img, anchor="nw", tag="topbar", state="hidden"
         )
 
+    def create_name_text(self, x: int, y: int, font: str) -> None:
+        """Creates text object used to display file name"""
+        self.file_name_text_id: int = self.create_text(
+            x,
+            y,
+            text="",
+            fill="white",
+            anchor="w",
+            font=font,
+            tags="topbar",
+        )
+
     def update_img_display(self, new_image: PhotoImage) -> None:
         """Updates dispalyed with a new image"""
         self.itemconfigure(self.image_display_id, image=new_image)
@@ -112,3 +125,12 @@ class CustomCanvas(Canvas):
         # TODO: find a good way to handle scaling 10px to screen, don't
         # really want to call the internal scale function each time...
         self.move(self.image_display_id, x, y)
+
+    def refresh_text(self, new_name: str) -> int:
+        """Updates file name text"""
+        self.itemconfigure(self.file_name_text_id, text=new_name)
+        return self.bbox(self.file_name_text_id)[2]
+
+    def is_widget_visible(self, tag_or_id) -> bool:
+        """Returns bool of if provided tag/id is visible"""
+        return self.itemcget(tag_or_id, "state") == "normal"
