@@ -7,10 +7,11 @@ class RenameEntry(Entry):
     BG_COLOR: str = "#FEFEFE"
     ERROR_COLOR: str = "#E6505F"
 
-    __slots__ = ()
+    __slots__ = "id"
 
-    def __init__(self, master: Tk, font: str) -> None:
+    def __init__(self, master: Tk, id: int, font: str) -> None:
         super().__init__(master, font=font, bg=self.BG_COLOR, borderwidth=0)
+        self.id: int = id
         # ensure ctrl+c is processed outside of this program
         self.bind("<Control-c>", lambda _: self.master.update(), True)
 

@@ -35,7 +35,6 @@ class ViewerApp:
         "redraw_flag",
         "rename_button_id",
         "rename_entry",
-        "rename_window_id",
         "rename_window_x_offset",
         "topbar_shown",
         "width_ratio",
@@ -236,19 +235,16 @@ class ViewerApp:
             )
         )
 
-        # rename window
-        self.rename_window_id: int = canvas.create_window(
+        rename_id: int = canvas.create_window(
             0,
             0,
-            width=self._scale_pixels_to_width(200),
+            width=self._scale_pixels_to_width(250),
             height=int(topbar_height * 0.75),
             anchor="nw",
         )
-        self.rename_entry = RenameEntry(app, font=FONT)
+        self.rename_entry = RenameEntry(app, rename_id, font=FONT)
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
-        canvas.itemconfigure(
-            self.rename_window_id, state="hidden", window=self.rename_entry
-        )
+        canvas.itemconfigure(rename_id, state="hidden", window=self.rename_entry)
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
@@ -306,7 +302,7 @@ class ViewerApp:
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
-        if self.canvas.itemcget(self.rename_window_id, "state") == "normal":
+        if self.canvas.itemcget(self.rename_entry.id, "state") == "normal":
             self.hide_rename_window()
             return
         self.exit()
@@ -377,7 +373,7 @@ class ViewerApp:
         self.load_image_unblocking()
 
     def hide_rename_window(self) -> None:
-        self.canvas.itemconfigure(self.rename_window_id, state="hidden")
+        self.canvas.itemconfigure(self.rename_entry.id, state="hidden")
         self.app.focus()
 
     def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
@@ -402,16 +398,16 @@ class ViewerApp:
 
     def toggle_show_rename_window(self, _: Event) -> None:
         canvas = self.canvas
-        if canvas.itemcget(self.rename_window_id, "state") == "normal":
+        if canvas.itemcget(self.rename_entry.id, "state") == "normal":
             self.hide_rename_window()
             return
 
         if canvas.itemcget("topbar", "state") == "hidden":
             self.show_topbar()
 
-        canvas.itemconfigure(self.rename_window_id, state="normal")
+        canvas.itemconfigure(self.rename_entry.id, state="normal")
         canvas.coords(
-            self.rename_window_id,
+            self.rename_entry.id,
             self.rename_window_x_offset + self._scale_pixels_to_width(40),
             self._scale_pixels_to_height(4),
         )

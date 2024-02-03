@@ -132,8 +132,8 @@ class ImageLoader:
             self.begin_animation(current_image, frame_count)
         else:
             self.file_pointer.close()
-
-        self.zoomed_image_cache = [current_image]  # zoom 1.0 is same as current
+        # first zoom level is just the image as is
+        self.zoomed_image_cache = [current_image]
 
         return current_image
 
