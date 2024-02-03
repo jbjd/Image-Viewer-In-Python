@@ -36,7 +36,10 @@ def mock_open_image(_: str) -> MockImage:
 
 
 def mock_open_animated_image(_: str) -> MockImage:
-    return MockImage(8)
+    image = MockImage(8)
+    # is_animated only exists on file types that can be animated in PIL module
+    image.is_animated = True
+    return image
 
 
 def get_vars_for_test(
