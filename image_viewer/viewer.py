@@ -30,6 +30,7 @@ class ViewerApp:
         "file_name_text_id",
         "height_ratio",
         "image_loader",
+        "image_load_id",
         "move_id",
         "redraw_flag",
         "rename_button_id",
@@ -50,6 +51,7 @@ class ViewerApp:
         self.topbar_shown = self.dropdown_shown = self.redraw_flag = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
+        self.image_load_id: str = ""
 
         # Animation variables
         self.animation_id: str = ""
@@ -116,8 +118,6 @@ class ViewerApp:
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Left>", self.handle_lr_arrow)
-        app.bind("<Right>", self.handle_lr_arrow)
         app.bind("<Alt-Left>", self.handle_ctrl_arrow_keys)
         app.bind("<Alt-Right>", self.handle_ctrl_arrow_keys)
         app.bind("<Alt-Up>", self.handle_ctrl_arrow_keys)
@@ -273,10 +273,13 @@ class ViewerApp:
     def handle_key(self, event: Event) -> None:
         """Key binds on main screen"""
         if event.widget is self.app:
-            if event.keycode == 82:  # r
-                self.toggle_show_rename_window(event)
-            if event.keycode in (187, 189):  # - or =
-                self.handle_zoom(event)
+            match event.keycode:
+                case 37 | 39:  # Left/Right arrow
+                    self.handle_lr_arrow(event)
+                case 187 | 189:  # - or =
+                    self.handle_zoom(event)
+                case 82:  # r
+                    self.toggle_show_rename_window(event)
 
     def handle_key_release(self, event: Event) -> None:
         if event.widget is self.app:
@@ -287,12 +290,12 @@ class ViewerApp:
     def handle_lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
-        if event.widget is self.app and self.move_id == "":
+        if self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (event.state & 5)  # type: ignore
             if event.keysym == "Left":
                 move_amount = -move_amount
-            self._repeat_move(move_amount, 600)
+            self._repeat_move(move_amount, 500)
 
     def _repeat_move(self, move_amount: int, ms: int) -> None:
         """Repeat move to next image while L/R key held"""
@@ -404,7 +407,7 @@ class ViewerApp:
             ),
         )
 
-    def toggle_show_rename_window(self, _: Event | None = None) -> None:
+    def toggle_show_rename_window(self, _: Event) -> None:
         canvas = self.canvas
         if canvas.itemcget(self.rename_window_id, "state") == "normal":
             self.hide_rename_window()
@@ -449,10 +452,13 @@ class ViewerApp:
             self.remove_image(False)
 
         self.update_after_image_load(current_image)
+        self.image_load_id = ""
 
     def load_image_and_refresh(self) -> None:
         """Both loads a new image and refreshes topbar"""
-        self.load_image()
+        if self.image_load_id != "":
+            self.app.after_cancel(self.image_load_id)
+        self.image_load_id = self.app.after(0, self.load_image)
         if self.topbar_shown:
             self.refresh_topbar()
 
