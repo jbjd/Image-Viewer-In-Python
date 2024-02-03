@@ -45,15 +45,12 @@ class ViewerApp:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
-        self.topbar_shown: bool
-        self.dropdown_shown: bool
-        self.redraw_flag: bool
-        self.topbar_shown = self.dropdown_shown = self.redraw_flag = False
+        self.topbar_shown: bool = False
+        self.dropdown_shown: bool = False
+        self.redraw_flag: bool = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
         self.image_load_id: str = ""
-
-        # Animation variables
         self.animation_id: str = ""
 
         # Application and canvas
