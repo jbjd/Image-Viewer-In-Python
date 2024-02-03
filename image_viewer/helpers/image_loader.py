@@ -49,6 +49,7 @@ class ImageLoader:
         self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
+        """Gets next frame of animated image, will error otherwise"""
         self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
         current_frame = self.aniamtion_frames[self.frame_index]
         if current_frame is None:
@@ -80,10 +81,8 @@ class ImageLoader:
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
 
     def load_image(self) -> PhotoImage | None:
-        """
-        Loads an image and resizes it to fit on the screen
-        Returns PhotoImage or None on failure to load
-        """
+        """Loads an image and resizes it to fit on the screen
+        Returns PhotoImage or None on failure to load"""
 
         file_manager = self.file_manager
         path_to_current_image = file_manager.path_to_current_image

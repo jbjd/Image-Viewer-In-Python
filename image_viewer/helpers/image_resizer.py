@@ -98,7 +98,7 @@ class ImageResizer:
     def dimension_finder(
         self, image_width: int, image_height: int
     ) -> tuple[tuple[int, int], int]:
-        """fits dimensions to height if width within screen,
+        """Fits dimensions to height if width within screen,
         else fit to width and let height go off screen
         returns: new width, new height, and interpolation to use"""
         interpolation: int = (

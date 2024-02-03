@@ -264,7 +264,7 @@ class ViewerApp:
     # Functions handling user input
 
     def handle_canvas_click(self, _: Event) -> None:
-        """toggles the display of topbar when non-topbar area clicked"""
+        """Toggles the display of topbar when non-topbar area clicked"""
         if self.topbar_shown:
             self.hide_topbar()
         else:
@@ -354,20 +354,16 @@ class ViewerApp:
         self.load_image_and_refresh()
 
     def move(self, amount: int) -> None:
-        """
-        Moves to different image
-        amount: any non-zero value indicating movement to next or previous
-        """
+        """Moves to different image
+        amount: any non-zero value indicating movement to next or previous"""
         self.hide_rename_window()
         self.file_manager.move_current_index(amount)
         self.dropdown.refresh = True
         self.load_image_and_refresh()
 
     def redraw(self, event: Event) -> None:
-        """
-        Redraws screen if current image has a diffent size than when it was loaded
-        This implys it was edited outside of the program
-        """
+        """Redraws screen if current image has a diffent size than when it was loaded,
+        implying it was edited outside of the program"""
         if event.widget is not self.app or not self.redraw_flag:
             return
         self.redraw_flag = False
@@ -496,7 +492,7 @@ class ViewerApp:
         )
 
     def animate(self, ms_backoff: int) -> None:
-        """displays a frame on screen and loops to next frame after a delay"""
+        """Displays a frame on screen and loops to next frame after a delay"""
         frame_and_speed = self.image_loader.get_next_frame()
 
         # if tried to show next frame before it is loaded
