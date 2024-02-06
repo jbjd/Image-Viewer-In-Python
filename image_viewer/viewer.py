@@ -211,13 +211,13 @@ class ViewerApp:
         self.app.update()
         leftx, rightx = self.rename_entry.xview()
         while leftx > 0.0 or rightx < 1.0:
-            a = int(self.canvas.itemcget(self.rename_entry.id, "width"))
-            if a == MAX:
+            width = int(self.canvas.itemcget(self.rename_entry.id, "width"))
+            if width == MAX:
                 break
-            a += self._scale_pixels_to_width(30)
-            if a > MAX:
-                a = MAX
-            self.canvas.itemconfig(self.rename_entry.id, width=a)
+            width += self._scale_pixels_to_width(30)
+            if width > MAX:
+                width = MAX
+            self.canvas.itemconfig(self.rename_entry.id, width=width)
             self.app.update()
             leftx, rightx = self.rename_entry.xview()
 
