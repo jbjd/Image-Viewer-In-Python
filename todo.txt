@@ -1,4 +1,6 @@
 Standard Priority:
+    Handle really long file names with ...
+    Allow slashes in rename and ask to move directories
     Documentation
 
 Low Priority:

@@ -198,9 +198,28 @@ class ViewerApp:
             height=int(topbar_height * 0.75),
             anchor="nw",
         )
-        self.rename_entry = RenameEntry(app, rename_id, font=FONT)
+        self.rename_entry = RenameEntry(  # TODO: move this to canvas
+            app, rename_id, self._scale_pixels_to_width(500), font=FONT
+        )
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
+        self.rename_entry.text.trace_add("write", self._resize_rename_window)
         canvas.itemconfigure(rename_id, state="hidden", window=self.rename_entry)
+
+    def _resize_rename_window(self, *_) -> None:
+        """Resizes rename window when a scrollbar would need to appear"""
+        MAX = self.rename_entry.max_width
+        self.app.update()
+        leftx, rightx = self.rename_entry.xview()
+        while leftx > 0.0 or rightx < 1.0:
+            a = int(self.canvas.itemcget(self.rename_entry.id, "width"))
+            if a == MAX:
+                break
+            a += self._scale_pixels_to_width(30)
+            if a > MAX:
+                a = MAX
+            self.canvas.itemconfig(self.rename_entry.id, width=a)
+            self.app.update()
+            leftx, rightx = self.rename_entry.xview()
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""

@@ -1,4 +1,4 @@
-from tkinter import Entry, Tk
+from tkinter import Entry, Tk, StringVar
 
 
 class RenameEntry(Entry):
@@ -7,11 +7,17 @@ class RenameEntry(Entry):
     BG_COLOR: str = "#FEFEFE"
     ERROR_COLOR: str = "#E6505F"
 
-    __slots__ = "id"
+    __slots__ = ("id", "max_width", "text")
 
-    def __init__(self, master: Tk, id: int, font: str) -> None:
-        super().__init__(master, font=font, bg=self.BG_COLOR, borderwidth=0)
+    def __init__(self, master: Tk, id: int, max_width: int, font: str) -> None:
+        self.text = StringVar()
         self.id: int = id
+        self.max_width: int = max_width
+
+        super().__init__(
+            master, font=font, bg=self.BG_COLOR, borderwidth=0, textvariable=self.text
+        )
+
         # ensure ctrl+c is processed outside of this program
         self.bind("<Control-c>", lambda _: self.master.update(), True)
 
