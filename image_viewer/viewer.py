@@ -354,7 +354,7 @@ class ViewerApp:
 
     def toggle_show_rename_window(self, _: Event) -> None:
         canvas = self.canvas
-        if canvas.is_widget_visible(self.rename_entry.id, "state"):
+        if canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
             return
 
