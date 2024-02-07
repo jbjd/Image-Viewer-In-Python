@@ -1,25 +1,11 @@
 import os
 
-from cv2 import INTER_AREA, INTER_CUBIC, resize
-from numpy import asarray
-from PIL.Image import Image, fromarray
+from cv2 import INTER_AREA, INTER_CUBIC
+from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 
-
-def _image_to_array(image: Image):
-    """Turns a PIL Image into a Numpy array"""
-    return asarray(
-        image if image.mode != "P" else image.convert("RGB"),
-        order="C",
-    )
-
-
-def _array_to_photoimage(
-    array, dimensions: tuple[int, int], interpolation: int
-) -> PhotoImage:
-    """Converts and resizes a matrix-like into a PhotoImage fit to the screen"""
-    return PhotoImage(fromarray(resize(array, dimensions, interpolation=interpolation)))
+from util.array import array_to_photoimage, image_to_array
 
 
 class ImageResizer:
@@ -54,8 +40,8 @@ class ImageResizer:
         ):
             return None
 
-        return _array_to_photoimage(
-            _image_to_array(image),
+        return array_to_photoimage(
+            image_to_array(image),
             dimensions,
             interpolation,
         )
@@ -83,15 +69,15 @@ class ImageResizer:
                 self._get_jpeg_scale_factor(image_width, image_height),
                 0,
             )
-            return _array_to_photoimage(
+            return array_to_photoimage(
                 image_as_array, *self.dimension_finder(image_width, image_height)
             )
 
     def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
         # cv2 resize is faster than PIL, but convert to RGB then resize is slower
         # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
-        return _array_to_photoimage(
-            _image_to_array(image),
+        return array_to_photoimage(
+            image_to_array(image),
             *self.dimension_finder(*image.size),
         )
 

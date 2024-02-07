@@ -1,4 +1,4 @@
-from tkinter import Entry, Tk, StringVar
+from tkinter import Entry, StringVar, Tk
 
 
 class RenameEntry(Entry):
