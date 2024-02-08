@@ -1,13 +1,16 @@
 import ast
 import os
+import warnings
 from _ast import Name
 
 try:
     import autoflake
 except ImportError:
-    print(
-        "You do not have the autoflake package installed.",
-        "Installing it will allow for a slightly smaller output\n",
+    warnings.warn(
+        (
+            "You do not have the autoflake package installed. "
+            "Installing it will allow for a slightly smaller output\n"
+        )
     )
     autoflake = None
 

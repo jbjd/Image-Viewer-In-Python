@@ -27,7 +27,12 @@ WORKING_DIR: str = os.path.abspath(os.path.dirname(__file__))
 TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: str = os.path.join(WORKING_DIR, "image_viewer")
 COMPILE_DIR: str = os.path.join(WORKING_DIR, "main.dist")
-VALID_NUITKA_ARGS = {"--mingw64", "--clang", "--standalone", "--enable-console"}
+VALID_NUITKA_ARGS: set[str] = {
+    "--mingw64",
+    "--clang",
+    "--standalone",
+    "--enable-console",
+}
 INSTALL_PATH: str
 EXECUTABLE_EXT: str
 DATA_FILE_PATHS: list[str]
