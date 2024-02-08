@@ -35,7 +35,7 @@ class RenameEntry(Entry):
         self.bind("<ButtonRelease-1>", self._stop_resize)
         self.bind("<Motion>", lambda e: self._resize(canvas, e))
 
-    def can_resize(self, event: Event) -> None:
+    def can_resize(self, event: Event) -> bool:
         width = self.cget("width")
         if event.x >= width - (self.min_width // 35):
             return True
