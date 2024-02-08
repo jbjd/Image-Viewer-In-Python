@@ -63,9 +63,9 @@ class ImageResizer:
     def get_jpeg_fit_to_screen(self, image: Image) -> PhotoImage:
         """Resizes a JPEG utilizing libjpegturbo to shrink very large images"""
         image_width, image_height = image.size
-        image.fp.seek(0)
+        image.fp.seek(0)  # type: ignore
         image_as_array = self.jpeg_helper.decode(
-            image.fp.read(),
+            image.fp.read(),  # type: ignore
             TJPF_RGB,
             self._get_jpeg_scale_factor(image_width, image_height),
             0,
