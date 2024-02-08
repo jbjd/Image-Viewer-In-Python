@@ -48,17 +48,17 @@ class DropdownImage:
         self.showing = not self.showing
 
 
-def magic_number_guess(magic: bytes) -> str:
+def magic_number_guess(magic: bytes) -> tuple[str]:
     """Given bytes, make best guess at file type of image"""
     match magic:
         case b"\x89PNG":
-            return "PNG"
+            return ("PNG",)
         case b"RIFF":
-            return "WEBP"
+            return ("WEBP",)
         case b"GIF8":
-            return "GIF"
+            return ("GIF",)
         case _:
-            return "JPEG"
+            return ("JPEG",)
 
 
 def init_PIL(font_size: int) -> None:

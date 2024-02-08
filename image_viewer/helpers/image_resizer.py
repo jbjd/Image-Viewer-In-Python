@@ -60,24 +60,25 @@ class ImageResizer:
             return (1, 2)
         return None
 
-    def get_jpeg_fit_to_screen(self, image: Image, path_to_image: str) -> PhotoImage:
+    def get_jpeg_fit_to_screen(self, image: Image) -> PhotoImage:
+        """Resizes a JPEG utilizing libjpegturbo to shrink very large images"""
         image_width, image_height = image.size
-        with open(path_to_image, "rb") as im_bytes:
-            image_as_array = self.jpeg_helper.decode(
-                im_bytes.read(),
-                TJPF_RGB,
-                self._get_jpeg_scale_factor(image_width, image_height),
-                0,
-            )
-            return array_to_photoimage(
-                image_as_array, *self.dimension_finder(image_width, image_height)
-            )
+        image.fp.seek(0)
+        image_as_array = self.jpeg_helper.decode(
+            image.fp.read(),
+            TJPF_RGB,
+            self._get_jpeg_scale_factor(image_width, image_height),
+            0,
+        )
+        return array_to_photoimage(
+            image_as_array, *self.dimension_finder(image_width, image_height)
+        )
 
-    def get_image_fit_to_screen(self, image: Image, path_to_image: str) -> PhotoImage:
+    def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
         # cv2 resize is faster than PIL, but convert to RGB then resize is slower
         # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
         if image.format == "JPEG":
-            return self.get_jpeg_fit_to_screen(image, path_to_image)
+            return self.get_jpeg_fit_to_screen(image)
 
         return array_to_photoimage(
             image_to_array(image),

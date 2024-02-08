@@ -23,7 +23,7 @@ class ImageLoader:
         "aniamtion_frames",
         "animation_callback",
         "file_manager",
-        "file_pointer",
+        "PIL_image",
         "frame_index",
         "image_resizer",
         "zoom_cap",
@@ -40,9 +40,9 @@ class ImageLoader:
         self.file_manager: ImageFileManager = file_manager
         self.image_resizer: ImageResizer = image_resizer
 
-        self.file_pointer = Image()
-
         self.animation_callback: Callable[[int, int], None] = animation_callback
+
+        self.PIL_image = Image()
 
         self.aniamtion_frames: list = []
         self.frame_index: int = 0
@@ -61,7 +61,7 @@ class ImageLoader:
     def get_ms_until_next_frame(self) -> int:
         """Returns time until next frame for animated images"""
         return int(
-            self.file_pointer.info.get("duration", self.DEFAULT_GIF_SPEED)
+            self.PIL_image.info.get("duration", self.DEFAULT_GIF_SPEED)
             * self.ANIMATION_SPEED_FACTOR
         )
 
@@ -75,7 +75,7 @@ class ImageLoader:
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_remaining_frames,
-            args=(self.file_pointer, frame_count),
+            args=(self.PIL_image, frame_count),
             daemon=True,
         ).start()
 
@@ -106,13 +106,13 @@ class ImageLoader:
         try:
             # open even if in cache to throw error if user deleted it outside of program
             fp = open(path_to_current_image, "rb")
-            self.file_pointer = open_image(fp, "r", (magic_number_guess(fp.read(4)),))
+            self.PIL_image = open_image(fp, "r", magic_number_guess(fp.read(4)))
         except (FileNotFoundError, UnidentifiedImageError, ImportError):
             # except import error since user might open file with inaccurate ext
             # and trigger import that was excluded if they compiled as standalone
             return None
 
-        file_pointer = self.file_pointer
+        PIL_image = self.PIL_image
         image_kb_size: int = stat(path_to_current_image).st_size >> 10
 
         # check if was cached and not changed outside of program
@@ -122,20 +122,18 @@ class ImageLoader:
             current_image = cached_image_data.image
         else:
             try:
-                current_image = self.image_resizer.get_image_fit_to_screen(
-                    file_pointer, path_to_current_image
-                )
+                current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
             except ResizeException:
                 return None
 
-            self._cache_image(current_image, file_pointer.size, image_kb_size)
+            self._cache_image(current_image, PIL_image.size, image_kb_size)
 
-        frame_count: int = getattr(file_pointer, "n_frames", 1)
+        frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finised loading
             self.begin_animation(current_image, frame_count)
         else:
-            file_pointer.close()
+            PIL_image.close()
 
         # first zoom level is just the image as is
         self.zoomed_image_cache = [current_image]
@@ -176,17 +174,17 @@ class ImageLoader:
     ) -> None:
         """Loads all frames starting from the second"""
 
-        fp: Image = self.file_pointer
+        PIL_image = self.PIL_image
         for i in range(1, last_frame):
             # if user moved to new image, don't keep loading previous animated image
-            if fp is not original_image:
+            if PIL_image is not original_image:
                 return
             try:
-                fp.seek(i)
+                PIL_image.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.aniamtion_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(fp, ""),
+                    self.image_resizer.get_image_fit_to_screen(PIL_image),
                     ms_until_next_frame,
                 )
             except Exception:
@@ -194,7 +192,7 @@ class ImageLoader:
                 # just break and close to kill thread
                 break
 
-        if fp is original_image:
+        if PIL_image is original_image:
             original_image.close()
 
     def reset_and_setup(self) -> None:
@@ -202,7 +200,7 @@ class ImageLoader:
         to setup for next image load"""
         self.aniamtion_frames = []
         self.frame_index = 0
-        self.file_pointer.close()
+        self.PIL_image.close()
         self.zoom_factor = 1.0
         self.zoom_cap = 128.0
         self.zoomed_image_cache = []
