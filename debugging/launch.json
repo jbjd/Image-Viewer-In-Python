@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Start Image Viewer",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "C:/Python/Viewer/image_viewer/main.py",
             "args": [
@@ -14,7 +14,7 @@
         },
         {
             "name": "Compile",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "C:/Python/Viewer/compile.py",
             "args": [
