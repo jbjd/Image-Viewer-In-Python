@@ -250,10 +250,9 @@ class ViewerApp:
                     self.toggle_show_rename_window(event)
 
     def handle_key_release(self, event: Event) -> None:
-        if event.widget is self.app:
-            if self.move_id and event.keycode in (37, 39):  # Left/Right
-                self.app.after_cancel(self.move_id)
-                self.move_id = ""
+        if self.move_id != "" and event.keycode in (37, 39):  # Left/Right
+            self.app.after_cancel(self.move_id)
+            self.move_id = ""
 
     def handle_lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
@@ -263,12 +262,14 @@ class ViewerApp:
             move_amount: int = 1 + (event.state & 5)  # type: ignore
             if event.keysym == "Left":
                 move_amount = -move_amount
+            self.move(move_amount)
             self._repeat_move(move_amount, 500)
 
     def _repeat_move(self, move_amount: int, ms: int) -> None:
         """Repeat move to next image while L/R key held"""
-        self.move(move_amount)
-        self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
+        if self.move_id != "":
+            self.move(move_amount)
+            self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
 
     def handle_ctrl_arrow_keys(self, event: Event) -> None:
         """Wraps canvas's event handler if app is focused"""
