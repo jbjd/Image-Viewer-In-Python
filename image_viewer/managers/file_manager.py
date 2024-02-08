@@ -161,17 +161,17 @@ class ImageFileManager:
 
     def cache_image(
         self,
+        image: PhotoImage,
         width: int,
         height: int,
         dimensions: str,
-        photo_image: PhotoImage,
         kb_size: int,
     ) -> None:
         self.cache[self.current_image.name] = CachedImageData(
+            image,
             width,
             height,
             dimensions,
-            photo_image,
             kb_size,
         )
 

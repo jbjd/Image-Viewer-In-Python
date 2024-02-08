@@ -11,11 +11,11 @@ class CachedImageData:
 
     __slots__ = ("dimensions", "height", "image", "kb_size", "width")
 
-    def __init__(self, width, height, dimensions, image, kb_size) -> None:
+    def __init__(self, image, width, height, dimensions, kb_size) -> None:
+        self.image: PhotoImage = image
         self.width: int = width
         self.height: int = height
         self.dimensions: str = dimensions
-        self.image: PhotoImage = image
         self.kb_size: int = kb_size
 
 

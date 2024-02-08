@@ -57,7 +57,7 @@ def test_bad_path(img_dir: str):
 
 def test_caching(manager: ImageFileManager):
     """Test various caching methods to ensure they act as expected"""
-    manager.cache_image(20, 20, "20x20", None, 0)
+    manager.cache_image(None, 20, 20, "20x20", 0)
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
     assert manager.current_image_cache_still_fresh()
