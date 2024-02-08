@@ -243,7 +243,7 @@ class ViewerApp:
         Doesn't move when main window unfocused"""
         if self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
-            move_amount: int = 1 + (event.state & 5)  # type: ignore
+            move_amount: int = 1 + (int(event.state) & 5)  # type: ignore
             if event.keysym == "Left":
                 move_amount = -move_amount
             self.move(move_amount)

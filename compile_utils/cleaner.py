@@ -69,12 +69,14 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_Import(self, node):
         """Skips writing type hinting imports"""
-        if [n for n in node.names if n.name != "typing" and n.name != "collections"]:
+        if [
+            n for n in node.names if "typing" not in n.name and n.name != "collections"
+        ]:
             super().visit_Import(node)
 
     def visit_ImportFrom(self, node):
         """Skips writing type hinting imports"""
-        if node.module != "typing" and node.module != "collections.abc":
+        if "typing" not in node.module and node.module != "collections.abc":
             super().visit_ImportFrom(node)
 
 
