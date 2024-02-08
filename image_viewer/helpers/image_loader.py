@@ -186,7 +186,7 @@ class ImageLoader:
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.aniamtion_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(fp),
+                    self.image_resizer.get_image_fit_to_screen(fp, ""),
                     ms_until_next_frame,
                 )
             except Exception:
