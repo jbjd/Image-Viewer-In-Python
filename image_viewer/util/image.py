@@ -48,6 +48,19 @@ class DropdownImage:
         self.showing = not self.showing
 
 
+def magic_number_guess(magic: bytes) -> str:
+    """Given bytes, make best guess at file type of image"""
+    match magic:
+        case b"\x89PNG":
+            return "PNG"
+        case b"RIFF":
+            return "WEBP"
+        case b"GIF8":
+            return "GIF"
+        case _:
+            return "JPEG"
+
+
 def init_PIL(font_size: int) -> None:
     """Sets up font and PIL's internal list of plugins to load"""
     from PIL import Image

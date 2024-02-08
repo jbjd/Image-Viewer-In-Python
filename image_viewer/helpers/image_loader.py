@@ -10,6 +10,7 @@ from PIL.ImageTk import PhotoImage
 
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
+from util.image import magic_number_guess
 
 
 class ImageLoader:
@@ -81,60 +82,61 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
 
+    def _cache_image(
+        self, size: tuple[int, int], current_image: PhotoImage, image_kb_size: int
+    ) -> None:
+        dimension_display: str = (
+            f"{round(image_kb_size/10.24)/100}mb"
+            if image_kb_size > 999
+            else f"{image_kb_size}kb"
+        )
+
+        self.file_manager.cache_image(
+            size,
+            dimension_display,
+            current_image,
+            image_kb_size,
+        )
+
     def load_image(self) -> PhotoImage | None:
         """Loads an image and resizes it to fit on the screen
         Returns PhotoImage or None on failure to load"""
 
-        file_manager = self.file_manager
-        path_to_current_image = file_manager.path_to_current_image
+        path_to_current_image = self.file_manager.path_to_current_image
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            self.file_pointer = open_image(path_to_current_image)
+            fp = open(path_to_current_image, "rb")
+            self.file_pointer = open_image(fp, "r", (magic_number_guess(fp.read(4)),))
         except (FileNotFoundError, UnidentifiedImageError, ImportError):
             # except import error since user might open file with inaccurate ext
             # and trigger import that was excluded if they compiled as standalone
             return None
-        file_pointer = self.file_pointer
 
+        file_pointer = self.file_pointer
         image_kb_size: int = stat(path_to_current_image).st_size >> 10
-        frame_count: int = getattr(file_pointer, "n_frames", 1)
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
-        cached_image_data = file_manager.get_current_image_cache()
+        cached_image_data = self.file_manager.get_current_image_cache()
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
         else:
             try:
-                if file_pointer.format == "JPEG":
-                    current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                        file_pointer, path_to_current_image
-                    )
-                else:
-                    current_image = self.image_resizer.get_image_fit_to_screen(
-                        file_pointer
-                    )
+                current_image = self.image_resizer.get_image_fit_to_screen(
+                    file_pointer, path_to_current_image
+                )
             except ResizeException:
                 return None
 
-            dimension_display: str = (
-                f"{round(image_kb_size/10.24)/100}mb"
-                if image_kb_size > 999
-                else f"{image_kb_size}kb"
-            )
+            self._cache_image(*file_pointer.size, current_image, image_kb_size)
 
-            file_manager.cache_image(
-                *file_pointer.size,
-                dimension_display,
-                current_image,
-                image_kb_size,
-            )
-
+        frame_count: int = getattr(file_pointer, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finised loading
             self.begin_animation(current_image, frame_count)
         else:
-            self.file_pointer.close()
+            file_pointer.close()
+
         # first zoom level is just the image as is
         self.zoomed_image_cache = [current_image]
 

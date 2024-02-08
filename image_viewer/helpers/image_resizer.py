@@ -73,9 +73,12 @@ class ImageResizer:
                 image_as_array, *self.dimension_finder(image_width, image_height)
             )
 
-    def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
+    def get_image_fit_to_screen(self, image: Image, path_to_image: str) -> PhotoImage:
         # cv2 resize is faster than PIL, but convert to RGB then resize is slower
         # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
+        if image.format == "JPEG":
+            return self.get_jpeg_fit_to_screen(image, path_to_image)
+
         return array_to_photoimage(
             image_to_array(image),
             *self.dimension_finder(*image.size),
