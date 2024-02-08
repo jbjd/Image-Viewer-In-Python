@@ -44,7 +44,7 @@ class ImageLoader:
 
         self.PIL_image = Image()
 
-        self.aniamtion_frames: list[tuple | None] = []
+        self.aniamtion_frames: list[tuple[PhotoImage, int] | None] = []
         self.frame_index: int = 0
         self.zoom_factor: float = 1.0
         self.zoom_cap: float = 128.0
@@ -151,7 +151,7 @@ class ImageLoader:
         if previous_zoom == self.zoom_factor:
             return None
         # Check cache
-        index = round(self.zoom_factor * 4) - 4  # round in case float weirdness
+        index: int = round(self.zoom_factor * 4) - 4  # round in case float weirdness
         if index < len(self.zoomed_image_cache):
             return self.zoomed_image_cache[index]
         # Otherwise open and resize to new zoom
