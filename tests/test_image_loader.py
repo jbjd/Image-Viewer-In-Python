@@ -18,7 +18,7 @@ def test_next_frame(image_loader: ImageLoader):
     """Test expected behavior from getting next frame and reseting"""
 
     # normally has tuples with (PhotoImage, int) but just (int, int) for testing
-    image_loader.aniamtion_frames = [(1, 1), (2, 2), (3, 3)]
+    image_loader.aniamtion_frames = [(1, 1), (2, 2), (3, 3)]  # type: ignore
 
     example_frame: tuple | None = image_loader.get_next_frame()
     assert example_frame == (2, 2)
@@ -29,7 +29,7 @@ def test_next_frame(image_loader: ImageLoader):
     example_frame = image_loader.get_next_frame()
 
     # if next is None, should return None but not increment internal frame index
-    image_loader.aniamtion_frames[2] = None
+    image_loader.aniamtion_frames[2] = None  # type: ignore
     example_frame = image_loader.get_next_frame()
     assert example_frame is None
     assert image_loader.frame_index == 1
