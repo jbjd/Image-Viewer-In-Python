@@ -33,14 +33,14 @@ class IconFactory:
         image.line(self._scale_tuple_to_screen(xy), self.LINE_RGB, width)
 
     def make_topbar(self, screen_width: int) -> PhotoImage:
-        TOPBAR_RGBA: tuple = (60, 60, 60, 170)
+        TOPBAR_RGBA: tuple[int, int, int, int] = (60, 60, 60, 170)
         return PhotoImage(
             new_image("RGBA", (screen_width, self.icon_size[0]), TOPBAR_RGBA)
         )
 
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
-        EXIT_RGB: tuple = (190, 40, 40)
-        EXIT_HOVER_RGB: tuple = (180, 25, 20)
+        EXIT_RGB: tuple[int, int, int] = (190, 40, 40)
+        EXIT_HOVER_RGB: tuple[int, int, int] = (180, 25, 20)
         draw = Draw(new_image("RGB", self.icon_size, EXIT_HOVER_RGB))
         self._draw_line(draw, (6, 6, 26, 26), 2)
         self._draw_line(draw, (6, 26, 26, 6), 2)

@@ -11,7 +11,9 @@ class CachedImageData:
 
     __slots__ = ("dimensions", "height", "image", "kb_size", "width")
 
-    def __init__(self, image, width, height, dimensions, kb_size) -> None:
+    def __init__(
+        self, image: PhotoImage, width: int, height: int, dimensions: str, kb_size: int
+    ) -> None:
         self.image: PhotoImage = image
         self.width: int = width
         self.height: int = height
@@ -28,7 +30,7 @@ class ImagePath:
         self.suffix = name[name.rfind(".") :].lower()
         self.name = name
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: "ImagePath") -> bool:
         return OS_name_cmp(self.name, other.name)
 
 
@@ -70,7 +72,7 @@ def init_PIL(font_size: int) -> None:
     ImageDraw.fontmode = "L"  # antialiasing
 
     # edit these so PIL will not waste time importing +20 useless modules
-    Image._plugins = []
+    Image._plugins = []  # type: ignore
 
     def preinit():
         __import__("PIL.JpegImagePlugin", globals(), locals(), ())
@@ -85,7 +87,7 @@ def init_PIL(font_size: int) -> None:
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
 
-    text_bbox: tuple = ImageDraw.font.getbbox(dimension_text)
+    text_bbox: tuple[int, int, int, int] = ImageDraw.font.getbbox(dimension_text)
     x_offset: int = int(text_bbox[2] * 0.07)
     if x_offset < 10:
         x_offset = 10

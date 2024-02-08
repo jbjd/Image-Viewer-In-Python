@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from tkinter import Canvas
+from tkinter import Canvas, Tk
 
 from PIL.ImageTk import PhotoImage
 
@@ -26,7 +26,7 @@ class CustomCanvas(Canvas):
         "topbar",
     )
 
-    def __init__(self, master) -> None:
+    def __init__(self, master: Tk) -> None:
         super().__init__(master, bg="black", highlightthickness=0)
         self.pack(anchor="nw", fill="both", expand=1)
 
@@ -106,7 +106,7 @@ class CustomCanvas(Canvas):
 
     def handle_ctrl_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""
-        bbox: tuple = self.bbox(self.image_display_id)
+        bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
         match keycode:
             case 37:  # Left
                 x = -10
@@ -140,6 +140,6 @@ class CustomCanvas(Canvas):
         self.itemconfigure(self.file_name_text_id, text=_clean_long_name(new_name))
         return self.bbox(self.file_name_text_id)[2]
 
-    def is_widget_visible(self, tag_or_id) -> bool:
+    def is_widget_visible(self, tag_or_id: str | int) -> bool:
         """Returns bool of if provided tag/id is visible"""
         return self.itemcget(tag_or_id, "state") == "normal"

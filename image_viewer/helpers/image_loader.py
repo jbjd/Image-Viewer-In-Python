@@ -44,7 +44,7 @@ class ImageLoader:
 
         self.PIL_image = Image()
 
-        self.aniamtion_frames: list = []
+        self.aniamtion_frames: list[tuple | None] = []
         self.frame_index: int = 0
         self.zoom_factor: float = 1.0
         self.zoom_cap: float = 128.0
