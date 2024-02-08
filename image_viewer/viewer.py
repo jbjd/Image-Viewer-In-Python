@@ -191,35 +191,19 @@ class ViewerApp:
         )
         self.dropdown = DropdownImage(dropdown_id)
 
+        rename_window_width: int = self._scale_pixels_to_width(250)
         rename_id: int = canvas.create_window(
             0,
             0,
-            width=self._scale_pixels_to_width(250),
-            height=int(topbar_height * 0.75),
+            width=rename_window_width,
+            height=int(topbar_height * 0.78),
             anchor="nw",
         )
-        self.rename_entry = RenameEntry(  # TODO: move this to canvas
-            app, rename_id, self._scale_pixels_to_width(500), font=FONT
+        self.rename_entry = RenameEntry(  # TODO: move this to canvas?
+            app, canvas, rename_id, rename_window_width, font=FONT
         )
         self.rename_entry.bind("<Return>", self.try_rename_or_convert)
-        self.rename_entry.text.trace_add("write", self._resize_rename_window)
         canvas.itemconfigure(rename_id, state="hidden", window=self.rename_entry)
-
-    def _resize_rename_window(self, *_) -> None:
-        """Resizes rename window when a scrollbar would need to appear"""
-        MAX = self.rename_entry.max_width
-        self.app.update()
-        leftx, rightx = self.rename_entry.xview()
-        while leftx > 0.0 or rightx < 1.0:
-            width = int(self.canvas.itemcget(self.rename_entry.id, "width"))
-            if width == MAX:
-                break
-            width += self._scale_pixels_to_width(30)
-            if width > MAX:
-                width = MAX
-            self.canvas.itemconfig(self.rename_entry.id, width=width)
-            self.app.update()
-            leftx, rightx = self.rename_entry.xview()
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
