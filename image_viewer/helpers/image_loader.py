@@ -2,7 +2,6 @@ from collections.abc import Callable
 from os import stat
 from threading import Thread
 
-from cv2 import error as ResizeException
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
@@ -121,10 +120,7 @@ class ImageLoader:
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
         else:
-            try:
-                current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
-            except ResizeException:
-                return None
+            current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
 
             self._cache_image(current_image, PIL_image.size, image_kb_size)
 
