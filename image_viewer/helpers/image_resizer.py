@@ -1,9 +1,8 @@
 import os
 
-from PIL.Image import Image, fromarray
+from PIL.Image import Image, Resampling, fromarray
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
-from PIL.Image import Resampling
 
 
 def _scale_tuple(t: tuple[int, int], scale: float) -> tuple[int, int]:
