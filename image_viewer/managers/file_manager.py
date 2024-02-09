@@ -122,23 +122,52 @@ class ImageFileManager:
             except IndexError:
                 pass  # even if no images left, a new one will be added after this
 
-    def rename_or_convert_current_image(self, new_name: str) -> None:
-        """Try to either rename or convert based on user input.
-        ask_delete_after_convert lets user choose to delete old file"""
-        new_name = clean_str_for_OS_path(new_name)
+    # TODO: test this more
+    def _construct_path_for_rename(self, new_dir: str, new_name: str) -> str:
+        """Makes new path with validations when moving between directories"""
+        will_not_move: bool = new_dir == ""  # if user only provided a name
+        new_full_path: str
+        if will_not_move:
+            new_full_path = self.construct_path_to_image(new_name)
+        else:
+            if not os.path.isabs(new_dir):
+                new_dir = os.path.join(self.image_directory, new_dir)
+            if not os.path.exists(new_dir):
+                raise OSError()
+            new_full_path = os.path.join(new_dir, new_name)
+
+        if os.path.exists(new_full_path):
+            raise FileExistsError()
+
+        if will_not_move:
+            return new_full_path
+
+        if not askyesno(  # TODO: ask follow instead?
+            "Confirm move",
+            f"Move file to {new_dir}?",
+        ):
+            raise Exception()
+
+        return os.path.join(new_dir, new_name)
+
+    def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
+        """Try to either rename or convert based on user input"""
+        new_name: str = clean_str_for_OS_path(os.path.basename(new_name_or_path))
+        new_dir: str = os.path.dirname(new_name_or_path)
+
         new_image_data = ImagePath(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
             new_name += self.current_image.suffix
             new_image_data = ImagePath(new_name)
 
-        new_path: str = self.construct_path_to_image(new_name)
+        new_full_path: str = self._construct_path_for_rename(new_dir, new_name)
 
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
                 self.path_to_current_image,
                 self.current_image,
-                new_path,
+                new_full_path,
                 new_image_data,
             )
         ):
@@ -149,9 +178,13 @@ class ImageFileManager:
             if was_last_image:
                 self._current_index += 1
         else:
-            os.rename(self.path_to_current_image, new_path)
+            os.rename(self.path_to_current_image, new_full_path)
             self._clear_image_data()
-        self.add_new_image(new_name)
+
+        if os.path.dirname(new_full_path) == os.path.dirname(
+            self.path_to_current_image
+        ):
+            self.add_new_image(new_name)
 
     def add_new_image(self, new_name: str) -> None:
         """Adds new image to internal list and updates attributes"""

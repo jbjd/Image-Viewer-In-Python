@@ -1,5 +1,3 @@
-from os.path import exists
-
 from PIL.Image import open as open_image
 
 from util.image import ImagePath
@@ -13,10 +11,6 @@ def try_convert_file_and_save_new(
 ) -> bool:
     """Trys to convert to new file format.
     Return: bool if file was converted and a new file was created"""
-
-    if exists(new_path):
-        raise FileExistsError()
-
     with open_image(old_path) as temp_img:
         is_animated: bool = getattr(temp_img, "is_animated", False)
         if is_animated and new_image_data.suffix not in (".webp", ".gif", ".png"):

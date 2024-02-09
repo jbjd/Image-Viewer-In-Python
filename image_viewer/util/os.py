@@ -5,13 +5,13 @@ from re import sub
 if name == "nt":
     from ctypes import windll
 
-    illegal_char = r'[\\/<>:"|?*]'
+    illegal_char = r'[<>:"|?*]'
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
 else:  # linux / can't determine / unsupported OS
-    illegal_char = r"[/]"
+    illegal_char = r"[]"
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b

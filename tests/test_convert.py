@@ -61,9 +61,6 @@ def test_animated_to_not_animated():
 
 
 def test_convert_jpeg(img_dir: str):
-    with pytest.raises(FileExistsError):
-        try_convert_file_and_save_new(*get_vars_for_test(img_dir, "b.jpe", "d.jpg"))
-
     with mock.patch("image_viewer.util.convert.open_image", mock_open_image):
         # will not covert if jpeg varient
         assert not try_convert_file_and_save_new(
