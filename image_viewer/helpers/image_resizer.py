@@ -75,7 +75,7 @@ class ImageResizer:
         image_as_array = self.jpeg_helper.decode(
             image.fp.read(),  # type: ignore
             TJPF_RGB,
-            self._get_jpeg_scale_factor(image_width, image_height),
+            scale_factor,
             0,
         )
         return self._fit_to_screen(fromarray(image_as_array))
