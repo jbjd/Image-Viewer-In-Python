@@ -33,19 +33,19 @@ VALID_NUITKA_ARGS: set[str] = {
     "--standalone",
     "--enable-console",
 }
-INSTALL_PATH: str
-EXECUTABLE_EXT: str
-DATA_FILE_PATHS: list[str]
+install_path: str
+executable_ext: str
+data_file_paths: list[str]
 
 is_windows: bool = os.name == "nt"
 if is_windows:
-    INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
-    EXECUTABLE_EXT = ".exe"
-    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
+    install_path = "C:/Program Files/Personal Image Viewer/"
+    executable_ext = ".exe"
+    data_file_paths = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
-    INSTALL_PATH = "/usr/local/personal-image-viewer/"
-    EXECUTABLE_EXT = ".bin"
-    DATA_FILE_PATHS = ["icon/icon.png"]
+    install_path = "/usr/local/personal-image-viewer/"
+    executable_ext = ".bin"
+    data_file_paths = ["icon/icon.png"]
 
 parser = ArgumentParser(
     description="Compiles Personal Image Viewer to an executable, must be run as root",
@@ -53,7 +53,7 @@ parser = ArgumentParser(
 )
 parser.add_argument("-p", "--python-path", help="Python path to use in compilation")
 parser.add_argument(
-    "--install-path", help=f"Path to install to, default is {INSTALL_PATH}"
+    "--install-path", help=f"Path to install to, default is {install_path}"
 )
 parser.add_argument(
     "--report",
@@ -176,13 +176,14 @@ try:
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
 
     if args.install_path:
-        INSTALL_PATH = args.install_path
-    os.makedirs(INSTALL_PATH, exist_ok=True)
+        install_path = args.install_path
+
+    os.makedirs(install_path, exist_ok=True)
 
     print("Waiting for nuitka compilation...")
     process.wait()
 
-    for data_file_path in DATA_FILE_PATHS:
+    for data_file_path in data_file_paths:
         old_path = os.path.join(CODE_DIR, data_file_path)
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
@@ -191,13 +192,13 @@ try:
     if args.debug:
         exit(0)
 
-    dest: str = os.path.join(COMPILE_DIR, f"viewer{EXECUTABLE_EXT}")
+    dest: str = os.path.join(COMPILE_DIR, f"viewer{executable_ext}")
     src: str = os.path.join(
-        COMPILE_DIR if as_standalone else WORKING_DIR, f"main{EXECUTABLE_EXT}"
+        COMPILE_DIR if as_standalone else WORKING_DIR, f"main{executable_ext}"
     )
     os.rename(src, dest)
-    shutil.rmtree(INSTALL_PATH, ignore_errors=True)
-    os.rename(COMPILE_DIR, INSTALL_PATH)
+    shutil.rmtree(install_path, ignore_errors=True)
+    os.rename(COMPILE_DIR, install_path)
 finally:
     if not args.debug:
         shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
@@ -209,4 +210,4 @@ finally:
             pass
 
 print("\nFinished")
-print("Installed to", INSTALL_PATH)
+print("Installed to", install_path)
