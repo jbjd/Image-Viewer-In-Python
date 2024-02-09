@@ -1,11 +1,13 @@
 import os
 
-from cv2 import INTER_AREA, INTER_CUBIC
-from PIL.Image import Image
+from PIL.Image import Image, fromarray
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
+from PIL.Image import Resampling
 
-from util.array import array_to_photoimage, image_to_array
+
+def _scale_tuple(t: tuple[int, int], scale: float) -> tuple[int, int]:
+    return (int(t[0] * scale), int(t[1] * scale))
 
 
 class ImageResizer:
@@ -28,11 +30,10 @@ class ImageResizer:
     def get_zoomed_image(self, image: Image, zoom_factor: float) -> PhotoImage | None:
         """Resizes image using the provided zoom_factor.
         Returns None when max zoom reached"""
-        dimensions, interpolation = self.dimension_finder(*image.size)
-        dimensions = (
-            int(dimensions[0] * zoom_factor),
-            int(dimensions[1] * zoom_factor),
+        dimensions, interpolation = self.dimension_finder(
+            *_scale_tuple(image.size, zoom_factor)
         )
+        dimensions = _scale_tuple(dimensions, zoom_factor)
         if (
             dimensions[0] > self.screen_width
             and dimensions[1] > self.screen_height
@@ -40,10 +41,10 @@ class ImageResizer:
         ):
             return None
 
-        return array_to_photoimage(
-            image_to_array(image),
-            dimensions,
-            interpolation,
+        return PhotoImage(
+            (image.convert("RGB") if image.mode[:3] != "RGB" else image).resize(
+                dimensions, interpolation  # type: ignore
+            )
         )
 
     def _get_jpeg_scale_factor(
@@ -60,9 +61,16 @@ class ImageResizer:
             return (1, 2)
         return None
 
-    def get_jpeg_fit_to_screen(self, image: Image) -> PhotoImage:
+    def _get_jpeg_fit_to_screen(self, image: Image) -> PhotoImage:
         """Resizes a JPEG utilizing libjpegturbo to shrink very large images"""
         image_width, image_height = image.size
+        scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
+            image_width, image_height
+        )
+        # if small do a normal resize, otherwise utilize libJpegTurbo
+        if scale_factor is None:
+            return self._fit_to_screen(image)
+
         image.fp.seek(0)  # type: ignore
         image_as_array = self.jpeg_helper.decode(
             image.fp.read(),  # type: ignore
@@ -70,20 +78,22 @@ class ImageResizer:
             self._get_jpeg_scale_factor(image_width, image_height),
             0,
         )
-        return array_to_photoimage(
-            image_as_array, *self.dimension_finder(image_width, image_height)
+        return self._fit_to_screen(fromarray(image_as_array))
+
+    def _fit_to_screen(self, image: Image) -> PhotoImage:
+        """Resizes image to screen and returns it as a PhotoImage"""
+        return PhotoImage(
+            (image.convert("RGB") if image.mode[:3] != "RGB" else image).resize(
+                *self.dimension_finder(*image.size)  # type: ignore
+            )
         )
 
     def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
-        # cv2 resize is faster than PIL, but convert to RGB then resize is slower
-        # PIL resize for non-RGB(A) mode images looks very bad so still use cv2
+        """Returns resized image as a PhotoImage"""
         if image.format == "JPEG":
-            return self.get_jpeg_fit_to_screen(image)
+            return self._get_jpeg_fit_to_screen(image)
 
-        return array_to_photoimage(
-            image_to_array(image),
-            *self.dimension_finder(*image.size),
-        )
+        return self._fit_to_screen(image)
 
     def dimension_finder(
         self, image_width: int, image_height: int
@@ -92,9 +102,9 @@ class ImageResizer:
         else fit to width and let height go off screen
         returns: new width, new height, and interpolation to use"""
         interpolation: int = (
-            INTER_AREA
+            Resampling.HAMMING
             if image_height > self.screen_height or image_width > self.screen_width
-            else INTER_CUBIC
+            else Resampling.LANCZOS
         )
         width: int = round(image_width * (self.screen_height / image_height))
 
