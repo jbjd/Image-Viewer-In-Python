@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 
 from image_viewer.util.os import clean_str_for_OS_path, walk_dir
 
