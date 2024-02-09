@@ -43,7 +43,7 @@ class ImageResizer:
 
         return PhotoImage(
             (image.convert("RGB") if image.mode[:3] != "RGB" else image).resize(
-                dimensions, interpolation  # type: ignore
+                dimensions, interpolation
             )
         )
 
@@ -84,7 +84,7 @@ class ImageResizer:
         """Resizes image to screen and returns it as a PhotoImage"""
         return PhotoImage(
             (image.convert("RGB") if image.mode[:3] != "RGB" else image).resize(
-                *self.dimension_finder(*image.size)  # type: ignore
+                *self.dimension_finder(*image.size)
             )
         )
 
@@ -97,11 +97,11 @@ class ImageResizer:
 
     def dimension_finder(
         self, image_width: int, image_height: int
-    ) -> tuple[tuple[int, int], int]:
+    ) -> tuple[tuple[int, int], Resampling]:
         """Fits dimensions to height if width within screen,
         else fit to width and let height go off screen
         returns: new width, new height, and interpolation to use"""
-        interpolation: int = (
+        interpolation: Resampling = (
             Resampling.HAMMING
             if image_height > self.screen_height or image_width > self.screen_width
             else Resampling.LANCZOS
