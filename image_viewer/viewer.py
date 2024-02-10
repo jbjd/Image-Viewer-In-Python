@@ -288,6 +288,9 @@ class ViewerApp:
         """Safely exits the program"""
         self.image_loader.reset_and_setup()
         self.canvas.delete(self.canvas.file_name_text_id)
+        # Dangerous: this prevents an ignored exception since Tk may clean up
+        # before PIL does. Lets leave the work to Tk when exiting
+        del PhotoImage.__del__
         self.app.quit()
         self.app.destroy()
         raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
