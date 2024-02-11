@@ -2,7 +2,7 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
-from PIL.Image import Image, Resampling, new  # noqa: W0621
+from PIL.Image import Image, Resampling, new
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
@@ -39,14 +39,14 @@ def resize(image: Image, size: tuple[int, int], resample: Resampling) -> Image:
 
 def init_PIL(font_size: int) -> None:
     """Sets up font and PIL's internal list of plugins to load"""
-    from PIL import Image
-
     # setup font
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
 
     # edit these so PIL will not waste time importing +20 useless modules
-    Image._plugins = []  # type: ignore
+    from PIL import Image as _Image  # avoid name conflict
+
+    _Image._plugins = []  # type: ignore
 
     def preinit():
         __import__("PIL.JpegImagePlugin", globals(), locals(), ())
@@ -55,16 +55,14 @@ def init_PIL(font_size: int) -> None:
         __import__("PIL.WebPImagePlugin", globals(), locals(), ())
         __import__("PIL.TiffImagePlugin", globals(), locals(), ())
 
-    Image.preinit = preinit
+    _Image.preinit = preinit
 
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
 
     text_bbox: tuple[int, int, int, int] = ImageDraw.font.getbbox(dimension_text)
-    x_offset: int = int(text_bbox[2] * 0.07)
-    if x_offset < 10:
-        x_offset = 10
+    x_offset: int = max(int(text_bbox[2] * 0.07), 10)
 
     box_to_draw_on: ImageDraw = Draw(
         new(

@@ -21,8 +21,9 @@ else:  # linux / can't determine / unsupported OS
         return a < b
 
 
-def clean_str_for_OS_path(name: str) -> str:
-    return sub(illegal_char, "", name)
+def clean_str_for_OS_path(file_name: str) -> str:
+    """Removes characters that file names can't have on this OS"""
+    return sub(illegal_char, "", file_name)
 
 
 def walk_dir(directory_path: str) -> Iterator[str]:
@@ -33,7 +34,7 @@ def walk_dir(directory_path: str) -> Iterator[str]:
         while True:
             try:
                 entry = next(scandir_iter)
-            except Exception:
+            except (StopIteration, OSError):
                 return
 
             try:

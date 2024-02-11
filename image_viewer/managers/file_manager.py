@@ -94,7 +94,7 @@ class ImageFileManager:
         self.cache.pop(self._files.pop(self._current_index).name, None)
 
     def remove_current_image(self, delete_from_disk: bool) -> None:
-        # delete image from files array, cache, and optionally disk
+        """Deletes image from files array, cache, and optionally disk"""
         if delete_from_disk:
             send2trash(os.path.normpath(self.path_to_current_image))
         self._clear_image_data()
@@ -216,7 +216,7 @@ class ImageFileManager:
                 os.stat(self.path_to_current_image).st_size
                 == self.cache[self.current_image.name].kb_size
             )
-        except Exception:
+        except (OSError, ValueError, KeyError):
             return False
 
     def get_current_image_cache(self) -> CachedImageData | None:
