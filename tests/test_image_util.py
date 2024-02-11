@@ -3,12 +3,8 @@ from tkinter import Tk
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from image_viewer.util.image import (
-    DropdownImage,
-    ImagePath,
-    create_dropdown_image,
-    init_PIL,
-)
+from image_viewer.util.image import DropdownImage, ImagePath
+from image_viewer.util.PIL import create_dropdown_image, init_PIL
 
 
 def test_image_path():

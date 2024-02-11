@@ -101,6 +101,22 @@ class ViewerApp:
             self.load_image()
 
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
+        self._add_keybinds()
+
+        # OS specific keybinds
+        if is_windows:
+            app.bind(
+                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
+            )
+        else:
+            app.bind("<Button-4>", lambda _: self.move(-1))
+            app.bind("<Button-5>", lambda _: self.move(1))
+
+        app.mainloop()
+
+    def _add_keybinds(self) -> None:
+        """Assigns OS generic keybinds to app"""
+        app = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
         app.bind("<KeyPress>", self.handle_key)
@@ -114,16 +130,6 @@ class ViewerApp:
         app.bind("<Alt-Right>", self.handle_ctrl_arrow_keys)
         app.bind("<Alt-Up>", self.handle_ctrl_arrow_keys)
         app.bind("<Alt-Down>", self.handle_ctrl_arrow_keys)
-
-        if is_windows:
-            app.bind(
-                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
-            )
-        else:
-            app.bind("<Button-4>", lambda _: self.move(-1))
-            app.bind("<Button-5>", lambda _: self.move(1))
-
-        app.mainloop()
 
     def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
@@ -235,6 +241,7 @@ class ViewerApp:
                     self.toggle_show_rename_window(event)
 
     def handle_key_release(self, event: Event) -> None:
+        """Handle key release, current just used for L/R arrow release"""
         if self.move_id != "" and event.keycode in (37, 39):  # Left/Right
             self.app.after_cancel(self.move_id)
             self.move_id = ""
@@ -382,7 +389,7 @@ class ViewerApp:
         Trys to convert or rename based on input"""
         try:
             self.file_manager.rename_or_convert_current_image(self.rename_entry.get())
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             self.rename_entry.error_flash()
             return
 
