@@ -3,6 +3,7 @@ import os
 from PIL.Image import Image, Resampling, fromarray
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
+
 from util.PIL import resize
 
 

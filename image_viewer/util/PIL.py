@@ -2,11 +2,10 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
-from PIL.ImageTk import PhotoImage
-from PIL.Image import Image, Resampling
-from PIL.Image import new
+from PIL.Image import Image, Resampling, new  # noqa: W0621
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageFont import truetype
+from PIL.ImageTk import PhotoImage
 
 
 def _resize_new(

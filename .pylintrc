@@ -1,2 +1,6 @@
 [MESSAGES CONTROL]
-disable=import-error
+disable=import-error,
+        import-outside-toplevel,
+        import-self,
+        no-name-in-module,
+        invalid-name,
