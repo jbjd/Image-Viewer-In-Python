@@ -1,3 +1,7 @@
+"""
+Code for OS specific stuff
+"""
+
 from collections.abc import Iterator
 from os import name, scandir
 from re import sub

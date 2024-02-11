@@ -1,3 +1,7 @@
+"""
+Deals with converting between image file types
+"""
+
 from PIL.Image import open as open_image
 
 from util.image import ImagePath

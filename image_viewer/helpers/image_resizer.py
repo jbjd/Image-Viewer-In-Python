@@ -3,24 +3,7 @@ import os
 from PIL.Image import Image, Resampling, fromarray
 from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
-
-
-def _resize(image: Image, size: tuple[int, int], resample: Resampling) -> Image:
-    """modified version of resize from PIL"""
-    image.load()
-    if image.size == size:
-        return image
-
-    match image.mode:
-        case "RGBA":
-            image = image.convert("RGBa")
-        case "LA":
-            image = image.convert("La")
-        case "P" | "1":
-            image = image.convert("RGB")
-
-    box: tuple[int, int, int, int] = (0, 0) + image.size
-    return image._new(image.im.resize(size, resample, box))  # type: ignore
+from util.PIL import resize
 
 
 def _scale_tuple(t: tuple[int, int], scale: float) -> tuple[int, int]:
@@ -99,7 +82,7 @@ class ImageResizer:
 
     def _fit_to_screen(self, image: Image) -> PhotoImage:
         """Resizes image to screen and returns it as a PhotoImage"""
-        return PhotoImage(_resize(image, *self.dimension_finder(*image.size)))
+        return PhotoImage(resize(image, *self.dimension_finder(*image.size)))
 
     def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
         """Returns resized image as a PhotoImage"""

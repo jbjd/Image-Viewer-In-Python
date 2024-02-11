@@ -9,7 +9,8 @@ from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from ui.canvas import CustomCanvas
 from ui.rename_entry import RenameEntry
-from util.image import CachedImageData, DropdownImage, create_dropdown_image, init_PIL
+from util.image import CachedImageData, DropdownImage
+from util.PIL import create_dropdown_image, init_PIL
 
 
 class ViewerApp:
