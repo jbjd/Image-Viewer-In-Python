@@ -46,7 +46,7 @@ class ImageLoader:
         self.aniamtion_frames: list[tuple[PhotoImage, int] | None] = []
         self.frame_index: int = 0
         self.zoom_cap: int = 512
-        self.zoom_level: int = 1
+        self.zoom_level: int = 0
         self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
@@ -197,5 +197,5 @@ class ImageLoader:
         self.frame_index = 0
         self.PIL_image.close()
         self.zoom_cap = 512
-        self.zoom_level = 1
+        self.zoom_level = 0
         self.zoomed_image_cache = []

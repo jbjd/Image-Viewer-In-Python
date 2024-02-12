@@ -31,10 +31,12 @@ class ImageResizer:
     def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage | None:
         """Resizes image using the provided zoom_level.
         Returns None when max zoom reached"""
-        # scale zoom factor based on image size vs screen
+        # scale zoom factor based on image size vs screen and zoom level
         w, h = image.size
-        ratio: int = 1 + int(max(w / self.screen_width, h / self.screen_height) / 5)
-        zoom_factor: float = 1 + (0.25 * ratio * zoom_level)
+        zoom_scale: int = 1 + int(
+            max(w / self.screen_width, h / self.screen_height) / 5
+        )
+        zoom_factor: float = 1 + (0.25 * zoom_scale * zoom_level)
 
         dimensions, interpolation = self.dimension_finder(
             *_scale_tuple(image.size, zoom_factor)
