@@ -28,9 +28,14 @@ class ImageResizer:
             else None
         )
 
-    def get_zoomed_image(self, image: Image, zoom_factor: float) -> PhotoImage | None:
-        """Resizes image using the provided zoom_factor.
+    def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage | None:
+        """Resizes image using the provided zoom_level.
         Returns None when max zoom reached"""
+        # scale zoom factor based on image size vs screen
+        w, h = image.size
+        ratio: int = 1 + int(max(w / self.screen_width, h / self.screen_height) / 5)
+        zoom_factor: float = 1 + (0.25 * ratio * zoom_level)
+
         dimensions, interpolation = self.dimension_finder(
             *_scale_tuple(image.size, zoom_factor)
         )
@@ -41,12 +46,7 @@ class ImageResizer:
             and zoom_factor > self.ZOOM_MIN
         ):
             return None
-
-        return PhotoImage(
-            (image.convert("RGB") if image.mode[:3] != "RGB" else image).resize(
-                dimensions, interpolation
-            )
-        )
+        return PhotoImage(resize(image, dimensions, interpolation))
 
     def _get_jpeg_scale_factor(
         self, image_width: int, image_height: int

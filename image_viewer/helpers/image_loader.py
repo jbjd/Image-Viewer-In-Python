@@ -26,7 +26,7 @@ class ImageLoader:
         "frame_index",
         "image_resizer",
         "zoom_cap",
-        "zoom_factor",
+        "zoom_level",
         "zoomed_image_cache",
     )
 
@@ -45,8 +45,8 @@ class ImageLoader:
 
         self.aniamtion_frames: list[tuple[PhotoImage, int] | None] = []
         self.frame_index: int = 0
-        self.zoom_factor: float = 1.0
-        self.zoom_cap: float = 128.0
+        self.zoom_cap: int = 512
+        self.zoom_level: int = 1
         self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage, int] | None:
@@ -139,26 +139,25 @@ class ImageLoader:
     def get_zoomed_image(self, event_keycode: int) -> PhotoImage | None:
         """Handles getting and caching zoomed versions of the current image"""
         # determine new zoom factor
-        previous_zoom: float = self.zoom_factor
-        if event_keycode == 189 and previous_zoom > 1.0:  # -
-            self.zoom_factor -= 0.25
+        previous_zoom: int = self.zoom_level
+        if event_keycode == 189 and previous_zoom > 0:  # -
+            self.zoom_level -= 1
         elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # =
-            self.zoom_factor += 0.25
-        if previous_zoom == self.zoom_factor:
+            self.zoom_level += 1
+        if previous_zoom == self.zoom_level:
             return None
         # Check cache
-        index: int = round(self.zoom_factor * 4) - 4  # round in case float weirdness
-        if index < len(self.zoomed_image_cache):
-            return self.zoomed_image_cache[index]
+        if self.zoom_level < len(self.zoomed_image_cache):
+            return self.zoomed_image_cache[self.zoom_level]
         # Otherwise open and resize to new zoom
         try:
             with open_image(self.file_manager.path_to_current_image) as fp:
-                zoomed_image = self.image_resizer.get_zoomed_image(fp, self.zoom_factor)
+                zoomed_image = self.image_resizer.get_zoomed_image(fp, self.zoom_level)
                 if zoomed_image is not None:
                     self.zoomed_image_cache.append(zoomed_image)
                 else:
-                    self.zoom_factor -= 0.25
-                    self.zoom_cap = self.zoom_factor
+                    self.zoom_level -= 1
+                    self.zoom_cap = self.zoom_level
                 return zoomed_image
         except (FileNotFoundError, UnidentifiedImageError, ImportError):
             return None
@@ -197,6 +196,6 @@ class ImageLoader:
         self.aniamtion_frames = []
         self.frame_index = 0
         self.PIL_image.close()
-        self.zoom_factor = 1.0
-        self.zoom_cap = 128.0
+        self.zoom_cap = 512
+        self.zoom_level = 1
         self.zoomed_image_cache = []
