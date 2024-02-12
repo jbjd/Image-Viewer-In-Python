@@ -1,7 +1,7 @@
 Standard Priority:
-    Allow slashes in rename and ask to move directories
+    Use magic over file ext when checking for convert
+    Speed up zoom for large images
     Documentation
 
 Low Priority:
-    Moving images to a different directory
     Cropping images with preview

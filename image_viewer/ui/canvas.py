@@ -115,8 +115,8 @@ class CustomCanvas(Canvas):
                     return
             case 38:  # Up
                 x = 0
-                y = -10
-                if not (bbox[3] > self.screen_height) and (bbox[1] + y) < 0:
+                y = 10
+                if (bbox[3] + y) > self.screen_height and not (bbox[1] < 0):
                     return
             case 39:  # Right
                 x = 10
@@ -125,8 +125,8 @@ class CustomCanvas(Canvas):
                     return
             case _:  # Down
                 x = 0
-                y = 10
-                if (bbox[3] + y) > self.screen_height and not (bbox[1] < 0):
+                y = -10
+                if not (bbox[3] > self.screen_height) and (bbox[1] + y) < 0:
                     return
         self.move_x -= x
         self.move_y -= y
