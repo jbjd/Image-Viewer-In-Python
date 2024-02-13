@@ -1,5 +1,6 @@
 import os
 from tkinter import Event, Tk
+from typing import NoReturn
 
 from PIL.ImageTk import PhotoImage
 
@@ -298,7 +299,7 @@ class ViewerApp:
 
     # End functions handling user input
 
-    def exit(self, _: Event | None = None) -> None:
+    def exit(self, _: Event | None = None) -> NoReturn:
         """Safely exits the program"""
         self.image_loader.reset_and_setup()
         self.canvas.delete(self.canvas.file_name_text_id)

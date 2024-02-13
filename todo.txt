@@ -1,6 +1,5 @@
 Standard Priority:
     Use magic over file ext when checking for convert
-    Speed up zoom for large images
     Documentation
 
 Low Priority:
