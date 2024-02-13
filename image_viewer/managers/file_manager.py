@@ -17,14 +17,14 @@ class ImageFileManager:
     """Manages internal list of images"""
 
     VALID_FILE_TYPES: set[str] = {
-        ".gif",
-        ".jpg",
-        ".jpeg",
-        ".jpe",
-        ".jfif",
-        ".jif",
-        ".png",
-        ".webp",
+        "gif",
+        "jpg",
+        "jpeg",
+        "jpe",
+        "jfif",
+        "jif",
+        "png",
+        "webp",
     }
 
     __slots__ = (
@@ -157,7 +157,7 @@ class ImageFileManager:
 
         new_image_data = ImagePath(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
-            new_name += self.current_image.suffix
+            new_name += f".{self.current_image.suffix}"
             new_image_data = ImagePath(new_name)
 
         new_full_path: str = self._construct_path_for_rename(new_dir, new_name)
@@ -166,9 +166,8 @@ class ImageFileManager:
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
                 self.path_to_current_image,
-                self.current_image,
                 new_full_path,
-                new_image_data,
+                new_image_data.suffix,
             )
         ):
             was_last_image: bool = self._current_index == len(self._files) - 1

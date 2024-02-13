@@ -1,11 +1,22 @@
-import os
 from unittest import mock
 
 import pytest
 
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.convert import try_convert_file_and_save_new
-from image_viewer.util.image import ImagePath
+
+
+class MockFilePointer:
+    """Mocks whats returned by builtin open"""
+
+    def __enter__(self) -> "MockFilePointer":
+        return self
+
+    def __exit__(self, *_) -> None:
+        pass
+
+    def read(self, _) -> str:
+        return ""
 
 
 class MockImage:
@@ -31,6 +42,10 @@ class MockImage:
         pass
 
 
+def mock_open(*_) -> MockFilePointer:
+    return MockFilePointer()
+
+
 def mock_open_image(_: str) -> MockImage:
     return MockImage()
 
@@ -42,43 +57,45 @@ def mock_open_animated_image(_: str) -> MockImage:
     return image
 
 
-def get_vars_for_test(
-    dir: str, old_name: str, new_name: str
-) -> tuple[str, ImagePath, str, ImagePath]:
-    old_path: str = os.path.join(dir, f"{old_name}")
-    old_data = ImagePath(old_name)
-    new_path: str = os.path.join(dir, f"{new_name}")
-    new_data = ImagePath(new_name)
-    return (old_path, old_data, new_path, new_data)
-
-
+@mock.patch("image_viewer.util.convert.open_image", mock_open_animated_image)
+@mock.patch("image_viewer.util.convert.open", mock_open)
+@mock.patch("image_viewer.util.convert.magic_number_guess", lambda _: ("gif",))
 def test_animated_to_not_animated():
-    with mock.patch("image_viewer.util.convert.open_image", mock_open_animated_image):
-        with pytest.raises(ValueError):
-            try_convert_file_and_save_new(
-                *get_vars_for_test("", "asdf.gif", "hjkl.jpg")
-            )
+    with pytest.raises(ValueError):
+        try_convert_file_and_save_new("asdf.gif", "hjkl.jpg", "jpg")
 
 
+@mock.patch("image_viewer.util.convert.open_image", mock_open_image)
+@mock.patch("image_viewer.util.convert.open", mock_open)
 def test_convert_jpeg(img_dir: str):
-    with mock.patch("image_viewer.util.convert.open_image", mock_open_image):
-        # will not covert if jpeg varient
-        assert not try_convert_file_and_save_new(
-            *get_vars_for_test(img_dir, "old.jpe", "new.jpg")
-        )
-        # otherwise will succeed
-        assert try_convert_file_and_save_new(
-            *get_vars_for_test(img_dir, "old.png", "new.jpg")
-        )
+    # will not covert if jpeg varient
+    with mock.patch("image_viewer.util.convert.magic_number_guess", lambda _: ("jpg",)):
+        assert not try_convert_file_and_save_new("old.jpg", "new.jpe", "jpe")
+    # otherwise will succeed
+    with mock.patch("image_viewer.util.convert.magic_number_guess", lambda _: ("png",)):
+        assert try_convert_file_and_save_new("old.png", "new.jpg", "jpg")
 
 
+@mock.patch("image_viewer.util.convert.open_image", mock_open_image)
+@mock.patch("image_viewer.util.convert.open", mock_open)
 def test_all_valid_types():
     """Tries to get to Image.save() for all valid types"""
     valid_types: set[str] = ImageFileManager.VALID_FILE_TYPES
 
-    with mock.patch("image_viewer.util.convert.open_image", mock_open_image):
-        for type in valid_types:
-            result = try_convert_file_and_save_new(
-                *get_vars_for_test("", "old.png", f"new.{type}")
-            )
-            assert result
+    for img_type in valid_types:
+        # when img_type == png, try assuming old.png is a webp with incorrect name
+        # So function should still return true since old.png -> new.png was technially
+        # a convertion
+        with mock.patch(
+            "image_viewer.util.convert.magic_number_guess",
+            lambda _: ("png" if img_type != "png" else "webp",),
+        ):
+            assert try_convert_file_and_save_new("old.png", f"new.{img_type}", img_type)
+
+
+@mock.patch("image_viewer.util.convert.open_image", mock_open_image)
+@mock.patch("image_viewer.util.convert.open", mock_open)
+@mock.patch("image_viewer.util.convert.magic_number_guess", lambda _: ("jpg",))
+def test_convert_to_bad_type(img_dir: str):
+    """Should return False if an invalid image extension is passed"""
+    assert not try_convert_file_and_save_new("old.jpg", "new.txt", "txt")

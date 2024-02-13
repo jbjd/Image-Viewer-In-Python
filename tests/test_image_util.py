@@ -10,7 +10,13 @@ from image_viewer.util.PIL import create_dropdown_image, init_PIL
 def test_image_path():
     """Check that ImagePath correctly finds image suffixes"""
     example_image_path = ImagePath("some_image.1.PNG")
-    assert example_image_path.suffix == ".png"
+    assert example_image_path.suffix == "png"
+
+    example_image_path = ImagePath("some_file.")
+    assert example_image_path.suffix == ""
+
+    example_image_path = ImagePath("some_file")
+    assert example_image_path.suffix == "some_file"
 
 
 def test_PIL_functions():

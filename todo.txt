@@ -1,5 +1,4 @@
 Standard Priority:
-    Use magic over file ext when checking for convert
     Documentation
 
 Low Priority:

@@ -28,7 +28,7 @@ class ImagePath:
     __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
-        self.suffix = name[name.rfind(".") :].lower()
+        self.suffix = name[name.rfind(".") + 1 :].lower()
         self.name = name
 
     def __lt__(self, other: "ImagePath") -> bool:
