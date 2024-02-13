@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from tkinter import Canvas, Tk
+from tkinter import Canvas, Tk, Event
 
 from PIL.ImageTk import PhotoImage
 
@@ -50,7 +50,7 @@ class CustomCanvas(Canvas):
         hovered_image: PhotoImage,
         anchor: str,
         x_offset: int,
-        function_to_bind: Callable,
+        function_to_bind: Callable[[Event], None],
     ) -> int:
         """Default way to setup a button on the topbar"""
         button_id: int = self.create_image(
