@@ -20,7 +20,7 @@ def test_image_file_manager(manager: ImageFileManager):
     assert len(manager._files) == 4
     assert manager._binary_search("a.png") == 0
 
-    manager.add_new_image("y.jpeg")
+    manager.add_new_image("y.jpeg", False)
     assert len(manager._files) == 5
 
     # Should not try to rename/convert when file with that name already exists
@@ -76,9 +76,21 @@ def test_delete_file(manager: ImageFileManager):
     """Tests deleting a file from disk via file manager"""
 
     # add one extra image so it doesn't error after removing the only file
-    manager.add_new_image("Some_image.png")
+    manager.add_new_image("Some_image.png", False)
 
     with tempfile.NamedTemporaryFile() as tmp:
         manager.path_to_current_image = tmp.name
         manager.remove_current_image(True)
         assert len(manager._files) == 1
+
+
+def test_smart_adjust(manager: ImageFileManager):
+    """Should stay on current image when smart_adjust=True"""
+
+    # smart adjust should not kick in
+    manager.add_new_image("zzz.png", True)
+    assert manager._current_index == 0
+
+    # smart adjust should move index
+    manager.add_new_image("a.jpg", True)
+    assert manager._current_index == 1

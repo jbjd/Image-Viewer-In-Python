@@ -111,8 +111,9 @@ class ImageFileManager:
 
         self._populate_data_attributes()
 
-    def _ask_delete_after_convert(self, new_format: str) -> None:
-        """Used as callback function for after a succecssful file conversion"""
+    def _ask_delete_after_convert(self, new_format: str) -> bool:
+        """Used as callback function for after a succecssful file conversion
+        Returns True when user says no to delete"""
         if askyesno(
             "Confirm deletion",
             f"Converted file to {new_format}, delete old file?",
@@ -121,6 +122,8 @@ class ImageFileManager:
                 self.remove_current_image(True)
             except IndexError:
                 pass  # even if no images left, a new one will be added after this
+            return False
+        return True
 
     # TODO: test this more
     def _construct_path_for_rename(self, new_dir: str, new_name: str) -> str:
@@ -162,6 +165,7 @@ class ImageFileManager:
 
         new_full_path: str = self._construct_path_for_rename(new_dir, new_name)
 
+        need_smart_adjust: bool = False
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
@@ -170,12 +174,7 @@ class ImageFileManager:
                 new_image_data.suffix,
             )
         ):
-            was_last_image: bool = self._current_index == len(self._files) - 1
-            self._ask_delete_after_convert(new_image_data.suffix)
-            # weird case, previous function can reduce index by one
-            # when image was the last file in list due to temp removal
-            if was_last_image:
-                self._current_index += 1
+            need_smart_adjust = self._ask_delete_after_convert(new_image_data.suffix)
         else:
             os.rename(self.path_to_current_image, new_full_path)
             self._clear_image_data()
@@ -183,12 +182,17 @@ class ImageFileManager:
         if os.path.dirname(new_full_path) == os.path.dirname(
             self.path_to_current_image
         ):
-            self.add_new_image(new_name)
+            self.add_new_image(new_name, need_smart_adjust)
 
-    def add_new_image(self, new_name: str) -> None:
-        """Adds new image to internal list and updates attributes"""
+    def add_new_image(self, new_name: str, smart_adjust: bool) -> None:
+        """Adds new image to internal list and updates attributes
+        smart_adjust: True when we should adjust the index to
+        stay on the current umage"""
         image_data = ImagePath(new_name)
-        self._files.insert(self._binary_search(image_data.name), image_data)
+        insert_index: int = self._binary_search(image_data.name)
+        self._files.insert(insert_index, image_data)
+        if smart_adjust and insert_index <= self._current_index:
+            self._current_index += 1
         self._populate_data_attributes()
 
     def cache_image(
