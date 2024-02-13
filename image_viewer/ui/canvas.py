@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from tkinter import Canvas, Tk, Event
+from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
 

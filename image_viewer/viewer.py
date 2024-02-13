@@ -1,6 +1,6 @@
 import os
 from tkinter import Event, Tk
-from typing import NoReturn
+from typing import Final, NoReturn
 
 from PIL.ImageTk import PhotoImage
 
@@ -72,8 +72,8 @@ class ViewerApp:
         app.update()  # updates winfo width and height to the current size
         screen_width: int = app.winfo_width()
         screen_height: int = app.winfo_height()
-        self.height_ratio: float = screen_height / 1080
-        self.width_ratio: float = screen_width / 1920
+        self.height_ratio: Final[float] = screen_height / 1080
+        self.width_ratio: Final[float] = screen_width / 1920
 
         self.canvas.finish_init(screen_width, screen_height)
         self._load_assests(

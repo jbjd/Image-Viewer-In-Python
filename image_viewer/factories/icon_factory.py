@@ -1,3 +1,5 @@
+from typing import Final
+
 from PIL import ImageOps
 from PIL.Image import Image
 from PIL.Image import new as new_image
@@ -15,8 +17,8 @@ class IconFactory:
     __slots__ = "icon_size", "ratio"
 
     def __init__(self, icon_size: int) -> None:
-        self.icon_size: tuple[int, int] = (icon_size, icon_size)
-        self.ratio: float = icon_size / 32
+        self.icon_size: Final[tuple[int, int]] = (icon_size, icon_size)
+        self.ratio: Final[float] = icon_size / 32
 
     def _scale_tuple_to_screen(
         self, rgba: tuple[float, float, float, float]
