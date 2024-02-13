@@ -9,7 +9,8 @@ from util.PIL import resize
 
 
 def _scale_tuple(t: tuple[int, int], scale: float) -> tuple[int, int]:
-    return (int(t[0] * scale), int(t[1] * scale))
+    first, second = t
+    return (int(first * scale), int(second * scale))
 
 
 class ImageResizer:
