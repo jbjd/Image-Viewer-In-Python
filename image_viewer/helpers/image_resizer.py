@@ -104,7 +104,7 @@ class ImageResizer:
         returns: new width, new height, and interpolation to use"""
         interpolation: Resampling = (
             Resampling.HAMMING
-            if image_height > self.screen_height or image_width > self.screen_width
+            if image_height >= self.screen_height and image_width >= self.screen_width
             else Resampling.LANCZOS
         )
         width: int = round(image_width * (self.screen_height / image_height))
