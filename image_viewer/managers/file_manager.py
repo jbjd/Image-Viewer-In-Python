@@ -179,6 +179,7 @@ class ImageFileManager:
             os.rename(self.path_to_current_image, new_full_path)
             self._clear_image_data()
 
+        # Only add image if its still in the same directory
         if os.path.dirname(new_full_path) == os.path.dirname(
             self.path_to_current_image
         ):

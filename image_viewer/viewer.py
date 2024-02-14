@@ -148,8 +148,10 @@ class ViewerApp:
         icon_factory = IconFactory(topbar_height)
 
         canvas.create_topbar(icon_factory.make_topbar(screen_width))
+        # weird case, scale x offset by height, not width, since icon to its left
+        # is scaled by height, small screen could overlap otherwise
         canvas.create_name_text(
-            self._scale_pixels_to_width(36), self._scale_pixels_to_height(16), FONT
+            self._scale_pixels_to_height(36), self._scale_pixels_to_height(16), FONT
         )
 
         canvas.make_topbar_button(  # type: ignore
@@ -384,9 +386,10 @@ class ViewerApp:
             self.show_topbar()
 
         canvas.itemconfigure(self.rename_entry.id, state="normal")
+        # x offset for topbar items scaled by height, not width
         canvas.coords(
             self.rename_entry.id,
-            self.rename_window_x_offset + self._scale_pixels_to_width(40),
+            self.rename_window_x_offset + self._scale_pixels_to_height(40),
             self._scale_pixels_to_height(4),
         )
         self.rename_entry.focus()
