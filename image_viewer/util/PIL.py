@@ -18,7 +18,9 @@ def _resize_new(
     return image._new(image.im.resize(size, resample, box))  # type: ignore
 
 
-def resize(image: Image, size: tuple[int, int], resample: Resampling) -> Image:
+def resize(
+    image: Image, size: tuple[int, int], resample: Resampling = Resampling.LANCZOS
+) -> Image:
     """Modified version of resize from PIL"""
     image.load()
     if image.size == size:

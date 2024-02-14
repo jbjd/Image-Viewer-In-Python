@@ -1,5 +1,4 @@
 import pytest
-from PIL import Image
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
@@ -8,9 +7,6 @@ from image_viewer.helpers.image_resizer import ImageResizer
 @pytest.fixture
 def image_loader(image_resizer: ImageResizer) -> ImageLoader:
     image_loader = ImageLoader(None, image_resizer, lambda *_: None)  # type: ignore
-    # PIL_image will (and must) exist before calling reset
-    # since first thing done is loading an image where its normally set
-    image_loader.PIL_image = Image.new("RGB", (10, 10))
     return image_loader
 
 
