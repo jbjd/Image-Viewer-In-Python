@@ -1,4 +1,5 @@
-"""So viewer is hard to test due to being all UI code"""
+"""Viewer is hard to test due to being all UI code, testing what I can here"""
+
 from unittest import mock
 
 from image_viewer.viewer import ViewerApp
@@ -13,7 +14,7 @@ def test_pixel_scaling():
         mock_viewer = ViewerApp("", "")
         assert mock_viewer._scale_pixels_to_height(1080) == 1080
         assert mock_viewer._scale_pixels_to_width(1920) == 1920
-        mock_viewer.height_ratio = 2.21
-        mock_viewer.width_ratio = 1.21
+        mock_viewer.height_ratio = 2.21  # type: ignore
+        mock_viewer.width_ratio = 1.21  # type: ignore
         assert mock_viewer._scale_pixels_to_height(1080) == 2386
         assert mock_viewer._scale_pixels_to_width(1920) == 2323

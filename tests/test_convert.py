@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from unittest import mock
 
 import pytest
@@ -9,7 +11,7 @@ from image_viewer.util.convert import try_convert_file_and_save_new
 class MockFilePointer:
     """Mocks whats returned by builtin open"""
 
-    def __enter__(self) -> "MockFilePointer":
+    def __enter__(self) -> MockFilePointer:
         return self
 
     def __exit__(self, *_) -> None:
@@ -28,14 +30,14 @@ class MockImage:
     def __init__(self, n_frames: int = 1) -> None:
         self.n_frames: int = n_frames
 
-    def convert(self, new_mode: str) -> "MockImage":
+    def convert(self, new_mode: str) -> MockImage:
         self.mode = new_mode
         return self
 
     def save(self, *_, **kwargs) -> None:
         pass
 
-    def __enter__(self) -> "MockImage":
+    def __enter__(self) -> MockImage:
         return self
 
     def __exit__(self, *_) -> None:
