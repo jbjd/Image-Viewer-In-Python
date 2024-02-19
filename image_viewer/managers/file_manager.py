@@ -102,7 +102,7 @@ class ImageFileManager:
     def show_image_details(self) -> None:
         """Shows a popup with image details"""
         try:
-            details = self.get_cached_details()
+            details: tuple[str, ...] = self.get_cached_details()
         except KeyError:
             return  # let's not fail trying to read stuff, if not in cache just exit
 

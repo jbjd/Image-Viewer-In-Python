@@ -32,7 +32,7 @@ class ViewerApp:
         "image_loader",
         "image_load_id",
         "move_id",
-        "redraw_flag",
+        "need_to_redraw",
         "rename_button_id",
         "rename_entry",
         "rename_window_x_offset",
@@ -43,7 +43,7 @@ class ViewerApp:
         self.file_manager = ImageFileManager(first_image_to_show)
 
         # UI varaibles
-        self.redraw_flag: bool = False
+        self.need_to_redraw: bool = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
         self.image_load_id: str = ""
@@ -55,18 +55,14 @@ class ViewerApp:
         app.attributes("-fullscreen", True)
         self.canvas = CustomCanvas(app)
 
-        is_windows: bool = os.name == "nt"
-        if is_windows:
+        if os.name == "nt":
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
         else:
             from tkinter import Image as tkImage
 
-            app.tk.call(
-                "wm",
-                "iconphoto",
-                app._w,  # type: ignore
-                tkImage("photo", file=os.path.join(path_to_exe, "icon/icon.png")),
+            app.wm_iconbitmap(
+                bitmap=tkImage("photo", file=os.path.join(path_to_exe, "icon/icon.png"))
             )
 
         app.update()  # updates winfo width and height to the current size
@@ -104,15 +100,6 @@ class ViewerApp:
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         self._add_keybinds()
 
-        # OS specific keybinds
-        if is_windows:
-            app.bind(
-                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
-            )
-        else:
-            app.bind("<Button-4>", lambda _: self.move(-1))
-            app.bind("<Button-5>", lambda _: self.move(1))
-
         app.mainloop()
 
     def _add_keybinds(self) -> None:
@@ -132,6 +119,14 @@ class ViewerApp:
         app.bind("<Alt-Right>", self.handle_alt_arrow_keys)
         app.bind("<Alt-Up>", self.handle_alt_arrow_keys)
         app.bind("<Alt-Down>", self.handle_alt_arrow_keys)
+
+        if os.name == "nt":
+            app.bind(
+                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
+            )
+        else:
+            app.bind("<Button-4>", lambda _: self.move(-1))
+            app.bind("<Button-5>", lambda _: self.move(1))
 
     def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
@@ -177,8 +172,8 @@ class ViewerApp:
         # details dropdown
         (
             self.dropdown_hidden_icon,
-            self.dropdown_hidden_icon_hovered,
             self.dropdown_showing_icon,
+            self.dropdown_hidden_icon_hovered,
             self.dropdown_showing_icon_hovered,
         ) = icon_factory.make_dropdown_icons()
 
@@ -315,9 +310,9 @@ class ViewerApp:
 
     def minimize(self, _: Event) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
-        self.redraw_flag = True
+        self.need_to_redraw = True
         self.app.iconify()
-        if self.move_id:
+        if self.move_id != "":
             self.app.after_cancel(self.move_id)
 
     def refresh(self, _: Event) -> None:
@@ -339,9 +334,9 @@ class ViewerApp:
     def redraw(self, event: Event) -> None:
         """Redraws screen if current image has a diffent size than when it was loaded,
         implying it was edited outside of the program"""
-        if event.widget is not self.app or not self.redraw_flag:
+        if event.widget is not self.app or not self.need_to_redraw:
             return
-        self.redraw_flag = False
+        self.need_to_redraw = False
         if self.file_manager.current_image_cache_still_fresh():
             return
         self.load_image_unblocking()

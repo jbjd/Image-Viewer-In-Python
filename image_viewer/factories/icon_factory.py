@@ -69,10 +69,11 @@ class IconFactory:
         draw, draw_hovered = self._make_icon_base()
         return self._draw_trash_symbol(draw), self._draw_trash_symbol(draw_hovered)
 
-    def _draw_down_arrow(self, draw: ImageDraw) -> Image:
+    def _draw_down_arrow(self, draw: ImageDraw) -> tuple[PhotoImage, PhotoImage]:
         draw.line((6, 11, 16, 21), self.LINE_RGB, 2)
         draw.line((16, 21, 26, 11), self.LINE_RGB, 2)
-        return resize(draw._image, self.icon_size)  # type: ignore
+        resised_img: Image = resize(draw._image, self.icon_size)  # type: ignore
+        return PhotoImage(resised_img), PhotoImage(ImageOps.flip(resised_img))
 
     def make_dropdown_icons(
         self,
@@ -80,14 +81,7 @@ class IconFactory:
         """Return tuple of down arrow default, hovered and up arrow
         default hovered icons in that order"""
         draw, draw_hovered = self._make_icon_base()
-        default: Image = self._draw_down_arrow(draw)
-        hovered: Image = self._draw_down_arrow(draw_hovered)
-        return (
-            PhotoImage(default),
-            PhotoImage(hovered),
-            PhotoImage(ImageOps.flip(default)),
-            PhotoImage(ImageOps.flip(hovered)),
-        )
+        return self._draw_down_arrow(draw) + self._draw_down_arrow(draw_hovered)
 
     def _draw_rename_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.rectangle((7, 10, 25, 22), None, self.LINE_RGB, 1)
