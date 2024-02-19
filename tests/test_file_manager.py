@@ -55,6 +55,18 @@ def test_bad_path(img_dir: str):
         ImageFileManager(os.path.join(img_dir, "not_an_image.txt"))
 
 
+@mock.patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
+def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
+    """When calling rename, certain conditions should raise errors"""
+    with pytest.raises(OSError):
+        manager.rename_or_convert_current_image(
+            os.path.join("this/does/not/exist", "asdf.png")
+        )
+    # If path exists, error when user cancels (mocked in askyesno)
+    with pytest.raises(OSError):
+        manager.rename_or_convert_current_image(os.path.join(img_dir, "a.png"))
+
+
 def test_caching(manager: ImageFileManager):
     """Test various caching methods to ensure they act as expected"""
     manager.cache_image(None, 20, 20, "20x20", 0)  # type: ignore

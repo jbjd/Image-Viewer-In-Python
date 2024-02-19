@@ -105,7 +105,7 @@ class ImageFileManager:
             self._current_index = remaining_image_count - 1
 
         # This needs to be after index check if we catch IndexError and add
-        # a new image, we can safely increment index from -1 -> 0
+        # a new image, index will be -1 which works for newly added image
         if remaining_image_count == 0:
             raise IndexError()
 
@@ -125,7 +125,6 @@ class ImageFileManager:
             return False
         return True
 
-    # TODO: test this more
     def _construct_path_for_rename(self, new_dir: str, new_name: str) -> str:
         """Makes new path with validations when moving between directories"""
         will_not_move: bool = new_dir == ""  # if user only provided a name
@@ -145,7 +144,7 @@ class ImageFileManager:
         if will_not_move:
             return new_full_path
 
-        if not askyesno(  # TODO: ask follow instead?
+        if not askyesno(
             "Confirm move",
             f"Move file to {new_dir}?",
         ):
