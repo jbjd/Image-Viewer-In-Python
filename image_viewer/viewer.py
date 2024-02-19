@@ -205,7 +205,7 @@ class ViewerApp:
         self.rename_entry = RenameEntry(  # TODO: move this to canvas?
             app, canvas, rename_id, rename_window_width, font=FONT
         )
-        self.rename_entry.bind("<Return>", self.try_rename_or_convert)
+        self.rename_entry.bind("<Return>", self.rename_or_convert)
         canvas.itemconfigure(rename_id, state="hidden", window=self.rename_entry)
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
@@ -281,7 +281,7 @@ class ViewerApp:
         """Function to be called in Tk thread for loading image with zoom"""
         new_image: PhotoImage | None = self.image_loader.get_zoomed_image(keycode)
         if new_image is not None:
-            self.canvas.update_img_display(new_image, False)
+            self.canvas.update_image_display(new_image)
 
     def handle_zoom(self, event: Event) -> None:
         """Handle user input of zooming in or out"""
@@ -387,7 +387,7 @@ class ViewerApp:
         )
         self.rename_entry.focus()
 
-    def try_rename_or_convert(self, _: Event) -> None:
+    def rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.
         Trys to convert or rename based on input"""
         try:
@@ -398,12 +398,12 @@ class ViewerApp:
 
         # Cleanup after successful rename
         self.hide_rename_window()
-        self.load_image()
-        self.refresh_topbar()
+        self.load_image_unblocking()
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.update_img_display(current_image, True)
+        self.canvas.center_image()
+        self.canvas.update_image_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
@@ -445,7 +445,7 @@ class ViewerApp:
 
     def refresh_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
-        self.rename_window_x_offset = self.canvas.refresh_text(
+        self.rename_window_x_offset = self.canvas.update_file_name(
             self.file_manager.current_image.name
         )
         self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
@@ -469,7 +469,7 @@ class ViewerApp:
             ms_backoff = int(ms_backoff * 1.4)
             ms_until_next_frame = ms_backoff
         else:
-            self.canvas.update_img_display(frame_and_speed[0], False)
+            self.canvas.update_image_display(frame_and_speed[0])
             ms_until_next_frame = frame_and_speed[1]
 
         self.animation_loop(ms_until_next_frame, ms_backoff)

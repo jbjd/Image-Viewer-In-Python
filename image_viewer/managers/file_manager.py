@@ -5,7 +5,7 @@ from tkinter.messagebox import askyesno, showinfo
 from PIL.ImageTk import PhotoImage
 
 from util.convert import try_convert_file_and_save_new
-from util.image import CachedImageData, ImagePath
+from util.image import CachedImageData, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
 
 if os.name == "nt":
@@ -43,12 +43,12 @@ class ImageFileManager:
         if not os.path.isfile(first_image_to_load):
             raise ValueError("File doesn't exist or is a directory")
 
-        first_image_data = ImagePath(os.path.basename(first_image_to_load))
+        first_image_data = ImageName(os.path.basename(first_image_to_load))
         if first_image_data.suffix not in self.VALID_FILE_TYPES:
             raise ValueError("File extension not supported")
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
-        self._files: list[ImagePath] = [first_image_data]
+        self._files: list[ImageName] = [first_image_data]
         self._index: int = 0
         self._populate_data_attributes()
         self.cache: dict[str, CachedImageData] = {}
@@ -72,7 +72,7 @@ class ImageFileManager:
         self._files = [
             image_path
             for path in walk_dir(self.image_directory)
-            if (image_path := ImagePath(path)).suffix in VALID_FILE_TYPES
+            if (image_path := ImageName(path)).suffix in VALID_FILE_TYPES
         ]
 
         self._files.sort()
@@ -85,7 +85,7 @@ class ImageFileManager:
         self.fully_load_image_data()
 
     def get_cached_details(self) -> tuple[str, str, str]:
-        """Returns tuple of image dimensions, size, and mode
+        """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
         image_info: CachedImageData = self.cache[self.current_image.name]
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
@@ -193,10 +193,10 @@ class ImageFileManager:
         new_name: str = clean_str_for_OS_path(os.path.basename(new_name_or_path))
         new_dir: str = os.path.dirname(new_name_or_path)
 
-        new_image_data = ImagePath(new_name)
+        new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
             new_name += f".{self.current_image.suffix}"
-            new_image_data = ImagePath(new_name)
+            new_image_data = ImageName(new_name)
 
         new_full_path: str = self._construct_path_for_rename(new_dir, new_name)
 
@@ -224,7 +224,7 @@ class ImageFileManager:
         """Adds new image to internal list
         smart_adjust: True when we need to adjust the index to
         stay on the current umage"""
-        image_data = ImagePath(new_name)
+        image_data = ImageName(new_name)
         insert_index: int = self._binary_search(image_data.name)
         self._files.insert(insert_index, image_data)
         if smart_adjust and insert_index <= self._index:

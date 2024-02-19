@@ -6,7 +6,7 @@ from PIL.ImageTk import PhotoImage
 
 
 def _clean_long_name(image_name: str) -> str:
-    """Takes a name and returns a shortened version if too long"""
+    """Takes a name and returns a shortened version if its too long"""
     end_index: int = image_name.rfind(".")
     MAX: int = 40
     if end_index < MAX:
@@ -95,11 +95,12 @@ class CustomCanvas(Canvas):
             tags="topbar",
         )
 
-    def update_img_display(self, new_image: PhotoImage, reset_location: bool) -> None:
+    def center_image(self) -> None:
+        self.move(self.image_display_id, self.move_x, self.move_y)
+        self.move_x = self.move_y = 0
+
+    def update_image_display(self, new_image: PhotoImage) -> None:
         """Updates dispalyed with a new image and internal location metric"""
-        if reset_location:
-            self.move(self.image_display_id, self.move_x, self.move_y)
-            self.move_x = self.move_y = 0
         self.itemconfigure(self.image_display_id, image=new_image)
 
     def handle_alt_arrow_keys(self, keycode: int) -> None:
@@ -133,8 +134,8 @@ class CustomCanvas(Canvas):
         # really want to call the internal scale function each time...
         self.move(self.image_display_id, x, y)
 
-    def refresh_text(self, new_name: str) -> int:
-        """Updates file name text"""
+    def update_file_name(self, new_name: str) -> int:
+        """Updates file name. Returns width of new name"""
         self.itemconfigure(self.file_name_text_id, text=_clean_long_name(new_name))
         return self.bbox(self.file_name_text_id)[2]
 

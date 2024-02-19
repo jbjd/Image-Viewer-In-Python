@@ -29,7 +29,7 @@ class CachedImageData:
         self.mode: str = mode
 
 
-class ImagePath:
+class ImageName:
     """Full name and suffix of loaded image files"""
 
     __slots__ = ("name", "suffix")
@@ -38,7 +38,7 @@ class ImagePath:
         self.suffix = name[name.rfind(".") + 1 :].lower()
         self.name = name
 
-    def __lt__(self, other: "ImagePath") -> bool:
+    def __lt__(self, other: "ImageName") -> bool:
         return OS_name_cmp(self.name, other.name)
 
 
