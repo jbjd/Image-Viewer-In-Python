@@ -53,7 +53,8 @@ class ViewerApp:
         app = Tk()
         self.app = app
         app.attributes("-fullscreen", True)
-        self.canvas = CustomCanvas(app)
+        canvas = CustomCanvas(app)
+        self.canvas = canvas
 
         if os.name == "nt":
             app.state("zoomed")
@@ -65,28 +66,24 @@ class ViewerApp:
                 bitmap=tkImage("photo", file=os.path.join(path_to_exe, "icon/icon.png"))
             )
 
-        app.update()  # updates winfo width and height to the current size
-        screen_width: int = app.winfo_width()
-        screen_height: int = app.winfo_height()
-        self.height_ratio: Final[float] = screen_height / 1080
-        self.width_ratio: Final[float] = screen_width / 1920
+        self.height_ratio: Final[float] = canvas.screen_height / 1080
+        self.width_ratio: Final[float] = canvas.screen_width / 1920
 
-        self.canvas.finish_init(screen_width, screen_height)
         self._load_assests(
-            app, self.canvas, screen_width, self._scale_pixels_to_height(32)
+            app, canvas, canvas.screen_width, self._scale_pixels_to_height(32)
         )
 
         # set up and draw first image, then get all image paths in directory
         self.image_loader = ImageLoader(
             self.file_manager,
-            ImageResizer(screen_width, screen_height, path_to_exe),
+            ImageResizer(canvas.screen_width, canvas.screen_height, path_to_exe),
             self.animation_loop,
         )
 
         init_PIL(self._scale_pixels_to_height(22))
 
-        # Don't call load_image for first image since if it fails to load, don't exit
-        # until we load the rest of the images and try to display them as well
+        # Don't call this class's load_image here since we only loaded one image
+        # and if its failed to load, we don't want to exit. Special check for that here
         if (current_image := self.image_loader.load_image()) is not None:
             self.update_after_image_load(current_image)
             app.update()

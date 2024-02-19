@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from tkinter import Canvas, Event, Tk
+from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
@@ -33,16 +34,16 @@ class CustomCanvas(Canvas):
         self.move_x: int = 0
         self.move_y: int = 0
 
-    def finish_init(self, screen_width: int, screen_height: int) -> None:
-        """Finishes init since screen size not known before canvas needs to display"""
+        master.update()  # updates winfo width and height to the current size
+        self.screen_width: Final[int] = master.winfo_width()
+        self.screen_height: Final[int] = master.winfo_height()
+
         self.create_rectangle(
-            0, 0, screen_width, screen_height, fill="black", tags="back"
+            0, 0, self.screen_width, self.screen_height, fill="black", tags="back"
         )
         self.image_display_id = self.create_image(
-            screen_width >> 1, screen_height >> 1, anchor="center", tag="back"
+            self.screen_width >> 1, self.screen_height >> 1, anchor="center", tag="back"
         )
-        self.screen_width = screen_width
-        self.screen_height = screen_height
 
     def make_topbar_button(
         self,
