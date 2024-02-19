@@ -10,7 +10,7 @@ from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from ui.canvas import CustomCanvas
 from ui.rename_entry import RenameEntry
-from util.image import CachedImageData, DropdownImage
+from util.image import DropdownImage
 from util.PIL import create_dropdown_image, init_PIL
 
 
@@ -123,8 +123,9 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind("<Control-d>", lambda _: self.load_image_unblocking())
+        app.bind("<Control-d>", lambda _: self.file_manager.show_image_details())
         app.bind("<F2>", self.toggle_show_rename_window)
+        app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
         app.bind("<Alt-Left>", self.handle_ctrl_arrow_keys)
@@ -495,13 +496,12 @@ class ViewerApp:
         dropdown = self.dropdown
         if dropdown.showing:
             if dropdown.need_refresh:
-                image_info: CachedImageData | None = (
-                    self.file_manager.get_current_image_cache()
-                )
-                if image_info is None:
-                    return
-                dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
-                size_text: str = f"Size: {image_info.dimensions}"
+                try:
+                    dimension_text, size_text, _ = (
+                        self.file_manager.get_cached_details()
+                    )
+                except KeyError:
+                    return  # data not present in cache
 
                 dropdown.image = create_dropdown_image(dimension_text, size_text)
 

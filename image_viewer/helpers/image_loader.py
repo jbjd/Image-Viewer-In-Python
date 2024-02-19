@@ -82,19 +82,20 @@ class ImageLoader:
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
 
     def _cache_image(
-        self, current_image: PhotoImage, size: tuple[int, int], image_kb_size: int
+        self,
+        current_image: PhotoImage,
+        size: tuple[int, int],
+        image_kb_size: int,
+        mode: str,
     ) -> None:
-        dimension_display: str = (
+        size_display: str = (
             f"{round(image_kb_size/10.24)/100}mb"
             if image_kb_size > 999
             else f"{image_kb_size}kb"
         )
 
         self.file_manager.cache_image(
-            current_image,
-            *size,
-            dimension_display,
-            image_kb_size,
+            current_image, *size, size_display, image_kb_size, mode
         )
 
     def load_image(self) -> PhotoImage | None:
@@ -120,9 +121,10 @@ class ImageLoader:
         if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
             current_image = cached_image_data.image
         else:
+            mode: str = PIL_image.mode  # save original mode pre-resizing
             current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
 
-            self._cache_image(current_image, PIL_image.size, image_kb_size)
+            self._cache_image(current_image, PIL_image.size, image_kb_size, mode)
 
         frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:

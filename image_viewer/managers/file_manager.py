@@ -1,5 +1,6 @@
 import os
-from tkinter.messagebox import askyesno
+from time import ctime
+from tkinter.messagebox import askyesno, showinfo
 
 from PIL.ImageTk import PhotoImage
 
@@ -83,6 +84,42 @@ class ImageFileManager:
         images in direcrory"""
         self.cache = {}
         self.fully_load_image_data()
+
+    def get_cached_details(self) -> tuple[str, str, str]:
+        """Returns tuple of image dimensions and size
+        Can raise KeyError on failure to get data from cache"""
+        image_info: CachedImageData = self.cache[self.current_image.name]
+        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
+        size_text: str = f"Size: {image_info.size_display}"
+        bpp: int = len(image_info.mode) * 8 if image_info.mode != "1" else 1
+        readable_mode: str = {
+            "P": "Palette",
+            "L": "Grayscale",
+            "1": "Black And White",
+        }.get(image_info.mode, image_info.mode)
+        format_text: str = f"Pixel Format: {bpp} bpp {readable_mode}"
+        return (dimension_text, size_text, format_text)
+
+    def show_image_details(self) -> None:
+        """Shows a popup with image details"""
+        try:
+            details = self.get_cached_details()
+        except KeyError:
+            return  # let's not fail trying to read stuff, if not in cache just exit
+
+        try:
+            os_info = os.stat(self.path_to_current_image)
+            # [4:] chops of 3 character day like Mon/Tue/etc.
+            created_time: str = ctime(os_info.st_ctime)[4:]
+            last_modifed_time: str = ctime(os_info.st_mtime)[4:]
+            details += (
+                f"Created: {created_time}",
+                f"Last Modified: {last_modifed_time}",
+            )
+        except (OSError, ValueError):
+            pass  # don't include if can't get
+
+        showinfo("Image Details", "\n".join(details))
 
     def move_current_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
@@ -200,15 +237,17 @@ class ImageFileManager:
         image: PhotoImage,
         width: int,
         height: int,
-        dimensions: str,
+        size_display: str,
         kb_size: int,
+        mode: str,
     ) -> None:
         self.cache[self.current_image.name] = CachedImageData(
             image,
             width,
             height,
-            dimensions,
+            size_display,
             kb_size,
+            mode,
         )
 
     def current_image_cache_still_fresh(self) -> bool:

@@ -10,16 +10,23 @@ from util.os import OS_name_cmp
 class CachedImageData:
     """Information stored to skip resizing/system calls on repeated opening"""
 
-    __slots__ = ("dimensions", "height", "image", "kb_size", "width")
+    __slots__ = ("height", "image", "kb_size", "mode", "size_display", "width")
 
     def __init__(
-        self, image: PhotoImage, width: int, height: int, dimensions: str, kb_size: int
+        self,
+        image: PhotoImage,
+        width: int,
+        height: int,
+        size_display: str,
+        kb_size: int,
+        mode: str,
     ) -> None:
         self.image: PhotoImage = image
         self.width: int = width
         self.height: int = height
-        self.dimensions: str = dimensions
+        self.size_display: str = size_display
         self.kb_size: int = kb_size
+        self.mode: str = mode
 
 
 class ImagePath:
