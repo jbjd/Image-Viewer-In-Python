@@ -128,10 +128,10 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Alt-Left>", self.handle_ctrl_arrow_keys)
-        app.bind("<Alt-Right>", self.handle_ctrl_arrow_keys)
-        app.bind("<Alt-Up>", self.handle_ctrl_arrow_keys)
-        app.bind("<Alt-Down>", self.handle_ctrl_arrow_keys)
+        app.bind("<Alt-Left>", self.handle_alt_arrow_keys)
+        app.bind("<Alt-Right>", self.handle_alt_arrow_keys)
+        app.bind("<Alt-Up>", self.handle_alt_arrow_keys)
+        app.bind("<Alt-Down>", self.handle_alt_arrow_keys)
 
     def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
@@ -267,10 +267,10 @@ class ViewerApp:
             self.move(move_amount)
             self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
 
-    def handle_ctrl_arrow_keys(self, event: Event) -> None:
+    def handle_alt_arrow_keys(self, event: Event) -> None:
         """Wraps canvas's event handler if app is focused"""
         if event.widget is self.app:
-            self.canvas.handle_ctrl_arrow_keys(event.keycode)
+            self.canvas.handle_alt_arrow_keys(event.keycode)
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
@@ -289,7 +289,7 @@ class ViewerApp:
         """Function to be called in Tk thread for loading image with zoom"""
         new_image: PhotoImage | None = self.image_loader.get_zoomed_image(keycode)
         if new_image is not None:
-            self.canvas.update_img_display(new_image)
+            self.canvas.update_img_display(new_image, False)
 
     def handle_zoom(self, event: Event) -> None:
         """Handle user input of zooming in or out"""
@@ -333,7 +333,7 @@ class ViewerApp:
         """Moves to different image
         amount: any non-zero value indicating movement to next or previous"""
         self.hide_rename_window()
-        self.file_manager.move_current_index(amount)
+        self.file_manager.move_index(amount)
         self.load_image_unblocking()
 
     def redraw(self, event: Event) -> None:
@@ -411,7 +411,7 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.update_img_display_and_location(current_image)
+        self.canvas.update_img_display(current_image, True)
         self.app.title(self.file_manager.current_image.name)
 
     def load_image(self) -> None:
@@ -477,7 +477,7 @@ class ViewerApp:
             ms_backoff = int(ms_backoff * 1.4)
             ms_until_next_frame = ms_backoff
         else:
-            self.canvas.update_img_display(frame_and_speed[0])
+            self.canvas.update_img_display(frame_and_speed[0], False)
             ms_until_next_frame = frame_and_speed[1]
 
         self.animation_loop(ms_until_next_frame, ms_backoff)

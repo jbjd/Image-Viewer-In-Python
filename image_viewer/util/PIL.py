@@ -4,7 +4,6 @@ Functions for manipulating PIL and PIL's image objects
 
 from PIL.Image import Image, Resampling, new
 from PIL.ImageDraw import Draw, ImageDraw
-from PIL.ImageFont import truetype
 from PIL.ImageTk import PhotoImage
 
 
@@ -40,14 +39,15 @@ def resize(
 
 
 def init_PIL(font_size: int) -> None:
-    """Sets up font and PIL's internal list of plugins to load"""
-    # setup font
+    """Sets up font and edit PIL's internal list of plugins to load"""
+    from PIL.ImageFont import truetype
+
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
 
-    # edit these so PIL will not waste time importing +20 useless modules
     from PIL import Image as _Image  # avoid name conflict
 
+    # edit these so PIL will not waste time importing +20 useless modules
     _Image._plugins = []  # type: ignore
 
     def preinit():

@@ -29,8 +29,8 @@ class ImageFileManager:
     }
 
     __slots__ = (
-        "_current_index",
         "_files",
+        "_index",
         "cache",
         "current_image",
         "image_directory",
@@ -49,7 +49,7 @@ class ImageFileManager:
 
         self.image_directory: str = os.path.dirname(first_image_to_load)
         self._files: list[ImagePath] = [first_image_data]
-        self._current_index: int = 0
+        self._index: int = 0
         self._populate_data_attributes()
         self.cache: dict[str, CachedImageData] = {}
 
@@ -58,15 +58,15 @@ class ImageFileManager:
 
     def _populate_data_attributes(self) -> None:
         """Sets variables about current image.
-        Should be called when lenth of files changes"""
-        self.current_image = self._files[self._current_index]
+        Should be called after adding/deleting an image"""
+        self.current_image = self._files[self._index]
         self.path_to_current_image = self.construct_path_to_image(
             self.current_image.name
         )
 
     def fully_load_image_data(self) -> None:
         """Init only loads one file, load entire directory here"""
-        image_to_start_at: str = self._files[self._current_index].name
+        image_to_start_at: str = self._files[self._index].name
 
         VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = [
@@ -76,18 +76,17 @@ class ImageFileManager:
         ]
 
         self._files.sort()
-        self._current_index = self._binary_search(image_to_start_at)
+        self._index = self._binary_search(image_to_start_at)
         self._populate_data_attributes()
 
     def refresh_image_list(self) -> None:
-        """Clears cache and updates internal image list with current
-        images in direcrory"""
+        """Clears cache and re-loads current images in direcrory"""
         self.cache = {}
         self.fully_load_image_data()
 
     def get_cached_details(self) -> tuple[str, str, str]:
-        """Returns tuple of image dimensions and size
-        Can raise KeyError on failure to get data from cache"""
+        """Returns tuple of image dimensions, size, and mode
+        Can raise KeyError on failure to get data"""
         image_info: CachedImageData = self.cache[self.current_image.name]
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.size_display}"
@@ -121,14 +120,14 @@ class ImageFileManager:
 
         showinfo("Image Details", "\n".join(details))
 
-    def move_current_index(self, amount: int) -> None:
+    def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
-        self._current_index = (self._current_index + amount) % len(self._files)
+        self._index = (self._index + amount) % len(self._files)
 
         self._populate_data_attributes()
 
     def _clear_image_data(self) -> None:
-        self.cache.pop(self._files.pop(self._current_index).name, None)
+        self.cache.pop(self._files.pop(self._index).name, None)
 
     def remove_current_image(self, delete_from_disk: bool) -> None:
         """Deletes image from files array, cache, and optionally disk"""
@@ -138,8 +137,8 @@ class ImageFileManager:
 
         remaining_image_count: int = len(self._files)
 
-        if self._current_index >= remaining_image_count:
-            self._current_index = remaining_image_count - 1
+        if self._index >= remaining_image_count:
+            self._index = remaining_image_count - 1
 
         # This needs to be after index check if we catch IndexError and add
         # a new image, index will be -1 which works for newly added image
@@ -222,14 +221,14 @@ class ImageFileManager:
             self.add_new_image(new_name, need_smart_adjust)
 
     def add_new_image(self, new_name: str, smart_adjust: bool) -> None:
-        """Adds new image to internal list and updates attributes
-        smart_adjust: True when we should adjust the index to
+        """Adds new image to internal list
+        smart_adjust: True when we need to adjust the index to
         stay on the current umage"""
         image_data = ImagePath(new_name)
         insert_index: int = self._binary_search(image_data.name)
         self._files.insert(insert_index, image_data)
-        if smart_adjust and insert_index <= self._current_index:
-            self._current_index += 1
+        if smart_adjust and insert_index <= self._index:
+            self._index += 1
         self._populate_data_attributes()
 
     def cache_image(
@@ -238,7 +237,7 @@ class ImageFileManager:
         width: int,
         height: int,
         size_display: str,
-        kb_size: int,
+        size_in_kb: int,
         mode: str,
     ) -> None:
         self.cache[self.current_image.name] = CachedImageData(
@@ -246,7 +245,7 @@ class ImageFileManager:
             width,
             height,
             size_display,
-            kb_size,
+            size_in_kb,
             mode,
         )
 
@@ -256,7 +255,7 @@ class ImageFileManager:
         try:
             return (
                 os.stat(self.path_to_current_image).st_size
-                == self.cache[self.current_image.name].kb_size
+                == self.cache[self.current_image.name].size_in_kb
             )
         except (OSError, ValueError, KeyError):
             return False

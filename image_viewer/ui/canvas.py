@@ -94,17 +94,14 @@ class CustomCanvas(Canvas):
             tags="topbar",
         )
 
-    def update_img_display(self, new_image: PhotoImage) -> None:
-        """Updates dispalyed with a new image"""
+    def update_img_display(self, new_image: PhotoImage, reset_location: bool) -> None:
+        """Updates dispalyed with a new image and internal location metric"""
+        if reset_location:
+            self.move(self.image_display_id, self.move_x, self.move_y)
+            self.move_x = self.move_y = 0
         self.itemconfigure(self.image_display_id, image=new_image)
 
-    def update_img_display_and_location(self, new_image: PhotoImage) -> None:
-        """Updates dispalyed with a new image and internal location metric"""
-        self.move(self.image_display_id, self.move_x, self.move_y)
-        self.update_img_display(new_image)
-        self.move_x = self.move_y = 0
-
-    def handle_ctrl_arrow_keys(self, keycode: int) -> None:
+    def handle_alt_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""
         bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
         match keycode:

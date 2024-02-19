@@ -23,41 +23,39 @@ class RenameEntry(Entry):
             width=min_width,
         )
 
+        self.being_resized: bool = False
+        self.cursor: str = ""
         self.id: int = id
         self.min_width: int = min_width
 
-        self.being_resized: bool = False
-        self.cursor: str = ""
-
         # ensure ctrl+c is processed outside of this program
         self.bind("<Control-c>", lambda _: self.master.update(), True)
-        self.bind("<ButtonPress-1>", self._try_start_resize)
+        self.bind("<ButtonPress-1>", self._start_resize)
         self.bind("<ButtonRelease-1>", self._stop_resize)
-        self.bind("<Motion>", lambda e: self._resize(canvas, e))
+        self.bind("<Motion>", lambda e: self._resize(canvas, e.x))
 
-    def can_resize(self, event: Event) -> bool:
-        width = self.cget("width")
-        if event.x >= width - (self.min_width // 35):
+    def can_resize(self, target_width: int) -> bool:
+        width: int = self.cget("width")
+        if target_width >= width - (self.min_width // 35):
             return True
         return False
 
-    def _try_start_resize(self, event: Event) -> None:
-        self.being_resized = self.can_resize(event)
+    def _start_resize(self, event: Event) -> None:
+        self.being_resized = self.can_resize(event.x)
 
     def _stop_resize(self, _: Event) -> None:
         self.config(state="normal")
         self.being_resized = False
 
-    def _resize(self, canvas: Canvas, event: Event) -> None:
-        """Handles user draggig to resize rename window"""
+    def _resize(self, canvas: Canvas, new_width: int) -> None:
+        """Handles dragging to resize rename window"""
         if self.being_resized:
             self.config(state="disabled")
-            new_width: int = event.x
             if (new_width >= self.min_width) and (new_width <= (self.min_width << 1)):
                 self.config(width=new_width)
                 canvas.itemconfig(self.id, width=new_width)
         else:
-            cursor = "sb_h_double_arrow" if self.can_resize(event) else ""
+            cursor: str = "sb_h_double_arrow" if self.can_resize(new_width) else ""
             if cursor != self.cursor:
                 self.config(cursor=cursor)
                 self.cursor = cursor

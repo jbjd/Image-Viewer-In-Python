@@ -69,7 +69,7 @@ def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
 
 def test_caching(manager: ImageFileManager):
     """Test various caching methods to ensure they act as expected"""
-    manager.cache_image(None, 20, 20, "20x20", 0)  # type: ignore
+    manager.cache_image(None, 20, 20, "20x20", 0, "RGB")  # type: ignore
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
     assert manager.current_image_cache_still_fresh()
@@ -78,10 +78,10 @@ def test_caching(manager: ImageFileManager):
     assert not manager.current_image_cache_still_fresh()
 
 
-def test_move_current_index(manager: ImageFileManager):
+def test_move_index(manager: ImageFileManager):
     """Test moving to an index thats too large"""
-    manager.move_current_index(999)
-    assert manager._current_index == 0
+    manager.move_index(999)
+    assert manager._index == 0
 
 
 def test_delete_file(manager: ImageFileManager):
@@ -101,8 +101,8 @@ def test_smart_adjust(manager: ImageFileManager):
 
     # smart adjust should not kick in
     manager.add_new_image("zzz.png", True)
-    assert manager._current_index == 0
+    assert manager._index == 0
 
     # smart adjust should move index
     manager.add_new_image("a.jpg", True)
-    assert manager._current_index == 1
+    assert manager._index == 1

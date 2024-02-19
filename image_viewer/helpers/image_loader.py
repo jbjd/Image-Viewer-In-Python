@@ -84,18 +84,18 @@ class ImageLoader:
     def _cache_image(
         self,
         current_image: PhotoImage,
-        size: tuple[int, int],
-        image_kb_size: int,
+        dimensions: tuple[int, int],
+        size_in_kb: int,
         mode: str,
     ) -> None:
         size_display: str = (
-            f"{round(image_kb_size/10.24)/100}mb"
-            if image_kb_size > 999
-            else f"{image_kb_size}kb"
+            f"{round(size_in_kb/10.24)/100}mb"
+            if size_in_kb > 999
+            else f"{size_in_kb}kb"
         )
 
         self.file_manager.cache_image(
-            current_image, *size, size_display, image_kb_size, mode
+            current_image, *dimensions, size_display, size_in_kb, mode
         )
 
     def load_image(self) -> PhotoImage | None:
@@ -107,24 +107,22 @@ class ImageLoader:
             # open even if in cache to throw error if user deleted it outside of program
             fp = open(path_to_current_image, "rb")
             self.PIL_image = open_image(fp, "r", magic_number_guess(fp.read(4)))
-        except (FileNotFoundError, UnidentifiedImageError, ImportError):
-            # except import error since user might open file with inaccurate ext
-            # and trigger import that was excluded if they compiled as standalone
+        except (FileNotFoundError, UnidentifiedImageError):
             return None
 
         PIL_image = self.PIL_image
-        image_kb_size: int = stat(path_to_current_image).st_size >> 10
+        size_in_kb: int = stat(path_to_current_image).st_size >> 10
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
         cached_image_data = self.file_manager.get_current_image_cache()
-        if cached_image_data is not None and image_kb_size == cached_image_data.kb_size:
+        if cached_image_data is not None and size_in_kb == cached_image_data.size_in_kb:
             current_image = cached_image_data.image
         else:
-            mode: str = PIL_image.mode  # save original mode pre-resizing
+            original_mode: str = PIL_image.mode  # save since resize might change it
             current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
 
-            self._cache_image(current_image, PIL_image.size, image_kb_size, mode)
+            self._cache_image(current_image, PIL_image.size, size_in_kb, original_mode)
 
         frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:
@@ -161,7 +159,7 @@ class ImageLoader:
                     self.zoom_level -= 1
                     self.zoom_cap = self.zoom_level
                 return zoomed_image
-        except (FileNotFoundError, UnidentifiedImageError, ImportError):
+        except (FileNotFoundError, UnidentifiedImageError):
             return None
 
     def load_remaining_frames(
