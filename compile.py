@@ -1,9 +1,9 @@
-import importlib
 import os
 import shutil
 import subprocess
 from argparse import REMAINDER, ArgumentParser
 from glob import glob
+from importlib import import_module
 from sys import version_info
 
 from compile_utils.cleaner import clean_file_and_copy
@@ -148,7 +148,7 @@ try:
     move_files_to_tmp_and_clean(CODE_DIR)
 
     for mod_name in ["turbojpeg", "send2trash"]:  # TODO: add more
-        module = importlib.import_module(mod_name)
+        module = import_module(mod_name)
         if module.__file__ is None:
             print(f"Error getting module {mod_name}'s filepath")
             continue
