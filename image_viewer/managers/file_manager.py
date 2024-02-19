@@ -2,10 +2,8 @@ import os
 from time import ctime
 from tkinter.messagebox import askyesno, showinfo
 
-from PIL.ImageTk import PhotoImage
-
 from util.convert import try_convert_file_and_save_new
-from util.image import CachedImageData, ImageName
+from util.image import CachedImage, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
 
 if os.name == "nt":
@@ -51,7 +49,7 @@ class ImageFileManager:
         self._files: list[ImageName] = [first_image_data]
         self._index: int = 0
         self._populate_data_attributes()
-        self.cache: dict[ImageName, CachedImageData] = {}
+        self.cache: dict[ImageName, CachedImage] = {}
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
@@ -87,7 +85,7 @@ class ImageFileManager:
     def get_cached_details(self) -> tuple[str, str, str]:
         """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
-        image_info: CachedImageData = self.cache[self.current_image]
+        image_info: CachedImage = self.cache[self.current_image]
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.size_display}"
         bpp: int = len(image_info.mode) * 8 if image_info.mode != "1" else 1
@@ -231,23 +229,8 @@ class ImageFileManager:
             self._index += 1
         self._populate_data_attributes()
 
-    def cache_image(
-        self,
-        image: PhotoImage,
-        width: int,
-        height: int,
-        size_display: str,
-        size_in_kb: int,
-        mode: str,
-    ) -> None:
-        self.cache[self.current_image] = CachedImageData(
-            image,
-            width,
-            height,
-            size_display,
-            size_in_kb,
-            mode,
-        )
+    def cache_image(self, cached_image: CachedImage) -> None:
+        self.cache[self.current_image] = cached_image
 
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when it seems the cached image is still accurate.
@@ -260,7 +243,7 @@ class ImageFileManager:
         except (OSError, ValueError, KeyError):
             return False
 
-    def get_current_image_cache(self) -> CachedImageData | None:
+    def get_current_image_cache(self) -> CachedImage | None:
         return self.cache.get(self.current_image, None)
 
     def _binary_search(self, target_image: str) -> int:

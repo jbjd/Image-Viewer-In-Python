@@ -9,7 +9,7 @@ from PIL.ImageTk import PhotoImage
 
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
-from util.image import magic_number_guess
+from util.image import CachedImage, magic_number_guess
 
 
 class ImageLoader:
@@ -95,7 +95,13 @@ class ImageLoader:
         )
 
         self.file_manager.cache_image(
-            current_image, *dimensions, size_display, size_in_kb, mode
+            CachedImage(
+                current_image,
+                *dimensions,
+                size_display,
+                size_in_kb,
+                mode,
+            )
         )
 
     def load_image(self) -> PhotoImage | None:
