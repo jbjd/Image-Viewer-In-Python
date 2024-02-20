@@ -167,14 +167,14 @@ try:
     # Begin nuitka compilation in subprocess
     print("Starting compilation with nuitka")
     print("Using python install ", args.python_path)
-    cmd_str = f'{args.python_path} -m nuitka --follow-import-to="factories" \
+    cmd_str = f'{args.python_path} -m nuitka --lto=yes --follow-import-to="factories" \
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers" {extra_args} \
         --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" \
         --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/main.py"'
 
     compile_env = os.environ.copy()
-    compile_env["CCFLAGS"] = "-Ofast"
+    compile_env["CCFLAGS"] = "-Ofast -fno-signed-zeros"
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR, env=compile_env)
 
     if args.install_path:
