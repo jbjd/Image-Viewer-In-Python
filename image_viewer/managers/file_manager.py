@@ -203,7 +203,7 @@ class ImageFileManager:
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
         new_dir, new_name = self._split_dir_and_name(new_name_or_path)
-        # TODO: strink "/./" into "/" and "abc/../" into "abc"
+        # TODO: strink "/./" into "/" and "abc/123/../" into "abc/"
 
         new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
