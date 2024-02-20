@@ -43,13 +43,13 @@ class ImageLoader:
 
         self.PIL_image = Image()
 
-        self.aniamtion_frames: list[tuple[PhotoImage, int] | None] = []
+        self.aniamtion_frames: list[tuple[PhotoImage | None, int]] = []
         self.frame_index: int = 0
         self.zoom_cap: int = 512
         self.zoom_level: int = 0
         self.zoomed_image_cache: list[PhotoImage] = []
 
-    def get_next_frame(self) -> tuple[PhotoImage, int] | None:
+    def get_next_frame(self) -> tuple[PhotoImage | None, int]:
         """Gets next frame of animated image, will error otherwise"""
         self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
         current_frame = self.aniamtion_frames[self.frame_index]
@@ -66,7 +66,7 @@ class ImageLoader:
 
     def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
         """Begins new thread to handle dispalying frames of an aniamted image"""
-        self.aniamtion_frames = [None] * frame_count
+        self.aniamtion_frames = [(None, 0)] * frame_count
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
 

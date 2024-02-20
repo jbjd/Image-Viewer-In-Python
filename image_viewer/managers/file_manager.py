@@ -49,7 +49,7 @@ class ImageFileManager:
         self._files: list[ImageName] = [first_image_data]
         self._index: int = 0
         self._populate_data_attributes()
-        self.cache: dict[ImageName, CachedImage] = {}
+        self.cache: dict[str, CachedImage] = {}
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
@@ -85,7 +85,7 @@ class ImageFileManager:
     def get_cached_details(self) -> tuple[str, str, str]:
         """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
-        image_info: CachedImage = self.cache[self.current_image]
+        image_info: CachedImage = self.cache[self.current_image.name]
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.size_display}"
         bpp: int = len(image_info.mode) * 8 if image_info.mode != "1" else 1
@@ -125,7 +125,7 @@ class ImageFileManager:
         self._populate_data_attributes()
 
     def _clear_image_data(self) -> None:
-        self.cache.pop(self._files.pop(self._index), None)
+        self.cache.pop(self._files.pop(self._index).name, None)
 
     def remove_current_image(self, delete_from_disk: bool) -> None:
         """Deletes image from files array, cache, and optionally disk"""
@@ -230,7 +230,7 @@ class ImageFileManager:
         self._populate_data_attributes()
 
     def cache_image(self, cached_image: CachedImage) -> None:
-        self.cache[self.current_image] = cached_image
+        self.cache[self.current_image.name] = cached_image
 
     def current_image_cache_still_fresh(self) -> bool:
         """Returns true when it seems the cached image is still accurate.
@@ -238,13 +238,13 @@ class ImageFileManager:
         try:
             return (
                 os.stat(self.path_to_current_image).st_size
-                == self.cache[self.current_image].size_in_kb
+                == self.cache[self.current_image.name].size_in_kb
             )
         except (OSError, ValueError, KeyError):
             return False
 
     def get_current_image_cache(self) -> CachedImage | None:
-        return self.cache.get(self.current_image, None)
+        return self.cache.get(self.current_image.name, None)
 
     def _binary_search(self, target_image: str) -> int:
         """Finds index of target_image in internal list"""

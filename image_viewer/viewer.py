@@ -455,22 +455,19 @@ class ViewerApp:
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
         """Handles looping between animation frames"""
         self.animation_id = self.app.after(
-            ms_until_next_frame, self.animate, ms_backoff
+            ms_until_next_frame, self.show_next_frame, ms_backoff
         )
 
-    def animate(self, ms_backoff: int) -> None:
+    def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
-        frame_and_speed = self.image_loader.get_next_frame()
-
-        # if tried to show next frame before it is loaded
-        # reset to current frame and try again after delay
+        frame: PhotoImage | None
         ms_until_next_frame: int
-        if frame_and_speed is None:
-            ms_backoff = int(ms_backoff * 1.4)
-            ms_until_next_frame = ms_backoff
+        frame, ms_until_next_frame = self.image_loader.get_next_frame()
+
+        if frame is None:  # trying to display frame before it is loaded
+            ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_image_display(frame_and_speed[0])
-            ms_until_next_frame = frame_and_speed[1]
+            self.canvas.update_image_display(frame)
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
