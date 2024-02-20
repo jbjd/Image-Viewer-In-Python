@@ -173,7 +173,9 @@ try:
         --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" \
         --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/main.py"'
 
-    process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR)
+    compile_env = os.environ.copy()
+    compile_env["CCFLAGS"] = "-Ofast"
+    process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR, env=compile_env)
 
     if args.install_path:
         install_path = args.install_path

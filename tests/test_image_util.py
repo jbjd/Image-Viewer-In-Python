@@ -32,5 +32,6 @@ def test_PIL_functions():
 def test_dropdown_image():
     """Ensures basic functionality of dropdown image container"""
     dropdown = DropdownImage(123)
+    assert not dropdown.showing
     dropdown.toggle_display()
     assert dropdown.showing
