@@ -59,9 +59,9 @@ class ImageLoader:
 
     def get_ms_until_next_frame(self) -> int:
         """Returns time until next frame for animated images"""
-        return int(
-            self.PIL_image.info.get("duration", self.DEFAULT_GIF_SPEED)
-            * self.ANIMATION_SPEED_FACTOR
+        ms: int = self.PIL_image.info.get("duration", self.DEFAULT_GIF_SPEED)
+        return (
+            int(ms * self.ANIMATION_SPEED_FACTOR) if ms > 1 else self.DEFAULT_GIF_SPEED
         )
 
     def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
@@ -183,6 +183,7 @@ class ImageLoader:
             try:
                 PIL_image.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
+                print(ms_until_next_frame)
 
                 self.aniamtion_frames[i] = (
                     self.image_resizer.get_image_fit_to_screen(PIL_image),
