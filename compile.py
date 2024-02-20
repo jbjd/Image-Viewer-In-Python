@@ -174,7 +174,7 @@ try:
         --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/main.py"'
 
     compile_env = os.environ.copy()
-    compile_env["CCFLAGS"] = "-Ofast -fno-signed-zeros"
+    compile_env["CCFLAGS"] = "-O2"
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR, env=compile_env)
 
     if args.install_path:
