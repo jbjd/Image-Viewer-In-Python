@@ -48,13 +48,13 @@ class ImageFileManager:
         self.image_directory: str = os.path.dirname(first_image_to_load)
         self._files: list[ImageName] = [first_image_data]
         self._index: int = 0
-        self._populate_data_attributes()
+        self._update_after_move_or_edit()
         self.cache: dict[str, CachedImage] = {}
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
 
-    def _populate_data_attributes(self) -> None:
+    def _update_after_move_or_edit(self) -> None:
         """Sets variables about current image.
         Should be called after adding/deleting an image"""
         self.current_image = self._files[self._index]
@@ -75,7 +75,7 @@ class ImageFileManager:
 
         self._files.sort()
         self._index = self._binary_search(image_to_start_at)
-        self._populate_data_attributes()
+        self._update_after_move_or_edit()
 
     def refresh_image_list(self) -> None:
         """Clears cache and re-loads current images in direcrory"""
@@ -122,7 +122,7 @@ class ImageFileManager:
         """Moves internal index with safe wrap around"""
         self._index = (self._index + amount) % len(self._files)
 
-        self._populate_data_attributes()
+        self._update_after_move_or_edit()
 
     def _clear_image_data(self) -> None:
         self.cache.pop(self._files.pop(self._index).name, None)
@@ -143,7 +143,7 @@ class ImageFileManager:
         if remaining_image_count == 0:
             raise IndexError()
 
-        self._populate_data_attributes()
+        self._update_after_move_or_edit()
 
     def _ask_delete_after_convert(self, new_format: str) -> bool:
         """Used as callback function for after a succecssful file conversion
@@ -186,10 +186,21 @@ class ImageFileManager:
 
         return os.path.join(new_dir, new_name)
 
-    def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
-        """Try to either rename or convert based on user input"""
+    def _split_dir_and_name(self, new_name_or_path: str) -> tuple[str, str]:
+        """Returns tuple with path and file name split up"""
         new_name: str = clean_str_for_OS_path(os.path.basename(new_name_or_path))
         new_dir: str = os.path.dirname(new_name_or_path)
+
+        if new_name == "." or new_name == "..":
+            # name is acutally path specifier
+            os.path.join(new_dir, new_name)
+            new_name = self.current_image.name
+
+        return new_dir, new_name
+
+    def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
+        """Try to either rename or convert based on input"""
+        new_dir, new_name = self._split_dir_and_name(new_name_or_path)
 
         new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
@@ -217,17 +228,19 @@ class ImageFileManager:
             self.path_to_current_image
         ):
             self.add_new_image(new_name, need_smart_adjust)
+        else:
+            self._update_after_move_or_edit()
 
     def add_new_image(self, new_name: str, smart_adjust: bool) -> None:
-        """Adds new image to internal list
+        """Adds a new image to the image list
         smart_adjust: True when we need to adjust the index to
-        stay on the current umage"""
+        stay on the current image"""
         image_data = ImageName(new_name)
         insert_index: int = self._binary_search(image_data.name)
         self._files.insert(insert_index, image_data)
         if smart_adjust and insert_index <= self._index:
             self._index += 1
-        self._populate_data_attributes()
+        self._update_after_move_or_edit()
 
     def cache_image(self, cached_image: CachedImage) -> None:
         self.cache[self.current_image.name] = cached_image
