@@ -187,12 +187,15 @@ class ImageFileManager:
 
     def _split_dir_and_name(self, new_name_or_path: str) -> tuple[str, str]:
         """Returns tuple with path and file name split up"""
-        new_name: str = clean_str_for_OS_path(os.path.basename(new_name_or_path))
+        new_name: str = (
+            clean_str_for_OS_path(os.path.basename(new_name_or_path))
+            or self.current_image.name
+        )
         new_dir: str = os.path.dirname(new_name_or_path)
 
         if new_name == "." or new_name == "..":
             # name is acutally path specifier
-            os.path.join(new_dir, new_name)
+            new_dir = os.path.join(new_dir, new_name)
             new_name = self.current_image.name
 
         return new_dir, new_name
