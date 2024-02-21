@@ -183,7 +183,6 @@ class ImageLoader:
             try:
                 PIL_image.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
-                print(ms_until_next_frame)
 
                 self.aniamtion_frames[i] = (
                     self.image_resizer.get_image_fit_to_screen(PIL_image),
