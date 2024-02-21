@@ -4,7 +4,7 @@ from tkinter.messagebox import askyesno, showinfo
 
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageName
-from util.os import OS_name_cmp, clean_str_for_OS_path, walk_dir
+from util.os import OS_name_cmp, clean_str_for_OS_path, truncate_path, walk_dir
 
 if os.name == "nt":
     from send2trash.win.legacy import send2trash
@@ -203,7 +203,7 @@ class ImageFileManager:
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
         new_dir, new_name = self._split_dir_and_name(new_name_or_path)
-        # TODO: strink "/./" into "/" and "abc/123/../" into "abc/"
+        new_dir = truncate_path(new_dir)
 
         new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:

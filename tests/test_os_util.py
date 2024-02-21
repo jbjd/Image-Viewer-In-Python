@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from image_viewer.util.os import clean_str_for_OS_path, walk_dir
+from image_viewer.util.os import clean_str_for_OS_path, walk_dir, truncate_path
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
@@ -17,3 +17,13 @@ def test_walk_dir(img_dir: str):
     """Test that walk_dir behaves like expected"""
     files = [p for p in walk_dir(img_dir)]
     assert len(files) == 5
+
+
+def test_truncate_path():
+    assert truncate_path("/./asdf") == "/asdf"
+    assert truncate_path("asdf/./123/.") == "asdf/123/"
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
+def test_truncate_path_nt():
+    assert truncate_path("C:/.\\asdf\\.\\") == "C:/asdf/"
