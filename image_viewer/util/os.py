@@ -23,10 +23,15 @@ else:  # linux / can't determine / unsupported OS
         return a < b
 
 
-# TODO: strink "abc/123/../" into "abc/"
 def truncate_path(path: str) -> str:
-    """Shortens /./ to /"""
-    pattern: str = rf"({seperators}\.{seperators})|({seperators}.$)"
+    """Shortens . and .. in paths"""
+    # shrink /./ to /
+    pattern: str = rf"{seperators}\.({seperators}|$)"
+    path = sub(pattern, "/", path)
+
+    # shrink abc/123/../ to abc
+    negated_seperators: str = f"[^{seperators[1:-1]}]"  # [...] -> [^...]
+    pattern = rf"{seperators}{negated_seperators}+?{seperators}\.\.({seperators}|$)"
     return sub(pattern, "/", path)
 
 

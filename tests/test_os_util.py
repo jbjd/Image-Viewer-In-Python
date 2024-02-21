@@ -20,10 +20,17 @@ def test_walk_dir(img_dir: str):
 
 
 def test_truncate_path():
+    # test truncating . to same directory
     assert truncate_path("/./asdf") == "/asdf"
     assert truncate_path("asdf/./123/.") == "asdf/123/"
+
+    # test truncating .. to previous directory
+    assert truncate_path("abc/123/..") == "abc/"
+    assert truncate_path("abc/123/../") == "abc/"
+    assert truncate_path("abc/./123/../.") == "abc/"
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
 def test_truncate_path_nt():
     assert truncate_path("C:/.\\asdf\\.\\") == "C:/asdf/"
+    assert truncate_path("C:/abc\\./123/..\\.") == "C:/abc/"

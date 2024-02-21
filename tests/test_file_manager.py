@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from image_viewer.managers.file_manager import ImageFileManager
+from image_viewer.util.image import CachedImage
 
 
 @pytest.fixture
@@ -31,7 +32,7 @@ def test_image_file_manager(manager: ImageFileManager):
     with mock.patch("os.rename", lambda *_: None):
         with mock.patch.object(
             ImageFileManager,
-            "_ask_delete_after_convert",
+            "_ask_to_delete_old_image_after_convert",
             lambda *_: None,
         ):
             manager.rename_or_convert_current_image("example.test")
@@ -69,7 +70,7 @@ def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
 
 def test_caching(manager: ImageFileManager):
     """Test various caching methods to ensure they act as expected"""
-    manager.cache_image(None, 20, 20, "20x20", 0, "RGB")  # type: ignore
+    manager.cache_image(CachedImage(None, 20, 20, "20x20", 0, "RGB"))  # type: ignore
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
     assert manager.current_image_cache_still_fresh()
