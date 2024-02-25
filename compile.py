@@ -4,24 +4,11 @@ import subprocess
 from argparse import REMAINDER, ArgumentParser
 from glob import glob
 from importlib import import_module
-from sys import version_info
 
 from compile_utils.cleaner import clean_file_and_copy
+from compile_utils.version_check import raise_if_unsupported_python_version
 
-try:
-    from nuitka import PythonVersions
-except ImportError:
-    raise ImportError(
-        "Nuitka is not installed on your system, it must be installed to compile"
-    )
-
-if version_info[:2] < (3, 10):
-    raise Exception("Python 3.10 or higher required")
-
-if (
-    version := f"{version_info[0]}.{version_info[1]}"
-) in PythonVersions.getNotYetSupportedPythonVersions():
-    raise Exception(f"{version} not supported by Nuitka yet")
+raise_if_unsupported_python_version()
 
 WORKING_DIR: str = os.path.abspath(os.path.dirname(__file__))
 TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
@@ -86,7 +73,7 @@ if args.report or args.debug:
 
 if as_standalone:
     extra_args += " --enable-plugin=tk-inter"
-    with open(os.path.join(WORKING_DIR, "skippable_imports.txt")) as fp:
+    with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
         extra_args += " --nofollow-import-to=" + " --nofollow-import-to=".join(
             fp.read().strip().split("\n")
         )
