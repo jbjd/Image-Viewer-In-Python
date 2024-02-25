@@ -46,16 +46,22 @@ def init_PIL(font_size: int) -> None:
     ImageDraw.fontmode = "L"  # antialiasing
 
     from PIL import Image as _Image  # avoid name conflict
+    from PIL import JpegImagePlugin
+    from PIL.JpegImagePlugin import JpegImageFile
 
     # edit these so PIL will not waste time importing +20 useless modules
+    def jpeg_factory(fp=None, filename=None) -> JpegImageFile:
+        return JpegImageFile(fp, filename)
+
+    JpegImagePlugin.jpeg_factory = jpeg_factory
+
     _Image._plugins = []  # type: ignore
 
-    def preinit():
+    def preinit() -> None:
         __import__("PIL.JpegImagePlugin", globals(), locals(), ())
         __import__("PIL.GifImagePlugin", globals(), locals(), ())
         __import__("PIL.PngImagePlugin", globals(), locals(), ())
         __import__("PIL.WebPImagePlugin", globals(), locals(), ())
-        __import__("PIL.TiffImagePlugin", globals(), locals(), ())
 
     _Image.preinit = preinit
 

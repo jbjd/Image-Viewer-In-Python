@@ -43,6 +43,7 @@ PIL.SgiImagePlugin
 PIL.SpiderImagePlugin
 PIL.SunImagePlugin
 PIL.TgaImagePlugin
+PIL.TiffImagePlugin
 PIL.WmfImagePlugin
 PIL.XbmImagePlugin
 PIL.XpmImagePlugin
