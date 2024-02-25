@@ -1,6 +1,6 @@
 import pytest
 
-from image_viewer.ui.canvas import CustomCanvas, _clean_long_name
+from image_viewer.ui.canvas import CustomCanvas
 
 
 @pytest.fixture
@@ -26,5 +26,6 @@ def test_create_assets(canvas: CustomCanvas):
 def test_clean_long_name():
     long_name: str = "too_long12" * 10 + ".png"
     assert (
-        _clean_long_name(long_name) == "too_long12too_long12too_long12too_long(…).png"
+        CustomCanvas._clean_long_name(long_name)
+        == "too_long12too_long12too_long12too_long(…).png"
     )

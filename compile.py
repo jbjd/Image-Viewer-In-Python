@@ -72,6 +72,9 @@ try:
                 mod_name,
             )
 
+    if args.skip_nuitka:
+        exit(0)
+
     # Begin nuitka compilation in subprocess
     print("Starting compilation with nuitka")
     print("Using python install ", args.python_path)
@@ -114,7 +117,8 @@ finally:
     if not args.debug:
         shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
         shutil.rmtree(COMPILE_DIR, ignore_errors=True)
-        shutil.rmtree(TMP_DIR, ignore_errors=True)
+        if not args.skip_nuitka:
+            shutil.rmtree(TMP_DIR, ignore_errors=True)
         try:
             os.remove(os.path.join(WORKING_DIR, "main.cmd"))
         except FileNotFoundError:

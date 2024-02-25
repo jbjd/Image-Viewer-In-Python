@@ -16,8 +16,15 @@ except ImportError:
 
 skip_repo: dict[str, tuple[set[str], set[str]]] = {
     "turbojpeg": (
-        set(),
-        {"crop_multiple", "scale_with_quality", "decode_to_yuv_planes"},
+        {"TJPF_BGRX", "TJPF_BGRA", "TJPF_ABGR", "TJPF_ARGB", "TJFLAG_LIMITSCANS"},
+        {
+            "crop_multiple",
+            "scale_with_quality",
+            "encode_from_yuv",
+            "decode_to_yuv",
+            "decode_to_yuv_planes",
+            "__map_luminance_to_dc_dct_coefficient",
+        },
     )
 }
 
@@ -36,7 +43,9 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             self.vars_to_skip = set()
             self.func_to_skip = set()
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+        self.vars_to_skip = self.vars_to_skip.union({"__version__", "__author__"})
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Removes type hints from functions"""
         if node.name in self.func_to_skip:
             return
@@ -53,13 +62,13 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""
         var_name: str = getattr(node.targets[0], "id", "")
         if var_name not in self.vars_to_skip:
             super().visit_Assign(node)
 
-    def visit_AnnAssign(self, node: ast.AnnAssign):
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""
         if node.value:
             self.fill()
@@ -70,14 +79,14 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             self.write(" = ")
             self.traverse(node.value)
 
-    def visit_Import(self, node: ast.Import):
+    def visit_Import(self, node: ast.Import) -> None:
         """Skips writing type hinting imports"""
         if [
             n for n in node.names if "typing" not in n.name and n.name != "collections"
         ]:
             super().visit_Import(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Skips writing type hinting imports"""
         if (
             node.module is not None
@@ -85,6 +94,15 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             and node.module != "collections.abc"
         ):
             super().visit_ImportFrom(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        try:
+            # Skip if __name__ == "__main__" blocks
+            if node.test.left.id == "__name__":  # type: ignore
+                return
+        except Exception:
+            pass
+        super().visit_If(node)
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:

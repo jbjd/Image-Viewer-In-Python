@@ -42,6 +42,14 @@ class CustomArgParser(ArgumentParser):
                 "--warn-unusual-code, --report=compilation-report.xml flags to nuitka"
             ),
         )
+        self.add_argument(
+            "--skip-nuitka",
+            action="store_true",
+            help=(
+                "Will not compile, will only create tmp directroy"
+                "with cleaned .py files. This option is exposed for debugging"
+            ),
+        )
         self.add_argument("args", nargs=REMAINDER)
 
     def validate_and_return_arguments(self) -> tuple[Namespace, list[str]]:
