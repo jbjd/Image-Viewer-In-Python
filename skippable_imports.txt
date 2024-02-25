@@ -1,10 +1,8 @@
 argparse
 cffi
 csv
-cv2.version
 defusedxml
 email*
-getpass
 numpy.testing
 packaging
 PIL.BlpImagePlugin
