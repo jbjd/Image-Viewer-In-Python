@@ -24,6 +24,7 @@ PIL.IcoImagePlugin
 PIL.ImImagePlugin
 PIL.ImtImagePlugin
 PIL.IptcImagePlugin
+PIL.Jpeg2KImagePlugin
 PIL.McIdasImagePlugin
 PIL.MicImagePlugin
 PIL.MpegImagePlugin
