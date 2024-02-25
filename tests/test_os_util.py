@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from image_viewer.util.os import clean_str_for_OS_path, walk_dir, truncate_path
+from image_viewer.util.os import clean_str_for_OS_path, truncate_path, walk_dir
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
