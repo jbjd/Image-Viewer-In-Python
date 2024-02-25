@@ -1,10 +1,10 @@
 import os
 import shutil
 import subprocess
-from argparse import REMAINDER, ArgumentParser
 from glob import glob
 from importlib import import_module
 
+from compile_utils.args import CustomArgParser, parse_nuitka_args
 from compile_utils.cleaner import clean_file_and_copy
 from compile_utils.version_check import raise_if_unsupported_python_version
 
@@ -24,8 +24,7 @@ install_path: str
 executable_ext: str
 data_file_paths: list[str]
 
-is_windows: bool = os.name == "nt"
-if is_windows:
+if os.name == "nt":
     install_path = "C:/Program Files/Personal Image Viewer/"
     executable_ext = ".exe"
     data_file_paths = ["icon/icon.ico", "dll/libturbojpeg.dll"]
@@ -34,86 +33,10 @@ else:
     executable_ext = ".bin"
     data_file_paths = ["icon/icon.png"]
 
-parser = ArgumentParser(
-    description="Compiles Personal Image Viewer to an executable, must be run as root",
-    epilog=f"Some nuitka arguments are also accepted: {VALID_NUITKA_ARGS}\n",
-)
-parser.add_argument("-p", "--python-path", help="Python path to use in compilation")
-parser.add_argument(
-    "--install-path", help=f"Path to install to, default is {install_path}"
-)
-parser.add_argument(
-    "--report",
-    action="store_true",
-    help="Adds --report=compilation-report.xml flag to nuitka",
-)
-parser.add_argument(
-    "--debug",
-    action="store_true",
-    help=(
-        "Doesn't move compiled code to install path, doesn't check for root, "
-        "doesn't pass Go, doesn't collect $200, "
-        "adds --enable-console, --warn-implicit-exceptions, --warn-unusual-code,"
-        " --report=compilation-report.xml flags to nuitka"
-    ),
-)
-parser.add_argument("args", nargs=REMAINDER)
-args, extra_args_list = parser.parse_known_args()
-for extra_arg in extra_args_list:
-    if extra_arg not in VALID_NUITKA_ARGS:
-        raise ValueError(f"Unkown arguement {extra_arg}")
+parser = CustomArgParser(install_path)
+args, nuitka_args = parser.validate_and_return_arguments()
 
-extra_args: str = " ".join(extra_args_list).strip()
-as_standalone: bool = "--standalone" in extra_args_list
-
-if args.report or args.debug:
-    extra_args += " --report=compilation-report.xml"
-    if args.debug:
-        extra_args += " --warn-implicit-exceptions --warn-unusual-code"
-
-if as_standalone:
-    extra_args += " --enable-plugin=tk-inter"
-    with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
-        extra_args += " --nofollow-import-to=" + " --nofollow-import-to=".join(
-            fp.read().strip().split("\n")
-        )
-
-extra_args += (
-    " --enable-console"
-    if "--enable-console" in extra_args_list or args.debug
-    else " --disable-console"
-)
-
-if not args.debug:
-    is_root: bool
-    if is_windows:
-        import ctypes
-
-        is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
-    else:
-        # On windows, mypy complains
-        is_root = os.geteuid() == 0  # type: ignore
-
-    if not is_root:
-        raise Exception("compile.py needs root privileges to run")
-
-if args.python_path is None:
-    if is_windows:
-        # if not provided, try to find with where
-        args.python_path = (
-            subprocess.run("where python", shell=True, stdout=subprocess.PIPE)
-            .stdout.decode()
-            .partition("\n")[0]
-        )
-        if args.python_path == "":
-            raise Exception(
-                (
-                    "Failed to find path to python. "
-                    "Please provide the --python-path command line argument"
-                )
-            )
-    else:
-        args.python_path = "python3"
+extra_args: str = parse_nuitka_args(args, nuitka_args, WORKING_DIR)
 
 
 def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = ""):
@@ -183,7 +106,8 @@ try:
 
     dest: str = os.path.join(COMPILE_DIR, f"viewer{executable_ext}")
     src: str = os.path.join(
-        COMPILE_DIR if as_standalone else WORKING_DIR, f"main{executable_ext}"
+        COMPILE_DIR if "--standalone" in nuitka_args else WORKING_DIR,
+        f"main{executable_ext}",
     )
     os.rename(src, dest)
     shutil.rmtree(install_path, ignore_errors=True)
