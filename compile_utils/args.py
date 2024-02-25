@@ -68,8 +68,8 @@ class CustomArgParser(ArgumentParser):
         return args, nuitka_args
 
 
-def parse_nuitka_args(args: Namespace, nuitka_args: list[str], working_dir: str):
-
+def parse_nuitka_args(args: Namespace, nuitka_args: list[str], working_dir: str) -> str:
+    """Adds to nuitka args user passed for debugging and import skips"""
     extra_args: str = " ".join(nuitka_args).strip()
 
     if args.report or args.debug:

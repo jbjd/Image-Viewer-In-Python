@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from glob import glob
 from importlib import import_module
+from typing import Final
 
 from compile_utils.args import CustomArgParser, parse_nuitka_args
 from compile_utils.cleaner import clean_file_and_copy
@@ -10,16 +11,13 @@ from compile_utils.version_check import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
 
-WORKING_DIR: str = os.path.abspath(os.path.dirname(__file__))
-TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
-CODE_DIR: str = os.path.join(WORKING_DIR, "image_viewer")
-COMPILE_DIR: str = os.path.join(WORKING_DIR, "main.dist")
-VALID_NUITKA_ARGS: set[str] = {
-    "--mingw64",
-    "--clang",
-    "--standalone",
-    "--enable-console",
-}
+WORKING_DIR: Final[str] = os.path.abspath(os.path.dirname(__file__))
+TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
+CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
+COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, "main.dist")
+VALID_NUITKA_ARGS: frozenset[str] = frozenset(
+    ("--mingw64", "--clang", "--standalone", "--enable-console")
+)
 install_path: str
 executable_ext: str
 data_file_paths: list[str]
@@ -39,7 +37,7 @@ args, nuitka_args = parser.validate_and_return_arguments()
 extra_args: str = parse_nuitka_args(args, nuitka_args, WORKING_DIR)
 
 
-def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = ""):
+def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = "") -> None:
     for python_file in glob(f"{dir}/**/*.py", recursive=True):
         if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
             continue
