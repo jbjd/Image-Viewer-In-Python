@@ -19,13 +19,11 @@ def test_image_path():
     assert example_image_path.suffix == "some_file"
 
 
-def test_PIL_functions():
+def test_PIL_functions(tk_app: Tk):
     """Ensure no error with font and that PIL.Image gets modified"""
     init_PIL(20)
     assert len(Image._plugins) == 0  # type: ignore
 
-    # create_dropdown_image needs Tk to be initialized before calling
-    _ = Tk()
     assert isinstance(create_dropdown_image("test", "test"), PhotoImage)
 
 

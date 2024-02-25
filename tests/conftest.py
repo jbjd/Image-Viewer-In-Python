@@ -1,4 +1,5 @@
 import os
+from tkinter import Tk
 
 import pytest
 
@@ -17,3 +18,10 @@ def image_resizer() -> ImageResizer:
     return ImageResizer(
         1920, 1080, os.path.join(os.path.dirname(WORKING_DIR), "image_viewer")
     )
+
+
+@pytest.fixture(scope="session")
+def tk_app() -> Tk:
+    app = Tk()
+    app.withdraw()
+    return app

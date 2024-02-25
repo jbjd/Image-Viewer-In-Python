@@ -50,14 +50,14 @@ def init_PIL(font_size: int) -> None:
     from PIL.JpegImagePlugin import JpegImageFile
 
     # edit these so PIL will not waste time importing +20 useless modules
-    def jpeg_factory(fp=None, filename=None) -> JpegImageFile:
+    def jpeg_factory(fp=None, filename=None) -> JpegImageFile:  # pragma: no cover
         return JpegImageFile(fp, filename)
 
     JpegImagePlugin.jpeg_factory = jpeg_factory
 
     _Image._plugins = []  # type: ignore
 
-    def preinit() -> None:
+    def preinit() -> None:  # pragma: no cover
         __import__("PIL.JpegImagePlugin", globals(), locals(), ())
         __import__("PIL.GifImagePlugin", globals(), locals(), ())
         __import__("PIL.PngImagePlugin", globals(), locals(), ())
