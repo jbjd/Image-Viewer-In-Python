@@ -40,14 +40,15 @@ def resize(
 
 def init_PIL(font_size: int) -> None:
     """Sets up font and edit PIL's internal list of plugins to load"""
+    from PIL import Image as _Image  # avoid name conflicts
+    from PIL import ImageDraw as _ImageDraw
+    from PIL import JpegImagePlugin
     from PIL.ImageFont import truetype
+    from PIL.JpegImagePlugin import JpegImageFile
 
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
-
-    from PIL import Image as _Image  # avoid name conflict
-    from PIL import JpegImagePlugin
-    from PIL.JpegImagePlugin import JpegImageFile
+    _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
 
     # edit these so PIL will not waste time importing +20 useless modules
     def jpeg_factory(fp=None, filename=None) -> JpegImageFile:  # pragma: no cover

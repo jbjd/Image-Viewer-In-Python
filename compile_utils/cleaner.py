@@ -25,7 +25,13 @@ skip_repo: dict[str, tuple[set[str], set[str]]] = {
             "decode_to_yuv_planes",
             "__map_luminance_to_dc_dct_coefficient",
         },
-    )
+    ),
+    "PIL.ImageDraw": (set(), {"getdraw"}),
+    "PIL.WebPImagePlugin": ({"format_description"}, set()),
+    "PIL.JpegImagePlugin": (
+        {"format_description"},
+        {"_getexif", "_save_cjpeg"},
+    ),
 }
 
 
@@ -43,12 +49,24 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             self.vars_to_skip = set()
             self.func_to_skip = set()
 
-        self.vars_to_skip = self.vars_to_skip.union({"__version__", "__author__"})
+        self.vars_to_skip = self.vars_to_skip.union({"__author__"})
+
+        self.ignore_bare_annotations: bool = False  # ignore a: str without an =
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Disable removing annotations within class vars for safety"""
+        self.ignore_bare_annotations = True
+        super().visit_ClassDef(node)
+        self.ignore_bare_annotations = False
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Removes type hints from functions"""
         if node.name in self.func_to_skip:
             return
+        # always ignore inside of function context
+        previous_ignore: bool = self.ignore_bare_annotations
+        self.ignore_bare_annotations = False
+
         self.maybe_newline()
         for deco in node.decorator_list:
             self.fill("@")
@@ -62,6 +80,8 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         with self.block(extra=self.get_type_comment(node)):
             self._write_docstring_and_traverse_body(node)
 
+        self.ignore_bare_annotations = previous_ignore
+
     def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""
         var_name: str = getattr(node.targets[0], "id", "")
@@ -70,30 +90,23 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""
-        if node.value:
+        if node.value or self.ignore_bare_annotations:
             self.fill()
             with self.delimit_if(
                 "(", ")", not node.simple and isinstance(node.target, Name)
             ):
                 self.traverse(node.target)
-            self.write(" = ")
-            self.traverse(node.value)
-
-    def visit_Import(self, node: ast.Import) -> None:
-        """Skips writing type hinting imports"""
-        if [
-            n for n in node.names if "typing" not in n.name and n.name != "collections"
-        ]:
-            super().visit_Import(node)
-
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Skips writing type hinting imports"""
-        if (
-            node.module is not None
-            and "typing" not in node.module
-            and node.module != "collections.abc"
-        ):
-            super().visit_ImportFrom(node)
+            if node.value:
+                self.write(" = ")
+                self.traverse(node.value)
+            else:
+                # Can only reach here if annotion must be kept for formatting
+                self.write(": ")
+                new_node = ast.Name()
+                new_node.ctx = None  # type: ignore
+                # These might refer to removed things, so make them all "Any"
+                new_node.id = '"Any"'
+                self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:
         try:
@@ -106,7 +119,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
-    with open(path) as fp:
+    with open(path, "r", encoding="utf-8") as fp:
         parsed_source = ast.parse(fp.read())
     contents: str = TypeHintRemover(module_name).visit(
         ast.NodeTransformer().visit(parsed_source)
@@ -122,5 +135,5 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         )
 
     os.makedirs(os.path.dirname(new_path), exist_ok=True)
-    with open(new_path, "w") as fp:
+    with open(new_path, "w", encoding="utf-8") as fp:
         fp.write(contents)

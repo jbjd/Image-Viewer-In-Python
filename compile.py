@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 from glob import glob
@@ -8,6 +9,7 @@ from typing import Final
 from compile_utils.args import CustomArgParser, parse_nuitka_args
 from compile_utils.cleaner import clean_file_and_copy
 from compile_utils.version_check import raise_if_unsupported_python_version
+from image_viewer.util.os import seperators
 
 raise_if_unsupported_python_version()
 
@@ -46,7 +48,18 @@ def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = "") -> None:
             mod_prefix, python_file.replace(dir, "").strip("/\\")
         )
         new_path: str = os.path.join(TMP_DIR, relative_path)
-        clean_file_and_copy(python_file, new_path)
+        mod_name: str = re.sub(seperators, ".", relative_path)[:-3]  # chops of .py
+        clean_file_and_copy(python_file, new_path, mod_name)
+
+    for python_file in glob(f"{dir}/**/*.pyi", recursive=True) + glob(
+        f"{dir}/**/*.pyd", recursive=True
+    ):
+        python_file = os.path.abspath(python_file)
+        relative_path: str = os.path.join(
+            mod_prefix, python_file.replace(dir, "").strip("/\\")
+        )
+        new_path: str = os.path.join(TMP_DIR, relative_path)
+        shutil.copyfile(python_file, new_path)
 
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
@@ -55,7 +68,7 @@ shutil.rmtree(TMP_DIR, ignore_errors=True)
 try:
     move_files_to_tmp_and_clean(CODE_DIR)
 
-    for mod_name in ["turbojpeg", "send2trash"]:  # TODO: add more
+    for mod_name in ["turbojpeg", "send2trash", "PIL"]:  # TODO: consider adding numpy
         module = import_module(mod_name)
         if module.__file__ is None:
             print(f"Error getting module {mod_name}'s filepath")
