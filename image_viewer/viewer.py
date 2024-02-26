@@ -314,7 +314,7 @@ class ViewerApp:
 
     def refresh(self, _: Event) -> None:
         """Gets images in current directory and update internal list with them"""
-        self.clear_animation_variables()
+        self.clear_image()
         try:
             self.file_manager.refresh_image_list()
         except IndexError:
@@ -340,7 +340,7 @@ class ViewerApp:
 
     def trash_image(self, _: Event | None = None) -> None:
         """Move current image to trash and moves to next"""
-        self.clear_animation_variables()
+        self.clear_image()
         self.hide_rename_window()
         self.remove_image(True)
         self.load_image_unblocking()
@@ -408,7 +408,7 @@ class ViewerApp:
 
     def load_image(self) -> None:
         """Loads an image and updates display"""
-        self.clear_animation_variables()
+        self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
         while (current_image := self.image_loader.load_image()) is None:
@@ -471,14 +471,13 @@ class ViewerApp:
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
-    def clear_animation_variables(self) -> None:
+    def clear_image(self) -> None:
         """Clears all animation data"""
-        if self.animation_id == "":
-            return
-
-        self.app.after_cancel(self.animation_id)
-        self.animation_id = ""
         self.image_loader.reset_and_setup()
+
+        if self.animation_id != "":
+            self.app.after_cancel(self.animation_id)
+            self.animation_id = ""
 
     def update_details_dropdown(self) -> None:
         """Updates the infomation and state of dropdown image"""
