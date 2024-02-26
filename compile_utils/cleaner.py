@@ -26,11 +26,15 @@ skip_repo: dict[str, tuple[set[str], set[str]]] = {
             "__map_luminance_to_dc_dct_coefficient",
         },
     ),
+    "PIL.Image": (set(), {"_getxmp"}),
     "PIL.ImageDraw": (set(), {"getdraw"}),
-    "PIL.GifImagePlugin": ({"format_description"}, set()),
-    "PIL.JpegImagePlugin": ({"format_description"}, {"_getexif", "_save_cjpeg"}),
-    "PIL.PngImagePlugin": ({"format_description"}, set()),
-    "PIL.WebPImagePlugin": ({"format_description"}, set()),
+    "PIL.GifImagePlugin": ({"format_description"}, {"getdata"}),
+    "PIL.JpegImagePlugin": (
+        {"format_description"},
+        {"getxmp", "_getexif", "_save_cjpeg"},
+    ),
+    "PIL.PngImagePlugin": ({"format_description"}, {"getxmp"}),
+    "PIL.WebPImagePlugin": ({"format_description"}, {"getxmp"}),
 }
 
 
