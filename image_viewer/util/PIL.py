@@ -60,6 +60,9 @@ def init_PIL(font_size: int) -> None:
     _Image._plugins = []  # type: ignore
 
     def preinit() -> None:  # pragma: no cover
+        if _Image._initialized > 0:  # type: ignore
+            return
+
         __import__("PIL.JpegImagePlugin", globals(), locals(), ())
         __import__("PIL.GifImagePlugin", globals(), locals(), ())
         __import__("PIL.PngImagePlugin", globals(), locals(), ())
@@ -71,8 +74,9 @@ def init_PIL(font_size: int) -> None:
             lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
         )
 
+        _Image._initialized = 2  # type: ignore
+
     _Image.preinit = preinit
-    del _Image
     del _ImageDraw
 
 

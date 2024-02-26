@@ -14,7 +14,7 @@ except ImportError:
     )
     autoflake = None
 
-skip_repo: dict[str, tuple[set[str], set[str]]] = {
+func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
     "turbojpeg": (
         {"TJPF_BGRX", "TJPF_BGRA", "TJPF_ABGR", "TJPF_ARGB", "TJFLAG_LIMITSCANS"},
         {
@@ -26,7 +26,7 @@ skip_repo: dict[str, tuple[set[str], set[str]]] = {
             "__map_luminance_to_dc_dct_coefficient",
         },
     ),
-    "PIL.Image": (set(), {"_getxmp"}),
+    "PIL.Image": (set(), {"_getxmp", "getexif"}),
     "PIL.ImageDraw": (set(), {"getdraw"}),
     "PIL.GifImagePlugin": ({"format_description"}, {"getdata"}),
     "PIL.JpegImagePlugin": (
@@ -37,6 +37,8 @@ skip_repo: dict[str, tuple[set[str], set[str]]] = {
     "PIL.WebPImagePlugin": ({"format_description"}, {"getxmp"}),
 }
 
+classes_to_skip: dict[str, set[str]] = {"PIL.Image": {"Exif"}}
+
 
 class TypeHintRemover(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
@@ -46,11 +48,13 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
         self.vars_to_skip: set[str]
         self.func_to_skip: set[str]
-        if module_name in skip_repo:
-            self.vars_to_skip, self.func_to_skip = skip_repo[module_name]
+        if module_name in func_and_vars_to_skip:
+            self.vars_to_skip, self.func_to_skip = func_and_vars_to_skip[module_name]
         else:
             self.vars_to_skip = set()
             self.func_to_skip = set()
+
+        self.classes_to_skip = classes_to_skip.get(module_name, set())
 
         self.vars_to_skip = self.vars_to_skip.union({"__author__"})
 
@@ -58,6 +62,8 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Disable removing annotations within class vars for safety"""
+        if node.name in self.classes_to_skip:
+            return
         self.ignore_bare_annotations = True
         super().visit_ClassDef(node)
         self.ignore_bare_annotations = False
