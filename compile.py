@@ -9,6 +9,7 @@ from typing import Final
 from compile_utils.args import CustomArgParser, parse_nuitka_args
 from compile_utils.cleaner import clean_file_and_copy
 from compile_utils.version_check import raise_if_unsupported_python_version
+
 from image_viewer.util.os import seperators
 
 raise_if_unsupported_python_version()

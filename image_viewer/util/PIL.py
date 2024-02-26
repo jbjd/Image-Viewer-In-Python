@@ -2,7 +2,7 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
-from PIL.Image import Image, Resampling, new
+from PIL.Image import Image, Resampling, new, register_open
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 
@@ -49,13 +49,14 @@ def init_PIL(font_size: int) -> None:
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
     _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
+    del truetype
+
+    # Remove calls to "APP" since its only for exif and uses removed Tiff plugin
+    for i in range(0xFFE0, 0xFFF0):
+        JpegImagePlugin.MARKER[i] = ("", "", None)
+    del JpegImagePlugin
 
     # edit these so PIL will not waste time importing +20 useless modules
-    def jpeg_factory(fp=None, filename=None) -> JpegImageFile:  # pragma: no cover
-        return JpegImageFile(fp, filename)
-
-    JpegImagePlugin.jpeg_factory = jpeg_factory
-
     _Image._plugins = []  # type: ignore
 
     def preinit() -> None:  # pragma: no cover
@@ -64,7 +65,15 @@ def init_PIL(font_size: int) -> None:
         __import__("PIL.PngImagePlugin", globals(), locals(), ())
         __import__("PIL.WebPImagePlugin", globals(), locals(), ())
 
+        register_open(
+            "JPEG",
+            lambda fp=None, filename=None: JpegImageFile(fp, filename),
+            lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
+        )
+
     _Image.preinit = preinit
+    del _Image
+    del _ImageDraw
 
 
 def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:

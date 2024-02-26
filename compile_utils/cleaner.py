@@ -27,11 +27,10 @@ skip_repo: dict[str, tuple[set[str], set[str]]] = {
         },
     ),
     "PIL.ImageDraw": (set(), {"getdraw"}),
+    "PIL.GifImagePlugin": ({"format_description"}, set()),
+    "PIL.JpegImagePlugin": ({"format_description"}, {"_getexif", "_save_cjpeg"}),
+    "PIL.PngImagePlugin": ({"format_description"}, set()),
     "PIL.WebPImagePlugin": ({"format_description"}, set()),
-    "PIL.JpegImagePlugin": (
-        {"format_description"},
-        {"_getexif", "_save_cjpeg"},
-    ),
 }
 
 
