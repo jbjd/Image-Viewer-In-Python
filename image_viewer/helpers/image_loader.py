@@ -50,9 +50,12 @@ class ImageLoader:
         self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage | None, int]:
-        """Gets next frame of animated image, will error otherwise"""
-        self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
-        current_frame = self.aniamtion_frames[self.frame_index]
+        """Gets next frame of animated image or None while its being loaded"""
+        try:
+            self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
+            current_frame = self.aniamtion_frames[self.frame_index]
+        except ZeroDivisionError:
+            return (None, 0)
         if current_frame is None:
             self.frame_index -= 1
         return current_frame

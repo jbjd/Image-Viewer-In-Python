@@ -472,12 +472,11 @@ class ViewerApp:
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
     def clear_image(self) -> None:
-        """Clears all animation data"""
-        self.image_loader.reset_and_setup()
-
+        """Clears all image data"""
         if self.animation_id != "":
             self.app.after_cancel(self.animation_id)
             self.animation_id = ""
+        self.image_loader.reset_and_setup()
 
     def update_details_dropdown(self) -> None:
         """Updates the infomation and state of dropdown image"""
