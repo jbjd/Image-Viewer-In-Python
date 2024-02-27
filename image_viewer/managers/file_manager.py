@@ -263,7 +263,7 @@ class ImageFileManager:
             return False
 
     def get_current_image_cache(self) -> CachedImage | None:
-        return self.cache.get(self.current_image.name, None)
+        return self.cache.get(self.current_image.name)
 
     def _binary_search(self, target_image: str) -> int:
         """Finds index of target_image in internal list"""

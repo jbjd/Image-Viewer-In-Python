@@ -70,6 +70,7 @@ def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
 
 def test_caching(manager: ImageFileManager):
     """Test various caching methods to ensure they act as expected"""
+    assert manager.get_current_image_cache() is None
     manager.cache_image(CachedImage(None, 20, 20, "20x20", 0, "RGB"))  # type: ignore
     assert len(manager.cache) == 1
     assert manager.get_current_image_cache() is not None
