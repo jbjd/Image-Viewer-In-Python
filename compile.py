@@ -52,14 +52,15 @@ def move_files_to_tmp_and_clean(dir: str, mod_prefix: str = "") -> None:
         mod_name: str = re.sub(seperators, ".", relative_path)[:-3]  # chops of .py
         clean_file_and_copy(python_file, new_path, mod_name)
 
+    # TODO: deduplicate
     for python_file in glob(f"{dir}/**/*.pyi", recursive=True) + glob(
         f"{dir}/**/*.pyd", recursive=True
     ):
         python_file = os.path.abspath(python_file)
-        relative_path: str = os.path.join(
+        relative_path = os.path.join(
             mod_prefix, python_file.replace(dir, "").strip("/\\")
         )
-        new_path: str = os.path.join(TMP_DIR, relative_path)
+        new_path = os.path.join(TMP_DIR, relative_path)
         shutil.copyfile(python_file, new_path)
 
 

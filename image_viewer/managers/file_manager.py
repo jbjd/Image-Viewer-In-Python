@@ -191,8 +191,10 @@ class ImageFileManager:
 
         return os.path.join(new_dir, new_name)
 
-    def _split_dir_and_name(self, new_name_or_path: str) -> tuple[str, str]:
-        """Returns tuple with path and file name split up"""
+    def _split_and_truncate_dir_and_name(
+        self, new_name_or_path: str
+    ) -> tuple[str, str]:
+        """Returns tuple with truncated path and file name split up"""
         new_name: str = (
             clean_str_for_OS_path(os.path.basename(new_name_or_path))
             or self.current_image.name
@@ -204,12 +206,11 @@ class ImageFileManager:
             new_dir = os.path.join(new_dir, new_name)
             new_name = self.current_image.name
 
-        return new_dir, new_name
+        return truncate_path(new_dir), new_name
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
-        new_dir, new_name = self._split_dir_and_name(new_name_or_path)
-        new_dir = truncate_path(new_dir)
+        new_dir, new_name = self._split_and_truncate_dir_and_name(new_name_or_path)
 
         new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:

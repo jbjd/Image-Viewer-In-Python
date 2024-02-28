@@ -24,7 +24,7 @@ def test_PIL_functions(tk_app: Tk):
     init_PIL(20)
     assert len(Image._plugins) == 0  # type: ignore
 
-    assert isinstance(create_dropdown_image("test", "test"), PhotoImage)
+    assert isinstance(create_dropdown_image("test\ntest"), PhotoImage)
 
 
 def test_dropdown_image():
