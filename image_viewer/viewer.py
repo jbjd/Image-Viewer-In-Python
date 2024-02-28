@@ -1,7 +1,7 @@
 import os
+from time import perf_counter
 from tkinter import Event, Tk
 from typing import Final, NoReturn
-from time import perf_counter
 
 from PIL.ImageTk import PhotoImage
 

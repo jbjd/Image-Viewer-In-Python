@@ -2,9 +2,11 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
+from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
+from PIL.JpegImagePlugin import JpegImageFile
 
 
 def _resize_new(
@@ -38,48 +40,6 @@ def resize(
     return _resize_new(image, size, resample, box)
 
 
-def init_PIL(font_size: int) -> None:
-    """Sets up font and edit PIL's internal list of plugins to load"""
-    from PIL import Image as _Image  # avoid name conflicts
-    from PIL import ImageDraw as _ImageDraw
-    from PIL import JpegImagePlugin
-    from PIL.ImageFont import truetype
-    from PIL.JpegImagePlugin import JpegImageFile
-
-    ImageDraw.font = truetype("arial.ttf", font_size)
-    ImageDraw.fontmode = "L"  # antialiasing
-    _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
-    del truetype
-
-    # Remove calls to "APP" since its only for exif and uses removed Tiff plugin
-    for i in range(0xFFE0, 0xFFF0):
-        JpegImagePlugin.MARKER[i] = ("", "", None)
-    del JpegImagePlugin
-
-    # edit these so PIL will not waste time importing +20 useless modules
-    _Image._plugins = []  # type: ignore
-
-    def preinit() -> None:  # pragma: no cover
-        if _Image._initialized > 0:  # type: ignore
-            return
-
-        __import__("PIL.JpegImagePlugin", globals(), locals(), ())
-        __import__("PIL.GifImagePlugin", globals(), locals(), ())
-        __import__("PIL.PngImagePlugin", globals(), locals(), ())
-        __import__("PIL.WebPImagePlugin", globals(), locals(), ())
-
-        register_open(
-            "JPEG",
-            lambda fp=None, filename=None: JpegImageFile(fp, filename),
-            lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
-        )
-
-        _Image._initialized = 2  # type: ignore
-
-    _Image.preinit = preinit
-    del _ImageDraw
-
-
 def create_dropdown_image(text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
     split_text: list[str] = text.split("\n")
@@ -103,3 +63,51 @@ def create_dropdown_image(text: str) -> PhotoImage:
     box_to_draw_on.text((10, spacing), text, fill="white", spacing=spacing)
 
     return PhotoImage(box_to_draw_on._image)  # type: ignore
+
+
+def _preinit() -> None:  # pragma: no cover
+    """Edited version of PIL's preinit to be used as a replacement"""
+    if _Image._initialized > 0:  # type: ignore
+        return
+
+    __import__("PIL.JpegImagePlugin", globals(), locals(), ())
+    __import__("PIL.GifImagePlugin", globals(), locals(), ())
+    __import__("PIL.PngImagePlugin", globals(), locals(), ())
+    __import__("PIL.WebPImagePlugin", globals(), locals(), ())
+
+    register_open(
+        "JPEG",
+        lambda fp=None, filename=None: JpegImageFile(fp, filename),
+        lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
+    )
+
+    _Image._initialized = 2  # type: ignore
+
+
+def _stop_unwanted_PIL_imports() -> None:
+    """Edits parts of PIL module to prevent excessive imports"""
+    from PIL import JpegImagePlugin
+
+    # Remove calls to "APP" since its only for exif and uses removed Tiff plugin
+    # Can't edit JpegImagePlugin.APP directly due to PIL storing it in this dict
+    for i in range(0xFFE0, 0xFFF0):
+        JpegImagePlugin.MARKER[i] = ("", "", None)
+    del JpegImagePlugin
+
+    # Edit plugins and preinit to avoid importing many unused image modules
+    _Image._plugins = []  # type: ignore
+    _Image.preinit = _preinit
+
+
+def init_PIL(font_size: int) -> None:
+    """Sets up font and edit PIL's internal list of plugins to load"""
+    from PIL import ImageDraw as _ImageDraw  # avoid name conflicts
+    from PIL.ImageFont import truetype
+
+    ImageDraw.font = truetype("arial.ttf", font_size)
+    ImageDraw.fontmode = "L"  # antialiasing
+    _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
+    del truetype
+    del _ImageDraw
+
+    _stop_unwanted_PIL_imports()
