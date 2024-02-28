@@ -12,8 +12,10 @@ def try_convert_file_and_save_new(
     new_path: str,
     target_ext: str,
 ) -> bool:
-    """Trys to convert to new file format.
-    Return: bool if file was converted and a new file was created"""
+    """Tries to convert to new file format.
+    Raises errors if file exists or conversion is invalid
+    Returns bool if conversion performed, will be false when converting to the same type
+    """
     with open(old_path, "rb") as fp:
         original_ext: str = magic_number_guess(fp.read(4))[0]
 

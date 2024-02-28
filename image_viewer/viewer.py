@@ -43,7 +43,7 @@ class ViewerApp:
     def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
         self.file_manager = ImageFileManager(first_image_to_show)
 
-        # UI varaibles
+        # UI variables
         self.need_to_redraw: bool = False
         self.rename_window_x_offset: int = 0
         self.move_id: str = ""
@@ -101,7 +101,7 @@ class ViewerApp:
         app.mainloop()
 
     def _add_keybinds(self) -> None:
-        """Assigns OS generic keybinds to app"""
+        """Assigns keybinds to app"""
         app = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
@@ -333,7 +333,7 @@ class ViewerApp:
         self.load_image_unblocking()
 
     def redraw(self, event: Event) -> None:
-        """Redraws screen if current image has a diffent size than when it was loaded,
+        """Redraws screen if current image has a different size than when it was loaded,
         implying it was edited outside of the program"""
         if event.widget is not self.app or not self.need_to_redraw:
             return
@@ -393,7 +393,7 @@ class ViewerApp:
 
     def rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.
-        Trys to convert or rename based on input"""
+        Tries to convert or rename based on input"""
         user_input: str = self.rename_entry.get()
         if user_input == "":
             return
@@ -489,7 +489,7 @@ class ViewerApp:
         self.image_loader.reset_and_setup()
 
     def update_details_dropdown(self) -> None:
-        """Updates the infomation and state of dropdown image"""
+        """Updates the information and state of dropdown image"""
         dropdown = self.dropdown
         if dropdown.showing:
             if dropdown.need_refresh:

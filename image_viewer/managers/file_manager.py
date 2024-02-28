@@ -198,7 +198,7 @@ class ImageFileManager:
         new_dir: str = os.path.dirname(new_name_or_path)
 
         if new_name == "." or new_name == "..":
-            # name is acutally path specifier
+            # name is actually path specifier
             new_dir = os.path.join(new_dir, new_name)
             new_name = self.current_image.name
 
@@ -256,7 +256,7 @@ class ImageFileManager:
 
     def current_image_cache_still_fresh(self) -> bool:
         """Returns True when it seems the cached image is still accurate.
-        Not guaranteed to be correct, but thats not important for this case"""
+        Not guaranteed to be correct, but that's not important for this case"""
         try:
             return (
                 os.stat(self.path_to_current_image).st_size

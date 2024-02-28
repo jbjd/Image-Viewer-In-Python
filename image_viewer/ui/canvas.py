@@ -91,9 +91,9 @@ class CustomCanvas(Canvas):
         self.move_x = self.move_y = 0
 
     def update_image_display(self, new_image: PhotoImage) -> None:
-        """Updates dispalyed with a new image and internal location metric"""
+        """Updates display with a new image and forces state update"""
         self.itemconfigure(self.image_display_id, image=new_image)
-        self.master.update_idletasks()  # force update state
+        self.master.update_idletasks()
 
     def handle_alt_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""

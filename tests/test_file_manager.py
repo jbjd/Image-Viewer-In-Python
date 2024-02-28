@@ -37,7 +37,7 @@ def test_image_file_manager(manager: ImageFileManager):
         ):
             manager.rename_or_convert_current_image("example.test")
 
-    # test remove_current_image fuctionality
+    # test remove_current_image functionality
     for _ in range(4):
         manager.remove_current_image(False)
     assert len(manager._files) == 1
@@ -81,7 +81,7 @@ def test_caching(manager: ImageFileManager):
 
 
 def test_move_index(manager: ImageFileManager):
-    """Test moving to an index thats too large"""
+    """Test moving to an index that's too large"""
     manager.move_index(999)
     assert manager._index == 0
 

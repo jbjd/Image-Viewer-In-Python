@@ -10,14 +10,14 @@ if os.name == "nt":
     from ctypes import windll
 
     illegal_char = r'[<>:"|?*]'
-    seperators = r"[\\/]"
+    separators = r"[\\/]"
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
 else:  # linux / can't determine / unsupported OS
     illegal_char = r"[]"
-    seperators = r"[/]"
+    separators = r"[/]"
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
@@ -26,12 +26,12 @@ else:  # linux / can't determine / unsupported OS
 def truncate_path(path: str) -> str:
     """Shortens . and .. in paths"""
     # shrink /./ to /
-    pattern: str = rf"{seperators}\.({seperators}|$)"
+    pattern: str = rf"{separators}\.({separators}|$)"
     path = sub(pattern, "/", path)
 
     # shrink abc/123/../ to abc
-    negated_seperators: str = f"[^{seperators[1:-1]}]"  # [...] -> [^...]
-    pattern = rf"{seperators}{negated_seperators}+?{seperators}\.\.({seperators}|$)"
+    negated_separators: str = f"[^{separators[1:-1]}]"  # [...] -> [^...]
+    pattern = rf"{separators}{negated_separators}+?{separators}\.\.({separators}|$)"
     return sub(pattern, "/", path)
 
 

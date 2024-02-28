@@ -9,7 +9,7 @@ from image_viewer.util.convert import try_convert_file_and_save_new
 
 
 class MockFilePointer:
-    """Mocks whats returned by builtin open"""
+    """Mocks what's returned by builtin open"""  # TODO: I think unittest has this?
 
     def __enter__(self) -> MockFilePointer:
         return self
@@ -70,7 +70,7 @@ def test_animated_to_not_animated():
 @mock.patch("image_viewer.util.convert.open_image", mock_open_image)
 @mock.patch("image_viewer.util.convert.open", mock_open)
 def test_convert_jpeg(img_dir: str):
-    # will not covert if jpeg varient
+    # will not convert if jpeg variant
     with mock.patch("image_viewer.util.convert.magic_number_guess", lambda _: ("jpg",)):
         assert not try_convert_file_and_save_new("old.jpg", "new.jpe", "jpe")
     # otherwise will succeed
@@ -87,7 +87,7 @@ def test_all_valid_types():
     for img_type in valid_types:
         # when img_type == png, try assuming old.png is a webp with incorrect name
         # So function should still return true since old.png -> new.png was technially
-        # a convertion
+        # a conversion
         with mock.patch(
             "image_viewer.util.convert.magic_number_guess",
             lambda _: ("png" if img_type != "png" else "webp",),

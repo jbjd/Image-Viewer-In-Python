@@ -100,8 +100,8 @@ class ImageResizer:
         self, image_width: int, image_height: int
     ) -> tuple[tuple[int, int], Resampling]:
         """Fits dimensions to height if width within screen,
-        else fit to width and let height go off screen
-        returns: new width, new height, and interpolation to use"""
+        else fit to width and let height go off screen.
+        Returns new width, new height, and interpolation to use"""
         interpolation: Resampling = (
             Resampling.HAMMING
             if image_height >= self.screen_height and image_width >= self.screen_width

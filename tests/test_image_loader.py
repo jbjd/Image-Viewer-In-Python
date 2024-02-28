@@ -11,7 +11,7 @@ def image_loader(image_resizer: ImageResizer) -> ImageLoader:
 
 
 def test_next_frame(image_loader: ImageLoader):
-    """Test expected behavior from getting next frame and reseting"""
+    """Test expected behavior from getting next frame and resetting"""
 
     # normally has tuples with (PhotoImage, int) but just (int, int) for testing
     image_loader.animation_frames = [(1, 1), (2, 2), (3, 3)]  # type: ignore

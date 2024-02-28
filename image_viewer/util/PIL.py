@@ -15,7 +15,7 @@ def _resize_new(
     resample: Resampling,
     box: tuple[int, int, int, int],
 ) -> Image:
-    """Preforms image resize and returns the new image"""
+    """Performs image resize and returns the new image"""
     return image._new(image.im.resize(size, resample, box))  # type: ignore
 
 
@@ -91,7 +91,7 @@ def _stop_unwanted_PIL_imports() -> None:
     # Remove calls to "APP" since its only for exif and uses removed Tiff plugin
     # Can't edit JpegImagePlugin.APP directly due to PIL storing it in this dict
     for i in range(0xFFE0, 0xFFF0):
-        JpegImagePlugin.MARKER[i] = ("", "", None)
+        JpegImagePlugin.MARKER[i] = ("", "", JpegImagePlugin.Skip)
     del JpegImagePlugin
 
     # Edit plugins and preinit to avoid importing many unused image modules

@@ -28,6 +28,7 @@ func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
     ),
     "PIL.Image": (set(), {"_getxmp", "getexif"}),
     "PIL.ImageDraw": (set(), {"getdraw"}),
+    "PIL.ImageFile": (set(), {"verify", "raise_oserror"}),
     "PIL.GifImagePlugin": ({"format_description"}, {"getdata"}),
     "PIL.JpegImagePlugin": (
         {"format_description"},

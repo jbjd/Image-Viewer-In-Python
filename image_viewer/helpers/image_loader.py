@@ -15,7 +15,7 @@ from util.image import CachedImage, magic_number_guess
 class ImageLoader:
     """Handles loading images from disk"""
 
-    DEFAULT_ANIMATION_SPEED: int = 100  # in miliseconds
+    DEFAULT_ANIMATION_SPEED: int = 100  # in milliseconds
 
     __slots__ = (
         "animation_frames",
@@ -62,14 +62,14 @@ class ImageLoader:
         return current_frame
 
     def get_ms_until_next_frame(self) -> int:
-        """Returns miliseconds until next frame for animated images"""
+        """Returns milliseconds until next frame for animated images"""
         ms: int = round(
             self.PIL_image.info.get("duration", self.DEFAULT_ANIMATION_SPEED)
         )
         return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
 
     def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
-        """Begins new thread to handle dispalying frames of an aniamted image"""
+        """Begins new thread to handle displaying frames of an aniamted image"""
         self.animation_frames = [(None, 0)] * frame_count
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
@@ -136,7 +136,7 @@ class ImageLoader:
 
         frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:
-            # file pointer will be closed when animation finised loading
+            # file pointer will be closed when animation finished loading
             self.begin_animation(current_image, frame_count)
         else:
             PIL_image.close()
