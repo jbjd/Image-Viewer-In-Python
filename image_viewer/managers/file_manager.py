@@ -2,6 +2,8 @@ import os
 from time import ctime
 from tkinter.messagebox import askyesno, showinfo
 
+from PIL.Image import Image
+
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, truncate_path, walk_dir
@@ -82,25 +84,28 @@ class ImageFileManager:
         self.cache = {}
         self.fully_load_image_data()
 
-    def get_cached_details(self) -> tuple[str, str, str]:
+    def get_cached_details(self) -> str:
         """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
         image_info: CachedImage = self.cache[self.current_image.name]
-        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
-        size_text: str = f"Size: {image_info.size_display}"
+
         bpp: int = len(image_info.mode) * 8 if image_info.mode != "1" else 1
         readable_mode: str = {
             "P": "Palette",
             "L": "Grayscale",
             "1": "Black And White",
         }.get(image_info.mode, image_info.mode)
-        format_text: str = f"Pixel Format: {bpp} bpp {readable_mode}"
-        return (dimension_text, size_text, format_text)
 
-    def show_image_details(self) -> None:
+        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
+        size_text: str = f"Size: {image_info.size_display}"
+        mode_text: str = f"\nPixel Format: {bpp} bpp {readable_mode}"
+
+        return f"{dimension_text}\n{size_text}\n{mode_text}"
+
+    def show_image_details(self, PIL_Image: Image) -> None:
         """Shows a popup with image details"""
         try:
-            details: tuple[str, ...] = self.get_cached_details()
+            details: str = f"{self.get_cached_details()}\n"
         except KeyError:
             return  # don't fail trying to read, if not in cache just exit
 
@@ -109,14 +114,15 @@ class ImageFileManager:
             # [4:] chops of 3 character day like Mon/Tue/etc.
             created_time: str = ctime(os_info.st_ctime)[4:]
             last_modifed_time: str = ctime(os_info.st_mtime)[4:]
-            details += (
-                f"Created: {created_time}",
-                f"Last Modified: {last_modifed_time}",
-            )
+            details += f"Created: {created_time}\nLast Modified: {last_modifed_time}\n"
         except (OSError, ValueError):
             pass  # don't include if can't get
 
-        showinfo("Image Details", "\n".join(details))
+        # Can add more here, just didn't see any others I felt were important enough
+        if comment := PIL_Image.info.get("comment"):
+            details += f"Comment: {comment.decode('utf-8')}\n"
+
+        showinfo("Image Details", details)
 
     def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""

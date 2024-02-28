@@ -53,10 +53,12 @@ class ImageLoader:
         try:
             self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
             current_frame = self.animation_frames[self.frame_index]
-        except ZeroDivisionError:
+        except (ZeroDivisionError, IndexError):
             return (None, 0)
+
         if current_frame is None:
             self.frame_index -= 1
+
         return current_frame
 
     def get_ms_until_next_frame(self) -> int:

@@ -80,20 +80,26 @@ def init_PIL(font_size: int) -> None:
     del _ImageDraw
 
 
-def create_dropdown_image(dimension_text: str, size_text: str) -> PhotoImage:
+def create_dropdown_image(text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
+    split_text: list[str] = text.split("\n")
+    text_bbox: tuple[int, int, int, int] = ImageDraw.font.getbbox(
+        max(split_text, key=len)
+    )
 
-    text_bbox: tuple[int, int, int, int] = ImageDraw.font.getbbox(dimension_text)
     x_offset: int = max(int(text_bbox[2] * 0.07), 10)
+    height: int = text_bbox[3] + text_bbox[1]
+    spacing: int = int(height * 0.8)
+    count: int = len(split_text)
 
     box_to_draw_on: ImageDraw = Draw(
         new(
             "RGBA",
-            (text_bbox[2] + (x_offset << 1), text_bbox[3] * 5 + 10),
+            (text_bbox[2] + (x_offset << 1), height * count + spacing * (count + 1)),
             (40, 40, 40, 170),
         ),
         "RGBA",
     )
-    box_to_draw_on.text((10, text_bbox[3] + 5), dimension_text, fill="white")
-    box_to_draw_on.text((10, int(text_bbox[3] * 3)), size_text, fill="white")
+    box_to_draw_on.text((10, spacing), text, fill="white", spacing=spacing)
+
     return PhotoImage(box_to_draw_on._image)  # type: ignore

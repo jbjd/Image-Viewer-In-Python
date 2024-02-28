@@ -81,7 +81,7 @@ class ViewerApp:
             self.animation_loop,
         )
 
-        init_PIL(self._scale_pixels_to_height(22))
+        init_PIL(self._scale_pixels_to_height(23))
 
         # Don't call this class's load_image here since we only loaded one image
         # and if its failed to load, we don't want to exit. Special check for that here
@@ -108,7 +108,10 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind("<Control-d>", lambda _: self.file_manager.show_image_details())
+        app.bind(
+            "<Control-d>",
+            lambda _: self.file_manager.show_image_details(self.image_loader.PIL_image),
+        )
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
@@ -488,13 +491,13 @@ class ViewerApp:
         if dropdown.showing:
             if dropdown.need_refresh:
                 try:
-                    dimension_text, size_text, _ = (
-                        self.file_manager.get_cached_details()
-                    )
+                    details: str = self.file_manager.get_cached_details()
                 except KeyError:
                     return  # data not present in cache
 
-                dropdown.image = create_dropdown_image(dimension_text, size_text)
+                # remove last line since I don't want to show mode in this dropdown
+                details = details[: details.rfind("\n") - 1]
+                dropdown.image = create_dropdown_image(details)
 
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
