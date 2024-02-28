@@ -15,11 +15,10 @@ from util.image import CachedImage, magic_number_guess
 class ImageLoader:
     """Handles loading images from disk"""
 
-    DEFAULT_GIF_SPEED: int = 100
-    ANIMATION_SPEED_FACTOR: float = 0.82
+    DEFAULT_ANIMATION_SPEED: int = 100  # in miliseconds
 
     __slots__ = (
-        "aniamtion_frames",
+        "animation_frames",
         "animation_callback",
         "file_manager",
         "PIL_image",
@@ -43,7 +42,7 @@ class ImageLoader:
 
         self.PIL_image = Image()
 
-        self.aniamtion_frames: list[tuple[PhotoImage | None, int]] = []
+        self.animation_frames: list[tuple[PhotoImage | None, int]] = []
         self.frame_index: int = 0
         self.zoom_cap: int = 512
         self.zoom_level: int = 0
@@ -52,8 +51,8 @@ class ImageLoader:
     def get_next_frame(self) -> tuple[PhotoImage | None, int]:
         """Gets next frame of animated image or None while its being loaded"""
         try:
-            self.frame_index = (self.frame_index + 1) % len(self.aniamtion_frames)
-            current_frame = self.aniamtion_frames[self.frame_index]
+            self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
+            current_frame = self.animation_frames[self.frame_index]
         except ZeroDivisionError:
             return (None, 0)
         if current_frame is None:
@@ -61,19 +60,19 @@ class ImageLoader:
         return current_frame
 
     def get_ms_until_next_frame(self) -> int:
-        """Returns time until next frame for animated images"""
-        ms: int = self.PIL_image.info.get("duration", self.DEFAULT_GIF_SPEED)
-        return (
-            int(ms * self.ANIMATION_SPEED_FACTOR) if ms > 1 else self.DEFAULT_GIF_SPEED
+        """Returns miliseconds until next frame for animated images"""
+        ms: int = round(
+            self.PIL_image.info.get("duration", self.DEFAULT_ANIMATION_SPEED)
         )
+        return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
 
     def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
         """Begins new thread to handle dispalying frames of an aniamted image"""
-        self.aniamtion_frames = [(None, 0)] * frame_count
+        self.animation_frames = [(None, 0)] * frame_count
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
 
-        self.aniamtion_frames[0] = current_image, ms_until_next_frame
+        self.animation_frames[0] = current_image, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_remaining_frames,
@@ -82,7 +81,7 @@ class ImageLoader:
         ).start()
 
         # Params: time until next frame, backoff time to help loading
-        self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_GIF_SPEED)
+        self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
     def _cache_image(
         self,
@@ -187,7 +186,7 @@ class ImageLoader:
                 PIL_image.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
-                self.aniamtion_frames[i] = (
+                self.animation_frames[i] = (
                     self.image_resizer.get_image_fit_to_screen(PIL_image),
                     ms_until_next_frame,
                 )
@@ -202,7 +201,7 @@ class ImageLoader:
     def reset_and_setup(self) -> None:
         """Resets zoom, animation frames, and closes previous image
         to setup for next image load"""
-        self.aniamtion_frames = []
+        self.animation_frames = []
         self.frame_index = 0
         self.PIL_image.close()
         self.zoom_cap = 512

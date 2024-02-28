@@ -93,6 +93,7 @@ class CustomCanvas(Canvas):
     def update_image_display(self, new_image: PhotoImage) -> None:
         """Updates dispalyed with a new image and internal location metric"""
         self.itemconfigure(self.image_display_id, image=new_image)
+        self.master.update_idletasks()  # force update state
 
     def handle_alt_arrow_keys(self, keycode: int) -> None:
         """Move onscreen image when ctrl+arrow key clicked/held"""

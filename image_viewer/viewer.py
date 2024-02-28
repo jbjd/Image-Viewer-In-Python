@@ -1,6 +1,7 @@
 import os
 from tkinter import Event, Tk
 from typing import Final, NoReturn
+from time import perf_counter
 
 from PIL.ImageTk import PhotoImage
 
@@ -460,6 +461,7 @@ class ViewerApp:
 
     def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
+        start = perf_counter()
         frame: PhotoImage | None
         ms_until_next_frame: int
         frame, ms_until_next_frame = self.image_loader.get_next_frame()
@@ -468,6 +470,8 @@ class ViewerApp:
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
             self.canvas.update_image_display(frame)
+            elapsed = round((perf_counter() - start) * 1000)
+            ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
