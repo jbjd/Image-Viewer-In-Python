@@ -110,7 +110,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
                 self.write(" = ")
                 self.traverse(node.value)
             else:
-                # Can only reach here if annotion must be kept for formatting
+                # Can only reach here if annotation must be kept for formatting a class
                 self.write(": ")
                 new_node = ast.Name()
                 new_node.ctx = None  # type: ignore

@@ -46,14 +46,14 @@ class CustomArgParser(ArgumentParser):
             "--skip-nuitka",
             action="store_true",
             help=(
-                "Will not compile, will only create tmp directroy"
+                "Will not compile, will only create tmp directory"
                 "with cleaned .py files. This option is exposed for debugging"
             ),
         )
         self.add_argument("args", nargs=REMAINDER)
 
     def validate_and_return_arguments(self) -> tuple[Namespace, list[str]]:
-        """Validates root privledge and no unknown arguments present"""
+        """Validates root privilege and no unknown arguments present"""
         args, nuitka_args = self.parse_known_args()
 
         if not args.debug:
@@ -71,7 +71,7 @@ class CustomArgParser(ArgumentParser):
 
         for extra_arg in nuitka_args:
             if extra_arg not in self.VALID_NUITKA_ARGS:
-                raise ValueError(f"Unkown argument {extra_arg}")
+                raise ValueError(f"Unknown argument {extra_arg}")
 
         return args, nuitka_args
 
