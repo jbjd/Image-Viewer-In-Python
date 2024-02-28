@@ -166,35 +166,31 @@ class ImageFileManager:
 
     def _construct_path_for_rename(self, new_dir: str, new_name: str) -> str:
         """Makes new path with validations when moving between directories"""
-        will_not_move_dirs: bool = new_dir == ""
+        will_move_dirs: bool = new_dir != ""
         new_full_path: str
-        if will_not_move_dirs:
-            new_full_path = self.construct_path_to_image(new_name)
-        else:
+        if will_move_dirs:
             if not os.path.isabs(new_dir):
                 new_dir = os.path.join(self.image_directory, new_dir)
+            new_dir = truncate_path(new_dir)
             if not os.path.exists(new_dir):
                 raise OSError()
             new_full_path = os.path.join(new_dir, new_name)
+        else:
+            new_full_path = self.construct_path_to_image(new_name)
 
         if os.path.exists(new_full_path):
             raise FileExistsError()
 
-        if will_not_move_dirs:
-            return new_full_path
-
-        if not askyesno(
+        if will_move_dirs and not askyesno(
             "Confirm move",
-            f"Move file to {new_dir}?",
+            f"Move file to {new_dir} ?",
         ):
             raise Exception()
 
-        return os.path.join(new_dir, new_name)
+        return new_full_path
 
-    def _split_and_truncate_dir_and_name(
-        self, new_name_or_path: str
-    ) -> tuple[str, str]:
-        """Returns tuple with truncated path and file name split up"""
+    def _split_dir_and_name(self, new_name_or_path: str) -> tuple[str, str]:
+        """Returns tuple with path and file name split up"""
         new_name: str = (
             clean_str_for_OS_path(os.path.basename(new_name_or_path))
             or self.current_image.name
@@ -206,11 +202,11 @@ class ImageFileManager:
             new_dir = os.path.join(new_dir, new_name)
             new_name = self.current_image.name
 
-        return truncate_path(new_dir), new_name
+        return new_dir, new_name
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
-        new_dir, new_name = self._split_and_truncate_dir_and_name(new_name_or_path)
+        new_dir, new_name = self._split_dir_and_name(new_name_or_path)
 
         new_image_data = ImageName(new_name)
         if new_image_data.suffix not in self.VALID_FILE_TYPES:
