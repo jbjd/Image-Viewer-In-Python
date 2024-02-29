@@ -1,2 +1,2 @@
 [codespell]
-skip = tmp,compilation-report.xml
+skip = tmp,main.build,main.dist,compilation-report.xml
