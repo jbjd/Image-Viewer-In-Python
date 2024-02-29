@@ -98,7 +98,7 @@ class ImageFileManager:
 
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.size_display}"
-        mode_text: str = f"\nPixel Format: {bpp} bpp {readable_mode}"
+        mode_text: str = f"Pixel Format: {bpp} bpp {readable_mode}"
 
         return f"{dimension_text}\n{size_text}\n{mode_text}"
 

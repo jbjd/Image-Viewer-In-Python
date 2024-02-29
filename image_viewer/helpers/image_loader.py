@@ -10,6 +10,7 @@ from PIL.ImageTk import PhotoImage
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from util.image import CachedImage, magic_number_guess
+from util.PIL import get_placeholder_for_errored_image
 
 
 class ImageLoader:
@@ -111,17 +112,15 @@ class ImageLoader:
     def load_image(self) -> PhotoImage | None:
         """Loads an image and resizes it to fit on the screen
         Returns PhotoImage or None on failure to load"""
-
-        path_to_current_image = self.file_manager.path_to_current_image
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            fp = open(path_to_current_image, "rb")
+            fp = open(self.file_manager.path_to_current_image, "rb")
             self.PIL_image = open_image(fp, "r", magic_number_guess(fp.read(4)))
         except (FileNotFoundError, UnidentifiedImageError):
             return None
 
         PIL_image = self.PIL_image
-        size_in_kb: int = stat(path_to_current_image).st_size >> 10
+        size_in_kb: int = stat(self.file_manager.path_to_current_image).st_size >> 10
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
@@ -132,10 +131,14 @@ class ImageLoader:
             original_mode: str = PIL_image.mode  # save since resize might change it
             try:
                 current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
-            except OSError:
+            except OSError as e:
                 # Likely truncated, you can force PIL to not error here, but image
                 # will black screen. Gonna return None instead so image gets skipped
-                return None
+                current_image = get_placeholder_for_errored_image(
+                    e,
+                    self.image_resizer.screen_width,
+                    self.image_resizer.screen_height,
+                )
 
             self._cache_image(current_image, PIL_image.size, size_in_kb, original_mode)
 
@@ -151,6 +154,7 @@ class ImageLoader:
 
         return current_image
 
+    # TODO: break this up
     def get_zoomed_image(self, event_keycode: int) -> PhotoImage | None:
         """Handles getting and caching zoomed versions of the current image"""
         # determine new zoom factor

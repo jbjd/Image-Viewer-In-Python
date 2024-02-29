@@ -2,11 +2,15 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
+from textwrap import wrap
+
 from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
 from PIL.ImageDraw import Draw, ImageDraw
 from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
+
+from constants import TEXT_RGB
 
 
 def _resize_new(
@@ -40,29 +44,71 @@ def resize(
     return _resize_new(image, size, resample, box)
 
 
+def _get_longest_line_bbox(input: str) -> tuple[int, int, int, int]:
+    """Returns bbox of longest length string in a string with multiple lines"""
+    return ImageDraw.font.getbbox(max(input.split("\n"), key=len))
+
+
 def create_dropdown_image(text: str) -> PhotoImage:
     """Creates a new photo image with current images metadata"""
-    split_text: list[str] = text.split("\n")
-    text_bbox: tuple[int, int, int, int] = ImageDraw.font.getbbox(
-        max(split_text, key=len)
-    )
+    text_bbox: tuple[int, int, int, int] = _get_longest_line_bbox(text)
 
     x_offset: int = max(int(text_bbox[2] * 0.07), 10)
-    height: int = text_bbox[3] + text_bbox[1]
-    spacing: int = int(height * 0.8)
-    count: int = len(split_text)
+    line_height: int = text_bbox[3] + text_bbox[1]
+    spacing: int = int(line_height * 0.8)
+    line_count: int = text.count("\n") + 1
 
-    box_to_draw_on: ImageDraw = Draw(
-        new(
-            "RGBA",
-            (text_bbox[2] + (x_offset << 1), height * count + spacing * (count + 1)),
-            (40, 40, 40, 170),
+    width: int = text_bbox[2] + (x_offset << 1)
+    height: int = (line_height * line_count) + (spacing * (line_count + 1))
+    DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
+
+    draw: ImageDraw = Draw(new("RGBA", (width, height), DROPDOWN_RGBA))
+    draw.text((10, spacing), text, fill="white", spacing=spacing)
+
+    return PhotoImage(draw._image)  # type: ignore
+
+
+def _write_placeholder_text(
+    draw: ImageDraw, x_offset: int, y_offset: int, text: str
+) -> None:
+    """Curried function for writing placeholder text"""
+    draw.text(
+        (
+            x_offset,
+            y_offset,
         ),
-        "RGBA",
+        text,
+        TEXT_RGB,
     )
-    box_to_draw_on.text((10, spacing), text, fill="white", spacing=spacing)
 
-    return PhotoImage(box_to_draw_on._image)  # type: ignore
+
+def get_placeholder_for_errored_image(
+    error: Exception, screen_width: int, screen_height: int
+) -> PhotoImage:
+    """Returns a PhotoImage with error message to display"""
+    error_title: str = f"{type(error).__name__} occured while trying to load file"
+
+    # Wrap each individual line, then join to preserve already existing new lines
+    formated_error: str = "\n".join(
+        ["\n".join(wrap(line, 100)) for line in str(error).split("\n")]
+    ).capitalize()
+
+    draw: ImageDraw = Draw(new("RGB", (screen_width, screen_height)))
+    draw.line((0, 0, screen_width, screen_height), (30, 20, 20), width=100)
+
+    # Write title
+    *_, w, h = ImageDraw.font.getbbox(error_title)
+    y_offset: int = screen_height - (h * (5 + formated_error.count("\n"))) >> 1
+    x_offset: int = (screen_width - w) >> 1
+    _write_placeholder_text(draw, x_offset, y_offset, error_title)
+
+    # Write error body 2 lines of height below title
+    *_, w, h = _get_longest_line_bbox(formated_error)
+    y_offset += h * 2
+    x_offset = (screen_width - w) >> 1
+    _write_placeholder_text(draw, x_offset, y_offset, formated_error)
+
+    return PhotoImage(draw._image)  # type: ignore
 
 
 def _preinit() -> None:  # pragma: no cover

@@ -1,10 +1,11 @@
 from tkinter import Canvas, Entry, Event, Tk
 
+from constants import TEXT_RGB
+
 
 class RenameEntry(Entry):
     """Entry for use in a rename window"""
 
-    BG_COLOR: str = "#FEFEFE"
     ERROR_COLOR: str = "#E6505F"
 
     __slots__ = ("being_resized", "cursor", "id", "min_width", "text")
@@ -15,8 +16,8 @@ class RenameEntry(Entry):
         super().__init__(
             master,
             font=font,
-            bg=self.BG_COLOR,
-            disabledbackground=self.BG_COLOR,
+            bg=TEXT_RGB,
+            disabledbackground=TEXT_RGB,
             fg="black",
             disabledforeground="black",
             borderwidth=0,
@@ -67,4 +68,4 @@ class RenameEntry(Entry):
     def error_flash(self) -> None:
         """Makes Entry flash red"""
         self.config(bg=self.ERROR_COLOR)
-        self.master.after(400, lambda: self.config(bg=self.BG_COLOR))
+        self.master.after(400, lambda: self.config(bg=TEXT_RGB))
