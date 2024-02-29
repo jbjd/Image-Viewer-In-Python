@@ -30,7 +30,7 @@ def truncate_path(path: str) -> str:
     path = sub(pattern, "/", path)
 
     # shrink abc/123/../ to abc
-    negated_separators: str = f"[^{separators[1:-1]}]"  # [...] -> [^...]
+    negated_separators: str = f"[^{separators[1:]}"  # [...] -> [^...]
     pattern = rf"{separators}{negated_separators}+?{separators}\.\.({separators}|$)"
     return sub(pattern, "/", path)
 

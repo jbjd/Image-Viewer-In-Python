@@ -130,7 +130,12 @@ class ImageLoader:
             current_image = cached_image_data.image
         else:
             original_mode: str = PIL_image.mode  # save since resize might change it
-            current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
+            try:
+                current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
+            except OSError:
+                # Likely truncated, you can force PIL to not error here, but image
+                # will black screen. Gonna return None instead so image gets skipped
+                return None
 
             self._cache_image(current_image, PIL_image.size, size_in_kb, original_mode)
 

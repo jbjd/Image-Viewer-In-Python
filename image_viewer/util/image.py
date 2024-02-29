@@ -35,8 +35,8 @@ class ImageName:
     __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
-        self.suffix = name[name.rfind(".") + 1 :].lower()
-        self.name = name
+        self.suffix: str = name[name.rfind(".") + 1 :].lower()
+        self.name: str = name
 
     def __lt__(self, other: "ImageName") -> bool:
         return OS_name_cmp(self.name, other.name)
