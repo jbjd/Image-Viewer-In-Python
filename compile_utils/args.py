@@ -9,6 +9,8 @@ class CustomArgParser(ArgumentParser):
         "--clang",
         "--standalone",
         "--enable-console",
+        "--show-scons",
+        "--show-memory",
     }
 
     def __init__(self, install_path: str) -> None:
