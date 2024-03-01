@@ -42,22 +42,6 @@ class ImageName:
         return OS_name_cmp(self.name, other.name)
 
 
-class DropdownImage:
-    """The dropdown image containing metadata on the open image file"""
-
-    __slots__ = ("id", "image", "need_refresh", "showing")
-
-    def __init__(self, id: int) -> None:
-        self.id: int = id
-        self.need_refresh: bool = True
-        self.showing: bool = False
-        self.image: PhotoImage
-
-    def toggle_display(self) -> None:
-        """Flips if showing is true or false"""
-        self.showing = not self.showing
-
-
 def magic_number_guess(magic: bytes) -> tuple[str]:
     """Given bytes, make best guess at file type of image"""
     match magic:

@@ -10,8 +10,8 @@ from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from ui.canvas import CustomCanvas
+from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
-from util.image import DropdownImage
 from util.PIL import create_dropdown_image, init_PIL
 
 
@@ -202,6 +202,7 @@ class ViewerApp:
         canvas.tag_bind(
             self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
         )
+
         dropdown_id: int = canvas.create_image(
             screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
         )
@@ -239,7 +240,7 @@ class ViewerApp:
             self.show_topbar()
 
     def handle_key(self, event: Event) -> None:
-        """Key binds on main screen"""
+        """Key binds that happen only on main app focus"""
         if event.widget is self.app:
             match event.keycode:
                 case 37 | 39:  # Left/Right arrow
