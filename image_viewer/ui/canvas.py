@@ -87,6 +87,8 @@ class CustomCanvas(Canvas):
         )
 
     def center_image(self) -> None:
+        """Moves image back to center if user moved it"""
+        # Can't use moveto since it was inconsistent, this is
         self.move(self.image_display_id, self.move_x, self.move_y)
         self.move_x = self.move_y = 0
 
@@ -96,34 +98,30 @@ class CustomCanvas(Canvas):
         self.master.update_idletasks()
 
     def handle_alt_arrow_keys(self, keycode: int) -> None:
-        """Move onscreen image when ctrl+arrow key clicked/held"""
+        """Move onscreen image when alt+arrow key clicked/held"""
         bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
+        x = y = 0
         match keycode:
             case 37:  # Left
                 x = -10
-                y = 0
                 if not (bbox[2] > self.screen_width) and (bbox[0] + x) < 0:
                     return
             case 38:  # Up
-                x = 0
                 y = -10
                 if not (bbox[3] > self.screen_height) and (bbox[1] + y) < 0:
                     return
             case 39:  # Right
                 x = 10
-                y = 0
                 if (bbox[2] + x) > self.screen_width and not (bbox[0] < 0):
                     return
             case _:  # Down
-                x = 0
                 y = 10
                 if (bbox[3] + y) > self.screen_height and not (bbox[1] < 0):
                     return
         self.move_x -= x
         self.move_y -= y
 
-        # TODO: find a good way to handle scaling 10px to screen, don't
-        # really want to call the internal scale function each time...
+        # TODO: scale x/y to screen
         self.move(self.image_display_id, x, y)
 
     def update_file_name(self, new_name: str) -> int:
