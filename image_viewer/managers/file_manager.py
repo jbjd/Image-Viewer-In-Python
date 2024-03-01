@@ -64,7 +64,7 @@ class ImageFileManager:
             self.current_image.name
         )
 
-    def fully_load_image_data(self) -> None:
+    def find_all_images(self) -> None:
         """Init only loads one file, load entire directory here"""
         image_to_start_at: str = self._files[self._index].name
 
@@ -82,7 +82,7 @@ class ImageFileManager:
     def refresh_image_list(self) -> None:
         """Clears cache and re-loads current images in direcrory"""
         self.cache = {}
-        self.fully_load_image_data()
+        self.find_all_images()
 
     def get_cached_details(self) -> str:
         """Returns tuple of current image's dimensions, size, and mode.

@@ -70,17 +70,7 @@ class ViewerApp:
 
         init_PIL(self._scale_pixels_to_height(23))
 
-        # Don't call this class's load_image here since we only loaded one image
-        # and if its failed to load, we don't want to exit. Special check for that here
-        if (current_image := self.image_loader.load_image()) is not None:
-            self.update_after_image_load(current_image)
-            self.app.update()
-
-        self.file_manager.fully_load_image_data()
-
-        # if first load failed, load new one now that all images are loaded
-        if current_image is None:
-            self.load_image()
+        self._init_image_display()
 
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         self._add_keybinds()
@@ -105,6 +95,19 @@ class ViewerApp:
             del tkImage
 
         return app
+
+    def _init_image_display(self) -> None:
+        """Loads first image and then finds all images files in the directory"""
+        # Don't call this class's load_image here since we only consider there
+        # to be one image now, and that function would throw if that one failed to load
+        if (current_image := self.image_loader.load_image()) is not None:
+            self.update_after_image_load(current_image)
+
+        self.file_manager.find_all_images()
+
+        # if first load failed, load new one now that all images are loaded
+        if current_image is None:
+            self.load_image()
 
     def _add_keybinds(self) -> None:
         """Assigns keybinds to app"""

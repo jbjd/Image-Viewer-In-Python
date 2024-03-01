@@ -17,7 +17,7 @@ def test_image_file_manager(manager: ImageFileManager):
     """Test various functions of the file manager with empty image files"""
     assert len(manager._files) == 1
 
-    manager.fully_load_image_data()
+    manager.find_all_images()
     assert len(manager._files) == 4
     assert manager._binary_search("a.png") == 0
 

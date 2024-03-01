@@ -86,7 +86,7 @@ def get_placeholder_for_errored_image(
     error: Exception, screen_width: int, screen_height: int
 ) -> PhotoImage:
     """Returns a PhotoImage with error message to display"""
-    error_title: str = f"{type(error).__name__} occured while trying to load file"
+    error_title: str = f"{type(error).__name__} occurred while trying to load file"
 
     # Wrap each individual line, then join to preserve already existing new lines
     formated_error: str = "\n".join(
