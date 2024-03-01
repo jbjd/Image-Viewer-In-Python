@@ -102,6 +102,7 @@ class ViewerApp:
             app.wm_iconbitmap(
                 bitmap=tkImage("photo", file=os.path.join(path_to_exe, "icon/icon.png"))
             )
+            del tkImage
 
         return app
 
