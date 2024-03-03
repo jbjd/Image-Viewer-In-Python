@@ -10,6 +10,7 @@ from PIL.ImageTk import PhotoImage
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from util.image import CachedImage, magic_number_guess
+from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image
 
 
@@ -93,12 +94,7 @@ class ImageLoader:
         byte_size: int,
         mode: str,
     ) -> None:
-        size_in_kb: int = byte_size >> 10
-        size_display: str = (
-            f"{round(size_in_kb/10.24)/100}mb"
-            if size_in_kb > 999
-            else f"{size_in_kb}kb"
-        )
+        size_display: str = get_byte_display(byte_size)
 
         self.file_manager.cache_image(
             CachedImage(
