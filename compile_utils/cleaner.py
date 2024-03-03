@@ -1,17 +1,24 @@
 import ast
 import os
-import warnings
 from _ast import Name
+from glob import glob
+from re import sub
+from shutil import copyfile
+
+from image_viewer.util.os import separators
 
 try:
     import autoflake
 except ImportError:
+    import warnings
+
     warnings.warn(
         (
             "You do not have the autoflake package installed. "
             "Installing it will allow for a slightly smaller output\n"
         )
     )
+    del warnings
     autoflake = None
 
 func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
@@ -147,6 +154,28 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             remove_rhs_for_unused_variables=True,
         )
 
-    os.makedirs(os.path.dirname(new_path), exist_ok=True)
     with open(new_path, "w", encoding="utf-8") as fp:
         fp.write(contents)
+
+
+def move_files_to_tmp_and_clean(dir: str, tmp_dir: str, mod_prefix: str) -> None:
+    """Moves python files from dir to temp_dir and removes unused/unneeded code"""
+    for python_file in iter(
+        os.path.abspath(p)
+        for p in glob(f"{dir}/**/*", recursive=True)
+        if p.endswith((".py", ".pyi", ".pyd"))
+    ):
+        if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
+            continue  # skip __main__ in modules other than this one
+
+        relative_path: str = os.path.join(
+            mod_prefix, python_file.replace(dir, "").strip("/\\")
+        )
+        new_path: str = os.path.join(tmp_dir, relative_path)
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+
+        if python_file.endswith(".py"):
+            mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
+            clean_file_and_copy(python_file, new_path, mod_name)
+        else:
+            copyfile(python_file, new_path)
