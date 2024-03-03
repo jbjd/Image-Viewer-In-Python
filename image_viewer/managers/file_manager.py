@@ -261,7 +261,7 @@ class ImageFileManager:
         try:
             return (
                 os.stat(self.path_to_current_image).st_size
-                == self.cache[self.current_image.name].size_in_kb
+                == self.cache[self.current_image.name].byte_size
             )
         except (OSError, ValueError, KeyError):
             return False
