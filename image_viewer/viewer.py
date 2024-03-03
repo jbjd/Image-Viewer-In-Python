@@ -83,16 +83,14 @@ class ViewerApp:
         app = Tk()
         app.attributes("-fullscreen", True)
 
-        icon_path: str
         if os.name == "nt":
             app.state("zoomed")
-            icon_path = "icon/icon.ico"
-        else:
-            icon_path = "icon/icon.png"
 
         from tkinter import PhotoImage as tkPhotoImage
 
-        app.wm_iconphoto(True, tkPhotoImage(file=os.path.join(path_to_exe, icon_path)))
+        app.wm_iconphoto(
+            True, tkPhotoImage(file=os.path.join(path_to_exe, "icon/icon.png"))
+        )
         del tkPhotoImage
 
         return app
