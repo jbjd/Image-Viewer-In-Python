@@ -26,19 +26,22 @@ func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
             "__map_luminance_to_dc_dct_coefficient",
         },
     ),
-    "PIL.Image": (set(), {"_getxmp", "getexif"}),
+    "PIL.Image": (set(), {"_getxmp", "getexif", "preinit", "effect_mandelbrot"}),
     "PIL.ImageDraw": (set(), {"getdraw"}),
     "PIL.ImageFile": (set(), {"verify", "raise_oserror"}),
     "PIL.GifImagePlugin": ({"format_description"}, {"getdata"}),
     "PIL.JpegImagePlugin": (
         {"format_description"},
-        {"getxmp", "_getexif", "_save_cjpeg"},
+        {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
     ),
     "PIL.PngImagePlugin": ({"format_description"}, {"getxmp"}),
     "PIL.WebPImagePlugin": ({"format_description"}, {"getxmp"}),
 }
 
-classes_to_skip: dict[str, set[str]] = {"PIL.Image": {"Exif"}}
+classes_to_skip: dict[str, set[str]] = {
+    "PIL.Image": {"Exif"},
+    "PIL.ImageFile": {"_Tile"},
+}
 
 
 class TypeHintRemover(ast._Unparser):  # type: ignore

@@ -1,11 +1,6 @@
 from sys import version_info
 
-try:
-    from nuitka import PythonVersions
-except ImportError:
-    raise ImportError(
-        "Nuitka is not installed on your system, it must be installed to compile"
-    )
+from nuitka import PythonVersions
 
 
 def raise_if_unsupported_python_version() -> None:

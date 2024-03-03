@@ -15,23 +15,19 @@ from image_viewer.util.os import separators
 raise_if_unsupported_python_version()
 
 WORKING_DIR: Final[str] = os.path.abspath(os.path.dirname(__file__))
+FILE: Final[str] = "__main__"
 TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
-COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, "main.dist")
-VALID_NUITKA_ARGS: frozenset[str] = frozenset(
-    ("--mingw64", "--clang", "--standalone", "--enable-console")
-)
+COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.dist")
+BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
 install_path: str
-executable_ext: str
 data_file_paths: list[str]
 
 if os.name == "nt":
     install_path = "C:/Program Files/Personal Image Viewer/"
-    executable_ext = ".exe"
     data_file_paths = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
     install_path = "/usr/local/personal-image-viewer/"
-    executable_ext = ".bin"
     data_file_paths = ["icon/icon.png"]
 
 parser = CustomArgParser(install_path)
@@ -96,9 +92,9 @@ try:
     cmd_str = f'{args.python_path} -m nuitka --lto=yes --follow-import-to="factories" \
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers"  \
-        --follow-import-to="constants" \
+        --follow-import-to="constants" --output-filename="viewer" \
         --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" {extra_args} \
-        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/main.py"'
+        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/{FILE}.py"'
 
     compile_env = os.environ.copy()
     compile_env["CCFLAGS"] = "-O2"
@@ -121,22 +117,16 @@ try:
     if args.debug:
         exit(0)
 
-    dest: str = os.path.join(COMPILE_DIR, f"viewer{executable_ext}")
-    src: str = os.path.join(
-        COMPILE_DIR if "--standalone" in nuitka_args else WORKING_DIR,
-        f"main{executable_ext}",
-    )
-    os.rename(src, dest)
     shutil.rmtree(install_path, ignore_errors=True)
     os.rename(COMPILE_DIR, install_path)
 finally:
     if not args.debug:
-        shutil.rmtree(os.path.join(WORKING_DIR, "main.build"), ignore_errors=True)
+        shutil.rmtree(BUILD_DIR, ignore_errors=True)
         shutil.rmtree(COMPILE_DIR, ignore_errors=True)
         if not args.skip_nuitka:
             shutil.rmtree(TMP_DIR, ignore_errors=True)
         try:
-            os.remove(os.path.join(WORKING_DIR, "main.cmd"))
+            os.remove(os.path.join(WORKING_DIR, f"{FILE}.cmd"))
         except FileNotFoundError:
             pass
 
