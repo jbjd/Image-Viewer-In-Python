@@ -85,13 +85,14 @@ class ViewerApp:
 
         if os.name == "nt":
             app.state("zoomed")
+            app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
+        else:
+            from tkinter import PhotoImage as tkPhotoImage
 
-        from tkinter import PhotoImage as tkPhotoImage
-
-        app.wm_iconphoto(
-            True, tkPhotoImage(file=os.path.join(path_to_exe, "icon/icon.png"))
-        )
-        del tkPhotoImage
+            app.wm_iconphoto(
+                True, tkPhotoImage(file=os.path.join(path_to_exe, "icon/icon.png"))
+            )
+            del tkPhotoImage
 
         return app
 
