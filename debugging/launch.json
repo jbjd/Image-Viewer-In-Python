@@ -5,7 +5,7 @@
             "name": "Start Image Viewer",
             "type": "debugpy",
             "request": "launch",
-            "program": "C:/Python/Viewer/image_viewer/main.py",
+            "program": "C:/Python/Viewer/image_viewer/__main__.py",
             "args": [
                 "c:/photos/test.jpg"
             ],

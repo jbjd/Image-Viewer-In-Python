@@ -81,7 +81,9 @@ try:
     os.makedirs(install_path, exist_ok=True)
 
     print("Waiting for nuitka compilation...")
-    process.wait()
+
+    if process.wait():
+        exit(1)
 
     for data_file_path in data_file_paths:
         old_path = os.path.join(CODE_DIR, data_file_path)
