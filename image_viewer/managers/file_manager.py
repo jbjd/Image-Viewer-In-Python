@@ -89,12 +89,13 @@ class ImageFileManager:
         Can raise KeyError on failure to get data"""
         image_info: CachedImage = self.cache[self.current_image.name]
 
-        bpp: int = len(image_info.mode) * 8 if image_info.mode != "1" else 1
+        mode: str = image_info.mode
+        bpp: int = len(mode) * 8 if mode != "1" else 1
         readable_mode: str = {
             "P": "Palette",
             "L": "Grayscale",
             "1": "Black And White",
-        }.get(image_info.mode, image_info.mode)
+        }.get(mode, mode)
 
         dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
         size_text: str = f"Size: {image_info.size_display}"

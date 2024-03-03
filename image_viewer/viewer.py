@@ -187,7 +187,7 @@ class ViewerApp:
         ) = icon_factory.make_dropdown_icons()
 
         self.dropdown_button_id: int = canvas.create_image(
-            screen_width - (topbar_height << 1),
+            screen_width - (topbar_height + topbar_height),
             0,
             image=self.dropdown_hidden_icon,
             anchor="ne",

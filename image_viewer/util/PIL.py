@@ -58,7 +58,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
     spacing: int = int(line_height * 0.8)
     line_count: int = text.count("\n") + 1
 
-    width: int = text_bbox[2] + (x_offset << 1)
+    width: int = text_bbox[2] + x_offset + x_offset
     height: int = (line_height * line_count) + (spacing * (line_count + 1))
     DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
 
@@ -132,13 +132,13 @@ def _preinit() -> None:  # pragma: no cover
 
 def _stop_unwanted_PIL_imports() -> None:
     """Edits parts of PIL module to prevent excessive imports"""
-    from PIL import JpegImagePlugin
+    from PIL.JpegImagePlugin import MARKER, Skip
 
     # Remove calls to "APP" since its only for exif and uses removed Tiff plugin
-    # Can't edit JpegImagePlugin.APP directly due to PIL storing it in this dict
+    # Can't edit APP directly due to PIL storing it in this dict
     for i in range(0xFFE0, 0xFFF0):
-        JpegImagePlugin.MARKER[i] = ("", "", JpegImagePlugin.Skip)
-    del JpegImagePlugin
+        MARKER[i] = ("", "", Skip)
+    del MARKER, Skip
 
     # Edit plugins and preinit to avoid importing many unused image modules
     _Image._plugins = []  # type: ignore
@@ -153,7 +153,6 @@ def init_PIL(font_size: int) -> None:
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
     _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
-    del truetype
-    del _ImageDraw
+    del _ImageDraw, truetype
 
     _stop_unwanted_PIL_imports()
