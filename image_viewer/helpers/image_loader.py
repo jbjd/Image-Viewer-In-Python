@@ -91,9 +91,9 @@ class ImageLoader:
         current_image: PhotoImage,
         dimensions: tuple[int, int],
         byte_size: int,
-        size_in_kb: int,
         mode: str,
     ) -> None:
+        size_in_kb: int = byte_size >> 10
         size_display: str = (
             f"{round(size_in_kb/10.24)/100}mb"
             if size_in_kb > 999
@@ -122,12 +122,11 @@ class ImageLoader:
 
         PIL_image = self.PIL_image
         byte_size: int = stat(self.file_manager.path_to_current_image).st_size
-        size_in_kb: int = byte_size >> 10
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
         cached_image_data = self.file_manager.get_current_image_cache()
-        if cached_image_data is not None and size_in_kb == cached_image_data.byte_size:
+        if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             current_image = cached_image_data.image
         else:
             original_mode: str = PIL_image.mode  # save since resize might change it
@@ -142,9 +141,7 @@ class ImageLoader:
                     self.image_resizer.screen_height,
                 )
 
-            self._cache_image(
-                current_image, PIL_image.size, byte_size, size_in_kb, original_mode
-            )
+            self._cache_image(current_image, PIL_image.size, byte_size, original_mode)
 
         frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:
