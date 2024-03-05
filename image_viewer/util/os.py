@@ -16,6 +16,22 @@ if os.name == "nt":
     separators = r"[\\/]"
     kb_size = 1024
 
+    MB_YESNO: int = 0x4
+    MB_ICONERROR: int = 0x10
+    IDYES: int = 6
+
+    def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
+        """Show windows message box with error, returns True when user says no"""
+        return (
+            windll.user32.MessageBoxW(
+                0,
+                f"{str(error)}\n\nWrite traceback to {error_file}?",
+                f"Unhandled {error_type.__name__} Occured",
+                MB_YESNO | MB_ICONERROR,
+            )
+            != IDYES
+        )
+
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
@@ -26,6 +42,9 @@ else:  # linux / can't determine / unsupported OS
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
+
+    def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
+        return True  # TODO: add option for linux
 
 
 # Setup regex for truncating path

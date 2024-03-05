@@ -4,6 +4,8 @@
 .vscode/
 __pycache__/
 
+ERROR.log
+
 # nuitka artifacts
 *.bin
 *.exe
