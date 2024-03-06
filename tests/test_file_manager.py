@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest import mock
+from unittest.mock import patch
 
 import pytest
 
@@ -29,8 +29,8 @@ def test_image_file_manager(manager: ImageFileManager):
         manager.rename_or_convert_current_image("c.webp")
 
     # Try to rename a.png mocking the os call away should pass
-    with mock.patch("os.rename", lambda *_: None):
-        with mock.patch.object(
+    with patch("os.rename", lambda *_: None):
+        with patch.object(
             ImageFileManager,
             "_ask_to_delete_old_image_after_convert",
             lambda *_: None,
@@ -56,7 +56,7 @@ def test_bad_path(img_dir: str):
         ImageFileManager(os.path.join(img_dir, "not_an_image.txt"))
 
 
-@mock.patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
+@patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
 def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
     """When calling rename, certain conditions should raise errors"""
     with pytest.raises(OSError):
@@ -108,3 +108,29 @@ def test_smart_adjust(manager: ImageFileManager):
     # smart adjust should move index
     manager.add_new_image("a.jpg", True)
     assert manager._index == 1
+
+
+def test_undo(manager: ImageFileManager):
+    """Test correct behavior adding/removing with undo"""
+    with patch.object(
+        ImageFileManager,
+        "_ask_undo_last_action",
+        return_value=False,
+    ):
+        assert not manager.undo_rename_or_convert()
+
+    class MockActionUndoer:
+        def undo(*_):
+            return ("b.png", "a.png")
+
+    # Mock that undo should add b.png and remove a.png
+    manager.action_undoer = MockActionUndoer()  # type: ignore
+    with patch.object(
+        ImageFileManager,
+        "_ask_undo_last_action",
+        return_value=True,
+    ):
+        assert manager.undo_rename_or_convert()
+        assert len(manager._files) == 1
+        assert manager._files[0].name == "b.png"
+        assert manager._index == 0

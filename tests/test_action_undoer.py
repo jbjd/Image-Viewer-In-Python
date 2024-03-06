@@ -4,6 +4,8 @@ from image_viewer.util.action_undoer import ActionUndoer, RenameResult
 
 
 def test_action_undoer():
+    """Test all 3 undoable actions"""
+
     action_undoer = ActionUndoer()
     action_undoer.append(
         "old", "new", RenameResult(file_type_converted=False, preserve_index=False)
