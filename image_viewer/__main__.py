@@ -6,6 +6,7 @@ A lightweight image viewer app to be called like "python image_viewer path/to/im
 import os
 import sys
 from functools import partial
+
 from viewer import ViewerApp
 
 

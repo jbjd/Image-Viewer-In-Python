@@ -121,6 +121,7 @@ class ViewerApp:
             "<Control-d>",
             lambda _: self.file_manager.show_image_details(self.image_loader.PIL_image),
         )
+        app.bind("<Control-z>", self.undo_rename_or_convert)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
@@ -334,6 +335,10 @@ class ViewerApp:
         except IndexError:
             self.exit()
         self.load_image_unblocking()
+
+    def undo_rename_or_convert(self, _: Event) -> None:
+        if self.file_manager.undo_rename_or_convert():
+            self.load_image_unblocking()
 
     def move(self, amount: int) -> None:
         """Moves to different image
