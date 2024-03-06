@@ -26,7 +26,7 @@ if os.name == "nt":
             windll.user32.MessageBoxW(
                 0,
                 f"{str(error)}\n\nWrite traceback to {error_file}?",
-                f"Unhandled {error_type.__name__} Occured",
+                f"Unhandled {error_type.__name__} Occurred",
                 MB_YESNO | MB_ICONERROR,
             )
             != IDYES
