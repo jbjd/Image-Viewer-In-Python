@@ -4,10 +4,10 @@ from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
+from util.action_undoer import ActionUndoer, RenameResult
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, truncate_path, walk_dir
-from util.rename_undoer import RenameUndoer, RenameResult
 
 if os.name == "nt":
     from send2trash.win.legacy import send2trash
@@ -32,11 +32,11 @@ class ImageFileManager:
     __slots__ = (
         "_files",
         "_index",
+        "action_undoer",
         "cache",
         "current_image",
         "image_directory",
         "path_to_current_image",
-        "rename_undoer",
     )
 
     def __init__(self, first_image_to_load: str) -> None:
@@ -54,7 +54,7 @@ class ImageFileManager:
         self._index: int = 0
         self._update_after_move_or_edit()
         self.cache: dict[str, CachedImage] = {}
-        self.rename_undoer = RenameUndoer()
+        self.action_undoer = ActionUndoer()
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
@@ -220,6 +220,7 @@ class ImageFileManager:
             new_name += f".{self.current_image.suffix}"
             new_image_data = ImageName(new_name)
 
+        original_path: str = self.path_to_current_image
         new_full_path: str = self._construct_path_for_rename(
             new_dir, new_image_data.name
         )
@@ -228,7 +229,7 @@ class ImageFileManager:
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
-                self.path_to_current_image,
+                original_path,
                 new_full_path,
                 new_image_data.suffix,
             )
@@ -237,12 +238,10 @@ class ImageFileManager:
         else:
             result = self._rename(new_full_path)
 
-        self.rename_undoer.append(self.path_to_current_image, new_full_path, result)
+        self.action_undoer.append(original_path, new_full_path, result)
 
         # Only add image if its still in the same directory
-        if os.path.dirname(new_full_path) == os.path.dirname(
-            self.path_to_current_image
-        ):
+        if os.path.dirname(new_full_path) == os.path.dirname(original_path):
             self.add_new_image(new_name, result.preserve_index)
         else:
             self._update_after_move_or_edit()
@@ -268,20 +267,18 @@ class ImageFileManager:
         if not self._ask_undo_last_action():
             return False
 
-        image_to_add, image_to_remove = self.rename_undoer.undo()
-
-        # Stop early if something went wrong in undo
-        if image_to_add == "" and image_to_remove == "":
-            return False
+        try:
+            image_to_add, image_to_remove = self.action_undoer.undo()
+        except Exception:
+            return False  # TODO: error popup?
 
         image_to_add = os.path.basename(image_to_add)
         image_to_remove = os.path.basename(image_to_remove)
-        removed_image_index: int = -1
 
         if image_to_remove:
-            removed_image_index, found = self._binary_search(image_to_remove)
+            index, found = self._binary_search(image_to_remove)
             if found:
-                self.cache.pop(self._files.pop(removed_image_index).name, None)
+                self.cache.pop(self._files.pop(index).name, None)
 
         if image_to_add:
             preserve_index: bool = image_to_remove == ""
@@ -289,13 +286,12 @@ class ImageFileManager:
         else:
             self._update_after_move_or_edit()
 
-        # Need to update screen if image replace one that was currently being displayed
-        return removed_image_index == self._index
+        return True
 
     def _ask_undo_last_action(self) -> bool:
         """Returns if user wants to + can undo last action"""
         try:
-            action: str = self.rename_undoer.get_last_undoable_action()
+            action: str = self.action_undoer.get_last_undoable_action()
         except IndexError:
             return False
         return askyesno("Undo Rename/Convert", action)

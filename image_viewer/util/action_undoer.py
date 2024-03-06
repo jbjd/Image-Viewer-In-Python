@@ -1,14 +1,14 @@
+import os
 from collections import deque
 from typing import NamedTuple
-import os
-
 
 if os.name == "nt":
-    from winshell import undelete
     from send2trash.win.legacy import send2trash
+    from winshell import undelete
 else:
-    from util.os import undelete
     from send2trash import send2trash
+
+    from util.os import undelete
 
 
 class RenameResult(NamedTuple):
@@ -25,8 +25,10 @@ class _Rename(NamedTuple):
     file_type_converted: bool
 
 
-class RenameUndoer:
-    """Keeps information on recent file renames and optionally undoes them"""
+class ActionUndoer:
+    """Keeps information on recent file renames/converts and optionally undoes them"""
+
+    __slots__ = "_stack"
 
     def __init__(self) -> None:
         self._stack: deque[_Rename] = deque(maxlen=4)
@@ -54,19 +56,18 @@ class RenameUndoer:
         )
         # file was not converted -> try rename to its previous name
         if not file_type_converted:
-            try:
-                os.rename(new_name, original_name)
-            except OSError:
-                return ("", "")
+            os.rename(new_name, original_name)
+
             return (original_name, new_name)
         elif not old_file_deleted:
             send2trash(os.path.normpath(new_name))
 
             return ("", new_name)
         else:
-            raise NotImplementedError
+            undelete(os.path.normpath(original_name))
+            send2trash(os.path.normpath(new_name))
 
-        return ("", "")
+            return (original_name, new_name)
 
     def get_last_undoable_action(self) -> str:
         """Looks at top of deque and formats the information in a str"""

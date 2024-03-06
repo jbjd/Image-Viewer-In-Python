@@ -46,7 +46,7 @@ else:  # linux / can't determine / unsupported OS
     def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
         return True  # TODO: add option for linux
 
-    def undelete():
+    def undelete(original_path: str):
         raise NotImplementedError  # TODO: add option for linux
 
 

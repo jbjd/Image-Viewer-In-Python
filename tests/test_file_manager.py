@@ -19,7 +19,7 @@ def test_image_file_manager(manager: ImageFileManager):
 
     manager.find_all_images()
     assert len(manager._files) == 4
-    assert manager._binary_search("a.png") == 0
+    assert manager._binary_search("a.png") == (0, True)
 
     manager.add_new_image("y.jpeg", False)
     assert len(manager._files) == 5
