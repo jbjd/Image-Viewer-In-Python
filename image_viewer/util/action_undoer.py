@@ -1,6 +1,6 @@
 import os
 from collections import deque
-from typing import NamedTuple
+from abc import ABC
 
 from util.os import restore_from_bin
 
@@ -10,18 +10,44 @@ else:
     from send2trash import send2trash
 
 
-class RenameResult(NamedTuple):
-    file_type_converted: bool
-    preserve_index: bool
+class Action(ABC):
+    """Class used to track actions done to a file"""
+
+    __slots__ = "original_path"
+
+    def __init__(self, original_path: str) -> None:
+        self.original_path: str = original_path
 
 
-class _Rename(NamedTuple):
-    """Class used for storage within this file"""
+class Rename(Action):
+    """One class for rename/convert since this program handles them very closely"""
 
-    original_name: str
-    new_name: str
-    old_file_deleted: bool
-    file_type_converted: bool
+    __slots__ = "new_path", "preserve_index"
+
+    def __init__(
+        self, original_path: str, new_path: str, preserve_index: bool = False
+    ) -> None:
+        super().__init__(original_path)
+        self.new_path: str = new_path
+        self.preserve_index: bool = preserve_index
+
+
+class Convert(Rename):
+    """Convert action"""
+
+    __slots__ = "old_file_deleted"
+
+    def __init__(
+        self, original_path: str, new_path: str, old_file_deleted: bool
+    ) -> None:
+        super().__init__(original_path, new_path, not old_file_deleted)
+        self.old_file_deleted: bool = old_file_deleted
+
+
+class Delete(Action):
+    """Delete action"""
+
+    __slots__ = ()
 
 
 class ActionUndoer:
@@ -30,51 +56,51 @@ class ActionUndoer:
     __slots__ = "_stack"
 
     def __init__(self) -> None:
-        self._stack: deque[_Rename] = deque(maxlen=4)
+        self._stack: deque[Action] = deque(maxlen=4)
 
-    def append(
-        self, original_name: str, new_name: str, rename_result: RenameResult
-    ) -> None:
-        # File was deleted if file was converted and index did not need to be preserved
-        old_file_deleted: bool = (
-            rename_result.file_type_converted and not rename_result.preserve_index
-        )
-        self._stack.append(
-            _Rename(
-                original_name,
-                new_name,
-                old_file_deleted,
-                rename_result.file_type_converted,
-            )
-        )
+    def append(self, action: Action) -> None:
+        self._stack.append(action)
 
     def undo(self) -> tuple[str, str]:
         """returns tuple of image to add, image to remove, if any"""
-        original_name, new_name, old_file_deleted, file_type_converted = (
-            self._stack.pop()
-        )
-        # file was not converted -> try rename to its previous name
-        if not file_type_converted:
-            os.rename(new_name, original_name)
+        action: Action = self._stack.pop()
 
-            return (original_name, new_name)
-        elif not old_file_deleted:
-            send2trash(os.path.normpath(new_name))
+        if type(action) is Rename:
 
-            return ("", new_name)
-        else:
-            restore_from_bin(os.path.normpath(original_name))
-            send2trash(os.path.normpath(new_name))
+            os.rename(action.new_path, action.original_path)
+            return (action.original_path, action.new_path)
 
-            return (original_name, new_name)
+        elif type(action) is Convert and action.old_file_deleted:
+
+            restore_from_bin(action.original_path)
+            send2trash(os.path.normpath(action.new_path))
+            return (action.original_path, action.new_path)
+
+        elif type(action) is Convert:
+
+            send2trash(os.path.normpath(action.new_path))
+            return ("", action.new_path)
+
+        else:  # Delete
+
+            restore_from_bin(action.original_path)
+            return (action.original_path, "")
 
     def get_last_undoable_action(self) -> str:
         """Looks at top of deque and formats the information in a str"""
-        original_name, new_name, old_file_deleted, file_type_converted = self._stack[-1]
+        action: Action = self._stack[-1]
 
-        if not file_type_converted:
-            return f"Rename {new_name} back to {original_name}?"
-        elif not old_file_deleted:
-            return f"Delete {new_name}?"
-        else:
-            return f"Delete {new_name} and restore {original_name} from trash?"
+        message: str
+        if type(action) is Rename:
+            message = f"Rename {action.new_path} back to {action.original_path}?"
+        elif type(action) is Convert and action.old_file_deleted:
+            message = (
+                f"Delete {action.new_path} and restore {action.original_path}"
+                " from trash?"
+            )
+        elif type(action) is Convert:
+            message = f"Delete {action.new_path}?"
+        else:  # Delete
+            message = f"Restore {action.original_path} from trash?"
+
+        return message

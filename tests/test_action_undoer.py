@@ -1,25 +1,26 @@
 from unittest.mock import patch
 
-from image_viewer.util.action_undoer import ActionUndoer, RenameResult
+from image_viewer.util.action_undoer import ActionUndoer, Rename, Convert, Delete
 
 
 def test_action_undoer():
     """Test all 3 undoable actions"""
 
     action_undoer = ActionUndoer()
-    action_undoer.append(
-        "old", "new", RenameResult(file_type_converted=False, preserve_index=False)
-    )
-    action_undoer.append(
-        "old2", "new2", RenameResult(file_type_converted=True, preserve_index=True)
-    )
-    action_undoer.append(
-        "old3", "new3", RenameResult(file_type_converted=True, preserve_index=False)
-    )
-    assert len(action_undoer._stack) == 3
+    action_undoer.append(Rename("This will get", "thrown out"))
+    action_undoer.append(Rename("old", "new"))
+    action_undoer.append(Convert("old2", "new2", False))
+    action_undoer.append(Convert("old3", "new3", True))
+    action_undoer.append(Delete("old4"))
+    assert len(action_undoer._stack) == 4  # maxlen is 4, 1st append is removed
+
+    with patch("image_viewer.util.action_undoer.restore_from_bin") as mock_undelete:
+        # Undo delet, old4 should be added back and nothing removed
+        assert action_undoer.undo() == ("old4", "")
+        mock_undelete.assert_called_once()
 
     with patch("image_viewer.util.action_undoer.send2trash") as mock_trash:
-        with patch("image_viewer.util.action_undoer.undelete") as mock_undelete:
+        with patch("image_viewer.util.action_undoer.restore_from_bin") as mock_undelete:
             # Undo delete + convert, old3 should be added back and new3 removed
             assert action_undoer.undo() == ("old3", "new3")
             mock_trash.assert_called_once()
