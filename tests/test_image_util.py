@@ -21,7 +21,7 @@ def test_image_path():
     assert example_image_path.suffix == ""
 
     example_image_path = ImageName("some_file")
-    assert example_image_path.suffix == "some_file"
+    assert example_image_path.suffix == ""
 
 
 def test_PIL_functions(tk_app: Tk):

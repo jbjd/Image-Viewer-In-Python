@@ -35,7 +35,8 @@ class ImageName:
     __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
-        self.suffix: str = name[name.rfind(".") + 1 :].lower()
+        index: int = name.rfind(".") + 1
+        self.suffix: str = name[index:].lower() if index else ""
         self.name: str = name
 
     def __lt__(self, other: "ImageName") -> bool:
