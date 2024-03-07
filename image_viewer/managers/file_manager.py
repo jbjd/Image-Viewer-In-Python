@@ -269,7 +269,7 @@ class ImageFileManager:
 
         try:
             image_to_add, image_to_remove = self.action_undoer.undo()
-        except Exception:
+        except OSError:
             return False  # TODO: error popup?
 
         image_to_add = os.path.basename(image_to_add)

@@ -2,13 +2,12 @@ import os
 from collections import deque
 from typing import NamedTuple
 
+from util.os import restore_from_bin
+
 if os.name == "nt":
     from send2trash.win.legacy import send2trash
-    from winshell import undelete
 else:
     from send2trash import send2trash
-
-    from util.os import undelete
 
 
 class RenameResult(NamedTuple):
@@ -64,7 +63,7 @@ class ActionUndoer:
 
             return ("", new_name)
         else:
-            undelete(os.path.normpath(original_name))
+            restore_from_bin(os.path.normpath(original_name))
             send2trash(os.path.normpath(new_name))
 
             return (original_name, new_name)

@@ -11,6 +11,7 @@ separators: str
 kb_size: int
 if os.name == "nt":
     from ctypes import windll
+    from winshell import undelete, x_winshell
 
     illegal_char = compile(r'[<>:"|?*]')
     separators = r"[\\/]"
@@ -35,6 +36,12 @@ if os.name == "nt":
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
+    def restore_from_bin(original_path: str) -> None:
+        try:
+            undelete(os.path.normpath(original_path))
+        except x_winshell:
+            raise OSError  # change error type so catching is not OS specific
+
 else:  # linux / can't determine / unsupported OS
     illegal_char = compile(r"[]")
     separators = r"[/]"
@@ -46,7 +53,7 @@ else:  # linux / can't determine / unsupported OS
     def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
         return True  # TODO: add option for linux
 
-    def undelete(original_path: str):
+    def restore_from_bin(original_path: str) -> None:
         raise NotImplementedError  # TODO: add option for linux
 
 
