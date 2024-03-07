@@ -12,6 +12,7 @@ def test_action_undoer():
     action_undoer.append(Convert("old2", "new2", False))
     action_undoer.append(Convert("old3", "new3", True))
     action_undoer.append(Delete("old4"))
+
     assert len(action_undoer._stack) == 4  # maxlen is 4, 1st append is removed
 
     with patch("image_viewer.util.action_undoer.restore_from_bin") as mock_undelete:

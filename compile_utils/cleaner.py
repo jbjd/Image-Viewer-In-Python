@@ -33,10 +33,13 @@ func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
             "__map_luminance_to_dc_dct_coefficient",
         },
     ),
-    "PIL.Image": (set(), {"_getxmp", "getexif", "preinit", "effect_mandelbrot"}),
+    "PIL.Image": (
+        set(),
+        {"_getxmp", "getexif", "preinit", "effect_mandelbrot", "get_child_images"},
+    ),
     "PIL.ImageDraw": (set(), {"getdraw"}),
     "PIL.ImageFile": (set(), {"verify", "raise_oserror"}),
-    "PIL.GifImagePlugin": ({"format_description"}, {"getdata"}),
+    "PIL.GifImagePlugin": ({"format_description"}, {"getheader", "getdata"}),
     "PIL.JpegImagePlugin": (
         {"format_description"},
         {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
@@ -46,7 +49,6 @@ func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
 }
 
 classes_to_skip: dict[str, set[str]] = {
-    "PIL.Image": {"Exif"},
     "PIL.ImageFile": {"_Tile"},
 }
 
@@ -75,6 +77,9 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         """Disable removing annotations within class vars for safety"""
         if node.name in self.classes_to_skip:
             return
+
+        node.bases = [base for base in node.bases if getattr(base, "id", "") != "ABC"]
+
         self.ignore_bare_annotations = True
         super().visit_ClassDef(node)
         self.ignore_bare_annotations = False
