@@ -4,6 +4,7 @@ from tkinter import Tk
 import pytest
 
 from image_viewer.helpers.image_resizer import ImageResizer
+from image_viewer.ui.canvas import CustomCanvas
 
 WORKING_DIR: str = os.path.dirname(__file__)
 
@@ -25,3 +26,8 @@ def tk_app() -> Tk:
     app = Tk()
     app.withdraw()
     return app
+
+
+@pytest.fixture
+def canvas(tk_app) -> CustomCanvas:
+    return CustomCanvas(tk_app)

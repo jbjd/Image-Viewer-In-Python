@@ -1,13 +1,6 @@
 from unittest.mock import patch
 
-import pytest
-
 from image_viewer.ui.canvas import CustomCanvas
-
-
-@pytest.fixture
-def canvas(tk_app) -> CustomCanvas:
-    return CustomCanvas(tk_app)
 
 
 def test_create_assets(canvas: CustomCanvas):
