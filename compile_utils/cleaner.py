@@ -138,7 +138,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             # Skip if __name__ == "__main__" blocks
             if node.test.left.id == "__name__":  # type: ignore
                 return
-        except Exception:
+        except AttributeError:
             pass
         super().visit_If(node)
 

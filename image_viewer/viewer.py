@@ -414,7 +414,7 @@ class ViewerApp:
             return
         try:
             self.file_manager.rename_or_convert_current_image(user_input)
-        except Exception:  # pylint: disable=broad-exception-caught
+        except (OSError, FileExistsError, ValueError):
             self.rename_entry.error_flash()
             return
 

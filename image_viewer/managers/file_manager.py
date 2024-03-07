@@ -231,7 +231,7 @@ class ImageFileManager:
             "Confirm move",
             f"Move file to {new_dir} ?",
         ):
-            raise Exception()
+            raise OSError()
 
         return new_full_path
 
