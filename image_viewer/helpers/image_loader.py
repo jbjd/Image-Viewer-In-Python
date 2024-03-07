@@ -151,32 +151,39 @@ class ImageLoader:
 
         return current_image
 
-    # TODO: break this up
     def get_zoomed_image(self, event_keycode: int) -> PhotoImage | None:
         """Handles getting and caching zoomed versions of the current image"""
-        # determine new zoom factor
-        previous_zoom: int = self.zoom_level
-        if event_keycode == 189 and previous_zoom > 0:  # -
-            self.zoom_level -= 1
-        elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # =
-            self.zoom_level += 1
-        if previous_zoom == self.zoom_level:
+        if not self._try_update_zoom_level(event_keycode):
             return None
-        # Check cache
+
         if self.zoom_level < len(self.zoomed_image_cache):
             return self.zoomed_image_cache[self.zoom_level]
-        # Otherwise open and resize to new zoom
+
+        # Not in cache, resize to new zoom
         try:
             with open_image(self.file_manager.path_to_current_image) as fp:
                 zoomed_image = self.image_resizer.get_zoomed_image(fp, self.zoom_level)
-                if zoomed_image is not None:
-                    self.zoomed_image_cache.append(zoomed_image)
-                else:
-                    self.zoom_level -= 1
-                    self.zoom_cap = self.zoom_level
-                return zoomed_image
+
+            self.zoomed_image_cache.append(zoomed_image)
+            return zoomed_image
+        except ValueError:  # image resizer determined zoom cap exceeded
+            self.zoom_level -= 1
+            self.zoom_cap = self.zoom_level
         except (FileNotFoundError, UnidentifiedImageError):
-            return None
+            pass
+
+        return None
+
+    def _try_update_zoom_level(self, event_keycode: int) -> bool:
+        """Trys to update zoom level and returns if zoom changed"""
+        previous_zoom: int = self.zoom_level
+
+        if event_keycode == 189 and previous_zoom > 0:  # minus key
+            self.zoom_level -= 1
+        elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # plus key
+            self.zoom_level += 1
+
+        return previous_zoom != self.zoom_level
 
     def load_remaining_frames(
         self,

@@ -30,7 +30,7 @@ class ImageResizer:
             else None
         )
 
-    def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage | None:
+    def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage:
         """Resizes image using the provided zoom_level.
         Returns None when max zoom reached"""
         # scale zoom factor based on image size vs screen and zoom level
@@ -49,7 +49,7 @@ class ImageResizer:
             and dimensions[1] > self.screen_height
             and zoom_factor > self.ZOOM_MIN
         ):
-            return None
+            raise ValueError()
         return PhotoImage(resize(image, dimensions, interpolation))
 
     def _get_jpeg_scale_factor(
