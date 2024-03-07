@@ -4,15 +4,16 @@ from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
-from util.action_undoer import ActionUndoer, Rename, Convert
+from util.action_undoer import ActionUndoer, Convert, Delete, Rename
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageName
-from util.os import OS_name_cmp, clean_str_for_OS_path, truncate_path, walk_dir
-
-if os.name == "nt":
-    from send2trash.win.legacy import send2trash
-else:
-    from send2trash import send2trash
+from util.os import (
+    OS_name_cmp,
+    clean_str_for_OS_path,
+    trash_file,
+    truncate_path,
+    walk_dir,
+)
 
 
 class ImageFileManager:
@@ -137,7 +138,9 @@ class ImageFileManager:
     def remove_current_image(self, delete_from_disk: bool) -> None:
         """Deletes image from files array, cache, and optionally disk"""
         if delete_from_disk:
-            send2trash(os.path.normpath(self.path_to_current_image))
+            trash_file(self.path_to_current_image)
+            self.action_undoer.append(Delete(self.path_to_current_image))
+
         self._clear_image_data()
 
         remaining_image_count: int = len(self._files)

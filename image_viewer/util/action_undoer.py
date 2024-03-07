@@ -1,13 +1,8 @@
 import os
-from collections import deque
 from abc import ABC
+from collections import deque
 
-from util.os import restore_from_bin
-
-if os.name == "nt":
-    from send2trash.win.legacy import send2trash
-else:
-    from send2trash import send2trash
+from util.os import restore_from_bin, trash_file
 
 
 class Action(ABC):
@@ -73,12 +68,12 @@ class ActionUndoer:
         elif type(action) is Convert and action.old_file_deleted:
 
             restore_from_bin(action.original_path)
-            send2trash(os.path.normpath(action.new_path))
+            trash_file(action.new_path)
             return (action.original_path, action.new_path)
 
         elif type(action) is Convert:
 
-            send2trash(os.path.normpath(action.new_path))
+            trash_file(action.new_path)
             return ("", action.new_path)
 
         else:  # Delete
