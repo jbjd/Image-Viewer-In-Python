@@ -13,8 +13,8 @@ def try_convert_file_and_save_new(
     target_ext: str,
 ) -> bool:
     """Tries to convert to new file format.
-    Raises errors if file exists or conversion is invalid
-    Returns bool if conversion performed, will be false when converting to the same type
+    Raises ValueError if converting animated file to non-animated format
+    Returns bool if conversion performed, false when converting to the same type
     """
     with open(old_path, "rb") as fp:
         original_ext: str = magic_number_guess(fp.read(4))[0]

@@ -12,11 +12,11 @@ from viewer import ViewerApp
 
 def exception_hook(error_type, error: Exception, trace, path_to_exe: str):
     """Writes unhandled fatal exception to file"""
-    from util.os import show_error_with_yes_no
+    from util.os import ask_write_on_fatal_error
 
     error_file: str = os.path.join(path_to_exe, "ERROR.log")
 
-    if show_error_with_yes_no(error_type, error, error_file):
+    if ask_write_on_fatal_error(error_type, error, error_file):
         return
 
     import traceback

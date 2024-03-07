@@ -23,7 +23,7 @@ if os.name == "nt":
     MB_ICONERROR: int = 0x10
     IDYES: int = 6
 
-    def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
+    def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
         """Show windows message box with error, returns True when user says no"""
         return (
             windll.user32.MessageBoxW(
@@ -54,7 +54,7 @@ else:  # linux / can't determine / unsupported OS
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
 
-    def show_error_with_yes_no(error_type, error: Exception, error_file: str) -> bool:
+    def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
         return True  # TODO: add option for linux
 
     def restore_from_bin(original_path: str) -> None:
@@ -82,11 +82,13 @@ def clean_str_for_OS_path(file_name: str) -> str:
 
 
 def get_byte_display(bytes: int) -> str:
+    """Given bytes, formats it into a string using kb or mb"""
     size_in_kb: int = bytes // kb_size
     return f"{size_in_kb/kb_size:.2f}mb" if size_in_kb > 999 else f"{size_in_kb}kb"
 
 
 def trash_file(file_path: str) -> None:
+    """OS generic send file to trash"""
     send2trash(os.path.normpath(file_path))
 
 

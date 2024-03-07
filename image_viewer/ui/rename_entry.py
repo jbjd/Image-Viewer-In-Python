@@ -35,16 +35,19 @@ class RenameEntry(Entry):
         self.bind("<ButtonRelease-1>", self._stop_resize)
         self.bind("<Motion>", lambda e: self._resize(canvas, e.x))
 
-    def can_resize(self, target_width: int) -> bool:
+    def can_try_resize(self, target_width: int) -> bool:
+        """Determines if click on right edge of entry where user can try to resize"""
         width: int = self.cget("width")
         if target_width >= width - (self.min_width // 35):
             return True
         return False
 
     def _start_resize(self, event: Event) -> None:
-        self.being_resized = self.can_resize(event.x)
+        """Starts resize if cursor in correct spot"""
+        self.being_resized = self.can_try_resize(event.x)
 
     def _stop_resize(self, _: Event) -> None:
+        """Reallows input when resize event ends"""
         self.config(state="normal")
         self.being_resized = False
 
@@ -56,7 +59,7 @@ class RenameEntry(Entry):
                 self.config(width=new_width)
                 canvas.itemconfig(self.id, width=new_width)
         else:
-            cursor: str = "sb_h_double_arrow" if self.can_resize(new_width) else ""
+            cursor: str = "sb_h_double_arrow" if self.can_try_resize(new_width) else ""
             if cursor != self.cursor:
                 self.config(cursor=cursor)
                 self.cursor = cursor
