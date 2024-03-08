@@ -175,7 +175,7 @@ class ImageLoader:
         return None
 
     def _try_update_zoom_level(self, event_keycode: int) -> bool:
-        """Trys to update zoom level and returns if zoom changed"""
+        """Tries to update zoom level and returns if zoom changed"""
         previous_zoom: int = self.zoom_level
 
         if event_keycode == 189 and previous_zoom > 0:  # minus key

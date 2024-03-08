@@ -52,12 +52,8 @@ def test_widget_visible(canvas: CustomCanvas):
 @patch.object(CustomCanvas, "move", lambda *_: None)
 def test_alt_arrow_keys(canvas: CustomCanvas):
     """When clicking alt + arrow keys, image should move"""
-    canvas.screen_height = 1080  # type: ignore
-    canvas.screen_width = 1080  # type: ignore
-    assert canvas.move_x == 0
-    assert canvas.move_y == 0
 
-    # move_x and y axis are reversed
+    # move x and y axis are reversed
     canvas.handle_alt_arrow_keys(Key.LEFT)
     assert canvas.move_x == 10
     canvas.handle_alt_arrow_keys(Key.RIGHT)
@@ -71,3 +67,50 @@ def test_alt_arrow_keys(canvas: CustomCanvas):
     canvas.handle_alt_arrow_keys(Key.MINUS)
     assert canvas.move_x == 0
     assert canvas.move_y == 0
+
+
+@patch.object(CustomCanvas, "move", lambda *_: None)
+def test_alt_arrow_keys_on_edge(canvas: CustomCanvas):
+    """When image reaches the edge of the screen, it should not move"""
+
+    mock_bbox: tuple[int, int, int, int] = (0, 100, 100, 100)
+
+    with patch.object(CustomCanvas, "bbox", lambda *_: mock_bbox):
+        # Image at left edge of screen
+        canvas.handle_alt_arrow_keys(Key.LEFT)
+        assert canvas.move_x == 0
+
+        # Image at left edge of screen, but image is offscreen to the right
+        mock_bbox = (0, 100, 9999, 100)
+        canvas.handle_alt_arrow_keys(Key.LEFT)
+        assert canvas.move_x == 10
+
+        # Image at right edge of screen
+        mock_bbox = (100, 100, 1920, 100)
+        canvas.handle_alt_arrow_keys(Key.RIGHT)
+        assert canvas.move_x == 10
+
+        # Image at top edge of screen, but image is offscreen to the left
+        mock_bbox = (-1, 100, 1920, 100)
+        canvas.handle_alt_arrow_keys(Key.RIGHT)
+        assert canvas.move_x == 0
+
+        # Image at top edge of screen
+        mock_bbox = (100, 0, 100, 100)
+        canvas.handle_alt_arrow_keys(Key.UP)
+        assert canvas.move_y == 0
+
+        # Image at top edge of screen, but image is offscreen on the bottom
+        mock_bbox = (100, 0, 100, 9999)
+        canvas.handle_alt_arrow_keys(Key.UP)
+        assert canvas.move_y == 10
+
+        # Image at bottom edge of screen
+        mock_bbox = (100, 100, 100, 1080)
+        canvas.handle_alt_arrow_keys(Key.DOWN)
+        assert canvas.move_y == 10
+
+        # Image at bottom edge of screen, but image is offscreen on the top
+        mock_bbox = (100, -1, 100, 1080)
+        canvas.handle_alt_arrow_keys(Key.DOWN)
+        assert canvas.move_y == 0

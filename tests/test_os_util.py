@@ -2,7 +2,13 @@ import os
 
 import pytest
 
-from image_viewer.util.os import clean_str_for_OS_path, truncate_path, walk_dir
+from image_viewer.util.os import (
+    clean_str_for_OS_path,
+    get_byte_display,
+    kb_size,
+    truncate_path,
+    walk_dir,
+)
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
@@ -13,10 +19,18 @@ def test_clean_str_for_OS_path():
     assert good_name == "StringWithIllegalCharacters.png"
 
 
-def test_walk_dir(img_dir: str):
-    """Test that walk_dir behaves like expected"""
-    files = [p for p in walk_dir(img_dir)]
-    assert len(files) == 5
+@pytest.mark.skipif(os.name != "nt", reason="Uses Windows definition of kb/mb")
+def test_get_byte_display_nt():
+    """Should take bytes and return correct string representing kb/mb"""
+    assert get_byte_display(999 * kb_size) == "999kb"
+    assert get_byte_display(1000 * kb_size) == "0.98mb"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Non-Windows definition of kb/mb")
+def test_get_byte_display_linux():
+    """Should take bytes and return correct string representing kb/mb"""
+    assert get_byte_display(999 * kb_size) == "999kb"
+    assert get_byte_display(1000 * kb_size) == "1.00mb"
 
 
 def test_truncate_path():
@@ -34,3 +48,9 @@ def test_truncate_path():
 def test_truncate_path_nt():
     assert truncate_path("C:/.\\asdf\\.\\") == "C:/asdf/"
     assert truncate_path("C:/abc\\./123/..\\.") == "C:/abc/"
+
+
+def test_walk_dir(img_dir: str):
+    """Test that walk_dir behaves like expected"""
+    files = [p for p in walk_dir(img_dir)]
+    assert len(files) == 5
