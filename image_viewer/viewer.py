@@ -75,6 +75,7 @@ class ViewerApp:
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
         self._add_keybinds()
 
+        self.bring_tk_to_front()
         self.app.mainloop()
 
     @staticmethod
@@ -230,6 +231,12 @@ class ViewerApp:
     def _scale_pixels_to_width(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
         return int(original_pixels * self.width_ratio)
+
+    def bring_tk_to_front(self) -> None:
+        """Hack to force Tk window to front of screen"""
+        self.app.wm_attributes("-topmost", True)
+        self.app.update_idletasks()
+        self.app.wm_attributes("-topmost", False)
 
     # Functions handling user input
 

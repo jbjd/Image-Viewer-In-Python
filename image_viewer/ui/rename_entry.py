@@ -30,7 +30,7 @@ class RenameEntry(Entry):
         self.min_width: int = min_width
 
         # ensure ctrl+c is processed outside of this program
-        self.bind("<Control-c>", lambda _: self.master.update(), True)
+        self.bind("<Control-c>", lambda _: self.master.update_idletasks(), True)
         self.bind("<ButtonPress-1>", self._start_resize)
         self.bind("<ButtonRelease-1>", self._stop_resize)
         self.bind("<Motion>", lambda e: self._resize(canvas, e.x))
