@@ -4,6 +4,8 @@ from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
+from constants import Key
+
 
 class CustomCanvas(Canvas):
     """Custom version of tkinter's canvas to support internal methods"""
@@ -102,19 +104,19 @@ class CustomCanvas(Canvas):
         bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
         x = y = 0
         match keycode:
-            case 37:  # Left
+            case Key.LEFT:
                 x = -10
                 if not (bbox[2] > self.screen_width) and (bbox[0] + x) < 0:
                     return
-            case 38:  # Up
+            case Key.UP:
                 y = -10
                 if not (bbox[3] > self.screen_height) and (bbox[1] + y) < 0:
                     return
-            case 39:  # Right
+            case Key.RIGHT:
                 x = 10
                 if (bbox[2] + x) > self.screen_width and not (bbox[0] < 0):
                     return
-            case _:  # Down
+            case Key.DOWN:
                 y = 10
                 if (bbox[3] + y) > self.screen_height and not (bbox[1] < 0):
                     return

@@ -1,6 +1,5 @@
 """
 A lightweight image viewer app to be called like "python image_viewer path/to/image"
-
 """
 
 import os
@@ -28,7 +27,7 @@ def exception_hook(error_type, error: Exception, trace, path_to_exe: str):
         pass
 
 
-if len(sys.argv) > 1:
+if __name__ == "__main__" and len(sys.argv) > 1:  # pragma: no cover
     path_to_exe: str = os.path.abspath(sys.argv[0])
 
     # This will always be true when compiled

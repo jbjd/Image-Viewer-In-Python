@@ -5,6 +5,7 @@ from typing import Final, NoReturn
 
 from PIL.ImageTk import PhotoImage
 
+from constants import Key
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -253,11 +254,11 @@ class ViewerApp:
         """Key binds that happen only on main app focus"""
         if event.widget is self.app:
             match event.keycode:
-                case 37 | 39:  # Left/Right arrow
+                case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
-                case 187 | 189:  # - or =
+                case Key.MINUS | Key.EQUALS:
                     self.handle_zoom(event)
-                case 82:  # r
+                case Key.R:
                     self.toggle_show_rename_window(event)
 
     def handle_key_release(self, event: Event) -> None:

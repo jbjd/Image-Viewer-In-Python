@@ -6,9 +6,9 @@ from PIL.ImageTk import PhotoImage
 from image_viewer.util.image import ImageName, magic_number_guess
 from image_viewer.util.PIL import (
     create_dropdown_image,
+    get_placeholder_for_errored_image,
     init_PIL,
     resize,
-    get_placeholder_for_errored_image,
 )
 
 

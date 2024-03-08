@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from image_viewer.constants import Key
 from image_viewer.ui.canvas import CustomCanvas
 
 
@@ -45,3 +46,28 @@ def test_widget_visible(canvas: CustomCanvas):
 
     canvas.itemconfigure(canvas.image_display_id, state="hidden")
     assert not canvas.is_widget_visible(canvas.image_display_id)
+
+
+@patch.object(CustomCanvas, "bbox", lambda *_: (100, 100, 100, 100))
+@patch.object(CustomCanvas, "move", lambda *_: None)
+def test_alt_arrow_keys(canvas: CustomCanvas):
+    """When clicking alt + arrow keys, image should move"""
+    canvas.screen_height = 1080  # type: ignore
+    canvas.screen_width = 1080  # type: ignore
+    assert canvas.move_x == 0
+    assert canvas.move_y == 0
+
+    # move_x and y axis are reversed
+    canvas.handle_alt_arrow_keys(Key.LEFT)
+    assert canvas.move_x == 10
+    canvas.handle_alt_arrow_keys(Key.RIGHT)
+    assert canvas.move_x == 0
+    canvas.handle_alt_arrow_keys(Key.UP)
+    assert canvas.move_y == 10
+    canvas.handle_alt_arrow_keys(Key.DOWN)
+    assert canvas.move_y == 0
+
+    # random key will not move
+    canvas.handle_alt_arrow_keys(Key.MINUS)
+    assert canvas.move_x == 0
+    assert canvas.move_y == 0
