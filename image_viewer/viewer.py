@@ -73,7 +73,7 @@ class ViewerApp:
         self._init_image_display()
 
         self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
-        self._add_keybinds()
+        self._add_keybinds_to_tk()
 
         self.bring_tk_to_front()
         self.app.mainloop()
@@ -101,7 +101,9 @@ class ViewerApp:
         """Loads first image and then finds all images files in the directory"""
         # Don't call this class's load_image here since we only consider there
         # to be one image now, and that function would throw if that one failed to load
-        if (current_image := self.image_loader.load_image()) is not None:
+        current_image: PhotoImage | None = self.image_loader.load_image()
+
+        if current_image is not None:
             self.update_after_image_load(current_image)
 
         self.file_manager.find_all_images()
@@ -110,7 +112,7 @@ class ViewerApp:
         if current_image is None:
             self.load_image()
 
-    def _add_keybinds(self) -> None:
+    def _add_keybinds_to_tk(self) -> None:
         """Assigns keybinds to app"""
         app = self.app
         app.bind("<FocusIn>", self.redraw)
