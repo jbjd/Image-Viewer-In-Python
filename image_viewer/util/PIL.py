@@ -35,9 +35,8 @@ def resize(
     match image.mode:
         case "RGBA" | "LA":
             new_mode: str = f"{image.mode[:-1]}a"  # precomputed alpha
-            return _resize_new(image.convert(new_mode), size, resample, box).convert(
-                image.mode
-            )
+            new_image: Image = image.convert(new_mode)
+            return _resize_new(new_image, size, resample, box).convert(image.mode)
         case "P" | "1":
             image = image.convert("RGB")
 
@@ -68,20 +67,6 @@ def create_dropdown_image(text: str) -> PhotoImage:
     return PhotoImage(draw._image)  # type: ignore
 
 
-def _write_placeholder_text(
-    draw: ImageDraw, x_offset: int, y_offset: int, text: str
-) -> None:
-    """Curried function for writing placeholder text"""
-    draw.text(
-        (
-            x_offset,
-            y_offset,
-        ),
-        text,
-        TEXT_RGB,
-    )
-
-
 def get_placeholder_for_errored_image(
     error: Exception, screen_width: int, screen_height: int
 ) -> PhotoImage:
@@ -100,13 +85,13 @@ def get_placeholder_for_errored_image(
     *_, w, h = ImageDraw.font.getbbox(error_title)
     y_offset: int = screen_height - (h * (5 + formated_error.count("\n"))) >> 1
     x_offset: int = (screen_width - w) >> 1
-    _write_placeholder_text(draw, x_offset, y_offset, error_title)
+    draw.text((x_offset, y_offset), error_title, TEXT_RGB)
 
     # Write error body 2 lines of height below title
     *_, w, h = _get_longest_line_bbox(formated_error)
     y_offset += h * 2
     x_offset = (screen_width - w) >> 1
-    _write_placeholder_text(draw, x_offset, y_offset, formated_error)
+    draw.text((x_offset, y_offset), formated_error, TEXT_RGB)
 
     return PhotoImage(draw._image)  # type: ignore
 

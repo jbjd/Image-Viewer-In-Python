@@ -8,7 +8,7 @@ class RenameEntry(Entry):
 
     ERROR_COLOR: str = "#E6505F"
 
-    __slots__ = ("being_resized", "cursor", "id", "min_width", "text")
+    __slots__ = "being_resized", "cursor", "id", "min_width", "text"
 
     def __init__(
         self, master: Tk, canvas: Canvas, id: int, min_width: int, font: str

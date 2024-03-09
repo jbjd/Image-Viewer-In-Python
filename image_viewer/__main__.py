@@ -9,7 +9,7 @@ from functools import partial
 from viewer import ViewerApp
 
 
-def exception_hook(error_type, error: Exception, trace, path_to_exe: str):
+def exception_hook(error_type, error: Exception, trace, path_to_exe: str) -> None:
     """Writes unhandled fatal exception to file"""
     from util.os import ask_write_on_fatal_error
 

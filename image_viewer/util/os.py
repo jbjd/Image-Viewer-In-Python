@@ -19,21 +19,19 @@ if os.name == "nt":
     separators = r"[\\/]"
     kb_size = 1024
 
-    MB_YESNO: int = 0x4
-    MB_ICONERROR: int = 0x10
-    IDYES: int = 6
-
     def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
         """Show windows message box with error, returns True when user says no"""
-        return (
-            windll.user32.MessageBoxW(
-                0,
-                f"{str(error)}\n\nWrite traceback to {error_file}?",
-                f"Unhandled {error_type.__name__} Occurred",
-                MB_YESNO | MB_ICONERROR,
-            )
-            != IDYES
+        MB_YESNO: int = 0x4
+        MB_ICONERROR: int = 0x10
+        IDYES: int = 6
+
+        response: int = windll.user32.MessageBoxW(
+            0,
+            f"{str(error)}\n\nWrite traceback to {error_file}?",
+            f"Unhandled {error_type.__name__} Occurred",
+            MB_YESNO | MB_ICONERROR,
         )
+        return response != IDYES
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0

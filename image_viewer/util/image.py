@@ -32,7 +32,7 @@ class CachedImage:
 class ImageName:
     """Full name and suffix of loaded image files"""
 
-    __slots__ = ("name", "suffix")
+    __slots__ = "name", "suffix"
 
     def __init__(self, name: str) -> None:
         index: int = name.rfind(".") + 1

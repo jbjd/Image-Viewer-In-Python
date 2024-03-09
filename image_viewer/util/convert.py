@@ -8,9 +8,7 @@ from util.image import magic_number_guess
 
 
 def try_convert_file_and_save_new(
-    old_path: str,
-    new_path: str,
-    target_ext: str,
+    old_path: str, new_path: str, target_ext: str
 ) -> bool:
     """Tries to convert to new file format.
     Raises ValueError if converting animated file to non-animated format
