@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 import pytest
 
 from image_viewer.constants import Key

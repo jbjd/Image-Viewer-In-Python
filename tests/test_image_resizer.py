@@ -1,5 +1,9 @@
+from tkinter import Tk
 from unittest.mock import patch
-from PIL.Image import Resampling
+
+from PIL.Image import Image, Resampling
+from PIL.Image import new as new_image
+from PIL.ImageTk import PhotoImage
 
 from image_viewer.helpers.image_resizer import ImageResizer
 from test_util.mocks import MockImage
@@ -46,6 +50,17 @@ def test_get_fit_to_screen(image_resizer: ImageResizer):
     with patch.object(ImageResizer, "_fit_to_screen") as mock_generic_fit:
         image_resizer.get_image_fit_to_screen(MockImage(format="PNG"))
         mock_generic_fit.assert_called_once()
+
+
+def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
+    """Should resize and return PIL image as PhotoImage"""
+    image: Image = new_image("RGB", (10, 10))
+
+    with patch(
+        "image_viewer.helpers.image_resizer.resize", return_value=image
+    ) as mock_resize:
+        assert type(image_resizer._fit_to_screen(image)) is PhotoImage
+        mock_resize.assert_called_once()
 
 
 def test_scale_dimensions(image_resizer: ImageResizer):
