@@ -20,7 +20,7 @@ def test_exception_hook_when_user_accepts():
     """Write to file when user says so"""
     exception = Exception("problem!")
 
-    with patch("builtins.open", side_effect=OSError("Test")):
+    with patch("builtins.open", side_effect=OSError):
         # Should catch and not fail writing to file
         exception_hook(type(exception), exception, None, "")
 

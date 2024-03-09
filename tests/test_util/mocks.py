@@ -37,7 +37,7 @@ class MockImage(Image):
     _size: tuple[int, int] = (0, 0)
 
     def __init__(self, n_frames: int = 1, format: str = "") -> None:
-        self.format: str = format
+        self.format: str = format  # type: ignore
         self.n_frames: int = n_frames
 
         if n_frames > 1:  # Like PIL, only set for animtions

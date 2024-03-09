@@ -67,7 +67,7 @@ def test_get_ms_until_next_frame(image_loader: ImageLoader):
 def test_load_image_error_on_open(image_loader: ImageLoader):
     """An image might error on open when its not a valid image or not found"""
 
-    with patch("builtins.open", side_effect=FileNotFoundError()):
+    with patch("builtins.open", side_effect=FileNotFoundError):
         assert image_loader.load_image() is None
 
     with patch("builtins.open", mock_open(read_data="abcd")):
