@@ -125,11 +125,12 @@ class ImageResizer:
         interpolation: Resampling = self._determine_interpolation(
             image_width, image_height
         )
-        width: int = round(image_width * (self.screen_height / image_height))
-
+        fit_to_height: tuple[int, int] = self._fit_to_screen_height(
+            image_width, image_height
+        )
         return (
-            (width, self.screen_height)
-            if width <= self.screen_width
+            fit_to_height
+            if fit_to_height[0] <= self.screen_width
             else self._fit_to_screen_width(image_width, image_height)
         ), interpolation
 
