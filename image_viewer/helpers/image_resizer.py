@@ -8,11 +8,6 @@ from turbojpeg import TJPF_RGB, TurboJPEG
 from util.PIL import resize
 
 
-def _scale_tuple(t: tuple[int, int], scale: float) -> tuple[int, int]:
-    first, second = t
-    return (int(first * scale), int(second * scale))
-
-
 class ImageResizer:
     """Handles resizing images to fit to the screen"""
 
@@ -33,17 +28,12 @@ class ImageResizer:
     def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage:
         """Resizes image using the provided zoom_level.
         Returns None when max zoom reached"""
-        # scale zoom factor based on image size vs screen and zoom level
-        w, h = image.size
-        zoom_scale: int = 1 + int(
-            max(w / self.screen_width, h / self.screen_height) / 5
-        )
-        zoom_factor: float = 1 + (0.25 * zoom_scale * zoom_level)
+        zoom_factor: float = self._calc_zoom_factor(image, zoom_level)
 
         dimensions, interpolation = self.dimension_finder(
-            *_scale_tuple(image.size, zoom_factor)
+            *self._scale_dimensions(image.size, zoom_factor)
         )
-        dimensions = _scale_tuple(dimensions, zoom_factor)
+        dimensions = self._scale_dimensions(dimensions, zoom_factor)
         if (
             dimensions[0] > self.screen_width
             and dimensions[1] > self.screen_height
@@ -51,6 +41,21 @@ class ImageResizer:
         ):
             raise ValueError()
         return PhotoImage(resize(image, dimensions, interpolation))
+
+    def _calc_zoom_factor(self, image: Image, zoom_level: int) -> float:
+        """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""
+        w, h = image.size
+        zoom_scale: int = 1 + int(
+            max(w / self.screen_width, h / self.screen_height) / 5
+        )
+        # w/h ratio divide by magic 6 since seemed best after testing
+        wh_ratio: int = 1 + max(w // h, h // w) // 6
+        return 1 + (0.25 * zoom_scale * zoom_level * wh_ratio)
+
+    @staticmethod
+    def _scale_dimensions(t: tuple[int, int], scale: float) -> tuple[int, int]:
+        first, second = t
+        return (int(first * scale), int(second * scale))
 
     def _get_jpeg_scale_factor(
         self, image_width: int, image_height: int

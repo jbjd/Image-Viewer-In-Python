@@ -46,3 +46,8 @@ def test_get_fit_to_screen(image_resizer: ImageResizer):
     with patch.object(ImageResizer, "_fit_to_screen") as mock_generic_fit:
         image_resizer.get_image_fit_to_screen(MockImage(format="PNG"))
         mock_generic_fit.assert_called_once()
+
+
+def test_scale_dimensions(image_resizer: ImageResizer):
+    """Should scale a tuple of width height by provided ratio"""
+    assert image_resizer._scale_dimensions((1920, 1080), 1.5) == (2880, 1620)
