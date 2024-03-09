@@ -1,13 +1,16 @@
+from unittest.mock import mock_open, patch
+
 import pytest
+from PIL import UnidentifiedImageError
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
-from test_util.mocks import MockImage
+from test_util.mocks import MockImage, MockImageFileManager
 
 
 @pytest.fixture
 def image_loader(image_resizer: ImageResizer) -> ImageLoader:
-    image_loader = ImageLoader(None, image_resizer, lambda *_: None)  # type: ignore
+    image_loader = ImageLoader(MockImageFileManager(), image_resizer, lambda *_: None)
     return image_loader
 
 
@@ -53,3 +56,17 @@ def test_get_ms_until_next_frame(image_loader: ImageLoader):
 
     image_loader.PIL_image.info["duration"] = 66
     assert image_loader.get_ms_until_next_frame() == 66
+
+
+def test_load_image_error_on_open(image_loader: ImageLoader):
+    """An image might error on open when its not a valid image or not found"""
+
+    with patch("builtins.open", side_effect=FileNotFoundError()):
+        assert image_loader.load_image() is None
+
+    with patch("builtins.open", mock_open(read_data="abcd")):
+        with patch(
+            "image_viewer.helpers.image_loader.open_image",
+            side_effect=UnidentifiedImageError(),
+        ):
+            assert image_loader.load_image() is None

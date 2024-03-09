@@ -129,8 +129,6 @@ class ImageLoader:
             try:
                 current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
             except OSError as e:
-                # Likely truncated, you can force PIL to not error here, but image
-                # will black screen. Gonna return None instead so image gets skipped
                 current_image = get_placeholder_for_errored_image(
                     e,
                     self.image_resizer.screen_width,

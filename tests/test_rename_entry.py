@@ -2,8 +2,8 @@ from tkinter import Tk
 from unittest.mock import patch
 
 import pytest
-from conftest import should_not_be_called
 
+from conftest import should_not_be_called
 from image_viewer.constants import TEXT_RGB
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.rename_entry import RenameEntry

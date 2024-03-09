@@ -4,6 +4,7 @@ from tkinter import Event
 
 from PIL.Image import Image
 
+from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.action_undoer import ActionUndoer
 
 
@@ -17,19 +18,13 @@ class MockImage(Image):
         self.n_frames: int = n_frames
 
         if n_frames > 1:  # Like PIL, only set for animtions
-            self.is_animated = True
+            self.is_animated: bool = True
 
-    def convert(self, new_mode: str) -> MockImage:
+    def convert(self, new_mode: str) -> MockImage:  # type: ignore
         self.mode = new_mode
         return self
 
     def save(self, *_, **kwargs) -> None:
-        pass
-
-    def __enter__(self) -> MockImage:
-        return self
-
-    def __exit__(self, *_) -> None:
         pass
 
 
@@ -45,3 +40,10 @@ class MockActionUndoer(ActionUndoer):
 
     def undo(*_):
         return ("b.png", "a.png")
+
+
+class MockImageFileManager(ImageFileManager):
+    """Mocks this module's ImageFileManager"""
+
+    def __init__(self) -> None:
+        self.path_to_current_image = ""
