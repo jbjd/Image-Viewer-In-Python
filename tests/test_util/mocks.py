@@ -3,9 +3,24 @@ from __future__ import annotations
 from tkinter import Event
 
 from PIL.Image import Image
+from PIL.ImageTk import PhotoImage
 
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.action_undoer import ActionUndoer
+
+
+class MockStatResult:
+    """Mocks OS's stat_result"""
+
+    def __init__(self, st_size: int) -> None:
+        self.st_size: int = st_size
+
+
+class MockEvent(Event):
+    """Mocks Tk Event"""
+
+    def __init__(self, x: int) -> None:
+        self.x: int = x
 
 
 class MockImage(Image):
@@ -28,11 +43,11 @@ class MockImage(Image):
         pass
 
 
-class MockEvent(Event):
-    """Mocks Tk Event"""
+class MockPhotoImage(PhotoImage):
+    """Mocks PIL's PhotoImage"""
 
-    def __init__(self, x: int) -> None:
-        self.x: int = x
+    def __init__(self) -> None:
+        pass
 
 
 class MockActionUndoer(ActionUndoer):

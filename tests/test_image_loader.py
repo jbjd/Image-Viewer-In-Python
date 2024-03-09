@@ -2,10 +2,17 @@ from unittest.mock import mock_open, patch
 
 import pytest
 from PIL import UnidentifiedImageError
+from PIL.Image import Image
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
-from test_util.mocks import MockImage, MockImageFileManager
+from image_viewer.util.image import CachedImage
+from test_util.mocks import (
+    MockImage,
+    MockImageFileManager,
+    MockPhotoImage,
+    MockStatResult,
+)
 
 
 @pytest.fixture
@@ -70,3 +77,19 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
             side_effect=UnidentifiedImageError(),
         ):
             assert image_loader.load_image() is None
+
+
+@patch("builtins.open", mock_open(read_data="abcd"))
+@patch("image_viewer.helpers.image_loader.open_image", lambda *_: Image())
+def test_load_image_in_cache(image_loader: ImageLoader):
+    """When an image of the same name is in cache, don't load from disk"""
+
+    # setup cache for test
+    image_byte_size: int = 10
+    cached_image = MockPhotoImage()
+    cached_data = CachedImage(cached_image, 10, 10, "10kb", image_byte_size, "RGB")
+    image_loader.file_manager.get_current_image_cache = lambda: cached_data
+
+    mock_os_stat = MockStatResult(image_byte_size)
+    with patch("image_viewer.helpers.image_loader.stat", lambda _: mock_os_stat):
+        assert image_loader.load_image() is cached_image
