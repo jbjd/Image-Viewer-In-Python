@@ -57,6 +57,9 @@ class MockPhotoImage(PhotoImage):
     def __init__(self) -> None:
         pass
 
+    def __del__(self) -> None:
+        pass
+
 
 class MockActionUndoer(ActionUndoer):
     """Mocks this module's ActionUndoer"""

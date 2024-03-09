@@ -1,25 +1,12 @@
 from unittest.mock import mock_open, patch
 
-import pytest
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.util.image import CachedImage
-from test_util.mocks import (
-    MockImage,
-    MockImageFileManager,
-    MockPhotoImage,
-    MockStatResult,
-)
-
-
-@pytest.fixture
-def image_loader(image_resizer: ImageResizer) -> ImageLoader:
-    image_loader = ImageLoader(MockImageFileManager(), image_resizer, lambda *_: None)
-    image_loader.PIL_image = MockImage()
-    return image_loader
+from test_util.mocks import MockPhotoImage, MockStatResult
 
 
 def test_next_frame(image_loader: ImageLoader):

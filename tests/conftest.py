@@ -4,8 +4,10 @@ from typing import NoReturn
 
 import pytest
 
+from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.ui.canvas import CustomCanvas
+from test_util.mocks import MockImage, MockImageFileManager
 
 WORKING_DIR: str = os.path.dirname(__file__)
 
@@ -24,6 +26,13 @@ def image_resizer() -> ImageResizer:
     return ImageResizer(
         1920, 1080, os.path.join(os.path.dirname(WORKING_DIR), "image_viewer")
     )
+
+
+@pytest.fixture
+def image_loader(image_resizer: ImageResizer) -> ImageLoader:
+    image_loader = ImageLoader(MockImageFileManager(), image_resizer, lambda *_: None)
+    image_loader.PIL_image = MockImage()
+    return image_loader
 
 
 @pytest.fixture(scope="session")
