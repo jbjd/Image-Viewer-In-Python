@@ -1,4 +1,5 @@
 import os
+from unittest.mock import patch
 
 import pytest
 
@@ -51,6 +52,11 @@ def test_truncate_path_nt():
 
 
 def test_walk_dir(img_dir: str):
-    """Test that walk_dir behaves like expected"""
+    """Test that walk_dir correctly finds files in dir"""
     files = [p for p in walk_dir(img_dir)]
     assert len(files) == 5
+
+    # When is_dir raises os error, assume not a dir like os module does
+    with patch.object(os.DirEntry, "is_dir", side_effect=OSError):
+        files = [p for p in walk_dir(img_dir)]
+        assert len(files) == 5

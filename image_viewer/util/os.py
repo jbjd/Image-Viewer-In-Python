@@ -44,7 +44,7 @@ if os.name == "nt":
         except x_winshell:
             raise OSError  # change error type so catching is not OS specific
 
-else:  # linux / can't determine / unsupported OS
+else:  # assume linux for now
     from send2trash import send2trash
 
     illegal_char = compile(r"[]")

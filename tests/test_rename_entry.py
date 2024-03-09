@@ -7,11 +7,7 @@ from conftest import should_not_be_called
 from image_viewer.constants import TEXT_RGB
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.rename_entry import RenameEntry
-
-
-class MockEvent:
-    def __init__(self, x: int) -> None:
-        self.x: int = x
+from test_util.mocks import MockEvent
 
 
 @pytest.fixture
@@ -52,7 +48,7 @@ def test_resize(rename_entry: RenameEntry, canvas: CustomCanvas):
     """Ensure correct behaviour when user resizes the entry"""
 
     with patch.object(RenameEntry, "cget", lambda *_: 250):
-        rename_entry._start_resize(MockEvent(250))  # type: ignore
+        rename_entry._start_resize(MockEvent(250))
         assert rename_entry.being_resized
 
         rename_entry._resize(canvas, 251)

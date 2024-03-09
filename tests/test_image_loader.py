@@ -2,6 +2,7 @@ import pytest
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
+from test_util.mocks import MockImage
 
 
 @pytest.fixture
@@ -34,3 +35,21 @@ def test_next_frame(image_loader: ImageLoader):
     image_loader.reset_and_setup()
     assert len(image_loader.animation_frames) == 0
     assert image_loader.frame_index == 0
+
+    # program may try to get a frame when the animation frame list is empty
+    assert image_loader.get_next_frame() == (None, 0)
+
+
+def test_get_ms_until_next_frame(image_loader: ImageLoader):
+    """Should get ms until next frame in animated images without erroring"""
+    image_loader.PIL_image = MockImage()
+
+    # non-animated image gets default
+    default_speed: int = image_loader.DEFAULT_ANIMATION_SPEED
+    assert image_loader.get_ms_until_next_frame() == default_speed
+
+    image_loader.PIL_image.info["duration"] = 0
+    assert image_loader.get_ms_until_next_frame() == default_speed
+
+    image_loader.PIL_image.info["duration"] = 66
+    assert image_loader.get_ms_until_next_frame() == 66

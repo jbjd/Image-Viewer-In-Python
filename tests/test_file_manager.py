@@ -6,6 +6,7 @@ import pytest
 
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import CachedImage
+from test_util.mocks import MockActionUndoer
 
 
 @pytest.fixture
@@ -119,12 +120,8 @@ def test_undo(manager: ImageFileManager):
     ):
         assert not manager.undo_rename_or_convert()
 
-    class MockActionUndoer:
-        def undo(*_):
-            return ("b.png", "a.png")
-
     # Mock that undo should add b.png and remove a.png
-    manager.action_undoer = MockActionUndoer()  # type: ignore
+    manager.action_undoer = MockActionUndoer()
     with patch.object(
         ImageFileManager,
         "_ask_undo_last_action",

@@ -1,34 +1,10 @@
-from __future__ import annotations
-
 from unittest.mock import mock_open, patch
 
 import pytest
 
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.convert import try_convert_file_and_save_new
-
-
-class MockImage:
-    """Mocks PIL Image for testing"""
-
-    mode: str = "P"
-    info: dict = {}
-
-    def __init__(self, n_frames: int = 1) -> None:
-        self.n_frames: int = n_frames
-
-    def convert(self, new_mode: str) -> MockImage:
-        self.mode = new_mode
-        return self
-
-    def save(self, *_, **kwargs) -> None:
-        pass
-
-    def __enter__(self) -> MockImage:
-        return self
-
-    def __exit__(self, *_) -> None:
-        pass
+from test_util.mocks import MockImage
 
 
 def mock_open_image(_: str) -> MockImage:
@@ -37,8 +13,6 @@ def mock_open_image(_: str) -> MockImage:
 
 def mock_open_animated_image(_: str) -> MockImage:
     image = MockImage(8)
-    # is_animated only exists on file types that can be animated in PIL module
-    image.is_animated = True  # type: ignore
     return image
 
 
