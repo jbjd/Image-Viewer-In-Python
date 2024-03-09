@@ -150,13 +150,13 @@ class ImageResizer:
     def _fit_to_screen_height(
         self, image_width: int, image_height: int
     ) -> tuple[int, int]:
-        """Fits dimentions to screen's height"""
+        """Fits dimensions to screen's height"""
         width: int = round(image_width * (self.screen_height / image_height))
         return (width, self.screen_height)
 
     def _fit_to_screen_width(
         self, image_width: int, image_height: int
     ) -> tuple[int, int]:
-        """Fits dimentions to screen's width"""
+        """Fits dimensions to screen's width"""
         height: int = round(image_height * (self.screen_width / image_width))
         return (self.screen_width, height)

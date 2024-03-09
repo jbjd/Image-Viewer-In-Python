@@ -99,11 +99,14 @@ class CustomCanvas(Canvas):
         self.itemconfigure(self.image_display_id, image=new_image)
         self.master.update_idletasks()
 
-    def handle_alt_arrow_keys(self, keycode: int) -> None:
+    def handle_alt_arrow_keys(self, event: Event) -> None:
         """Move onscreen image when alt+arrow key clicked/held"""
+        if event.widget is not self.master:
+            return
+
         bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
         x = y = 0
-        match keycode:
+        match event.keycode:
             case Key.LEFT:
                 x = -10
                 if not (bbox[2] > self.screen_width) and (bbox[0] + x) < 0:

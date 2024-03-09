@@ -48,7 +48,7 @@ def test_resize(rename_entry: RenameEntry, canvas: CustomCanvas):
     """Ensure correct behaviour when user resizes the entry"""
 
     with patch.object(RenameEntry, "cget", lambda *_: 250):
-        rename_entry._start_resize(MockEvent(250))
+        rename_entry._start_resize(MockEvent(x=250))
         assert rename_entry.being_resized
 
         rename_entry._resize(canvas, 251)

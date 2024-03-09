@@ -2,7 +2,7 @@ from unittest.mock import patch
 from PIL.Image import Resampling
 
 from image_viewer.helpers.image_resizer import ImageResizer
-from tests.test_util.mocks import MockImage
+from test_util.mocks import MockImage
 
 
 def test_jpeg_scale_factor(image_resizer: ImageResizer):

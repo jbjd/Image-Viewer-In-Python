@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tkinter import Event
+from tkinter import Event, Tk
 
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
@@ -23,7 +23,9 @@ class MockStatResult:
 class MockEvent(Event):
     """Mocks Tk Event"""
 
-    def __init__(self, x: int) -> None:
+    def __init__(self, widget: Tk | None = None, keycode: int = 0, x: int = 0) -> None:
+        self.widget: Tk | None = widget
+        self.keycode: int = keycode
         self.x: int = x
 
 
@@ -72,3 +74,6 @@ class MockImageFileManager(ImageFileManager):
 
     def __init__(self) -> None:
         pass
+
+    def current_image_cache_still_fresh(self) -> bool:
+        return True

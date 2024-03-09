@@ -130,10 +130,10 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Alt-Left>", self.handle_alt_arrow_keys)
-        app.bind("<Alt-Right>", self.handle_alt_arrow_keys)
-        app.bind("<Alt-Up>", self.handle_alt_arrow_keys)
-        app.bind("<Alt-Down>", self.handle_alt_arrow_keys)
+        app.bind("<Alt-Left>", self.canvas.handle_alt_arrow_keys)
+        app.bind("<Alt-Right>", self.canvas.handle_alt_arrow_keys)
+        app.bind("<Alt-Up>", self.canvas.handle_alt_arrow_keys)
+        app.bind("<Alt-Down>", self.canvas.handle_alt_arrow_keys)
 
         if os.name == "nt":
             app.bind(
@@ -283,11 +283,6 @@ class ViewerApp:
         if self.move_id != "":
             self.move(move_amount)
             self.move_id = self.app.after(ms, self._repeat_move, move_amount, 200)
-
-    def handle_alt_arrow_keys(self, event: Event) -> None:
-        """Wraps canvas's event handler if app is focused"""
-        if event.widget is self.app:
-            self.canvas.handle_alt_arrow_keys(event.keycode)
 
     def handle_esc(self, _: Event) -> None:
         """Closes rename window, then program on hitting escape"""
