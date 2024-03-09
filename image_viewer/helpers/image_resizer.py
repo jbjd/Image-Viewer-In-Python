@@ -102,11 +102,17 @@ class ImageResizer:
         """Fits dimensions to height if width within screen,
         else fit to width and let height go off screen.
         Returns new width, new height, and interpolation to use"""
-        interpolation: Resampling = (
-            Resampling.HAMMING
-            if image_height >= self.screen_height and image_width >= self.screen_width
-            else Resampling.LANCZOS
-        )
+        interpolation: Resampling
+        height_is_big: bool = image_height >= self.screen_height
+        width_is_big: bool = image_width >= self.screen_width
+
+        if height_is_big and width_is_big:
+            interpolation = Resampling.HAMMING
+        elif height_is_big or width_is_big:
+            interpolation = Resampling.BICUBIC
+        else:
+            interpolation = Resampling.LANCZOS
+
         width: int = round(image_width * (self.screen_height / image_height))
 
         return (
