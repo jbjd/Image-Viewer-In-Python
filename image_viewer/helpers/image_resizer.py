@@ -37,20 +37,16 @@ class ImageResizer:
         )
         dimensions = self._scale_dimensions(dimensions, zoom_factor)
 
-        max_zoom_hit: bool = False
+        max_zoom_hit: bool
         if self._too_zoomed_in(dimensions, zoom_factor):
-            max_zoom_hit: bool = True
-            # TODO: This is similar to dimension_finder, deduplicate the logic
-            if height < self.screen_height:
-                dimensions = (
-                    round(width * (self.screen_height / height)),
-                    self.screen_height,
-                )
-            else:
-                dimensions = (
-                    self.screen_width,
-                    round(height * (self.screen_width / width)),
-                )
+            max_zoom_hit = True
+            dimensions = (
+                self._fit_to_screen_height(width, height)
+                if height < self.screen_height
+                else self._fit_to_screen_width(width, height)
+            )
+        else:
+            max_zoom_hit = False
 
         return PhotoImage(resize(image, dimensions, interpolation)), max_zoom_hit
 
@@ -132,16 +128,10 @@ class ImageResizer:
         width: int = round(image_width * (self.screen_height / image_height))
 
         return (
-            ((width, self.screen_height), interpolation)
+            (width, self.screen_height)
             if width <= self.screen_width
-            else (
-                (
-                    self.screen_width,
-                    round(image_height * (self.screen_width / image_width)),
-                ),
-                interpolation,
-            )
-        )
+            else self._fit_to_screen_width(image_width, image_height)
+        ), interpolation
 
     def _determine_interpolation(
         self, image_width: int, image_height: int
@@ -156,3 +146,17 @@ class ImageResizer:
             return Resampling.BICUBIC
         else:
             return Resampling.LANCZOS
+
+    def _fit_to_screen_height(
+        self, image_width: int, image_height: int
+    ) -> tuple[int, int]:
+        """Fits dimentions to screen's height"""
+        width: int = round(image_width * (self.screen_height / image_height))
+        return (width, self.screen_height)
+
+    def _fit_to_screen_width(
+        self, image_width: int, image_height: int
+    ) -> tuple[int, int]:
+        """Fits dimentions to screen's width"""
+        height: int = round(image_height * (self.screen_width / image_width))
+        return (self.screen_width, height)
