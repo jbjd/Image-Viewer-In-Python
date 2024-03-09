@@ -170,13 +170,15 @@ class ImageLoader:
         # Not in cache, resize to new zoom
         try:
             with open_image(self.file_manager.path_to_current_image) as fp:
-                zoomed_image = self.image_resizer.get_zoomed_image(fp, self.zoom_level)
+                zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
+                    fp, self.zoom_level
+                )
+            if hit_zoom_cap:
+                self.zoom_cap = self.zoom_level
 
             self.zoomed_image_cache.append(zoomed_image)
+
             return zoomed_image
-        except ValueError:  # image resizer determined zoom cap exceeded
-            self.zoom_level -= 1
-            self.zoom_cap = self.zoom_level
         except (FileNotFoundError, UnidentifiedImageError):
             pass
 

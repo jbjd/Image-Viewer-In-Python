@@ -25,32 +25,51 @@ class ImageResizer:
             else None
         )
 
-    def get_zoomed_image(self, image: Image, zoom_level: int) -> PhotoImage:
-        """Resizes image using the provided zoom_level.
-        Returns None when max zoom reached"""
-        zoom_factor: float = self._calc_zoom_factor(image, zoom_level)
+    def get_zoomed_image(
+        self, image: Image, zoom_level: int
+    ) -> tuple[PhotoImage, bool]:
+        """Resizes image using the provided zoom_level and bool if max zoom reached"""
+        width, height = image.size
+        zoom_factor: float = self._calc_zoom_factor(width, height, zoom_level)
 
         dimensions, interpolation = self.dimension_finder(
             *self._scale_dimensions(image.size, zoom_factor)
         )
         dimensions = self._scale_dimensions(dimensions, zoom_factor)
-        if (
-            dimensions[0] > self.screen_width
-            and dimensions[1] > self.screen_height
-            and zoom_factor > self.ZOOM_MIN
-        ):
-            raise ValueError()
-        return PhotoImage(resize(image, dimensions, interpolation))
 
-    def _calc_zoom_factor(self, image: Image, zoom_level: int) -> float:
+        max_zoom_hit: bool = False
+        if self._too_zoomed_in(dimensions, zoom_factor):
+            max_zoom_hit: bool = True
+            # TODO: This is similar to dimension_finder, deduplicate the logic
+            if height < self.screen_height:
+                dimensions = (
+                    round(width * (self.screen_height / height)),
+                    self.screen_height,
+                )
+            else:
+                dimensions = (
+                    self.screen_width,
+                    round(height * (self.screen_width / width)),
+                )
+
+        return PhotoImage(resize(image, dimensions, interpolation)), max_zoom_hit
+
+    def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
         """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""
-        w, h = image.size
         zoom_scale: int = 1 + int(
-            max(w / self.screen_width, h / self.screen_height) / 5
+            max(width / self.screen_width, height / self.screen_height) / 5
         )
         # w/h ratio divide by magic 6 since seemed best after testing
-        wh_ratio: int = 1 + max(w // h, h // w) // 6
+        wh_ratio: int = 1 + max(width // height, height // width) // 6
         return 1 + (0.25 * zoom_scale * zoom_level * wh_ratio)
+
+    def _too_zoomed_in(self, dimensions: tuple[int, int], zoom_factor) -> bool:
+        """Returns bool if new image dimensions would zoom in too much"""
+        return (
+            dimensions[0] >= self.screen_width
+            and dimensions[1] >= self.screen_height
+            and zoom_factor > self.ZOOM_MIN
+        )
 
     @staticmethod
     def _scale_dimensions(t: tuple[int, int], scale: float) -> tuple[int, int]:
@@ -107,17 +126,9 @@ class ImageResizer:
         """Fits dimensions to height if width within screen,
         else fit to width and let height go off screen.
         Returns new width, new height, and interpolation to use"""
-        interpolation: Resampling
-        height_is_big: bool = image_height >= self.screen_height
-        width_is_big: bool = image_width >= self.screen_width
-
-        if height_is_big and width_is_big:
-            interpolation = Resampling.HAMMING
-        elif height_is_big or width_is_big:
-            interpolation = Resampling.BICUBIC
-        else:
-            interpolation = Resampling.LANCZOS
-
+        interpolation: Resampling = self._determine_interpolation(
+            image_width, image_height
+        )
         width: int = round(image_width * (self.screen_height / image_height))
 
         return (
@@ -131,3 +142,17 @@ class ImageResizer:
                 interpolation,
             )
         )
+
+    def _determine_interpolation(
+        self, image_width: int, image_height: int
+    ) -> Resampling:
+        """Determine resampling to use based on image and screen"""
+        height_is_big: bool = image_height >= self.screen_height
+        width_is_big: bool = image_width >= self.screen_width
+
+        if height_is_big and width_is_big:
+            return Resampling.HAMMING
+        elif height_is_big or width_is_big:
+            return Resampling.BICUBIC
+        else:
+            return Resampling.LANCZOS
