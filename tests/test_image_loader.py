@@ -18,6 +18,7 @@ from test_util.mocks import (
 @pytest.fixture
 def image_loader(image_resizer: ImageResizer) -> ImageLoader:
     image_loader = ImageLoader(MockImageFileManager(), image_resizer, lambda *_: None)
+    image_loader.PIL_image = MockImage()
     return image_loader
 
 
@@ -52,8 +53,6 @@ def test_next_frame(image_loader: ImageLoader):
 
 def test_get_ms_until_next_frame(image_loader: ImageLoader):
     """Should get ms until next frame in animated images without erroring"""
-    image_loader.PIL_image = MockImage()
-
     # non-animated image gets default
     default_speed: int = image_loader.DEFAULT_ANIMATION_SPEED
     assert image_loader.get_ms_until_next_frame() == default_speed
@@ -93,3 +92,13 @@ def test_load_image_in_cache(image_loader: ImageLoader):
     mock_os_stat = MockStatResult(image_byte_size)
     with patch("image_viewer.helpers.image_loader.stat", lambda _: mock_os_stat):
         assert image_loader.load_image() is cached_image
+
+
+def test_load_image_resize_error(image_loader: ImageLoader):
+    """Should get placeholder image when resize errors"""
+    with patch.object(ImageResizer, "get_image_fit_to_screen", side_effect=OSError):
+        with patch(
+            "image_viewer.helpers.image_loader.get_placeholder_for_errored_image"
+        ) as mock_get_placeholder:
+            image_loader._load_image_from_disk_and_cache(0)
+            mock_get_placeholder.assert_called_once()

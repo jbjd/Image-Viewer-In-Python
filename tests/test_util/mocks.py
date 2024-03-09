@@ -7,6 +7,7 @@ from PIL.ImageTk import PhotoImage
 
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.action_undoer import ActionUndoer
+from image_viewer.util.image import ImageName
 
 
 class MockStatResult:
@@ -28,6 +29,7 @@ class MockImage(Image):
 
     mode: str = "P"
     info: dict = {}
+    _size: tuple[int, int] = (0, 0)
 
     def __init__(self, n_frames: int = 1) -> None:
         self.n_frames: int = n_frames
@@ -60,5 +62,9 @@ class MockActionUndoer(ActionUndoer):
 class MockImageFileManager(ImageFileManager):
     """Mocks this module's ImageFileManager"""
 
+    cache: dict = {}
+    current_image = ImageName("test.png")
+    path_to_current_image: str = ""
+
     def __init__(self) -> None:
-        self.path_to_current_image = ""
+        pass

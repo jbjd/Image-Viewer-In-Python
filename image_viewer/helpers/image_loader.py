@@ -125,17 +125,7 @@ class ImageLoader:
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             current_image = cached_image_data.image
         else:
-            original_mode: str = PIL_image.mode  # save since resize might change it
-            try:
-                current_image = self.image_resizer.get_image_fit_to_screen(PIL_image)
-            except OSError as e:
-                current_image = get_placeholder_for_errored_image(
-                    e,
-                    self.image_resizer.screen_width,
-                    self.image_resizer.screen_height,
-                )
-
-            self._cache_image(current_image, PIL_image.size, byte_size, original_mode)
+            current_image = self._load_image_from_disk_and_cache(byte_size)
 
         frame_count: int = getattr(PIL_image, "n_frames", 1)
         if frame_count > 1:
@@ -147,6 +137,26 @@ class ImageLoader:
         # first zoom level is just the image as is
         self.zoomed_image_cache = [current_image]
 
+        return current_image
+
+    def _load_image_from_disk_and_cache(self, image_byte_size: int) -> PhotoImage:
+        """Resizes PIL image, which forces a load from disk.
+        Caches it and returns it as a PhotoImage"""
+        original_mode: str = self.PIL_image.mode  # save since resize can change it
+
+        current_image: PhotoImage
+        try:
+            current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)
+        except OSError as e:
+            current_image = get_placeholder_for_errored_image(
+                e,
+                self.image_resizer.screen_width,
+                self.image_resizer.screen_height,
+            )
+
+        self._cache_image(
+            current_image, self.PIL_image.size, image_byte_size, original_mode
+        )
         return current_image
 
     def get_zoomed_image(self, event_keycode: int) -> PhotoImage | None:

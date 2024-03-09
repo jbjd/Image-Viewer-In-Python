@@ -131,3 +131,26 @@ def test_undo(manager: ImageFileManager):
         assert len(manager._files) == 1
         assert manager._files[0].name == "b.png"
         assert manager._index == 0
+
+
+def test_get_cached_details(manager: ImageFileManager):
+    """Should return a string containing details on current cached image"""
+
+    manager.cache[manager.current_image.name] = CachedImage(
+        None, 100, 100, "100kb", 9999, "P"  # type: ignore
+    )
+    # not gonna check the exact string returned, but Palette should be in it
+    # since P was passed as the mode and it should get mapped to a more readable name
+    assert "Palette" in manager.get_cached_details()
+
+
+def test_split_with_weird_names(manager: ImageFileManager):
+    """Should notice that . and .. are not file names, but part of path"""
+
+    # use join over static var so test works on all OS
+    expected_split = (os.path.join("C:/example", ".."), manager.current_image.name)
+    assert manager._split_dir_and_name("C:/example/..") == expected_split
+
+    # use join over static var so test works on all OS
+    expected_split = ("C:/example", "...")
+    assert manager._split_dir_and_name("C:/example/...") == expected_split
