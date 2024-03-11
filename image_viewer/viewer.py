@@ -125,6 +125,7 @@ class ViewerApp:
             "<Control-d>",
             lambda _: self.file_manager.show_image_details(self.image_loader.PIL_image),
         )
+        app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_rename_or_convert)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
@@ -313,6 +314,12 @@ class ViewerApp:
         self.image_load_id = self.app.after(0, self._load_zoomed_image, event.keycode)
 
     # End functions handling user input
+
+    def move_to_new_file(self, _: Event) -> None:
+        """Moves to a new image from file dialog"""
+        moved: bool = self.file_manager.move_to_new_directory()
+        if moved:
+            self.load_image()
 
     def exit(self, _: Event | None = None) -> NoReturn:
         """Safely exits the program"""

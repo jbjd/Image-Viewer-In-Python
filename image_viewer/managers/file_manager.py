@@ -1,6 +1,7 @@
 import os
 from time import ctime
 from tkinter.messagebox import askyesno, showinfo
+from tkinter.filedialog import askopenfilename
 
 from PIL.Image import Image
 
@@ -36,6 +37,7 @@ class ImageFileManager:
         "action_undoer",
         "cache",
         "current_image",
+        "dialog_file_types",
         "image_directory",
         "path_to_current_image",
     )
@@ -50,12 +52,55 @@ class ImageFileManager:
         if first_image_data.suffix not in self.VALID_FILE_TYPES:
             raise ValueError("File extension not supported")
 
-        self.image_directory: str = os.path.dirname(first_image_to_load)
-        self._files: list[ImageName] = [first_image_data]
-        self._index: int = 0
+        self.image_directory: str = os.path.normpath(
+            os.path.dirname(first_image_to_load)
+        )
+        self._init_list_of_file_names(first_image_data)
         self._update_after_move_or_edit()
         self.cache: dict[str, CachedImage] = {}
         self.action_undoer = ActionUndoer()
+        self.dialog_file_types: list[tuple[str, str]] | None = None
+
+    def _init_list_of_file_names(self, first_image_data: ImageName) -> None:
+        """Initalizes internal list of files with first entry for lazy loading"""
+        self._files: list[ImageName] = [first_image_data]
+        self._index: int = 0
+
+    def move_to_new_directory(self) -> bool:
+        """Asks user new image to go to and move to that image's directory"""
+        new_file_path: str = self._ask_open_image()
+        if new_file_path == "":
+            return False
+
+        choosen_file: str = os.path.basename(new_file_path)
+        new_dir: str = os.path.normpath(os.path.dirname(new_file_path))
+
+        if new_dir != self.image_directory:
+            self.image_directory = new_dir
+            first_image_data = ImageName(choosen_file)
+            self._init_list_of_file_names(first_image_data)
+            self.find_all_images()
+
+        self._index, found = self._binary_search(choosen_file)
+        if not found:
+            self.add_new_image(choosen_file, index=self._index)
+        else:
+            self._update_after_move_or_edit()
+
+        return True
+
+    def _ask_open_image(self) -> str:
+        """Ask user to choose an image file and returns its path"""
+        if self.dialog_file_types is None:
+            self.dialog_file_types = [
+                ("", f"*.{file_type}") for file_type in self.VALID_FILE_TYPES
+            ]
+
+        return askopenfilename(
+            title="Open Image",
+            initialdir=self.image_directory,
+            filetypes=self.dialog_file_types,
+        )
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
@@ -259,13 +304,17 @@ class ImageFileManager:
         self._clear_image_data()
         return Rename(original_path, new_full_path)
 
-    def add_new_image(self, new_name: str, preserve_index: bool) -> None:
+    def add_new_image(
+        self, new_name: str, preserve_index: bool = False, index: int = -1
+    ) -> None:
         """Adds a new image to the image list
         preserve_index: try to keep index at the same image it was before adding"""
         image_data = ImageName(new_name)
-        insert_index: int = self._binary_search(image_data.name)[0]
-        self._files.insert(insert_index, image_data)
-        if preserve_index and insert_index <= self._index:
+        if index < 0:
+            index = self._binary_search(image_data.name)[0]
+
+        self._files.insert(index, image_data)
+        if preserve_index and index <= self._index:
             self._index += 1
         self._update_after_move_or_edit()
 

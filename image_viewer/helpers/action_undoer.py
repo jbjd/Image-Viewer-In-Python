@@ -56,6 +56,9 @@ class ActionUndoer:
     def append(self, action: Action) -> None:
         self._stack.append(action)
 
+    def clear(self) -> None:
+        self._stack.clear()
+
     def undo(self) -> tuple[str, str]:
         """returns tuple of image to add, image to remove, if any"""
         action: Action = self._stack.pop()
