@@ -1,11 +1,11 @@
 """Viewer is hard to test due to being all UI code, testing what I can here"""
 
-import pytest
-
 from tkinter import Tk
 from unittest.mock import patch
-from image_viewer.helpers.image_loader import ImageLoader
 
+import pytest
+
+from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.viewer import ViewerApp
 from test_util.mocks import MockEvent, MockImageFileManager
 

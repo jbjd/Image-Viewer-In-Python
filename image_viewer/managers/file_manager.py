@@ -1,7 +1,7 @@
 import os
 from time import ctime
-from tkinter.messagebox import askyesno, showinfo
 from tkinter.filedialog import askopenfilename
+from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
@@ -62,7 +62,7 @@ class ImageFileManager:
         self.dialog_file_types: list[tuple[str, str]] | None = None
 
     def _init_list_of_file_names(self, first_image_data: ImageName) -> None:
-        """Initalizes internal list of files with first entry for lazy loading"""
+        """Initializes internal list of files with first entry for lazy loading"""
         self._files: list[ImageName] = [first_image_data]
         self._index: int = 0
 
