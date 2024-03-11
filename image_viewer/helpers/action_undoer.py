@@ -46,7 +46,7 @@ class Delete(Action):
 
 
 class ActionUndoer:
-    """Keeps information on recent file renames/converts and optionally undoes them"""
+    """Keeps information on recent file actions and can undo them"""
 
     __slots__ = "_stack"
 
@@ -85,17 +85,14 @@ class ActionUndoer:
         """Looks at top of deque and formats the information in a str"""
         action: Action = self._stack[-1]
 
-        message: str
         if type(action) is Rename:
-            message = f"Rename {action.new_path} back to {action.original_path}?"
+            return f"Rename {action.new_path} back to {action.original_path}?"
         elif type(action) is Convert and action.old_file_deleted:
-            message = (
+            return (
                 f"Delete {action.new_path} and restore {action.original_path}"
                 " from trash?"
             )
         elif type(action) is Convert:
-            message = f"Delete {action.new_path}?"
+            return f"Delete {action.new_path}?"
         else:  # Delete
-            message = f"Restore {action.original_path} from trash?"
-
-        return message
+            return f"Restore {action.original_path} from trash?"

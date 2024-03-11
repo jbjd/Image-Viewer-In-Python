@@ -5,8 +5,8 @@ from tkinter import Event, Tk
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
+from image_viewer.helpers.action_undoer import ActionUndoer
 from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.action_undoer import ActionUndoer
 from image_viewer.util.image import ImageName
 
 
