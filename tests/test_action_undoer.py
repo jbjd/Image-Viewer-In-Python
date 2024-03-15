@@ -1,12 +1,18 @@
 from unittest.mock import patch
 
+import pytest
+
 from image_viewer.helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 
 
-def test_action_undoer():
+@pytest.fixture
+def action_undoer() -> ActionUndoer:
+    return ActionUndoer()
+
+
+def test_action_undoer(action_undoer: ActionUndoer):
     """Test all 3 undoable actions"""
 
-    action_undoer = ActionUndoer()
     action_undoer.append(Rename("This will get", "thrown out"))
     action_undoer.append(Rename("old", "new"))
     action_undoer.append(Convert("old2", "new2", False))
@@ -42,3 +48,11 @@ def test_action_undoer():
         assert action_undoer.get_last_undoable_action()
         assert action_undoer.undo() == ("old", "new")
         mock_rename.assert_called_once()
+
+
+def test_clear(action_undoer: ActionUndoer):
+    action_undoer.append(Rename("", ""))
+    assert len(action_undoer._stack) == 1
+
+    action_undoer.clear()
+    assert len(action_undoer._stack) == 0

@@ -53,9 +53,13 @@ def test_redraw(viewer: ViewerApp, tk_app: Tk):
 
         # Will refresh when cache is stale
         viewer.need_to_redraw = True
-        viewer.file_manager.current_image_cache_still_fresh = lambda: False
-        viewer.redraw(correct_event)
-        mock_refresh.assert_called_once()
+        with patch.object(
+            MockImageFileManager,
+            "current_image_cache_still_fresh",
+            side_effect=lambda: False,
+        ) as mock_refresh:
+            viewer.redraw(correct_event)
+            mock_refresh.assert_called_once()
 
 
 def test_clear_image(viewer: ViewerApp, image_loader: ImageLoader):
