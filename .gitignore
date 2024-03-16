@@ -15,3 +15,5 @@ ERROR.log
 compilation-report.xml
 nuitka-crash-report.xml
 *tmp/
+
+*.egg-info
