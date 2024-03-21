@@ -65,8 +65,10 @@ same_dir: Pattern[str] = compile(rf"{separators}\.({separators}|$)")
 
 # shrink abc/123/../ to abc/
 previous_dir: Pattern[str] = compile(
-    rf"{separators}[^{separators[1:]}+?{separators}\.\."
+    rf"{separators}[^{separators[1:]}+?{separators}\.\.({separators}|$)"
 )
+
+is_separator: Pattern[str] = compile(separators)
 
 
 def truncate_path(path: str) -> str:
@@ -75,9 +77,9 @@ def truncate_path(path: str) -> str:
         path = same_dir.sub("/", path)
 
     while previous_dir.findall(path):
-        path = previous_dir.sub("", path)
+        path = previous_dir.sub("/", path)
 
-    if path != "" and path[-1] != "/":
+    if path != "" and is_separator.match(path[-1]) is None:
         path += "/"
 
     return path
