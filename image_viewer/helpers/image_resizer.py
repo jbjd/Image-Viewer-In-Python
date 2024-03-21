@@ -40,11 +40,10 @@ class ImageResizer:
         max_zoom_hit: bool
         if self._too_zoomed_in(dimensions, zoom_factor):
             max_zoom_hit = True
-            dimensions = (
-                self._fit_to_screen_height(width, height)
-                if height < self.screen_height
-                else self._fit_to_screen_width(width, height)
-            )
+            if height < self.screen_height:
+                dimensions = self._fit_to_screen_height(width, height)
+            elif width < self.screen_width:
+                dimensions = self._fit_to_screen_width(width, height)
         else:
             max_zoom_hit = False
 
