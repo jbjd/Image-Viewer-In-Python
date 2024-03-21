@@ -77,6 +77,9 @@ def truncate_path(path: str) -> str:
     while previous_dir.findall(path):
         path = previous_dir.sub("", path)
 
+    if path != "" and path[-1] != "/":
+        path += "/"
+
     return path
 
 

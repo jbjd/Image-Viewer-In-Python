@@ -35,17 +35,20 @@ def test_get_byte_display_linux():
 
 
 def test_truncate_path():
+    assert truncate_path("") == ""
+
     # test truncating . to same directory
-    assert truncate_path("/./asdf") == "/asdf"
+    assert truncate_path("/./asdf") == "/asdf/"
     assert truncate_path("asdf/./123/.") == "asdf/123/"
     assert truncate_path("asdf/./.") == "asdf/"
 
     # test truncating .. to previous directory
-    assert truncate_path("abc/123/..") == "abc"
-    assert truncate_path("abc/123/../") == "abc/"
-    assert truncate_path("abc/./123/../.") == "abc/"
-    assert truncate_path("abc/def/123/../../") == "abc/"
-    assert truncate_path("abc/def/../123/../") == "abc/"
+    expected: str = "abc/"
+    assert truncate_path("abc/123/..") == expected
+    assert truncate_path("abc/123/../") == expected
+    assert truncate_path("abc/./123/../.") == expected
+    assert truncate_path("abc/def/123/../../") == expected
+    assert truncate_path("abc/def/../123/../") == expected
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
