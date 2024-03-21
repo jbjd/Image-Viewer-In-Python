@@ -36,9 +36,10 @@ def test_get_byte_display_linux():
 
 def test_truncate_path():
     assert truncate_path("") == ""
+    assert truncate_path("asdf/..asdf") == "asdf/..asdf"
 
     # test truncating . to same directory
-    assert truncate_path("/./asdf") == "/asdf/"
+    assert truncate_path("/./asdf") == "/asdf"
     assert truncate_path("asdf/./123/.") == "asdf/123/"
     assert truncate_path("asdf/./.") == "asdf/"
 

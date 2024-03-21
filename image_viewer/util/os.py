@@ -68,8 +68,6 @@ previous_dir: Pattern[str] = compile(
     rf"{separators}[^{separators[1:]}+?{separators}\.\.({separators}|$)"
 )
 
-is_separator: Pattern[str] = compile(separators)
-
 
 def truncate_path(path: str) -> str:
     """Shortens . and .. in paths"""
@@ -78,9 +76,6 @@ def truncate_path(path: str) -> str:
 
     while previous_dir.findall(path):
         path = previous_dir.sub("/", path)
-
-    if path != "" and is_separator.match(path[-1]) is None:
-        path += "/"
 
     return path
 
