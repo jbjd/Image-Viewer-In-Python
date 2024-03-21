@@ -63,15 +63,21 @@ else:  # assume linux for now
 # shrink /./ to /
 same_dir: Pattern[str] = compile(rf"{separators}\.({separators}|$)")
 
-# shrink abc/123/../ to abc
+# shrink abc/123/../ to abc/
 previous_dir: Pattern[str] = compile(
-    rf"{separators}[^{separators[1:]}+?{separators}\.\.({separators}|$)"
+    rf"{separators}[^{separators[1:]}+?{separators}\.\."
 )
 
 
 def truncate_path(path: str) -> str:
     """Shortens . and .. in paths"""
-    return previous_dir.sub("/", same_dir.sub("/", path))
+    while same_dir.findall(path):
+        path = same_dir.sub("/", path)
+
+    while previous_dir.findall(path):
+        path = previous_dir.sub("", path)
+
+    return path
 
 
 def clean_str_for_OS_path(file_name: str) -> str:
