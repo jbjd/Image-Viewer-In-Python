@@ -65,17 +65,17 @@ same_dir: Pattern[str] = compile(rf"{separators}\.({separators}|$)")
 
 # shrink abc/123/../ to abc/
 previous_dir: Pattern[str] = compile(
-    rf"{separators}[^{separators[1:]}+?{separators}\.\.({separators}|$)"
+    rf"[^{separators[1:]}+?{separators}\.\.({separators}|$)"
 )
 
 
 def truncate_path(path: str) -> str:
     """Shortens . and .. in paths"""
-    while same_dir.findall(path):
+    while same_dir.search(path) is not None:
         path = same_dir.sub("/", path)
 
-    while previous_dir.findall(path):
-        path = previous_dir.sub("/", path)
+    while previous_dir.search(path) is not None:
+        path = previous_dir.sub("", path)
 
     return path
 

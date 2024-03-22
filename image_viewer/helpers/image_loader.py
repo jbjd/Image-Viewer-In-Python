@@ -7,6 +7,7 @@ from PIL.Image import Image
 from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
 
+from constants import Key
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from util.image import CachedImage, magic_number_guess
@@ -188,9 +189,9 @@ class ImageLoader:
         """Tries to update zoom level and returns if zoom changed"""
         previous_zoom: int = self.zoom_level
 
-        if event_keycode == 189 and previous_zoom > 0:  # minus key
+        if event_keycode == Key.MINUS and previous_zoom > 0:  # minus key
             self.zoom_level -= 1
-        elif event_keycode == 187 and previous_zoom < self.zoom_cap:  # plus key
+        elif event_keycode == Key.EQUALS and previous_zoom < self.zoom_cap:  # plus key
             self.zoom_level += 1
 
         return previous_zoom != self.zoom_level

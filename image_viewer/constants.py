@@ -14,6 +14,6 @@ class Key(IntEnum):
     UP = 38
     RIGHT = 39
     DOWN = 40
-    MINUS = 187
-    EQUALS = 189
+    EQUALS = 187
+    MINUS = 189
     R = 82

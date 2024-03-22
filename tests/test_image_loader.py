@@ -3,6 +3,7 @@ from unittest.mock import mock_open, patch
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 
+from image_viewer.constants import Key
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.util.image import CachedImage
@@ -89,3 +90,20 @@ def test_load_image_resize_error(image_loader: ImageLoader):
         ) as mock_get_placeholder:
             image_loader._load_image_from_disk_and_cache(0)
             mock_get_placeholder.assert_called_once()
+
+
+def test_update_zoom_level(image_loader: ImageLoader):
+    """Should update zoom level when +/- pressed"""
+    assert image_loader.zoom_level == 0
+
+    updated = image_loader._try_update_zoom_level(Key.UP)
+    assert image_loader.zoom_level == 0
+    assert not updated
+
+    updated = image_loader._try_update_zoom_level(Key.EQUALS)
+    assert image_loader.zoom_level == 1
+    assert updated
+
+    updated = image_loader._try_update_zoom_level(Key.MINUS)
+    assert image_loader.zoom_level == 0
+    assert updated
