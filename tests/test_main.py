@@ -2,8 +2,6 @@ from unittest.mock import mock_open, patch
 
 from image_viewer.__main__ import exception_hook
 
-# from image_viewer import util
-
 
 @patch("util.os.ask_write_on_fatal_error", lambda *_: True)
 def test_exception_hook_when_user_declines():

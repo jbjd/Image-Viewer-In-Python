@@ -7,22 +7,22 @@ from image_viewer.ui.canvas import CustomCanvas
 from test_util.mocks import MockEvent
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def left_key_event(tk_app):
     return MockEvent(widget=tk_app, keycode=Key.LEFT)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def right_key_event(tk_app):
     return MockEvent(widget=tk_app, keycode=Key.RIGHT)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def up_key_event(tk_app):
     return MockEvent(widget=tk_app, keycode=Key.UP)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def down_key_event(tk_app):
     return MockEvent(widget=tk_app, keycode=Key.DOWN)
 

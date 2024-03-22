@@ -36,7 +36,7 @@ def test_error_flash(rename_entry: RenameEntry):
     current_background: str = rename_entry.config()["background"][4]  # type: ignore
     assert current_background == rename_entry.ERROR_COLOR
 
-    # If we force no delay for testing, it should go back to beign white immediately
+    # If we force no delay for testing, it should go back to white immediately
     rename_entry.master.after = lambda _, callback: callback()  # type: ignore
     rename_entry.error_flash()
     current_background = rename_entry.config()["background"][4]  # type: ignore
