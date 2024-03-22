@@ -264,7 +264,7 @@ class ViewerApp:
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
-        if self.move_id != "" and event.keycode in (37, 39):  # Left/Right
+        if self.move_id != "" and event.keycode in (Key.LEFT, Key.RIGHT):
             self.app.after_cancel(self.move_id)
             self.move_id = ""
 
@@ -274,7 +274,7 @@ class ViewerApp:
         if self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (int(event.state) & 5)  # type: ignore
-            if event.keysym == "Left":
+            if event.keycode == Key.LEFT:
                 move_amount = -move_amount
             self.move(move_amount)
             self._repeat_move(move_amount, 500)
