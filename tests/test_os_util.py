@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from conftest import IMG_DIR
 from image_viewer.util.os import (
     clean_str_for_OS_path,
     get_byte_display,
@@ -58,12 +59,12 @@ def test_truncate_path_nt():
     assert truncate_path("C:/abc\\./123/..\\.") == "C:/abc/"
 
 
-def test_walk_dir(img_dir: str):
+def test_walk_dir():
     """Test that walk_dir correctly finds files in dir"""
-    files = [p for p in walk_dir(img_dir)]
+    files = [p for p in walk_dir(IMG_DIR)]
     assert len(files) == 5
 
     # When is_dir raises os error, assume not a dir like os module does
     with patch.object(os.DirEntry, "is_dir", side_effect=OSError):
-        files = [p for p in walk_dir(img_dir)]
+        files = [p for p in walk_dir(IMG_DIR)]
         assert len(files) == 5

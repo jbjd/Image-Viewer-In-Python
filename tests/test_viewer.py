@@ -5,20 +5,33 @@ from unittest.mock import patch
 
 import pytest
 
+from image_viewer.constants import Key
 from image_viewer.helpers.image_loader import ImageLoader
+from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.viewer import ViewerApp
 from test_util.mocks import MockEvent, MockImageFileManager
 
 
 @pytest.fixture
-def viewer(tk_app: Tk) -> ViewerApp:
+def viewer(tk_app: Tk, image_loader: ImageLoader) -> ViewerApp:
     def mock_viewer_init(self, *_):
         self.app = tk_app
         self.height_ratio = 1
         self.width_ratio = 1
+        self.image_loader = image_loader
 
     with patch.object(ViewerApp, "__init__", mock_viewer_init):
         return ViewerApp("", "")
+
+
+@pytest.fixture
+def focused_event(tk_app: Tk) -> MockEvent:
+    return MockEvent(tk_app)
+
+
+@pytest.fixture
+def unfocused_event() -> MockEvent:
+    return MockEvent()
 
 
 def test_pixel_scaling(viewer: ViewerApp):
@@ -32,7 +45,9 @@ def test_pixel_scaling(viewer: ViewerApp):
     assert viewer._scale_pixels_to_width(1920) == 2323
 
 
-def test_redraw(viewer: ViewerApp, tk_app: Tk):
+def test_redraw(
+    viewer: ViewerApp, focused_event: MockEvent, unfocused_event: MockEvent
+):
     """Should only redraw when necessary"""
 
     viewer.need_to_redraw = True
@@ -42,13 +57,12 @@ def test_redraw(viewer: ViewerApp, tk_app: Tk):
     with patch.object(
         MockImageFileManager, "current_image_cache_still_fresh"
     ) as mock_check_cache:
-        viewer.redraw(MockEvent(widget=None))
+        viewer.redraw(unfocused_event)
         mock_check_cache.assert_not_called()
 
-    correct_event = MockEvent(widget=tk_app)
     with patch.object(ViewerApp, "load_image_unblocking") as mock_refresh:
         # Will not refresh is cache is still fresh
-        viewer.redraw(correct_event)
+        viewer.redraw(focused_event)
         mock_refresh.assert_not_called()
 
         # Will refresh when cache is stale
@@ -58,14 +72,12 @@ def test_redraw(viewer: ViewerApp, tk_app: Tk):
             "current_image_cache_still_fresh",
             side_effect=lambda: False,
         ) as mock_refresh:
-            viewer.redraw(correct_event)
+            viewer.redraw(focused_event)
             mock_refresh.assert_called_once()
 
 
-def test_clear_image(viewer: ViewerApp, image_loader: ImageLoader):
+def test_clear_image(viewer: ViewerApp):
     """Should stop animations and ask image loader to also clear data"""
-
-    viewer.image_loader = image_loader
     viewer.animation_id = ""
 
     with patch.object(Tk, "after_cancel") as mock_after_cancel:
@@ -78,3 +90,39 @@ def test_clear_image(viewer: ViewerApp, image_loader: ImageLoader):
             viewer.clear_image()
             mock_after_cancel.assert_called_once()
             mock_reset.assert_called_once()
+
+
+def test_handle_key(
+    viewer: ViewerApp, focused_event: MockEvent, unfocused_event: MockEvent
+):
+    """Should only accept input when user focused on main app"""
+    focused_event.keycode = Key.R
+
+    with patch.object(ViewerApp, "toggle_show_rename_window") as mock_rename_window:
+        viewer.handle_key(unfocused_event)
+        mock_rename_window.assert_not_called()
+
+        viewer.handle_key(focused_event)
+        mock_rename_window.assert_called_once()
+
+    focused_event.keycode = Key.LEFT
+    with patch.object(ViewerApp, "handle_lr_arrow") as mock_lr_arrow:
+        viewer.handle_key(focused_event)
+        mock_lr_arrow.assert_called_once()
+
+    focused_event.keycode = Key.MINUS
+    with patch.object(ViewerApp, "handle_zoom") as mock_zoom:
+        viewer.handle_key(focused_event)
+        mock_zoom.assert_called_once()
+
+
+def test_exit(viewer: ViewerApp, canvas: CustomCanvas):
+    """Should clean up and exit"""
+    viewer.canvas = canvas
+    canvas.file_name_text_id = 0
+
+    with patch.object(CustomCanvas, "delete") as mock_delete:
+        with pytest.raises(SystemExit) as exception_cm:
+            viewer.exit()
+        assert exception_cm.value.code == 0
+        mock_delete.assert_called_once()

@@ -1,6 +1,5 @@
 import os
 from tkinter import Tk
-from typing import NoReturn
 
 import pytest
 
@@ -10,15 +9,7 @@ from image_viewer.ui.canvas import CustomCanvas
 from test_util.mocks import MockImage, MockImageFileManager
 
 WORKING_DIR: str = os.path.dirname(__file__)
-
-
-def should_not_be_called() -> NoReturn:
-    raise Exception("This function should not have been called")
-
-
-@pytest.fixture
-def img_dir() -> str:
-    return os.path.join(WORKING_DIR, "example_images")
+IMG_DIR: str = os.path.join(WORKING_DIR, "example_images")
 
 
 @pytest.fixture

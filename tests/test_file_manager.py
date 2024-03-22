@@ -4,14 +4,15 @@ from unittest.mock import patch
 
 import pytest
 
+from conftest import IMG_DIR
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import CachedImage
 from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
 
 @pytest.fixture
-def manager(img_dir: str) -> ImageFileManager:
-    return ImageFileManager(os.path.join(img_dir, "a.png"))
+def manager() -> ImageFileManager:
+    return ImageFileManager(os.path.join(IMG_DIR, "a.png"))
 
 
 def test_image_file_manager(manager: ImageFileManager):
@@ -48,17 +49,17 @@ def test_image_file_manager(manager: ImageFileManager):
         manager.remove_current_image(False)
 
 
-def test_bad_path(img_dir: str):
+def test_bad_path():
     # doesn't exist
     with pytest.raises(ValueError):
         ImageFileManager("bad/path")
     # wrong file type
     with pytest.raises(ValueError):
-        ImageFileManager(os.path.join(img_dir, "not_an_image.txt"))
+        ImageFileManager(os.path.join(IMG_DIR, "not_an_image.txt"))
 
 
 @patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
-def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
+def test_bad_path_for_rename(manager: ImageFileManager):
     """When calling rename, certain conditions should raise errors"""
     with pytest.raises(OSError):
         manager.rename_or_convert_current_image(
@@ -66,7 +67,7 @@ def test_bad_path_for_rename(manager: ImageFileManager, img_dir: str):
         )
     # If path exists, error when user cancels (mocked in askyesno)
     with pytest.raises(OSError):
-        manager.rename_or_convert_current_image(os.path.join(img_dir, "a.png"))
+        manager.rename_or_convert_current_image(os.path.join(IMG_DIR, "a.png"))
 
 
 def test_caching(manager: ImageFileManager):

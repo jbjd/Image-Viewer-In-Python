@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 
-from conftest import should_not_be_called
 from image_viewer.constants import TEXT_RGB
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.rename_entry import RenameEntry
@@ -66,13 +65,16 @@ def test_resize(rename_entry: RenameEntry, canvas: CustomCanvas):
 def test_resize_hover(rename_entry: RenameEntry, canvas: CustomCanvas):
     """Cursor should update when user can resize entry"""
 
-    canvas.itemconfig = should_not_be_called  # type: ignore
+    with patch.object(CustomCanvas, "itemconfig") as mock_itemconfig:
+        with patch.object(RenameEntry, "cget", lambda *_: 250):
+            # If able to resize, change cursor
+            rename_entry._resize(canvas, 251)
+            cursor = rename_entry.config()["cursor"][4]  # type: ignore
+            assert cursor == "sb_h_double_arrow"
 
-    with patch.object(RenameEntry, "cget", lambda *_: 250):
-        # If able to resize, change cursor
-        rename_entry._resize(canvas, 251)
-        assert rename_entry.config()["cursor"][4] == "sb_h_double_arrow"  # type: ignore
+            # When the cursor is now far away, go back to normal
+            rename_entry._resize(canvas, 1)
+            cursor = rename_entry.config()["cursor"][4]  # type: ignore
+            assert cursor == ""
 
-        # When the cursor is now far away, go back to normal
-        rename_entry._resize(canvas, 1)
-        assert rename_entry.config()["cursor"][4] == ""  # type: ignore
+        mock_itemconfig.assert_not_called()
