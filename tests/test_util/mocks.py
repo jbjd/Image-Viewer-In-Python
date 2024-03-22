@@ -78,5 +78,8 @@ class MockImageFileManager(ImageFileManager):
     def __init__(self) -> None:
         pass
 
+    def remove_current_image(self, _: bool) -> None:
+        pass
+
     def current_image_cache_still_fresh(self) -> bool:
         return True
