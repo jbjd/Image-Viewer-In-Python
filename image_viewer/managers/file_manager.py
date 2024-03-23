@@ -12,7 +12,6 @@ from util.os import (
     OS_name_cmp,
     clean_str_for_OS_path,
     trash_file,
-    truncate_path,
     walk_dir,
 )
 
@@ -262,7 +261,7 @@ class ImageFileManager:
         if will_move_dirs:
             if not os.path.isabs(new_dir):
                 new_dir = os.path.join(self.image_directory, new_dir)
-            new_dir = truncate_path(new_dir)
+            new_dir = os.path.normpath(new_dir)
             if not os.path.exists(new_dir):
                 raise OSError()
             new_full_path = os.path.join(new_dir, new_name)

@@ -8,7 +8,6 @@ from image_viewer.util.os import (
     clean_str_for_OS_path,
     get_byte_display,
     kb_size,
-    truncate_path,
     walk_dir,
 )
 
@@ -33,30 +32,6 @@ def test_get_byte_display_linux():
     """Should take bytes and return correct string representing kb/mb"""
     assert get_byte_display(999 * kb_size) == "999kb"
     assert get_byte_display(1000 * kb_size) == "1.00mb"
-
-
-def test_truncate_path():
-    assert truncate_path("") == ""
-    assert truncate_path("asdf/..asdf") == "asdf/..asdf"
-
-    # test truncating . to same directory
-    assert truncate_path("/./asdf") == "/asdf"
-    assert truncate_path("asdf/./123/.") == "asdf/123/"
-    assert truncate_path("asdf/./.") == "asdf/"
-
-    # test truncating .. to previous directory
-    expected: str = "abc/"
-    assert truncate_path("abc/123/..") == expected
-    assert truncate_path("abc/123/../") == expected
-    assert truncate_path("abc/./123/../.") == expected
-    assert truncate_path("abc/def/123/../../") == expected
-    assert truncate_path("abc/def/../123/../") == expected
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")
-def test_truncate_path_nt():
-    assert truncate_path("C:/.\\asdf\\.\\") == "C:/asdf/"
-    assert truncate_path("C:/abc\\./123/..\\.") == "C:/abc/"
 
 
 def test_walk_dir():

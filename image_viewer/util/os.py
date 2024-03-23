@@ -7,7 +7,6 @@ from collections.abc import Iterator
 from re import Pattern, compile
 
 illegal_char: Pattern[str]
-separators: str
 kb_size: int
 if os.name == "nt":
     from ctypes import windll
@@ -16,7 +15,6 @@ if os.name == "nt":
     from winshell import undelete, x_winshell
 
     illegal_char = compile(r'[<>:"|?*]')
-    separators = r"[\\/]"
     kb_size = 1024
 
     def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
@@ -27,7 +25,7 @@ if os.name == "nt":
 
         response: int = windll.user32.MessageBoxW(
             0,
-            f"{str(error)}\n\nWrite traceback to {error_file}?",
+            f"{error}\n\nWrite traceback to {error_file}?",
             f"Unhandled {error_type.__name__} Occurred",
             MB_YESNO | MB_ICONERROR,
         )
@@ -46,7 +44,6 @@ else:  # assume linux for now
     from send2trash import send2trash
 
     illegal_char = compile(r"[]")
-    separators = r"[/]"
     kb_size = 1000
 
     def OS_name_cmp(a: str, b: str) -> bool:
@@ -59,30 +56,9 @@ else:  # assume linux for now
         raise NotImplementedError  # TODO: add option for linux
 
 
-# Setup regex for truncating path
-# shrink /./ to /
-same_dir: Pattern[str] = compile(rf"{separators}\.({separators}|$)")
-
-# shrink abc/123/../ to abc/
-previous_dir: Pattern[str] = compile(
-    rf"[^{separators[1:]}+?{separators}\.\.({separators}|$)"
-)
-
-
-def truncate_path(path: str) -> str:
-    """Shortens . and .. in paths"""
-    while same_dir.search(path) is not None:
-        path = same_dir.sub("/", path)
-
-    while previous_dir.search(path) is not None:
-        path = previous_dir.sub("", path)
-
-    return path
-
-
-def clean_str_for_OS_path(file_name: str) -> str:
-    """Removes characters that file names can't have on this OS"""
-    return illegal_char.sub("", file_name)
+def clean_str_for_OS_path(path: str) -> str:
+    """Removes characters that paths can't have on this OS"""
+    return illegal_char.sub("", path)
 
 
 def get_byte_display(bytes: int) -> str:
@@ -91,9 +67,9 @@ def get_byte_display(bytes: int) -> str:
     return f"{size_in_kb/kb_size:.2f}mb" if size_in_kb > 999 else f"{size_in_kb}kb"
 
 
-def trash_file(file_path: str) -> None:
+def trash_file(path: str) -> None:
     """OS generic send file to trash"""
-    send2trash(os.path.normpath(file_path))
+    send2trash(os.path.normpath(path))
 
 
 def walk_dir(directory_path: str) -> Iterator[str]:

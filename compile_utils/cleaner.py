@@ -5,8 +5,6 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
-from image_viewer.util.os import separators
-
 try:
     import autoflake
 except ImportError:
@@ -20,6 +18,11 @@ except ImportError:
     )
     del warnings
     autoflake = None
+
+if os.name == "nt":
+    separators = r"[\\/]"
+else:
+    separators = r"[/]"
 
 func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
     "turbojpeg": (
