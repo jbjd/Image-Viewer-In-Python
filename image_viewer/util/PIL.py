@@ -32,15 +32,25 @@ def resize(
         return image
 
     box: tuple[int, int, int, int] = (0, 0) + image.size
-    match image.mode:
-        case "RGBA" | "LA":
-            new_mode: str = f"{image.mode[:-1]}a"  # precomputed alpha
-            new_image: Image = image.convert(new_mode)
-            return _resize_new(new_image, size, resample, box).convert(image.mode)
-        case "P" | "1":
-            image = image.convert("RGB")
+    original_mode: str = image.mode
+    modes_to_convert: dict[str, str] = {
+        "RGBA": "RGBa",
+        "LA": "La",
+        "P": "RGB",
+        "1": "RGB",
+    }
 
-    return _resize_new(image, size, resample, box)
+    if original_mode in modes_to_convert:
+        new_mode: str = modes_to_convert[original_mode]
+        image = image.convert(new_mode)
+
+    resized_image: Image = _resize_new(image, size, resample, box)
+
+    # These mode were temporarily converted to pre-compute alpha and should be reverted
+    if original_mode in ("RGBA", "LA"):
+        resized_image = resized_image.convert(original_mode)
+
+    return resized_image
 
 
 def _get_longest_line_bbox(input: str) -> tuple[int, int, int, int]:
@@ -54,7 +64,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
 
     x_offset: int = max(int(text_bbox[2] * 0.07), 10)
     line_height: int = text_bbox[3] + text_bbox[1]
-    spacing: int = int(line_height * 0.8)
+    spacing: int = round(line_height * 0.8)
     line_count: int = text.count("\n") + 1
 
     width: int = text_bbox[2] + x_offset + x_offset
@@ -78,7 +88,8 @@ def get_placeholder_for_errored_image(
         ["\n".join(wrap(line, 100)) for line in str(error).split("\n")]
     ).capitalize()
 
-    draw: ImageDraw = Draw(new("RGB", (screen_width, screen_height)))
+    blank_image: Image = new("RGB", (screen_width, screen_height))
+    draw: ImageDraw = Draw(blank_image)
     draw.line((0, 0, screen_width, screen_height), (30, 20, 20), width=100)
 
     # Write title

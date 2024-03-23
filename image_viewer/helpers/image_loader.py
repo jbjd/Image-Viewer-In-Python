@@ -113,7 +113,8 @@ class ImageLoader:
         try:
             # open even if in cache to throw error if user deleted it outside of program
             fp = open(self.file_manager.path_to_current_image, "rb")
-            self.PIL_image = open_image(fp, "r", magic_number_guess(fp.read(4)))
+            type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
+            self.PIL_image = open_image(fp, "r", type_to_try_loading)
         except (FileNotFoundError, UnidentifiedImageError):
             return None
 
