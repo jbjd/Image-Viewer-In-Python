@@ -5,6 +5,8 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
+from compile_utils.code_to_skip import functions_to_skip, vars_to_skip, classes_to_skip
+
 try:
     import autoflake
 except ImportError:
@@ -24,37 +26,6 @@ if os.name == "nt":
 else:
     separators = r"[/]"
 
-func_and_vars_to_skip: dict[str, tuple[set[str], set[str]]] = {
-    "turbojpeg": (
-        {"TJPF_BGRX", "TJPF_BGRA", "TJPF_ABGR", "TJPF_ARGB", "TJFLAG_LIMITSCANS"},
-        {
-            "crop_multiple",
-            "scale_with_quality",
-            "encode_from_yuv",
-            "decode_to_yuv",
-            "decode_to_yuv_planes",
-            "__map_luminance_to_dc_dct_coefficient",
-        },
-    ),
-    "PIL.Image": (
-        set(),
-        {"_getxmp", "getexif", "preinit", "effect_mandelbrot", "get_child_images"},
-    ),
-    "PIL.ImageDraw": (set(), {"getdraw"}),
-    "PIL.ImageFile": (set(), {"verify", "raise_oserror"}),
-    "PIL.GifImagePlugin": ({"format_description"}, {"getheader", "getdata"}),
-    "PIL.JpegImagePlugin": (
-        {"format_description"},
-        {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
-    ),
-    "PIL.PngImagePlugin": ({"format_description"}, {"getxmp"}),
-    "PIL.WebPImagePlugin": ({"format_description"}, {"getxmp"}),
-}
-
-classes_to_skip: dict[str, set[str]] = {
-    "PIL.ImageFile": {"_Tile"},
-}
-
 
 class TypeHintRemover(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
@@ -62,17 +33,11 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
     def __init__(self, module_name: str = "", **kwargs) -> None:
         super().__init__(**kwargs)
 
-        self.vars_to_skip: set[str]
-        self.func_to_skip: set[str]
-        if module_name in func_and_vars_to_skip:
-            self.vars_to_skip, self.func_to_skip = func_and_vars_to_skip[module_name]
-        else:
-            self.vars_to_skip = set()
-            self.func_to_skip = set()
+        self.func_to_skip: set[str] = functions_to_skip[module_name]
+        self.vars_to_skip: set[str] = vars_to_skip[module_name]
+        self.classes_to_skip: set[str] = classes_to_skip[module_name]
 
-        self.classes_to_skip = classes_to_skip.get(module_name, set())
-
-        self.vars_to_skip = self.vars_to_skip.union({"__author__"})
+        self.vars_to_skip.add("__author__")
 
         self.write_annotations_without_value: bool = False
 

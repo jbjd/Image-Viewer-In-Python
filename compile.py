@@ -4,7 +4,7 @@ import subprocess
 from importlib import import_module
 from typing import Final
 
-from compile_utils.args import CompileArgParser, parse_nuitka_args
+from compile_utils.args import CompileArgumentParser
 from compile_utils.cleaner import clean_file_and_copy, move_files_to_tmp_and_clean
 from compile_utils.validation import raise_if_unsupported_python_version
 
@@ -26,10 +26,8 @@ else:
     install_path = "/usr/local/personal-image-viewer/"
     data_file_paths = ["icon/icon.png"]
 
-parser = CompileArgParser(install_path)
-args, nuitka_args = parser.validate_and_return_arguments()
-
-extra_args: str = parse_nuitka_args(args, nuitka_args, WORKING_DIR)
+parser = CompileArgumentParser(install_path)
+args, nuitka_args = parser.parse_known_args(WORKING_DIR)
 
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
@@ -68,7 +66,7 @@ try:
         --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
         --follow-import-to="viewer" --follow-import-to="managers"  \
         --follow-import-to="constants" --output-filename="viewer" \
-        --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" {extra_args} \
+        --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" {nuitka_args} \
         --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/{FILE}.py"'
 
     compile_env = os.environ.copy()

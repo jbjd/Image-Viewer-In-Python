@@ -4,7 +4,8 @@ from argparse import REMAINDER, ArgumentParser, Namespace
 from compile_utils.validation import raise_if_not_root
 
 
-class CompileArgParser(ArgumentParser):
+class CompileArgumentParser(ArgumentParser):
+    """Argument Parser for compilation flags"""
 
     VALID_NUITKA_ARGS: set[str] = {
         "--mingw64",
@@ -56,39 +57,49 @@ class CompileArgParser(ArgumentParser):
         )
         self.add_argument("args", nargs=REMAINDER)
 
-    def validate_and_return_arguments(self) -> tuple[Namespace, list[str]]:
-        """Validates root privilege and no unknown arguments present"""
-        args, nuitka_args = self.parse_known_args()
+    def parse_known_args(self, working_dir: str) -> tuple[Namespace, str]:
+        """Returns Namespace of user arguments and string of args to pass to nuitka"""
+        user_args, nuitka_args = super().parse_known_args()
+        self._validate_args(nuitka_args, user_args.debug)
 
-        if not args.debug:
+        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, working_dir)
+
+        return user_args, " ".join(nuitka_args)
+
+    def _validate_args(self, nuitka_args: list[str], debug: bool) -> None:
+        """Validates root privilege and no unknown arguments present"""
+        if not debug:
             raise_if_not_root()
 
         for extra_arg in nuitka_args:
             if extra_arg not in self.VALID_NUITKA_ARGS:
                 raise ValueError(f"Unknown argument {extra_arg}")
 
-        return args, nuitka_args
+    @staticmethod
+    def _expand_nuitka_args(
+        user_args: Namespace, nuitka_args: list[str], working_dir: str
+    ) -> list[str]:
+        """Given the input list of nuitka args, adds extra arguments
+        based on flags user specified"""
+        if user_args.report or user_args.debug:
+            nuitka_args.append("--report=compilation-report.xml")
+            if user_args.debug:
+                nuitka_args += ["--warn-implicit-exceptions", "--warn-unusual-code"]
 
+        if "--standalone" in nuitka_args:
+            nuitka_args.append("--enable-plugin=tk-inter")
 
-def parse_nuitka_args(args: Namespace, nuitka_args: list[str], working_dir: str) -> str:
-    """Adds to nuitka args user passed for debugging and import skips"""
-    extra_args: str = " ".join(nuitka_args).strip()
+            with open(os.path.join(working_dir, "skippable_imports.txt"), "r") as fp:
+                imports_to_skip: list[str] = fp.read().strip().split("\n")
 
-    if args.report or args.debug:
-        extra_args += " --report=compilation-report.xml"
-        if args.debug:
-            extra_args += " --warn-implicit-exceptions --warn-unusual-code"
+            nuitka_args += [
+                f"--nofollow-import-to={skipped_import}"
+                for skipped_import in imports_to_skip
+            ]
 
-    if "--standalone" in nuitka_args:
-        extra_args += " --enable-plugin=tk-inter"
+        ENABLE_CONSOLE: str = "--enable-console"
+        DISABLE_CONSOLE: str = "--disable-console"
+        if ENABLE_CONSOLE not in nuitka_args and DISABLE_CONSOLE not in nuitka_args:
+            nuitka_args.append(ENABLE_CONSOLE if user_args.debug else DISABLE_CONSOLE)
 
-        with open(os.path.join(working_dir, "skippable_imports.txt"), "r") as fp:
-            imports_to_skip: list[str] = fp.read().strip().split("\n")
-
-        SKIP_IMPORT_PREFIX: str = " --nofollow-import-to="
-        extra_args += SKIP_IMPORT_PREFIX + SKIP_IMPORT_PREFIX.join(imports_to_skip)
-
-    enable_conosle: bool = "--enable-console" in nuitka_args or args.debug
-    extra_args += " --enable-console" if enable_conosle else " --disable-console"
-
-    return extra_args
+        return nuitka_args

@@ -1,3 +1,5 @@
+"""Validation functions for compilation requirements"""
+
 import os
 from sys import version_info
 
