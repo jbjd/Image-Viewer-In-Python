@@ -30,7 +30,9 @@ class CompileArgumentParser(ArgumentParser):
             default=default_python,
         )
         self.add_argument(
-            "--install-path", help=f"Path to install to, defaults to {install_path}"
+            "--install-path",
+            help=f"Path to install to, defaults to {install_path}",
+            default=install_path,
         )
         self.add_argument(
             "--report",

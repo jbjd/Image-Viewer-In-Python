@@ -5,7 +5,7 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
-from compile_utils.code_to_skip import functions_to_skip, vars_to_skip, classes_to_skip
+from compile_utils.code_to_skip import classes_to_skip, functions_to_skip, vars_to_skip
 
 try:
     import autoflake

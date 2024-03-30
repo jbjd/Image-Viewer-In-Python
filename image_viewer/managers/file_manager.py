@@ -8,12 +8,7 @@ from PIL.Image import Image
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageName
-from util.os import (
-    OS_name_cmp,
-    clean_str_for_OS_path,
-    trash_file,
-    walk_dir,
-)
+from util.os import OS_name_cmp, clean_str_for_OS_path, trash_file, walk_dir
 
 
 class ImageFileManager:

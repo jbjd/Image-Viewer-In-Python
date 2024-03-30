@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from argparse import Namespace
 from importlib import import_module
 from typing import Final
 
@@ -16,19 +17,21 @@ TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
 COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.dist")
 BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
-install_path: str
-data_file_paths: list[str]
+DEFAULT_INSTALL_PATH: str
+DATA_FILE_PATHS: list[str]
 
 if os.name == "nt":
-    install_path = "C:/Program Files/Personal Image Viewer/"
-    data_file_paths = ["icon/icon.ico", "dll/libturbojpeg.dll"]
+    DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
+    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
-    install_path = "/usr/local/personal-image-viewer/"
-    data_file_paths = ["icon/icon.png"]
+    DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
+    DATA_FILE_PATHS = ["icon/icon.png"]
 
-parser = CompileArgumentParser(install_path)
+parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
+
+args: Namespace
+nuitka_args: str
 args, nuitka_args = parser.parse_known_args(WORKING_DIR)
-
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
@@ -73,9 +76,7 @@ try:
     compile_env["CCFLAGS"] = "-O2"
     process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR, env=compile_env)
 
-    if args.install_path:
-        install_path = args.install_path
-
+    install_path: str = args.install_path
     os.makedirs(install_path, exist_ok=True)
 
     print("Waiting for nuitka compilation...")
@@ -83,7 +84,7 @@ try:
     if process.wait():
         exit(1)
 
-    for data_file_path in data_file_paths:
+    for data_file_path in DATA_FILE_PATHS:
         old_path = os.path.join(CODE_DIR, data_file_path)
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
