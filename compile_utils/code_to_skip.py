@@ -10,6 +10,7 @@ _function_kwargs: dict[str, set[str]] = {
         "decode_to_yuv",
         "decode_to_yuv_planes",
         "__map_luminance_to_dc_dct_coefficient",
+        "__get_dc_dqt_element",
     },
     "PIL.Image": {
         "_getxmp",
@@ -28,6 +29,8 @@ _function_kwargs: dict[str, set[str]] = {
 
 _vars_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
+        "TJERR_FATAL",
+        "TJCS_CMYK",
         "TJPF_BGRX",
         "TJPF_BGRA",
         "TJPF_ABGR",

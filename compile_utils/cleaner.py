@@ -93,13 +93,20 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
                 self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:
+        """Skip if __name__ == "__main__" blocks"""
         try:
-            # Skip if __name__ == "__main__" blocks
             if node.test.left.id == "__name__":  # type: ignore
                 return
         except AttributeError:
             pass
         super().visit_If(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom):
+        """Skip unnecessary futures imports"""
+        if node.module == "__future__":
+            return
+
+        super().visit_ImportFrom(node)
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
