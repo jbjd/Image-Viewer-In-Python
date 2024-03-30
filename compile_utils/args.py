@@ -11,9 +11,11 @@ class CompileArgumentParser(ArgumentParser):
         "--mingw64",
         "--clang",
         "--standalone",
-        "--enable-console",
+        "--quiet",
+        "--verbose",
         "--show-scons",
         "--show-memory",
+        "--enable-console",
     }
 
     def __init__(self, install_path: str) -> None:

@@ -13,7 +13,7 @@ def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
         "-m",
         "nuitka",
         input_file,
-        "--python-flag=-OO,no_annotations,no_warnings",
+        "--python-flag=-OO,no_annotations,no_warnings,static_hashes",
         "--output-filename=viewer",
     ]
 
