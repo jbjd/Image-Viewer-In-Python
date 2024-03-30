@@ -1,12 +1,13 @@
 import os
 import shutil
-import subprocess
+from subprocess import Popen
 from argparse import Namespace
 from importlib import import_module
 from typing import Final
 
 from compile_utils.args import CompileArgumentParser
 from compile_utils.cleaner import clean_file_and_copy, move_files_to_tmp_and_clean
+from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
@@ -30,8 +31,12 @@ else:
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
 args: Namespace
-nuitka_args: str
+nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(WORKING_DIR)
+
+if os.name == "nt":
+    windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
+    nuitka_args.append(f"--windows-icon-from-ico={windows_icon_file_path}")
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
@@ -62,19 +67,10 @@ try:
     if args.skip_nuitka:
         exit(0)
 
-    # Begin nuitka compilation in subprocess
-    print("Starting compilation with nuitka")
-    print("Using python install ", args.python_path)
-    cmd_str = f'{args.python_path} -m nuitka --lto=yes --follow-import-to="factories" \
-        --follow-import-to="helpers" --follow-import-to="util" --follow-import-to="ui" \
-        --follow-import-to="viewer" --follow-import-to="managers"  \
-        --follow-import-to="constants" --output-filename="viewer" \
-        --windows-icon-from-ico="{CODE_DIR}/icon/icon.ico" {nuitka_args} \
-        --python-flag="-OO,no_annotations,no_warnings" "{TMP_DIR}/{FILE}.py"'
-
-    compile_env = os.environ.copy()
-    compile_env["CCFLAGS"] = "-O2"
-    process = subprocess.Popen(cmd_str, shell=True, cwd=WORKING_DIR, env=compile_env)
+    input_file: str = f"{TMP_DIR}/{FILE}.py"
+    process: Popen = start_nuitka_compilation(
+        args.python_path, input_file, WORKING_DIR, nuitka_args
+    )
 
     install_path: str = args.install_path
     os.makedirs(install_path, exist_ok=True)

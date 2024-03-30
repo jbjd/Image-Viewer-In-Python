@@ -1,3 +1,5 @@
+"""Classes and functions that remove unused code and annotations"""
+
 import ast
 import os
 from _ast import Name

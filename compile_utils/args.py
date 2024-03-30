@@ -24,7 +24,6 @@ class CompileArgumentParser(ArgumentParser):
 
         default_python: str = "python" if os.name == "nt" else "python3"
         self.add_argument(
-            "-p",
             "--python-path",
             help=f"Python to use in compilation, defaults to {default_python}",
             default=default_python,
@@ -59,14 +58,14 @@ class CompileArgumentParser(ArgumentParser):
         )
         self.add_argument("args", nargs=REMAINDER)
 
-    def parse_known_args(self, working_dir: str) -> tuple[Namespace, str]:
+    def parse_known_args(self, working_dir: str) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
         user_args, nuitka_args = super().parse_known_args()
         self._validate_args(nuitka_args, user_args.debug)
 
         nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, working_dir)
 
-        return user_args, " ".join(nuitka_args)
+        return user_args, nuitka_args
 
     def _validate_args(self, nuitka_args: list[str], debug: bool) -> None:
         """Validates root privilege and no unknown arguments present"""
