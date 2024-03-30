@@ -4,9 +4,9 @@ import subprocess
 from importlib import import_module
 from typing import Final
 
-from compile_utils.args import CustomArgParser, parse_nuitka_args
+from compile_utils.args import CompileArgParser, parse_nuitka_args
 from compile_utils.cleaner import clean_file_and_copy, move_files_to_tmp_and_clean
-from compile_utils.version_check import raise_if_unsupported_python_version
+from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
 
@@ -26,7 +26,7 @@ else:
     install_path = "/usr/local/personal-image-viewer/"
     data_file_paths = ["icon/icon.png"]
 
-parser = CustomArgParser(install_path)
+parser = CompileArgParser(install_path)
 args, nuitka_args = parser.validate_and_return_arguments()
 
 extra_args: str = parse_nuitka_args(args, nuitka_args, WORKING_DIR)

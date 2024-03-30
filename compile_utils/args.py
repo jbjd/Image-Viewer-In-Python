@@ -1,8 +1,10 @@
 import os
 from argparse import REMAINDER, ArgumentParser, Namespace
 
+from compile_utils.validation import raise_if_not_root
 
-class CustomArgParser(ArgumentParser):
+
+class CompileArgParser(ArgumentParser):
 
     VALID_NUITKA_ARGS: set[str] = {
         "--mingw64",
@@ -59,17 +61,7 @@ class CustomArgParser(ArgumentParser):
         args, nuitka_args = self.parse_known_args()
 
         if not args.debug:
-            is_root: bool
-            if os.name == "nt":
-                import ctypes
-
-                is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
-            else:
-                # On windows, mypy complains
-                is_root = os.geteuid() == 0  # type: ignore
-
-            if not is_root:
-                raise PermissionError("need root privileges to compile and install")
+            raise_if_not_root()
 
         for extra_arg in nuitka_args:
             if extra_arg not in self.VALID_NUITKA_ARGS:
@@ -89,15 +81,14 @@ def parse_nuitka_args(args: Namespace, nuitka_args: list[str], working_dir: str)
 
     if "--standalone" in nuitka_args:
         extra_args += " --enable-plugin=tk-inter"
-        with open(os.path.join(working_dir, "skippable_imports.txt"), "r") as fp:
-            extra_args += " --nofollow-import-to=" + " --nofollow-import-to=".join(
-                fp.read().strip().split("\n")
-            )
 
-    extra_args += (
-        " --enable-console"
-        if "--enable-console" in nuitka_args or args.debug
-        else " --disable-console"
-    )
+        with open(os.path.join(working_dir, "skippable_imports.txt"), "r") as fp:
+            imports_to_skip: list[str] = fp.read().strip().split("\n")
+
+        SKIP_IMPORT_PREFIX: str = " --nofollow-import-to="
+        extra_args += SKIP_IMPORT_PREFIX + SKIP_IMPORT_PREFIX.join(imports_to_skip)
+
+    enable_conosle: bool = "--enable-console" in nuitka_args or args.debug
+    extra_args += " --enable-console" if enable_conosle else " --disable-console"
 
     return extra_args

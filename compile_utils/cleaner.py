@@ -74,7 +74,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
         self.vars_to_skip = self.vars_to_skip.union({"__author__"})
 
-        self.ignore_bare_annotations: bool = False  # ignore a: str without an =
+        self.write_annotations_without_value: bool = False
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Disable removing annotations within class vars for safety"""
@@ -83,32 +83,21 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
         node.bases = [base for base in node.bases if getattr(base, "id", "") != "ABC"]
 
-        self.ignore_bare_annotations = True
+        self.write_annotations_without_value = True
         super().visit_ClassDef(node)
-        self.ignore_bare_annotations = False
+        self.write_annotations_without_value = False
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Removes type hints from functions"""
         if node.name in self.func_to_skip:
             return
+
         # always ignore inside of function context
-        previous_ignore: bool = self.ignore_bare_annotations
-        self.ignore_bare_annotations = False
+        previous_ignore: bool = self.write_annotations_without_value
 
-        self.maybe_newline()
-        for deco in node.decorator_list:
-            self.fill("@")
-            self.traverse(deco)
-        self.fill(f"def {node.name}")
-        if node.args.args:
-            for arg in node.args.args:
-                arg.annotation = None
-        with self.delimit("(", ")"):
-            self.traverse(node.args)
-        with self.block(extra=self.get_type_comment(node)):
-            self._write_docstring_and_traverse_body(node)
-
-        self.ignore_bare_annotations = previous_ignore
+        self.write_annotations_without_value = False
+        super().visit_FunctionDef(node)
+        self.write_annotations_without_value = previous_ignore
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""
@@ -118,7 +107,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""
-        if node.value or self.ignore_bare_annotations:
+        if node.value or self.write_annotations_without_value:
             self.fill()
             with self.delimit_if(
                 "(", ")", not node.simple and isinstance(node.target, Name)
@@ -149,11 +138,12 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
     with open(path, "r", encoding="utf-8") as fp:
         parsed_source = ast.parse(fp.read())
+
     contents: str = TypeHintRemover(module_name).visit(
         ast.NodeTransformer().visit(parsed_source)
     )
 
-    if autoflake:
+    if autoflake is not None:
         contents = autoflake.fix_code(
             contents,
             remove_all_unused_imports=True,
