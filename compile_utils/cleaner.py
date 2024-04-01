@@ -7,7 +7,12 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
-from compile_utils.code_to_skip import classes_to_skip, functions_to_skip, vars_to_skip
+from compile_utils.code_to_skip import (
+    classes_to_skip,
+    functions_to_skip,
+    vars_to_skip,
+    function_calls_to_skip,
+)
 
 try:
     import autoflake
@@ -38,6 +43,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.func_to_skip: set[str] = functions_to_skip[module_name]
         self.vars_to_skip: set[str] = vars_to_skip[module_name]
         self.classes_to_skip: set[str] = classes_to_skip[module_name]
+        self.func_calls_to_skip: set[str] = function_calls_to_skip[module_name]
 
         self.vars_to_skip.add("__author__")
 
@@ -65,6 +71,13 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.write_annotations_without_value = False
         super().visit_FunctionDef(node)
         self.write_annotations_without_value = previous_ignore
+
+    def visit_Call(self, node: ast.Call) -> None:
+        if (
+            getattr(node.func, "attr", "") not in self.func_calls_to_skip
+            and getattr(node.func, "id", "") not in self.func_calls_to_skip
+        ):
+            super().visit_Call(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""

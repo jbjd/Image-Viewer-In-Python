@@ -25,7 +25,10 @@ _function_kwargs: dict[str, set[str]] = {
     "PIL.JpegImagePlugin": {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
     "PIL.PngImagePlugin": {"getxmp"},
     "PIL.WebPImagePlugin": {"getxmp"},
+    "PIL.TiffTags": {"_populate"},
 }
+
+_function_call_kwargs: dict[str, set[str]] = {"PIL.TiffTags": {"_populate"}}
 
 _vars_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
@@ -48,5 +51,8 @@ _classes_kwargs: dict[str, set[str]] = {
 }
 
 functions_to_skip: defaultdict[str, set] = defaultdict(set, **_function_kwargs)
+function_calls_to_skip: defaultdict[str, set] = defaultdict(
+    set, **_function_call_kwargs
+)
 vars_to_skip: defaultdict[str, set] = defaultdict(set, **_vars_kwargs)
 classes_to_skip: defaultdict[str, set] = defaultdict(set, **_classes_kwargs)

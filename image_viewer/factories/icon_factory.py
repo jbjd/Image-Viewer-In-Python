@@ -3,10 +3,10 @@ from typing import Final
 from PIL import ImageOps
 from PIL.Image import Image
 from PIL.Image import new as new_image
-from PIL.ImageDraw import Draw, ImageDraw
+from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 
-from util.PIL import resize
+from util.PIL import resize, get_image_draw
 
 
 class IconFactory:
@@ -36,7 +36,7 @@ class IconFactory:
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
         """Returns tuple of icon and hovered icon base images"""
-        return Draw(self._new_rgb_image(self.ICON_RGB)), Draw(
+        return get_image_draw(self._new_rgb_image(self.ICON_RGB)), get_image_draw(
             self._new_rgb_image(self.ICON_HOVERED_RGB)
         )
 
@@ -48,7 +48,7 @@ class IconFactory:
     def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
         EXIT_RGB: tuple[int, int, int] = (190, 40, 40)
         EXIT_HOVER_RGB: tuple[int, int, int] = (180, 25, 20)
-        draw = Draw(self._new_rgb_image(EXIT_HOVER_RGB))
+        draw = get_image_draw(self._new_rgb_image(EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), self.LINE_RGB, 2)
         draw.line((6, 26, 26, 6), self.LINE_RGB, 2)
         return (
@@ -98,7 +98,7 @@ class IconFactory:
 
     def make_rename_icons(self) -> tuple[PhotoImage, PhotoImage]:
         transparent_icon: Image = new_image("RGBA", self.DEFAULT_SIZE)
-        draw: ImageDraw = Draw(transparent_icon.copy())
-        draw_hovered: ImageDraw = Draw(transparent_icon)
+        draw: ImageDraw = get_image_draw(transparent_icon.copy())
+        draw_hovered: ImageDraw = get_image_draw(transparent_icon)
         draw_hovered.rectangle((4, 5, 28, 27), self.ICON_HOVERED_RGB, width=1)
         return self._draw_rename_symbol(draw), self._draw_rename_symbol(draw_hovered)

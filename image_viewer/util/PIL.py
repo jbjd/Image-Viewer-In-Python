@@ -6,7 +6,7 @@ from textwrap import wrap
 
 from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
-from PIL.ImageDraw import Draw, ImageDraw
+from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
 
@@ -53,26 +53,36 @@ def resize(
     return resized_image
 
 
+def get_image_draw(image: Image, mode=None) -> ImageDraw:
+    """Turns PIL Image into PIL ImageDraw.
+    This is a simplified version of PIL's Draw function"""
+    return ImageDraw(image, mode)
+
+
 def _get_longest_line_bbox(input: str) -> tuple[int, int, int, int]:
     """Returns bbox of longest length string in a string with multiple lines"""
     return ImageDraw.font.getbbox(max(input.split("\n"), key=len))
 
 
 def create_dropdown_image(text: str) -> PhotoImage:
-    """Creates a new photo image with current images metadata"""
+    """Creates a new PhotoImage with current images metadata"""
     text_bbox: tuple[int, int, int, int] = _get_longest_line_bbox(text)
 
-    x_offset: int = max(int(text_bbox[2] * 0.07), 10)
-    line_height: int = text_bbox[3] + text_bbox[1]
-    spacing: int = round(line_height * 0.8)
     line_count: int = text.count("\n") + 1
+    line_height: int = text_bbox[3] + text_bbox[1]
+    line_spacing: int = round(line_height * 0.8)
 
-    width: int = text_bbox[2] + x_offset + x_offset
-    height: int = (line_height * line_count) + (spacing * (line_count + 1))
+    x_padding: int = max(int(text_bbox[2] * 0.14), 20)
+    y_padding: int = line_spacing * (line_count + 1)
+
+    width: int = text_bbox[2] + x_padding
+    height: int = (line_height * line_count) + y_padding
+
     DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
+    image: Image = new("RGBA", (width, height), DROPDOWN_RGBA)
 
-    draw: ImageDraw = Draw(new("RGBA", (width, height), DROPDOWN_RGBA))
-    draw.text((10, spacing), text, fill="white", spacing=spacing)
+    draw: ImageDraw = get_image_draw(image)
+    draw.text((10, line_spacing), text, fill="white", spacing=line_spacing)
 
     return PhotoImage(draw._image)  # type: ignore
 
@@ -89,7 +99,7 @@ def get_placeholder_for_errored_image(
     ).capitalize()
 
     blank_image: Image = new("RGB", (screen_width, screen_height))
-    draw: ImageDraw = Draw(blank_image)
+    draw: ImageDraw = get_image_draw(blank_image)
     draw.line((0, 0, screen_width, screen_height), (30, 20, 20), width=100)
 
     # Write title
@@ -143,12 +153,10 @@ def _stop_unwanted_PIL_imports() -> None:
 
 def init_PIL(font_size: int) -> None:
     """Sets up font and edit PIL's internal list of plugins to load"""
-    from PIL import ImageDraw as _ImageDraw  # avoid name conflicts
     from PIL.ImageFont import truetype
 
     ImageDraw.font = truetype("arial.ttf", font_size)
     ImageDraw.fontmode = "L"  # antialiasing
-    _ImageDraw.Draw = lambda im, mode=None: ImageDraw(im, mode)
-    del _ImageDraw, truetype
+    del truetype
 
     _stop_unwanted_PIL_imports()
