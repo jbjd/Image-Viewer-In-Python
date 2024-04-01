@@ -59,23 +59,25 @@ def get_image_draw(image: Image, mode=None) -> ImageDraw:
     return ImageDraw(image, mode)
 
 
-def _get_longest_line_bbox(input: str) -> tuple[int, int, int, int]:
-    """Returns bbox of longest length string in a string with multiple lines"""
-    return ImageDraw.font.getbbox(max(input.split("\n"), key=len))
+def _get_longest_line_bbox(input: str) -> tuple[int, int]:
+    """Returns width and height of longest string in a string with multiple lines"""
+    width_offset, height_offset, width, height = ImageDraw.font.getbbox(
+        max(input.split("\n"), key=len)
+    )
+    return width + width_offset, height + height_offset
 
 
 def create_dropdown_image(text: str) -> PhotoImage:
     """Creates a new PhotoImage with current images metadata"""
-    text_bbox: tuple[int, int, int, int] = _get_longest_line_bbox(text)
+    line_width, line_height = _get_longest_line_bbox(text)
 
     line_count: int = text.count("\n") + 1
-    line_height: int = text_bbox[3] + text_bbox[1]
     line_spacing: int = round(line_height * 0.8)
 
-    x_padding: int = max(int(text_bbox[2] * 0.14), 20)
+    x_padding: int = max(int(line_width * 0.14), 20)
     y_padding: int = line_spacing * (line_count + 1)
 
-    width: int = text_bbox[2] + x_padding
+    width: int = line_width + x_padding
     height: int = (line_height * line_count) + y_padding
 
     DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
