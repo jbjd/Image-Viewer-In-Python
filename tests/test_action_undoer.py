@@ -19,7 +19,7 @@ def test_action_undoer(action_undoer: ActionUndoer):
     action_undoer.append(Convert("old3", "new3", True))
     action_undoer.append(Delete("old4"))
 
-    assert len(action_undoer._stack) == 4  # maxlen is 4, 1st append is removed
+    assert len(action_undoer) == 4  # maxlen is 4, 1st append is removed
 
     with patch("image_viewer.helpers.action_undoer.restore_from_bin") as mock_undelete:
         # Undo delete, old4 should be added back and nothing removed
@@ -48,11 +48,3 @@ def test_action_undoer(action_undoer: ActionUndoer):
         assert action_undoer.get_last_undoable_action()
         assert action_undoer.undo() == ("old", "new")
         mock_rename.assert_called_once()
-
-
-def test_clear(action_undoer: ActionUndoer):
-    action_undoer.append(Rename("", ""))
-    assert len(action_undoer._stack) == 1
-
-    action_undoer.clear()
-    assert len(action_undoer._stack) == 0

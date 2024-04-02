@@ -18,7 +18,7 @@ if os.name == "nt":
     kb_size = 1024
 
     def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
-        """Show windows message box with error, returns True when user says no"""
+        """Show windows message box with error. Returns True when user says no"""
         MB_YESNO: int = 0x4
         MB_ICONERROR: int = 0x10
         IDYES: int = 6

@@ -45,23 +45,17 @@ class Delete(Action):
     __slots__ = ()
 
 
-class ActionUndoer:
+class ActionUndoer(deque[Action]):
     """Keeps information on recent file actions and can undo them"""
 
-    __slots__ = "_stack"
+    __slots__ = ()
 
-    def __init__(self) -> None:
-        self._stack: deque[Action] = deque(maxlen=4)
-
-    def append(self, action: Action) -> None:
-        self._stack.append(action)
-
-    def clear(self) -> None:
-        self._stack.clear()
+    def __init__(self, maxlen: int = 4) -> None:
+        super().__init__(maxlen=maxlen)
 
     def undo(self) -> tuple[str, str]:
-        """returns tuple of image to add, image to remove, if any"""
-        action: Action = self._stack.pop()
+        """Returns tuple of image to add, image to remove, if any"""
+        action: Action = self.pop()
 
         if type(action) is Rename:
 
@@ -85,8 +79,9 @@ class ActionUndoer:
             return (action.original_path, "")
 
     def get_last_undoable_action(self) -> str:
-        """Looks at top of deque and formats the information in a str"""
-        action: Action = self._stack[-1]
+        """Looks at top of deque and formats the information in a string.
+        Throws when empty"""
+        action: Action = self[-1]
 
         if type(action) is Rename:
             return f"Rename {action.new_path} back to {action.original_path}?"
