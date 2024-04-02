@@ -5,7 +5,7 @@ from collections import deque
 from util.os import restore_from_bin, trash_file
 
 
-class Action(ABC):
+class FileAction(ABC):
     """Class used to track actions done to a file"""
 
     __slots__ = "original_path"
@@ -14,38 +14,32 @@ class Action(ABC):
         self.original_path: str = original_path
 
 
-class Rename(Action):
-    """One class for rename/convert since this program handles them very closely"""
+class Rename(FileAction):
+    """Any actions that results in the path of a file being changed"""
 
-    __slots__ = "new_path", "preserve_index"
+    __slots__ = "new_path", "original_file_deleted"
 
     def __init__(
-        self, original_path: str, new_path: str, preserve_index: bool = False
+        self, original_path: str, new_path: str, original_file_deleted: bool = False
     ) -> None:
         super().__init__(original_path)
         self.new_path: str = new_path
-        self.preserve_index: bool = preserve_index
+        self.original_file_deleted: bool = original_file_deleted
 
 
 class Convert(Rename):
     """Convert action"""
 
-    __slots__ = "old_file_deleted"
-
-    def __init__(
-        self, original_path: str, new_path: str, old_file_deleted: bool
-    ) -> None:
-        super().__init__(original_path, new_path, not old_file_deleted)
-        self.old_file_deleted: bool = old_file_deleted
+    __slots__ = ()
 
 
-class Delete(Action):
+class Delete(FileAction):
     """Delete action"""
 
     __slots__ = ()
 
 
-class ActionUndoer(deque[Action]):
+class ActionUndoer(deque[FileAction]):
     """Keeps information on recent file actions and can undo them"""
 
     __slots__ = ()
@@ -55,14 +49,14 @@ class ActionUndoer(deque[Action]):
 
     def undo(self) -> tuple[str, str]:
         """Returns tuple of image to add, image to remove, if any"""
-        action: Action = self.pop()
+        action: FileAction = self.pop()
 
         if type(action) is Rename:
 
             os.rename(action.new_path, action.original_path)
             return (action.original_path, action.new_path)
 
-        elif type(action) is Convert and action.old_file_deleted:
+        elif type(action) is Convert and action.original_file_deleted:
 
             restore_from_bin(action.original_path)
             trash_file(action.new_path)
@@ -73,24 +67,29 @@ class ActionUndoer(deque[Action]):
             trash_file(action.new_path)
             return ("", action.new_path)
 
-        else:  # Delete
+        elif type(action) is Delete:
 
             restore_from_bin(action.original_path)
             return (action.original_path, "")
 
-    def get_last_undoable_action(self) -> str:
+        else:
+            assert False  # Unreachable
+
+    def get_undo_message(self) -> str:
         """Looks at top of deque and formats the information in a string.
-        Throws when empty"""
-        action: Action = self[-1]
+        Throws IndexError when empty"""
+        action: FileAction = self[-1]
 
         if type(action) is Rename:
             return f"Rename {action.new_path} back to {action.original_path}?"
-        elif type(action) is Convert and action.old_file_deleted:
+        elif type(action) is Convert and action.original_file_deleted:
             return (
                 f"Delete {action.new_path} and restore {action.original_path}"
                 " from trash?"
             )
         elif type(action) is Convert:
             return f"Delete {action.new_path}?"
-        else:  # Delete
+        elif type(action) is Delete:
             return f"Restore {action.original_path} from trash?"
+        else:
+            assert False  # Unreachable

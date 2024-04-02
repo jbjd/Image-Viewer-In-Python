@@ -211,7 +211,7 @@ class ImageFileManager:
             new_dir, new_image_data.name
         )
 
-        result: Rename | Convert
+        result: Rename
         if (
             new_image_data.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
@@ -230,7 +230,8 @@ class ImageFileManager:
 
         # Only add image if its still in the same directory
         if os.path.dirname(new_full_path) == os.path.dirname(original_path):
-            self.add_new_image(new_name, result.preserve_index)
+            preserve_index: bool = not result.original_file_deleted
+            self.add_new_image(new_name, preserve_index)
         else:
             self._update_after_move_or_edit()
 
@@ -342,10 +343,10 @@ class ImageFileManager:
     def _ask_undo_last_action(self) -> bool:
         """Returns if user wants to + can undo last action"""
         try:
-            action: str = self.action_undoer.get_last_undoable_action()
+            undo_message: str = self.action_undoer.get_undo_message()
         except IndexError:
             return False
-        return askyesno("Undo Rename/Convert", action)
+        return askyesno("Undo Rename/Convert", undo_message)
 
     def cache_image(self, cached_image: CachedImage) -> None:
         self.cache[self.current_image.name] = cached_image
