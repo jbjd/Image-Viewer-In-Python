@@ -1,7 +1,7 @@
 import os
 from time import perf_counter
 from tkinter import Event, Tk
-from typing import Final, NoReturn
+from typing import Literal, NoReturn
 
 from PIL.ImageTk import PhotoImage
 
@@ -55,8 +55,8 @@ class ViewerApp:
         canvas = CustomCanvas(self.app)
         self.canvas = canvas
 
-        self.height_ratio: Final[float] = canvas.screen_height / 1080
-        self.width_ratio: Final[float] = canvas.screen_width / 1920
+        self.height_ratio: float = canvas.screen_height / 1080
+        self.width_ratio: float = canvas.screen_width / 1920
 
         self._load_assests(
             self.app, canvas, canvas.screen_width, self._scale_pixels_to_height(32)
@@ -258,7 +258,7 @@ class ViewerApp:
                 case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
                 case Key.MINUS | Key.EQUALS:
-                    self.handle_zoom(event)
+                    self.handle_zoom(event.keycode)
                 case Key.R:
                     self.toggle_show_rename_window(event)
 
@@ -298,20 +298,22 @@ class ViewerApp:
         self.hover_dropdown_toggle()  # fake mouse hover
         self.update_details_dropdown()
 
-    def _load_zoomed_image(self, keycode: int) -> None:
+    def _load_zoomed_image(self, keycode: Literal[Key.MINUS, Key.EQUALS]) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
-        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(keycode)
+        zoom_in: bool = keycode == Key.EQUALS
+        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(zoom_in)
         if new_image is not None:
             self.canvas.update_image_display(new_image)
 
-    def handle_zoom(self, event: Event) -> None:
+    def handle_zoom(self, keycode: Literal[Key.MINUS, Key.EQUALS]) -> None:
         """Handle user input of zooming in or out"""
         if self.animation_id != "":
             return
 
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
-        self.image_load_id = self.app.after(0, self._load_zoomed_image, event.keycode)
+
+        self.image_load_id = self.app.after(0, self._load_zoomed_image, keycode)
 
     # End functions handling user input
 

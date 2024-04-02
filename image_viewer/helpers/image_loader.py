@@ -7,9 +7,9 @@ from PIL.Image import Image
 from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
 
-from constants import Key
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
+from states.zoom_state import ZoomState
 from util.image import CachedImage, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image
@@ -27,8 +27,7 @@ class ImageLoader:
         "PIL_image",
         "frame_index",
         "image_resizer",
-        "zoom_cap",
-        "zoom_level",
+        "zoom_state",
         "zoomed_image_cache",
     )
 
@@ -47,8 +46,7 @@ class ImageLoader:
 
         self.animation_frames: list[tuple[PhotoImage | None, int]] = []
         self.frame_index: int = 0
-        self.zoom_cap: int = 512
-        self.zoom_level: int = 0
+        self.zoom_state = ZoomState()
         self.zoomed_image_cache: list[PhotoImage] = []
 
     def get_next_frame(self) -> tuple[PhotoImage | None, int]:
@@ -161,22 +159,23 @@ class ImageLoader:
         )
         return current_image
 
-    def get_zoomed_image(self, event_keycode: int) -> PhotoImage | None:
+    def get_zoomed_image(self, zoom_in: bool) -> PhotoImage | None:
         """Handles getting and caching zoomed versions of the current image"""
-        if not self._try_update_zoom_level(event_keycode):
+        if not self.zoom_state.try_update_zoom_level(zoom_in):
             return None
 
-        if self.zoom_level < len(self.zoomed_image_cache):
-            return self.zoomed_image_cache[self.zoom_level]
+        zoom_level: int = self.zoom_state.level
+        if zoom_level < len(self.zoomed_image_cache):
+            return self.zoomed_image_cache[zoom_level]
 
         # Not in cache, resize to new zoom
         try:
             with open_image(self.file_manager.path_to_current_image) as fp:
                 zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
-                    fp, self.zoom_level
+                    fp, zoom_level
                 )
             if hit_zoom_cap:
-                self.zoom_cap = self.zoom_level
+                self.zoom_state.hit_cap()
 
             self.zoomed_image_cache.append(zoomed_image)
 
@@ -185,17 +184,6 @@ class ImageLoader:
             pass
 
         return None
-
-    def _try_update_zoom_level(self, event_keycode: int) -> bool:
-        """Tries to update zoom level and returns if zoom changed"""
-        previous_zoom: int = self.zoom_level
-
-        if event_keycode == Key.MINUS and previous_zoom > 0:  # minus key
-            self.zoom_level -= 1
-        elif event_keycode == Key.EQUALS and previous_zoom < self.zoom_cap:  # plus key
-            self.zoom_level += 1
-
-        return previous_zoom != self.zoom_level
 
     def load_remaining_frames(
         self,
@@ -231,6 +219,5 @@ class ImageLoader:
         self.animation_frames = []
         self.frame_index = 0
         self.PIL_image.close()
-        self.zoom_cap = 512
-        self.zoom_level = 0
+        self.zoom_state.reset()
         self.zoomed_image_cache = []

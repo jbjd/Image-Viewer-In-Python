@@ -4,9 +4,10 @@
 MODULES: list[str] = [
     "factories",
     "helpers",
-    "util",
-    "ui",
-    "viewer",
     "managers",
+    "states",
+    "ui",
+    "util",
     "constants",
+    "viewer",
 ]
