@@ -35,4 +35,5 @@ def test_utility_functions(zoom_state: ZoomState):
     zoom_state.reset()
 
     default_zoom_state = ZoomState()
-    assert zoom_state == default_zoom_state
+    assert zoom_state.level == default_zoom_state.level
+    assert zoom_state.cap == default_zoom_state.cap

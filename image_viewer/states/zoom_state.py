@@ -27,8 +27,3 @@ class ZoomState:
         """Resets zoom level"""
         self.cap = self.ZOOM_CAP
         self.level = 0
-
-    def __eq__(self, __value: object) -> bool:
-        return self.level == getattr(__value, "level", None) and self.cap == getattr(
-            __value, "cap", None
-        )
