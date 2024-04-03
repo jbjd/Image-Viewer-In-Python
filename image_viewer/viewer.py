@@ -10,6 +10,7 @@ from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
+from ui.button import HoverableButton, ToggleButton
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
@@ -24,7 +25,6 @@ class ViewerApp:
         "app",
         "canvas",
         "dropdown",
-        "dropdown_button_id",
         "dropdown_hidden_icon",
         "dropdown_hidden_icon_hovered",
         "dropdown_showing_icon",
@@ -166,47 +166,31 @@ class ViewerApp:
             self._scale_pixels_to_height(36), self._scale_pixels_to_height(16), FONT
         )
 
-        canvas.make_topbar_button(  # type: ignore
-            *icon_factory.make_exit_icons(), "ne", screen_width, self.exit
+        exit_button = HoverableButton(
+            canvas, *icon_factory.make_exit_icons(), self.exit
         )
-        canvas.make_topbar_button(  # type: ignore
-            *icon_factory.make_minify_icons(),
-            "ne",
-            screen_width - topbar_height,
-            self.minimize,
-        )
-        canvas.make_topbar_button(  # type: ignore
-            *icon_factory.make_trash_icons(), "nw", 0, self.trash_image
-        )
-        self.rename_button_id: int = canvas.make_topbar_button(  # type: ignore
-            *icon_factory.make_rename_icons(),
-            "nw",
-            0,
-            self.toggle_show_rename_window,
-        )
+        exit_button.add_self_to_canvas("ne", screen_width)
 
-        # details dropdown
-        (
-            self.dropdown_hidden_icon,
-            self.dropdown_showing_icon,
-            self.dropdown_hidden_icon_hovered,
-            self.dropdown_showing_icon_hovered,
-        ) = icon_factory.make_dropdown_icons()
+        minify_button = HoverableButton(
+            canvas, *icon_factory.make_minify_icons(), self.minimize
+        )
+        minify_button.add_self_to_canvas("ne", screen_width - topbar_height)
 
-        self.dropdown_button_id: int = canvas.create_image(
-            screen_width - (topbar_height + topbar_height),
-            0,
-            image=self.dropdown_hidden_icon,
-            anchor="ne",
-            tag="topbar",
-            state="hidden",
+        trash_button = HoverableButton(
+            canvas, *icon_factory.make_trash_icons(), self.trash_image
         )
-        canvas.tag_bind(
-            self.dropdown_button_id, "<ButtonRelease-1>", self.handle_dropdown
+        trash_button.add_self_to_canvas("nw", 0)
+
+        rename_button = HoverableButton(
+            canvas, *icon_factory.make_rename_icons(), self.toggle_show_rename_window
         )
-        canvas.tag_bind(self.dropdown_button_id, "<Enter>", self.hover_dropdown_toggle)
-        canvas.tag_bind(
-            self.dropdown_button_id, "<Leave>", self.leave_hover_dropdown_toggle
+        self.rename_button_id: int = rename_button.add_self_to_canvas("nw", 0)
+
+        dropdown_button = ToggleButton(
+            canvas, *icon_factory.make_dropdown_icons(), self.handle_dropdown
+        )
+        dropdown_button.add_self_to_canvas(
+            "ne", screen_width - topbar_height - topbar_height
         )
 
         dropdown_id: int = canvas.create_image(
@@ -295,7 +279,6 @@ class ViewerApp:
     def handle_dropdown(self, _: Event) -> None:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
-        self.hover_dropdown_toggle()  # fake mouse hover
         self.update_details_dropdown()
 
     def _load_zoomed_image(self, keycode: Literal[Key.MINUS, Key.EQUALS]) -> None:
@@ -381,26 +364,6 @@ class ViewerApp:
     def hide_rename_window(self) -> None:
         self.canvas.itemconfigure(self.rename_entry.id, state="hidden")
         self.app.focus()
-
-    def leave_hover_dropdown_toggle(self, _: Event | None = None) -> None:
-        self.canvas.itemconfigure(
-            self.dropdown_button_id,
-            image=(
-                self.dropdown_showing_icon
-                if self.dropdown.showing
-                else self.dropdown_hidden_icon
-            ),
-        )
-
-    def hover_dropdown_toggle(self, _: Event | None = None) -> None:
-        self.canvas.itemconfigure(
-            self.dropdown_button_id,
-            image=(
-                self.dropdown_showing_icon_hovered
-                if self.dropdown.showing
-                else self.dropdown_hidden_icon_hovered
-            ),
-        )
 
     def toggle_show_rename_window(self, _: Event) -> None:
         canvas = self.canvas

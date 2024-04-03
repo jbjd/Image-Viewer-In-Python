@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from tkinter import Canvas, Event, Tk
 from typing import Final
 
@@ -37,37 +36,6 @@ class CustomCanvas(Canvas):
         self.image_display_id = self.create_image(
             self.screen_width >> 1, self.screen_height >> 1, anchor="center", tag="back"
         )
-
-    def make_topbar_button(
-        self,
-        regular_image: PhotoImage,
-        hovered_image: PhotoImage,
-        anchor: str,
-        x_offset: int,
-        function_to_bind: Callable[[Event], None],
-    ) -> int:
-        """Default way to setup a button on the topbar"""
-        button_id: int = self.create_image(
-            x_offset,
-            0,
-            image=regular_image,
-            anchor=anchor,
-            tag="topbar",
-            state="hidden",
-        )
-
-        self.tag_bind(
-            button_id,
-            "<Enter>",
-            lambda _: self.itemconfigure(button_id, image=hovered_image),
-        )
-        self.tag_bind(
-            button_id,
-            "<Leave>",
-            lambda _: self.itemconfigure(button_id, image=regular_image),
-        )
-        self.tag_bind(button_id, "<ButtonRelease-1>", function_to_bind)
-        return button_id
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
