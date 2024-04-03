@@ -5,7 +5,7 @@ from typing import Literal, NoReturn
 
 from PIL.ImageTk import PhotoImage
 
-from constants import Key
+from constants import Key, TOPBAR_TAG
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -152,12 +152,12 @@ class ViewerApp:
         topbar_height: size to make icons/topbar
         """
 
-        topbar_height += topbar_height % 2  # ensure even number
+        icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
         # negative makes it an absolute size for consistency with different monitors
         FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
 
-        icon_factory = IconFactory(topbar_height)
+        icon_factory = IconFactory(icon_size)
 
         canvas.create_topbar(icon_factory.make_topbar(screen_width))
         # weird case, scale x offset by height, not width, since icon to its left
@@ -166,35 +166,33 @@ class ViewerApp:
             self._scale_pixels_to_height(36), self._scale_pixels_to_height(16), FONT
         )
 
-        exit_button = HoverableButton(
-            canvas, *icon_factory.make_exit_icons(), self.exit
+        button_x_offset: int = screen_width - icon_size
+        HoverableButton(
+            canvas, *icon_factory.make_exit_icons(), self.exit, button_x_offset
         )
-        exit_button.add_self_to_canvas("ne", screen_width)
 
-        minify_button = HoverableButton(
-            canvas, *icon_factory.make_minify_icons(), self.minimize
+        button_x_offset -= icon_size
+        HoverableButton(
+            canvas, *icon_factory.make_minify_icons(), self.minimize, button_x_offset
         )
-        minify_button.add_self_to_canvas("ne", screen_width - topbar_height)
 
-        trash_button = HoverableButton(
-            canvas, *icon_factory.make_trash_icons(), self.trash_image
+        button_x_offset -= icon_size
+        ToggleButton(
+            canvas,
+            *icon_factory.make_dropdown_icons(),
+            self.handle_dropdown,
+            button_x_offset,
         )
-        trash_button.add_self_to_canvas("nw", 0)
+
+        HoverableButton(canvas, *icon_factory.make_trash_icons(), self.trash_image)
 
         rename_button = HoverableButton(
             canvas, *icon_factory.make_rename_icons(), self.toggle_show_rename_window
         )
-        self.rename_button_id: int = rename_button.add_self_to_canvas("nw", 0)
-
-        dropdown_button = ToggleButton(
-            canvas, *icon_factory.make_dropdown_icons(), self.handle_dropdown
-        )
-        dropdown_button.add_self_to_canvas(
-            "ne", screen_width - topbar_height - topbar_height
-        )
+        self.rename_button_id: int = rename_button.id
 
         dropdown_id: int = canvas.create_image(
-            screen_width, topbar_height, anchor="ne", tag="topbar", state="hidden"
+            screen_width, icon_size, anchor="ne", tag=TOPBAR_TAG, state="hidden"
         )
         self.dropdown = DropdownImage(dropdown_id)
 
@@ -203,14 +201,13 @@ class ViewerApp:
             0,
             0,
             width=rename_window_width,
-            height=int(topbar_height * 0.78),
+            height=int(icon_size * 0.78),
             anchor="nw",
         )
-        self.rename_entry = RenameEntry(  # TODO: move this to canvas?
+        self.rename_entry = RenameEntry(
             app, canvas, rename_id, rename_window_width, font=FONT
         )
         self.rename_entry.bind("<Return>", self.rename_or_convert)
-        canvas.itemconfigure(rename_id, state="hidden", window=self.rename_entry)
 
     def _scale_pixels_to_height(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
@@ -230,7 +227,7 @@ class ViewerApp:
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
-        if self.canvas.is_widget_visible("topbar"):
+        if self.canvas.is_widget_visible(TOPBAR_TAG):
             self.hide_topbar()
         else:
             self.show_topbar()
@@ -371,7 +368,7 @@ class ViewerApp:
             self.hide_rename_window()
             return
 
-        if not canvas.is_widget_visible("topbar"):
+        if not canvas.is_widget_visible(TOPBAR_TAG):
             self.show_topbar()
 
         canvas.itemconfigure(self.rename_entry.id, state="normal")
@@ -414,7 +411,7 @@ class ViewerApp:
             self.remove_image(False)
 
         self.update_after_image_load(current_image)
-        if self.canvas.is_widget_visible("topbar"):
+        if self.canvas.is_widget_visible(TOPBAR_TAG):
             self.refresh_topbar()
         self.image_load_id = ""
 
@@ -427,12 +424,12 @@ class ViewerApp:
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
-        self.canvas.itemconfigure("topbar", state="normal")
+        self.canvas.itemconfigure(TOPBAR_TAG, state="normal")
         self.refresh_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
-        self.canvas.itemconfigure("topbar", state="hidden")
+        self.canvas.itemconfigure(TOPBAR_TAG, state="hidden")
         self.hide_rename_window()
 
     def remove_image(self, delete_from_disk: bool) -> None:

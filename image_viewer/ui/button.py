@@ -1,6 +1,7 @@
 from typing import Callable
 from PIL.ImageTk import PhotoImage
 from tkinter import Canvas, Event
+from constants import TOPBAR_TAG
 
 
 class HoverableButton:
@@ -14,29 +15,25 @@ class HoverableButton:
         icon: PhotoImage,
         icon_hovered: PhotoImage,
         function_to_bind: Callable[[Event], None],
+        x_offset: int = 0,
     ) -> None:
         self.canvas: Canvas = canvas
         self.icon: PhotoImage = icon
         self.icon_hovered: PhotoImage = icon_hovered
         self.function_to_bind: Callable[[Event], None] = function_to_bind
-        self.id: int = -1
 
-    def add_self_to_canvas(self, anchor: str, x_offset: int) -> int:
-        """Uses canvas to create itself on the screen"""
-        self.id = self.canvas.create_image(
+        self.id: int = self.canvas.create_image(
             x_offset,
             0,
             image=self.icon,
-            anchor=anchor,
-            tag="topbar",
+            anchor="nw",
+            tag=TOPBAR_TAG,
             state="hidden",
         )
 
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.on_click)
-
-        return self.id
 
     def on_enter(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(self.id, image=self._get_hovered_icon())
@@ -67,8 +64,9 @@ class ToggleButton(HoverableButton):
         icon_hovered: PhotoImage,
         active_icon_hovered: PhotoImage,
         function_to_bind: Callable[[Event], None],
+        x_offset: int = 0,
     ) -> None:
-        super().__init__(canvas, icon, icon_hovered, function_to_bind)
+        super().__init__(canvas, icon, icon_hovered, function_to_bind, x_offset)
         self.active_icon: PhotoImage = active_icon
         self.active_icon_hovered: PhotoImage = active_icon_hovered
         self.active: bool = False

@@ -4,6 +4,8 @@ File with constants needed in multiple spots of the codebase
 
 from enum import IntEnum
 
+TOPBAR_TAG: str = "topbar"
+
 TEXT_RGB: str = "#FEFEFE"
 
 

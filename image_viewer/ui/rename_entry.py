@@ -23,6 +23,7 @@ class RenameEntry(Entry):
             borderwidth=0,
             width=min_width,
         )
+        canvas.itemconfigure(id, state="hidden", window=self)
 
         self.being_resized: bool = False
         self.cursor: str = ""

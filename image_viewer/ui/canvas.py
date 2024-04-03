@@ -1,9 +1,8 @@
 from tkinter import Canvas, Event, Tk
-from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
-from constants import Key
+from constants import Key, TEXT_RGB, TOPBAR_TAG
 
 
 class CustomCanvas(Canvas):
@@ -27,8 +26,8 @@ class CustomCanvas(Canvas):
         self.move_y: int = 0
 
         master.update()  # updates winfo width and height to the current size
-        self.screen_width: Final[int] = master.winfo_width()
-        self.screen_height: Final[int] = master.winfo_height()
+        self.screen_width: int = master.winfo_width()
+        self.screen_height: int = master.winfo_height()
 
         self.create_rectangle(
             0, 0, self.screen_width, self.screen_height, fill="black", tags="back"
@@ -41,7 +40,7 @@ class CustomCanvas(Canvas):
         """Creates the topbar and stores it"""
         self.topbar = topbar_img  # need to do this so garbage collector doesn't kill it
         self.create_image(
-            0, 0, image=topbar_img, anchor="nw", tag="topbar", state="hidden"
+            0, 0, image=topbar_img, anchor="nw", tag=TOPBAR_TAG, state="hidden"
         )
 
     def create_name_text(self, x: int, y: int, font: str) -> None:
@@ -49,11 +48,10 @@ class CustomCanvas(Canvas):
         self.file_name_text_id: int = self.create_text(
             x,
             y,
-            text="",
-            fill="white",
+            fill=TEXT_RGB,
             anchor="w",
             font=font,
-            tags="topbar",
+            tags=TOPBAR_TAG,
         )
 
     def center_image(self) -> None:
