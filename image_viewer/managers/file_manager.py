@@ -7,7 +7,7 @@ from PIL.Image import Image
 
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from util.convert import try_convert_file_and_save_new
-from util.image import CachedImage, ImageName
+from util.image import CachedImage, ImageCache, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, trash_file, walk_dir
 
 
@@ -51,7 +51,7 @@ class ImageFileManager:
         )
         self._init_list_of_file_names(first_image_data)
         self._update_after_move_or_edit()
-        self.cache: dict[str, CachedImage] = {}
+        self.cache = ImageCache()
         self.action_undoer = ActionUndoer()
         self.dialog_file_types: list[tuple[str, str]] | None = None
 
@@ -124,7 +124,7 @@ class ImageFileManager:
 
     def refresh_image_list(self) -> None:
         """Clears cache and re-loads current images in direcrory"""
-        self.cache = {}
+        self.cache.clear()
         self.find_all_images()
 
     def get_cached_details(self) -> str:
@@ -180,7 +180,7 @@ class ImageFileManager:
             trash_file(self.path_to_current_image)
             self.action_undoer.append(Delete(self.path_to_current_image))
 
-        self._clear_image_data()
+        self._clear_current_image_data()
 
         remaining_image_count: int = len(self._files)
 
@@ -194,8 +194,11 @@ class ImageFileManager:
 
         self._update_after_move_or_edit()
 
-    def _clear_image_data(self) -> None:
-        self.cache.pop(self._files.pop(self._index).name, None)
+    def _clear_image_data(self, index: int) -> None:
+        self.cache.safe_pop(self._files.pop(index).name)
+
+    def _clear_current_image_data(self) -> None:
+        self._clear_image_data(self._index)
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
@@ -296,7 +299,7 @@ class ImageFileManager:
     def _rename(self, original_path: str, new_full_path: str) -> Rename:
         """Renames a file and returns the rename result"""
         os.rename(original_path, new_full_path)
-        self._clear_image_data()
+        self._clear_current_image_data()
         return Rename(original_path, new_full_path)
 
     def add_new_image(
@@ -330,7 +333,7 @@ class ImageFileManager:
         if image_to_remove:
             index, found = self._binary_search(image_to_remove)
             if found:
-                self.cache.pop(self._files.pop(index).name, None)
+                self._clear_image_data(index)
 
         if image_to_add:
             preserve_index: bool = image_to_remove == ""
@@ -355,15 +358,10 @@ class ImageFileManager:
         return self.cache.get(self.current_image.name)
 
     def current_image_cache_still_fresh(self) -> bool:
-        """Returns True when it seems the cached image is still accurate.
-        Not guaranteed to be correct, but that's not important for this case"""
-        try:
-            return (
-                os.stat(self.path_to_current_image).st_size
-                == self.cache[self.current_image.name].byte_size
-            )
-        except (OSError, ValueError, KeyError):
-            return False
+        """Checks if cached image is still up to date"""
+        return self.cache.image_cache_still_fresh(
+            self.current_image.name, self.path_to_current_image
+        )
 
     def _binary_search(self, target_image: str) -> tuple[int, bool]:
         """Finds index of target_image in internal list

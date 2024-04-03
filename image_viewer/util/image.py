@@ -2,6 +2,8 @@
 Contains classes and functions to help with storing and reading images
 """
 
+from os import stat
+
 from PIL.ImageTk import PhotoImage
 
 from util.os import OS_name_cmp
@@ -27,6 +29,21 @@ class CachedImage:
         self.size_display: str = size_display
         self.byte_size: int = byte_size
         self.mode: str = mode
+
+
+class ImageCache(dict[str, CachedImage]):
+    """Dictionary for caching image data"""
+
+    def safe_pop(self, key: str) -> None:
+        self.pop(key, None)
+
+    def image_cache_still_fresh(self, key: str, image_path: str) -> bool:
+        """Returns True when cached image is the same size of the image on disk.
+        Not guaranteed to be correct, but that's not important for this case"""
+        try:
+            return stat(image_path).st_size == self[key].byte_size
+        except (OSError, ValueError, KeyError):
+            return False
 
 
 class ImageName:
