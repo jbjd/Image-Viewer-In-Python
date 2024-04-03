@@ -56,7 +56,7 @@ class HoverableButton:
 class ToggleButton(HoverableButton):
     """Extends HoverableButton by allowing an active/inactive state"""
 
-    __slots__ = "active", "active_icon", "active_icon_hovered", "hovered_button"
+    __slots__ = "active_icon", "active_icon_hovered", "hovered_button", "is_active"
 
     def __init__(
         self,
@@ -71,15 +71,15 @@ class ToggleButton(HoverableButton):
         super().__init__(canvas, icon, icon_hovered, function_to_bind, x_offset)
         self.active_icon: PhotoImage = active_icon
         self.active_icon_hovered: PhotoImage = active_icon_hovered
-        self.active: bool = False
+        self.is_active: bool = False
 
     def _get_hovered_icon(self) -> PhotoImage:
-        return self.active_icon_hovered if self.active else self.icon_hovered
+        return self.active_icon_hovered if self.is_active else self.icon_hovered
 
     def _get_default_icon(self) -> PhotoImage:
-        return self.active_icon if self.active else self.icon
+        return self.active_icon if self.is_active else self.icon
 
     def on_click(self, event: Event) -> None:
-        self.active = not self.active
+        self.is_active = not self.is_active
         self.on_enter()  # fake mouse hover
         self.function_to_bind(event)

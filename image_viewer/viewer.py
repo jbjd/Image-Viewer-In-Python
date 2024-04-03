@@ -217,7 +217,7 @@ class ViewerApp:
         self.app.update_idletasks()
         self.app.wm_attributes("-topmost", False)
 
-    # Functions handling user input
+    # Functions handling specific user input
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
@@ -289,7 +289,7 @@ class ViewerApp:
 
         self.image_load_id = self.app.after(0, self._load_zoomed_image, keycode)
 
-    # End functions handling user input
+    # End functions handling specific user input
 
     def move_to_new_file(self, _: Event) -> None:
         """Moves to a new image from file dialog"""
@@ -400,6 +400,7 @@ class ViewerApp:
         self.update_after_image_load(current_image)
         if self.canvas.is_widget_visible(TOPBAR_TAG):
             self.update_topbar()
+
         self.image_load_id = ""
 
     def load_image_unblocking(self) -> None:
