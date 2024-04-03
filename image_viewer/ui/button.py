@@ -4,7 +4,7 @@ from tkinter import Canvas, Event
 
 
 class HoverableButton:
-    """Decorates a Button on the UI that has a different image when hovered"""
+    """Button with different icons when its hovered"""
 
     __slots__ = "canvas", "function_to_bind", "icon", "icon_hovered", "id"
 
