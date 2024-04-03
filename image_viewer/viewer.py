@@ -272,14 +272,18 @@ class ViewerApp:
         self.dropdown.toggle_display()
         self.update_details_dropdown()
 
-    def _load_zoomed_image(self, keycode: Literal[Key.MINUS, Key.EQUALS]) -> None:
+    def _load_zoomed_image(
+        self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
+    ) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
         zoom_in: bool = keycode == Key.EQUALS
         new_image: PhotoImage | None = self.image_loader.get_zoomed_image(zoom_in)
         if new_image is not None:
             self.canvas.update_image_display(new_image)
 
-    def handle_zoom(self, keycode: Literal[Key.MINUS, Key.EQUALS]) -> None:
+    def handle_zoom(
+        self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
+    ) -> None:
         """Handle user input of zooming in or out"""
         if self.animation_id != "":
             return

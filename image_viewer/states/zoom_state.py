@@ -28,5 +28,7 @@ class ZoomState:
         self.cap = self.ZOOM_CAP
         self.level = 0
 
-    def __eq__(self, __value: "ZoomState") -> bool:
-        return self.level == __value.level and self.cap == __value.cap
+    def __eq__(self, __value: object) -> bool:
+        return self.level == getattr(__value, "level", None) and self.cap == getattr(
+            __value, "cap", None
+        )
