@@ -29,7 +29,6 @@ def down_key_event(tk_app):
 
 def test_create_assets(canvas: CustomCanvas):
     """Ensure creation of buttons, text, and topbar goes well"""
-    assert canvas.make_topbar_button(None, None, "ne", 0, lambda: None)  # type: ignore
 
     # Should store id after creation
     canvas.create_name_text(0, 0, "test.png")

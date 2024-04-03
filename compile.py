@@ -1,8 +1,8 @@
 import os
 import shutil
-from subprocess import Popen
 from argparse import Namespace
 from importlib import import_module
+from subprocess import Popen
 from typing import Final
 
 from compile_utils.args import CompileArgumentParser

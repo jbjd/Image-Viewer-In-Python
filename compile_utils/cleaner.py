@@ -9,9 +9,9 @@ from shutil import copyfile
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
+    function_calls_to_skip,
     functions_to_skip,
     vars_to_skip,
-    function_calls_to_skip,
 )
 
 try:

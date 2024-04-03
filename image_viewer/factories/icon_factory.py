@@ -6,7 +6,7 @@ from PIL.Image import new as new_image
 from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 
-from util.PIL import resize, get_image_draw
+from util.PIL import get_image_draw, resize
 
 
 class IconFactory:

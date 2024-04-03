@@ -5,7 +5,7 @@ from typing import Literal, NoReturn
 
 from PIL.ImageTk import PhotoImage
 
-from constants import Key, TOPBAR_TAG
+from constants import TOPBAR_TAG, Key
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -25,10 +25,6 @@ class ViewerApp:
         "app",
         "canvas",
         "dropdown",
-        "dropdown_hidden_icon",
-        "dropdown_hidden_icon_hovered",
-        "dropdown_showing_icon",
-        "dropdown_showing_icon_hovered",
         "file_manager",
         "height_ratio",
         "image_loader",
@@ -37,7 +33,6 @@ class ViewerApp:
         "need_to_redraw",
         "rename_button_id",
         "rename_entry",
-        "rename_window_x_offset",
         "width_ratio",
     )
 
@@ -46,7 +41,6 @@ class ViewerApp:
 
         # UI variables
         self.need_to_redraw: bool = False
-        self.rename_window_x_offset: int = 0
         self.move_id: str = ""
         self.image_load_id: str = ""
         self.animation_id: str = ""
@@ -363,21 +357,14 @@ class ViewerApp:
         self.app.focus()
 
     def toggle_show_rename_window(self, _: Event) -> None:
-        canvas = self.canvas
-        if canvas.is_widget_visible(self.rename_entry.id):
+        if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
             return
 
-        if not canvas.is_widget_visible(TOPBAR_TAG):
+        if not self.canvas.is_widget_visible(TOPBAR_TAG):
             self.show_topbar()
 
-        canvas.itemconfigure(self.rename_entry.id, state="normal")
-        # x offset for topbar items scaled by height, not width
-        canvas.coords(
-            self.rename_entry.id,
-            self.rename_window_x_offset + self._scale_pixels_to_height(40),
-            self._scale_pixels_to_height(4),
-        )
+        self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
 
     def rename_or_convert(self, _: Event) -> None:
@@ -412,7 +399,7 @@ class ViewerApp:
 
         self.update_after_image_load(current_image)
         if self.canvas.is_widget_visible(TOPBAR_TAG):
-            self.refresh_topbar()
+            self.update_topbar()
         self.image_load_id = ""
 
     def load_image_unblocking(self) -> None:
@@ -425,7 +412,7 @@ class ViewerApp:
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
         self.canvas.itemconfigure(TOPBAR_TAG, state="normal")
-        self.refresh_topbar()
+        self.update_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
@@ -439,12 +426,17 @@ class ViewerApp:
         except IndexError:
             self.exit()
 
-    def refresh_topbar(self) -> None:
+    def update_topbar(self) -> None:
         """Updates all elements on the topbar with current info"""
-        self.rename_window_x_offset = self.canvas.update_file_name(
+        rename_window_x_offset = self.canvas.update_file_name(
             self.file_manager.current_image.name
         )
-        self.canvas.coords(self.rename_button_id, self.rename_window_x_offset, 0)
+        self.canvas.coords(self.rename_button_id, rename_window_x_offset, 0)
+        self.canvas.coords(
+            self.rename_entry.id,
+            rename_window_x_offset + self._scale_pixels_to_height(40),
+            self._scale_pixels_to_height(4),
+        )
 
         self.update_details_dropdown()
 

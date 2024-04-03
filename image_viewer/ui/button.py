@@ -1,6 +1,8 @@
-from typing import Callable
-from PIL.ImageTk import PhotoImage
 from tkinter import Canvas, Event
+from typing import Callable
+
+from PIL.ImageTk import PhotoImage
+
 from constants import TOPBAR_TAG
 
 

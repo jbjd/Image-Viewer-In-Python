@@ -2,7 +2,7 @@ from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
 
-from constants import Key, TEXT_RGB, TOPBAR_TAG
+from constants import TEXT_RGB, TOPBAR_TAG, Key
 
 
 class CustomCanvas(Canvas):
