@@ -1,11 +1,11 @@
 import os
 from time import ctime
-from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
+from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageCache, ImageName
 from util.os import OS_name_cmp, clean_str_for_OS_path, trash_file, walk_dir
@@ -31,7 +31,7 @@ class ImageFileManager:
         "action_undoer",
         "cache",
         "current_image",
-        "dialog_file_types",
+        "file_dialog_asker",
         "image_directory",
         "path_to_current_image",
     )
@@ -53,7 +53,7 @@ class ImageFileManager:
         self._update_after_move_or_edit()
         self.cache = ImageCache()
         self.action_undoer = ActionUndoer()
-        self.dialog_file_types: list[tuple[str, str]] | None = None
+        self.file_dialog_asker = FileDialogAsker(self.VALID_FILE_TYPES)
 
     def _init_list_of_file_names(self, first_image_data: ImageName) -> None:
         """Initializes internal list of files with first entry for lazy loading"""
@@ -62,7 +62,7 @@ class ImageFileManager:
 
     def move_to_new_directory(self) -> bool:
         """Asks user new image to go to and move to that image's directory"""
-        new_file_path: str = self._ask_open_image()
+        new_file_path: str = self.file_dialog_asker.ask_open_image(self.image_directory)
         if new_file_path == "":
             return False
 
@@ -82,19 +82,6 @@ class ImageFileManager:
             self._update_after_move_or_edit()
 
         return True
-
-    def _ask_open_image(self) -> str:
-        """Ask user to choose an image file and returns its path"""
-        if self.dialog_file_types is None:
-            self.dialog_file_types = [
-                ("", f"*.{file_type}") for file_type in self.VALID_FILE_TYPES
-            ]
-
-        return askopenfilename(
-            title="Open Image",
-            initialdir=self.image_directory,
-            filetypes=self.dialog_file_types,
-        )
 
     def construct_path_to_image(self, image_name: str) -> str:
         return f"{self.image_directory}/{image_name}"
