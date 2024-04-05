@@ -6,13 +6,13 @@ import pytest
 
 from conftest import IMG_DIR
 from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.image import CachedImage
+from image_viewer.util.image import CachedImage, ImageCache
 from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
 
 @pytest.fixture
-def manager() -> ImageFileManager:
-    return ImageFileManager(os.path.join(IMG_DIR, "a.png"))
+def manager(image_cache: ImageCache) -> ImageFileManager:
+    return ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
 
 
 def test_image_file_manager(manager: ImageFileManager):
@@ -49,13 +49,13 @@ def test_image_file_manager(manager: ImageFileManager):
         manager.remove_current_image(False)
 
 
-def test_bad_path():
+def test_bad_path(image_cache: ImageCache):
     # doesn't exist
     with pytest.raises(ValueError):
-        ImageFileManager("bad/path")
+        ImageFileManager("bad/path", image_cache)
     # wrong file type
     with pytest.raises(ValueError):
-        ImageFileManager(os.path.join(IMG_DIR, "not_an_image.txt"))
+        ImageFileManager(os.path.join(IMG_DIR, "not_an_image.txt"), image_cache)
 
 
 @patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
@@ -68,18 +68,6 @@ def test_bad_path_for_rename(manager: ImageFileManager):
     # If path exists, error when user cancels (mocked in askyesno)
     with pytest.raises(OSError):
         manager.rename_or_convert_current_image(os.path.join(IMG_DIR, "a.png"))
-
-
-def test_caching(manager: ImageFileManager):
-    """Test various caching methods to ensure they act as expected"""
-    assert manager.get_current_image_cache() is None
-    manager.cache_image(CachedImage(None, 20, 20, "20x20", 0, "RGB"))  # type: ignore
-    assert len(manager.cache) == 1
-    assert manager.get_current_image_cache() is not None
-    assert manager.current_image_cache_still_fresh()
-    # clear cache to make it not fresh
-    manager.refresh_image_list()
-    assert not manager.current_image_cache_still_fresh()
 
 
 def test_move_index(manager: ImageFileManager):
@@ -95,7 +83,7 @@ def test_delete_file(manager: ImageFileManager):
     manager.add_new_image("Some_image.png", False)
 
     with tempfile.NamedTemporaryFile() as tmp:
-        manager.path_to_current_image = tmp.name
+        manager.path_to_image = tmp.name
         manager.remove_current_image(True)
         assert len(manager._files) == 1
 
@@ -144,8 +132,8 @@ def test_get_and_show_details(manager: ImageFileManager):
         manager.show_image_details(PIL_image)
         mock_show_info.assert_not_called()
 
-    manager.cache[manager.current_image.name] = CachedImage(
-        None, 100, 100, "100kb", 9999, "P"  # type: ignore
+    manager.image_cache[manager.path_to_image] = CachedImage(
+        None, (100, 100), "100kb", 9999, "P"  # type: ignore
     )
     # not gonna check the exact string returned, but Palette should be in it
     # since P was passed as the mode and it should get mapped to a more readable name

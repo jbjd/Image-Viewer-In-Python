@@ -29,14 +29,14 @@ class ImageFileManager:
         "_files",
         "_index",
         "action_undoer",
-        "cache",
         "current_image",
         "file_dialog_asker",
+        "image_cache",
         "image_directory",
-        "path_to_current_image",
+        "path_to_image",
     )
 
-    def __init__(self, first_image_to_load: str) -> None:
+    def __init__(self, first_image_to_load: str, image_cache: ImageCache) -> None:
         """Load single file for display before we load the rest"""
 
         if not os.path.isfile(first_image_to_load):
@@ -51,7 +51,7 @@ class ImageFileManager:
         )
         self._init_list_of_file_names(first_image_data)
         self._update_after_move_or_edit()
-        self.cache = ImageCache()
+        self.image_cache = image_cache
         self.action_undoer = ActionUndoer()
         self.file_dialog_asker = FileDialogAsker(self.VALID_FILE_TYPES)
 
@@ -90,9 +90,7 @@ class ImageFileManager:
         """Sets variables about current image.
         Should be called after adding/deleting an image"""
         self.current_image = self._files[self._index]
-        self.path_to_current_image = self.construct_path_to_image(
-            self.current_image.name
-        )
+        self.path_to_image = self.construct_path_to_image(self.current_image.name)
 
     def find_all_images(self) -> None:
         """Init only loads one file, load entire directory here"""
@@ -111,13 +109,13 @@ class ImageFileManager:
 
     def refresh_image_list(self) -> None:
         """Clears cache and re-loads current images in direcrory"""
-        self.cache.clear()
+        self.image_cache.clear()
         self.find_all_images()
 
     def get_cached_details(self) -> str:
         """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
-        image_info: CachedImage = self.cache[self.current_image.name]
+        image_info: CachedImage = self.image_cache[self.path_to_image]
 
         mode: str = image_info.mode
         bpp: int = len(mode) * 8 if mode != "1" else 1
@@ -141,7 +139,7 @@ class ImageFileManager:
             return  # don't fail trying to read, if not in cache just exit
 
         try:
-            os_info = os.stat(self.path_to_current_image)
+            os_info = os.stat(self.path_to_image)
             # [4:] chops of 3 character day like Mon/Tue/etc.
             created_time: str = ctime(os_info.st_ctime)[4:]
             last_modifed_time: str = ctime(os_info.st_mtime)[4:]
@@ -164,8 +162,8 @@ class ImageFileManager:
     def remove_current_image(self, delete_from_disk: bool) -> None:
         """Deletes image from files array, cache, and optionally disk"""
         if delete_from_disk:
-            trash_file(self.path_to_current_image)
-            self.action_undoer.append(Delete(self.path_to_current_image))
+            trash_file(self.path_to_image)
+            self.action_undoer.append(Delete(self.path_to_image))
 
         self._clear_current_image_data()
 
@@ -182,10 +180,13 @@ class ImageFileManager:
         self._update_after_move_or_edit()
 
     def _clear_image_data(self, index: int) -> None:
-        self.cache.safe_pop(self._files.pop(index).name)
+        deleted_name: str = self._files.pop(index).name
+        key: str = self.construct_path_to_image(deleted_name)
+        self.image_cache.safe_pop(key)
 
     def _clear_current_image_data(self) -> None:
-        self._clear_image_data(self._index)
+        self._files.pop(self._index)
+        self.image_cache.safe_pop(self.path_to_image)
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
@@ -196,7 +197,7 @@ class ImageFileManager:
             new_name += f".{self.current_image.suffix}"
             new_image_data = ImageName(new_name)
 
-        original_path: str = self.path_to_current_image
+        original_path: str = self.path_to_image
         new_full_path: str = self._construct_path_for_rename(
             new_dir, new_image_data.name
         )
@@ -338,17 +339,9 @@ class ImageFileManager:
             return False
         return askyesno("Undo Rename/Convert", undo_message)
 
-    def cache_image(self, cached_image: CachedImage) -> None:
-        self.cache[self.current_image.name] = cached_image
-
-    def get_current_image_cache(self) -> CachedImage | None:
-        return self.cache.get(self.current_image.name)
-
     def current_image_cache_still_fresh(self) -> bool:
         """Checks if cached image is still up to date"""
-        return self.cache.image_cache_still_fresh(
-            self.current_image.name, self.path_to_current_image
-        )
+        return self.image_cache.image_cache_still_fresh(self.path_to_image)
 
     def _binary_search(self, target_image: str) -> tuple[int, bool]:
         """Finds index of target_image in internal list

@@ -14,6 +14,7 @@ from ui.button import HoverableButton, ToggleButton
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
+from util.image import ImageCache
 from util.PIL import create_dropdown_image, init_PIL
 
 
@@ -37,7 +38,8 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
-        self.file_manager = ImageFileManager(first_image_to_show)
+        image_cache = ImageCache()
+        self.file_manager = ImageFileManager(first_image_to_show, image_cache)
 
         # UI variables
         self.need_to_redraw: bool = False
@@ -58,8 +60,8 @@ class ViewerApp:
 
         # set up and draw first image, then get all image paths in directory
         self.image_loader = ImageLoader(
-            self.file_manager,
             ImageResizer(canvas.screen_width, canvas.screen_height, path_to_exe),
+            image_cache,
             self.animation_loop,
         )
 
@@ -96,7 +98,7 @@ class ViewerApp:
         """Loads first image and then finds all images files in the directory"""
         # Don't call this class's load_image here since we only consider there
         # to be one image now, and that function would throw if that one failed to load
-        current_image: PhotoImage | None = self.image_loader.load_image()
+        current_image: PhotoImage | None = self._load_image_at_current_path()
 
         if current_image is not None:
             self.update_after_image_load(current_image)
@@ -277,7 +279,9 @@ class ViewerApp:
     ) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
         zoom_in: bool = keycode == Key.EQUALS
-        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(zoom_in)
+        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(
+            self.file_manager.path_to_image, zoom_in
+        )
         if new_image is not None:
             self.canvas.update_image_display(new_image)
 
@@ -393,12 +397,16 @@ class ViewerApp:
         self.canvas.update_image_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
+    def _load_image_at_current_path(self):
+        """Wraps ImageLoader's load call with path from FileManager"""
+        return self.image_loader.load_image(self.file_manager.path_to_image)
+
     def load_image(self) -> None:
         """Loads an image and updates display"""
         self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
-        while (current_image := self.image_loader.load_image()) is None:
+        while (current_image := self._load_image_at_current_path()) is None:
             self.remove_image(False)
 
         self.update_after_image_load(current_image)

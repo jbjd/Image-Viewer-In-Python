@@ -12,36 +12,36 @@ from util.os import OS_name_cmp
 class CachedImage:
     """Information stored to skip resizing/system calls on repeated opening"""
 
-    __slots__ = ("height", "image", "mode", "size_display", "byte_size", "width")
+    __slots__ = "height", "image", "mode", "size_display", "byte_size", "width"
 
     def __init__(
         self,
         image: PhotoImage,
-        width: int,
-        height: int,
+        dimensions: tuple[int, int],
         size_display: str,
         byte_size: int,
         mode: str,
     ) -> None:
+        self.width: int
+        self.height: int
+        self.width, self.height = dimensions
         self.image: PhotoImage = image
-        self.width: int = width
-        self.height: int = height
         self.size_display: str = size_display
         self.byte_size: int = byte_size
         self.mode: str = mode
 
 
 class ImageCache(dict[str, CachedImage]):
-    """Dictionary for caching image data"""
+    """Dictionary for caching image data using paths as keys"""
 
-    def safe_pop(self, key: str) -> None:
-        self.pop(key, None)
+    def safe_pop(self, image_path: str) -> None:
+        self.pop(image_path, None)
 
-    def image_cache_still_fresh(self, key: str, image_path: str) -> bool:
+    def image_cache_still_fresh(self, image_path: str) -> bool:
         """Returns True when cached image is the same size of the image on disk.
         Not guaranteed to be correct, but that's not important for this case"""
         try:
-            return stat(image_path).st_size == self[key].byte_size
+            return stat(image_path).st_size == self[image_path].byte_size
         except (OSError, ValueError, KeyError):
             return False
 

@@ -8,9 +8,8 @@ from PIL.Image import open as open_image
 from PIL.ImageTk import PhotoImage
 
 from helpers.image_resizer import ImageResizer
-from managers.file_manager import ImageFileManager
 from states.zoom_state import ZoomState
-from util.image import CachedImage, magic_number_guess
+from util.image import CachedImage, ImageCache, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image
 
@@ -23,21 +22,21 @@ class ImageLoader:
     __slots__ = (
         "animation_frames",
         "animation_callback",
-        "file_manager",
-        "PIL_image",
         "frame_index",
+        "image_cache",
         "image_resizer",
+        "PIL_image",
         "zoom_state",
         "zoomed_image_cache",
     )
 
     def __init__(
         self,
-        file_manager: ImageFileManager,
         image_resizer: ImageResizer,
+        image_cache: ImageCache,
         animation_callback: Callable[[int, int], None],
     ) -> None:
-        self.file_manager: ImageFileManager = file_manager
+        self.image_cache: ImageCache = image_cache
         self.image_resizer: ImageResizer = image_resizer
 
         self.animation_callback: Callable[[int, int], None] = animation_callback
@@ -86,64 +85,52 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
-    def _cache_image(
-        self,
-        current_image: PhotoImage,
-        dimensions: tuple[int, int],
-        byte_size: int,
-        mode: str,
-    ) -> None:
-        size_display: str = get_byte_display(byte_size)
-
-        self.file_manager.cache_image(
-            CachedImage(
-                current_image,
-                *dimensions,
-                size_display,
-                byte_size,
-                mode,
-            )
-        )
-
-    def load_image(self) -> PhotoImage | None:
+    def load_image(self, path_to_image) -> PhotoImage | None:
         """Loads an image and resizes it to fit on the screen
         Returns PhotoImage or None on failure to load"""
         try:
             # open even if in cache to throw error if user deleted it outside of program
-            fp = open(self.file_manager.path_to_current_image, "rb")
+            fp = open(path_to_image, "rb")
             type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
             self.PIL_image = open_image(fp, "r", type_to_try_loading)
         except (FileNotFoundError, UnidentifiedImageError):
             return None
 
-        PIL_image = self.PIL_image
-        byte_size: int = stat(self.file_manager.path_to_current_image).st_size
+        byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
         current_image: PhotoImage
-        cached_image_data = self.file_manager.get_current_image_cache()
+        cached_image_data = self.image_cache.get(path_to_image)
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             current_image = cached_image_data.image
         else:
-            current_image = self._load_image_from_disk_and_cache(byte_size)
+            original_mode: str = self.PIL_image.mode
+            current_image = self._load_image_from_disk()
+            size_display: str = get_byte_display(byte_size)
 
-        frame_count: int = getattr(PIL_image, "n_frames", 1)
+            self.image_cache[path_to_image] = CachedImage(
+                current_image,
+                self.PIL_image.size,
+                size_display,
+                byte_size,
+                original_mode,
+            )
+
+        frame_count: int = getattr(self.PIL_image, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finished loading
             self.begin_animation(current_image, frame_count)
         else:
-            PIL_image.close()
+            self.PIL_image.close()
 
         # first zoom level is just the image as is
         self.zoomed_image_cache = [current_image]
 
         return current_image
 
-    def _load_image_from_disk_and_cache(self, image_byte_size: int) -> PhotoImage:
+    def _load_image_from_disk(self) -> PhotoImage:
         """Resizes PIL image, which forces a load from disk.
         Caches it and returns it as a PhotoImage"""
-        original_mode: str = self.PIL_image.mode  # save since resize can change it
-
         current_image: PhotoImage
         try:
             current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)
@@ -154,12 +141,9 @@ class ImageLoader:
                 self.image_resizer.screen_height,
             )
 
-        self._cache_image(
-            current_image, self.PIL_image.size, image_byte_size, original_mode
-        )
         return current_image
 
-    def get_zoomed_image(self, zoom_in: bool) -> PhotoImage | None:
+    def get_zoomed_image(self, path_to_image: str, zoom_in: bool) -> PhotoImage | None:
         """Handles getting and caching zoomed versions of the current image"""
         if not self.zoom_state.try_update_zoom_level(zoom_in):
             return None
@@ -170,7 +154,7 @@ class ImageLoader:
 
         # Not in cache, resize to new zoom
         try:
-            with open_image(self.file_manager.path_to_current_image) as fp:
+            with open_image(path_to_image) as fp:
                 zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
                     fp, zoom_level
                 )

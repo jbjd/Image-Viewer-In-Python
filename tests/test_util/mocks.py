@@ -73,7 +73,7 @@ class MockImageFileManager(ImageFileManager):
 
     cache: dict = {}
     current_image = ImageName("test.png")
-    path_to_current_image: str = ""
+    path_to_image: str = ""
 
     def __init__(self) -> None:
         pass

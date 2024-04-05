@@ -55,14 +55,14 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
     """An image might error on open when its not a valid image or not found"""
 
     with patch("builtins.open", side_effect=FileNotFoundError):
-        assert image_loader.load_image() is None
+        assert image_loader.load_image("") is None
 
     with patch("builtins.open", mock_open(read_data="abcd")):
         with patch(
             "image_viewer.helpers.image_loader.open_image",
             side_effect=UnidentifiedImageError(),
         ):
-            assert image_loader.load_image() is None
+            assert image_loader.load_image("") is None
 
 
 @patch("builtins.open", mock_open(read_data="abcd"))
@@ -73,12 +73,12 @@ def test_load_image_in_cache(image_loader: ImageLoader):
     # setup cache for test
     image_byte_size: int = 10
     cached_image = MockPhotoImage()
-    cached_data = CachedImage(cached_image, 10, 10, "10kb", image_byte_size, "RGB")
-    image_loader.file_manager.get_current_image_cache = lambda: cached_data
+    cached_data = CachedImage(cached_image, (10, 10), "10kb", image_byte_size, "RGB")
+    image_loader.image_cache["some/path"] = cached_data
 
     mock_os_stat = MockStatResult(image_byte_size)
     with patch("image_viewer.helpers.image_loader.stat", lambda _: mock_os_stat):
-        assert image_loader.load_image() is cached_image
+        assert image_loader.load_image("some/path") is cached_image
 
 
 def test_load_image_resize_error(image_loader: ImageLoader):
@@ -87,5 +87,5 @@ def test_load_image_resize_error(image_loader: ImageLoader):
         with patch(
             "image_viewer.helpers.image_loader.get_placeholder_for_errored_image"
         ) as mock_get_placeholder:
-            image_loader._load_image_from_disk_and_cache(0)
+            image_loader._load_image_from_disk()
             mock_get_placeholder.assert_called_once()
