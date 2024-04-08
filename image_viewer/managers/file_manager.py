@@ -221,7 +221,7 @@ class ImageFileManager:
 
         # Only add image if its still in the same directory
         if os.path.dirname(new_full_path) == os.path.dirname(original_path):
-            preserve_index: bool = not result.original_file_deleted
+            preserve_index: bool = self._should_perserve_index(result)
             self.add_new_image(new_name, preserve_index)
         else:
             self._update_after_move_or_edit()
@@ -289,6 +289,15 @@ class ImageFileManager:
         os.rename(original_path, new_full_path)
         self._clear_current_image_data()
         return Rename(original_path, new_full_path)
+
+    @staticmethod
+    def _should_perserve_index(result: Rename) -> bool:
+        """Returns True when special adjustment needed to stay
+        on current index"""
+        if isinstance(result, Convert):
+            return not result.original_file_deleted
+
+        return False
 
     def add_new_image(
         self, new_name: str, preserve_index: bool = False, index: int = -1
