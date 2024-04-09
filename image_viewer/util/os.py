@@ -74,7 +74,8 @@ def trash_file(path: str) -> None:
 
 def get_dir_name(path: str) -> str:
     """Gets dir name of a file path and normalizes it"""
-    return os.path.normpath(os.path.dirname(path))
+    dir: str = os.path.dirname(path)
+    return os.path.normpath(dir) if dir != "" else ""
 
 
 def walk_dir(directory_path: str) -> Iterator[str]:
