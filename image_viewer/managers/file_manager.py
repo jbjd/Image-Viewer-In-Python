@@ -36,24 +36,26 @@ class ImageFileManager:
         "path_to_image",
     )
 
-    def __init__(self, first_image_to_load: str, image_cache: ImageCache) -> None:
+    def __init__(self, first_image_path: str, image_cache: ImageCache) -> None:
         """Load single file for display before we load the rest"""
 
-        if not os.path.isfile(first_image_to_load):
-            raise ValueError("File doesn't exist or is a directory")
-
-        first_image_data = ImageName(os.path.basename(first_image_to_load))
-        if first_image_data.suffix not in self.VALID_FILE_TYPES:
-            raise ValueError("File extension not supported")
-
-        self.image_directory: str = os.path.normpath(
-            os.path.dirname(first_image_to_load)
-        )
-        self._init_list_of_file_names(first_image_data)
+        first_image_name: ImageName = self._make_name_with_validation(first_image_path)
+        self.image_directory: str = os.path.normpath(os.path.dirname(first_image_path))
+        self._init_list_of_file_names(first_image_name)
         self._update_after_move_or_edit()
-        self.image_cache = image_cache
+
+        self.image_cache: ImageCache = image_cache
+
         self.action_undoer = ActionUndoer()
         self.file_dialog_asker = FileDialogAsker(self.VALID_FILE_TYPES)
+
+    def _make_name_with_validation(self, path: str) -> ImageName:
+        """Makes ImageName out of path. Raises ValueError if path is invalid"""
+        image_name = ImageName(os.path.basename(path))
+        if not os.path.isfile(path) or image_name.suffix not in self.VALID_FILE_TYPES:
+            raise ValueError
+
+        return image_name
 
     def _init_list_of_file_names(self, first_image_data: ImageName) -> None:
         """Initializes internal list of files with first entry for lazy loading"""
@@ -175,7 +177,7 @@ class ImageFileManager:
         # This needs to be after index check if we catch IndexError and add
         # a new image, index will be -1 which works for newly added image
         if remaining_image_count == 0:
-            raise IndexError()
+            raise IndexError
 
         self._update_after_move_or_edit()
 
@@ -250,19 +252,19 @@ class ImageFileManager:
                 new_dir = os.path.join(self.image_directory, new_dir)
             new_dir = os.path.normpath(new_dir)
             if not os.path.exists(new_dir):
-                raise OSError()
+                raise OSError
             new_full_path = os.path.join(new_dir, new_name)
         else:
             new_full_path = self.construct_path_to_image(new_name)
 
         if os.path.exists(new_full_path):
-            raise FileExistsError()
+            raise FileExistsError
 
         if will_move_dirs and not askyesno(
             "Confirm move",
             f"Move file to {new_dir} ?",
         ):
-            raise OSError()
+            raise OSError
 
         return new_full_path
 

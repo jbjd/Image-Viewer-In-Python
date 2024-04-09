@@ -37,11 +37,14 @@ class ViewerApp:
         "width_ratio",
     )
 
-    def __init__(self, first_image_to_show: str, path_to_exe: str) -> None:
+    def __init__(self, first_image_path: str, path_to_exe: str) -> None:
+        # make FileManager first since it will validate path
         image_cache = ImageCache()
-        self.file_manager = ImageFileManager(first_image_to_show, image_cache)
+        try:
+            self.file_manager = ImageFileManager(first_image_path, image_cache)
+        except ValueError:
+            self.exit(exit_code=1)
 
-        # UI variables
         self.need_to_redraw: bool = False
         self.move_id: str = ""
         self.image_load_id: str = ""
@@ -305,7 +308,7 @@ class ViewerApp:
         if moved:
             self.load_image()
 
-    def exit(self, _: Event | None = None) -> NoReturn:
+    def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
         self.image_loader.reset_and_setup()
         self.canvas.delete(self.canvas.file_name_text_id)
@@ -314,7 +317,7 @@ class ViewerApp:
         del PhotoImage.__del__
         self.app.quit()
         self.app.destroy()
-        raise SystemExit(0)  # I used exit(0) here, but didn't work with --standalone
+        raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
 
     def minimize(self, _: Event) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""

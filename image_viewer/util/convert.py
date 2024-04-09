@@ -25,7 +25,7 @@ def try_convert_file_and_save_new(
         with open_image(fp) as temp_img:
             is_animated: bool = getattr(temp_img, "is_animated", False)
             if is_animated and target_ext not in ("webp", "gif", "png"):
-                raise ValueError()
+                raise ValueError
 
             match target_ext:
                 case "webp" | "png":
