@@ -72,6 +72,11 @@ def trash_file(path: str) -> None:
     send2trash(os.path.normpath(path))
 
 
+def get_dir_name(path: str) -> str:
+    """Gets dir name of a file path and normalizes it"""
+    return os.path.normpath(os.path.dirname(path))
+
+
 def walk_dir(directory_path: str) -> Iterator[str]:
     """Copied from OS module and edited to yield each file
     and only files instead of including dirs/extra info"""

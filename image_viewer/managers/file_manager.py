@@ -8,7 +8,13 @@ from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageCache, ImageName
-from util.os import OS_name_cmp, clean_str_for_OS_path, trash_file, walk_dir
+from util.os import (
+    OS_name_cmp,
+    clean_str_for_OS_path,
+    get_dir_name,
+    trash_file,
+    walk_dir,
+)
 
 
 class ImageFileManager:
@@ -40,7 +46,7 @@ class ImageFileManager:
         """Load single file for display before we load the rest"""
 
         first_image_name: ImageName = self._make_name_with_validation(first_image_path)
-        self.image_directory: str = os.path.normpath(os.path.dirname(first_image_path))
+        self.image_directory: str = get_dir_name(first_image_path)
         self._init_list_of_file_names(first_image_name)
         self._update_after_move_or_edit()
 
@@ -69,7 +75,7 @@ class ImageFileManager:
             return False
 
         choosen_file: str = os.path.basename(new_file_path)
-        new_dir: str = os.path.normpath(os.path.dirname(new_file_path))
+        new_dir: str = get_dir_name(new_file_path)
 
         if new_dir != self.image_directory:
             self.image_directory = new_dir
@@ -222,7 +228,7 @@ class ImageFileManager:
         self.action_undoer.append(result)
 
         # Only add image if its still in the same directory
-        if os.path.dirname(new_full_path) == os.path.dirname(original_path):
+        if get_dir_name(new_full_path) == get_dir_name(original_path):
             preserve_index: bool = self._should_perserve_index(result)
             self.add_new_image(new_name, preserve_index)
         else:
@@ -234,11 +240,11 @@ class ImageFileManager:
             clean_str_for_OS_path(os.path.basename(new_name_or_path))
             or self.current_image.name
         )
-        new_dir: str = os.path.dirname(new_name_or_path)
+        new_dir: str = get_dir_name(new_name_or_path)
 
         if new_name == "." or new_name == "..":
             # name is actually path specifier
-            new_dir = os.path.join(new_dir, new_name)
+            new_dir = os.path.normpath(os.path.join(new_dir, new_name))
             new_name = self.current_image.name
 
         return new_dir, new_name
@@ -246,11 +252,11 @@ class ImageFileManager:
     def _construct_path_for_rename(self, new_dir: str, new_name: str) -> str:
         """Makes new path with validations when moving between directories"""
         will_move_dirs: bool = new_dir != ""
+
         new_full_path: str
         if will_move_dirs:
             if not os.path.isabs(new_dir):
                 new_dir = os.path.join(self.image_directory, new_dir)
-            new_dir = os.path.normpath(new_dir)
             if not os.path.exists(new_dir):
                 raise OSError
             new_full_path = os.path.join(new_dir, new_name)

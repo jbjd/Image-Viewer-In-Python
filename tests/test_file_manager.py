@@ -32,10 +32,16 @@ def test_image_file_manager(manager: ImageFileManager):
 
     # Try to rename a.png mocking the os call away should pass
     with patch("os.rename", lambda *_: None):
-        with patch.object(
-            ImageFileManager,
-            "_ask_to_delete_old_image_after_convert",
-            lambda *_: None,
+        with (
+            patch.object(
+                ImageFileManager,
+                "_ask_to_delete_old_image_after_convert",
+                lambda *_: None,
+            ),
+            patch(
+                "image_viewer.managers.file_manager.askyesno",
+                lambda *_: True,
+            ),
         ):
             manager.rename_or_convert_current_image("example.test")
 
@@ -155,9 +161,9 @@ def test_split_with_weird_names(manager: ImageFileManager):
     """Should notice that . and .. are not file names, but part of path"""
 
     # use join over static var so test works on all OS
-    expected_split = (os.path.join("C:/example", ".."), manager.current_image.name)
+    expected_split = (os.path.normpath("C:/"), manager.current_image.name)
     assert manager._split_dir_and_name("C:/example/..") == expected_split
 
     # use join over static var so test works on all OS
-    expected_split = ("C:/example", "...")
+    expected_split = (os.path.normpath("C:/example"), "...")
     assert manager._split_dir_and_name("C:/example/...") == expected_split
