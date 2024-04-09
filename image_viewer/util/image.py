@@ -3,6 +3,7 @@ Contains classes and functions to help with storing and reading images
 """
 
 from os import stat
+from typing import Iterable
 
 from PIL.ImageTk import PhotoImage
 
@@ -58,6 +59,58 @@ class ImageName:
 
     def __lt__(self, other: "ImageName") -> bool:
         return OS_name_cmp(self.name, other.name)
+
+
+class ImageNameList(list[ImageName]):
+
+    __slots__ = "index"
+
+    def __init__(self, iterable: Iterable[ImageName]) -> None:
+        super().__init__(iterable)
+        self.index: int = 0
+
+    def get_current_image(self) -> ImageName:
+        return self[self.index]
+
+    def move_index(self, amount: int) -> None:
+        image_count: int = len(self)
+        if image_count > 0:
+            self.index = (self.index + amount) % len(self)
+
+    def sort(self, image_to_start_at: str) -> None:
+        """Sorts and moves internal index to provided image"""
+        super().sort()
+        self.index = self.binary_search(image_to_start_at)[0]
+
+    def pop_current_image(self) -> None:
+        """Pops current index and raises IndexError if last image popped"""
+        super().pop(self.index)
+
+        image_count: int = len(self)
+
+        if self.index >= image_count:
+            self.index = image_count - 1
+
+        # This needs to be after index check if we catch IndexError and add
+        # a new image, index will be -1 which works for newly added image
+        if image_count == 0:
+            raise IndexError
+
+    def binary_search(self, target_image: str) -> tuple[int, bool]:
+        """Finds index of target_image.
+        Returns tuple of index and if match was found"""
+        low: int = 0
+        high: int = len(self) - 1
+        while low <= high:
+            mid: int = (low + high) >> 1
+            current_image = self[mid].name
+            if target_image == current_image:
+                return mid, True
+            if OS_name_cmp(target_image, current_image):
+                high = mid - 1
+            else:
+                low = mid + 1
+        return low, False
 
 
 def magic_number_guess(magic: bytes) -> tuple[str]:

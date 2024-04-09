@@ -7,14 +7,8 @@ from PIL.Image import Image
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
-from util.image import CachedImage, ImageCache, ImageName
-from util.os import (
-    OS_name_cmp,
-    clean_str_for_OS_path,
-    get_dir_name,
-    trash_file,
-    walk_dir,
-)
+from util.image import CachedImage, ImageCache, ImageName, ImageNameList
+from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
 
 
 class ImageFileManager:
@@ -33,7 +27,6 @@ class ImageFileManager:
 
     __slots__ = (
         "_files",
-        "_index",
         "action_undoer",
         "current_image",
         "file_dialog_asker",
@@ -47,13 +40,13 @@ class ImageFileManager:
 
         first_image_name: ImageName = self._make_name_with_validation(first_image_path)
         self.image_directory: str = get_dir_name(first_image_path)
-        self._init_list_of_file_names(first_image_name)
-        self._update_after_move_or_edit()
 
         self.image_cache: ImageCache = image_cache
 
-        self.action_undoer = ActionUndoer()
-        self.file_dialog_asker = FileDialogAsker(self.VALID_FILE_TYPES)
+        self.action_undoer: ActionUndoer = ActionUndoer()
+        self.file_dialog_asker: FileDialogAsker = FileDialogAsker(self.VALID_FILE_TYPES)
+        self._files: ImageNameList = ImageNameList([first_image_name])
+        self._update_after_move_or_edit()
 
     def _make_name_with_validation(self, path: str) -> ImageName:
         """Makes ImageName out of path. Raises ValueError if path is invalid"""
@@ -62,11 +55,6 @@ class ImageFileManager:
             raise ValueError
 
         return image_name
-
-    def _init_list_of_file_names(self, first_image_data: ImageName) -> None:
-        """Initializes internal list of files with first entry for lazy loading"""
-        self._files: list[ImageName] = [first_image_data]
-        self._index: int = 0
 
     def move_to_new_directory(self) -> bool:
         """Asks user new image to go to and move to that image's directory"""
@@ -79,13 +67,12 @@ class ImageFileManager:
 
         if new_dir != self.image_directory:
             self.image_directory = new_dir
-            first_image_data = ImageName(choosen_file)
-            self._init_list_of_file_names(first_image_data)
             self.find_all_images()
 
-        self._index, found = self._binary_search(choosen_file)
+        index, found = self._files.binary_search(choosen_file)
+        self._files.index = index
         if not found:
-            self.add_new_image(choosen_file, index=self._index)
+            self.add_new_image(choosen_file, index=index)
         else:
             self._update_after_move_or_edit()
 
@@ -97,22 +84,23 @@ class ImageFileManager:
     def _update_after_move_or_edit(self) -> None:
         """Sets variables about current image.
         Should be called after adding/deleting an image"""
-        self.current_image = self._files[self._index]
+        self.current_image = self._files.get_current_image()
         self.path_to_image = self.construct_path_to_image(self.current_image.name)
 
     def find_all_images(self) -> None:
         """Init only loads one file, load entire directory here"""
-        image_to_start_at: str = self._files[self._index].name
+        image_to_start_at: str = self._files.get_current_image().name
 
         VALID_FILE_TYPES = self.VALID_FILE_TYPES
-        self._files = [
-            image_path
-            for path in walk_dir(self.image_directory)
-            if (image_path := ImageName(path)).suffix in VALID_FILE_TYPES
-        ]
+        self._files = ImageNameList(
+            [
+                image_path
+                for path in walk_dir(self.image_directory)
+                if (image_path := ImageName(path)).suffix in VALID_FILE_TYPES
+            ]
+        )
 
-        self._files.sort()
-        self._index = self._binary_search(image_to_start_at)[0]
+        self._files.sort(image_to_start_at)
         self._update_after_move_or_edit()
 
     def refresh_image_list(self) -> None:
@@ -163,8 +151,7 @@ class ImageFileManager:
 
     def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
-        self._index = (self._index + amount) % len(self._files)
-
+        self._files.move_index(amount)
         self._update_after_move_or_edit()
 
     def remove_current_image(self, delete_from_disk: bool) -> None:
@@ -174,17 +161,6 @@ class ImageFileManager:
             self.action_undoer.append(Delete(self.path_to_image))
 
         self._clear_current_image_data()
-
-        remaining_image_count: int = len(self._files)
-
-        if self._index >= remaining_image_count:
-            self._index = remaining_image_count - 1
-
-        # This needs to be after index check if we catch IndexError and add
-        # a new image, index will be -1 which works for newly added image
-        if remaining_image_count == 0:
-            raise IndexError
-
         self._update_after_move_or_edit()
 
     def _clear_image_data(self, index: int) -> None:
@@ -193,7 +169,10 @@ class ImageFileManager:
         self.image_cache.safe_pop(key)
 
     def _clear_current_image_data(self) -> None:
-        self._files.pop(self._index)
+        try:
+            self._files.pop_current_image()
+        except IndexError:
+            pass
         self.image_cache.safe_pop(self.path_to_image)
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
@@ -314,11 +293,11 @@ class ImageFileManager:
         preserve_index: try to keep index at the same image it was before adding"""
         image_data = ImageName(new_name)
         if index < 0:
-            index = self._binary_search(image_data.name)[0]
+            index = self._files.binary_search(image_data.name)[0]
 
         self._files.insert(index, image_data)
-        if preserve_index and index <= self._index:
-            self._index += 1
+        if preserve_index and index <= self._files.index:
+            self._files.move_index(1)
         self._update_after_move_or_edit()
 
     def undo_rename_or_convert(self) -> bool:
@@ -336,7 +315,7 @@ class ImageFileManager:
         image_to_remove = os.path.basename(image_to_remove)
 
         if image_to_remove:
-            index, found = self._binary_search(image_to_remove)
+            index, found = self._files.binary_search(image_to_remove)
             if found:
                 self._clear_image_data(index)
 
@@ -359,20 +338,3 @@ class ImageFileManager:
     def current_image_cache_still_fresh(self) -> bool:
         """Checks if cached image is still up to date"""
         return self.image_cache.image_cache_still_fresh(self.path_to_image)
-
-    def _binary_search(self, target_image: str) -> tuple[int, bool]:
-        """Finds index of target_image in internal list
-        returns tuple of index and if match was found"""
-        files = self._files
-        low: int = 0
-        high: int = len(files) - 1
-        while low <= high:
-            mid: int = (low + high) >> 1
-            current_image = files[mid].name
-            if target_image == current_image:
-                return mid, True
-            if OS_name_cmp(target_image, current_image):
-                high = mid - 1
-            else:
-                low = mid + 1
-        return low, False
