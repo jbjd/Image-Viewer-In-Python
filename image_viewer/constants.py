@@ -19,3 +19,11 @@ class Key(IntEnum):
     EQUALS = 187
     MINUS = 189
     R = 82
+
+
+class Rotation(IntEnum):
+    """Denotes angle of rotation"""
+
+    LEFT = 90
+    RIGHT = 270
+    FLIP = 180

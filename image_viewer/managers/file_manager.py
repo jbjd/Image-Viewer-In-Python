@@ -4,11 +4,13 @@ from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
+from constants import Rotation
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageCache, ImageName, ImageNameList
 from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
+from util.PIL import rotate_image, save_image
 
 
 class ImageFileManager:
@@ -78,14 +80,18 @@ class ImageFileManager:
 
         return True
 
-    def construct_path_to_image(self, image_name: str) -> str:
+    def get_path_to_image(self, image_name: str | None = None) -> str:
+        """Returns full path to image, defaulting to the current image displayed"""
+        if image_name is None:
+            image_name = self.current_image.name
+
         return f"{self.image_directory}/{image_name}"
 
     def _update_after_move_or_edit(self) -> None:
         """Sets variables about current image.
         Should be called after adding/deleting an image"""
         self.current_image = self._files.get_current_image()
-        self.path_to_image = self.construct_path_to_image(self.current_image.name)
+        self.path_to_image = self.get_path_to_image()
 
     def find_all_images(self) -> None:
         """Init only loads one file, load entire directory here"""
@@ -165,7 +171,7 @@ class ImageFileManager:
 
     def _clear_image_data(self, index: int) -> None:
         deleted_name: str = self._files.pop(index).name
-        key: str = self.construct_path_to_image(deleted_name)
+        key: str = self.get_path_to_image(deleted_name)
         self.image_cache.safe_pop(key)
 
     def _clear_current_image_data(self) -> None:
@@ -240,7 +246,7 @@ class ImageFileManager:
                 raise OSError
             new_full_path = os.path.join(new_dir, new_name)
         else:
-            new_full_path = self.construct_path_to_image(new_name)
+            new_full_path = self.get_path_to_image(new_name)
 
         if os.path.exists(new_full_path):
             raise FileExistsError
@@ -338,3 +344,11 @@ class ImageFileManager:
     def current_image_cache_still_fresh(self) -> bool:
         """Checks if cached image is still up to date"""
         return self.image_cache.image_cache_still_fresh(self.path_to_image)
+
+    def rotate_image_and_save(self, image: Image, angle: Rotation) -> None:
+        """Rotates and saves updated image on disk"""
+        path: str = self.get_path_to_image()
+        with open(path, "+wb") as fp:
+            fp.read()
+            rotated_image: Image = rotate_image(image, angle)
+            save_image(rotated_image, fp)

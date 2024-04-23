@@ -2,6 +2,7 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
+from io import IOBase
 from textwrap import wrap
 
 from PIL import Image as _Image  # avoid name conflicts
@@ -10,7 +11,26 @@ from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
 
-from constants import TEXT_RGB
+from constants import TEXT_RGB, Rotation
+
+
+def save_image(
+    image: Image,
+    fp: str | IOBase,
+    format: str | None = None,
+    quality: int = 100,
+    is_animated: bool | None = None,
+) -> None:
+    """Saves a PIL image to disk"""
+    save_all: bool = (
+        getattr(image, "is_animated", False) if is_animated is None else is_animated
+    )
+    image.save(fp, format, optimize=True, method=6, quality=quality, save_all=save_all)
+
+
+def rotate_image(image: Image, angle: Rotation) -> Image:
+    """Rotates an image with the highest quality"""
+    return image.rotate(angle, Resampling.LANCZOS, expand=True)
 
 
 def _resize_new(
