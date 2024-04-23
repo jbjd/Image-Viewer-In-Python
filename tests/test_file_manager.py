@@ -21,7 +21,7 @@ def test_image_file_manager(manager: ImageFileManager):
 
     manager.find_all_images()
     assert len(manager._files) == 4
-    assert manager._binary_search("a.png") == (0, True)
+    assert manager._files.binary_search("a.png") == (0, True)
 
     manager.add_new_image("y.jpeg", False)
     assert len(manager._files) == 5
@@ -79,7 +79,7 @@ def test_bad_path_for_rename(manager: ImageFileManager):
 def test_move_index(manager: ImageFileManager):
     """Test moving to an index that's too large"""
     manager.move_index(999)
-    assert manager._index == 0
+    assert manager._files.index == 0
 
 
 def test_delete_file(manager: ImageFileManager):
@@ -99,11 +99,11 @@ def test_smart_adjust(manager: ImageFileManager):
 
     # smart adjust should not kick in
     manager.add_new_image("zzz.png", True)
-    assert manager._index == 0
+    assert manager._files.index == 0
 
     # smart adjust should move index
     manager.add_new_image("a.jpg", True)
-    assert manager._index == 1
+    assert manager._files.index == 1
 
 
 def test_undo(manager: ImageFileManager):
@@ -125,7 +125,7 @@ def test_undo(manager: ImageFileManager):
         assert manager.undo_rename_or_convert()
         assert len(manager._files) == 1
         assert manager._files[0].name == "b.png"
-        assert manager._index == 0
+        assert manager._files.index == 0
 
 
 def test_get_and_show_details(manager: ImageFileManager):
