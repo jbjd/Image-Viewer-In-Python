@@ -16,4 +16,5 @@ compilation-report.xml
 nuitka-crash-report.xml
 *tmp/
 
+*.ipynb
 *.egg-info
