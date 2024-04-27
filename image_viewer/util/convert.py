@@ -43,7 +43,7 @@ def try_convert_file_and_save_new(
             temp_img.save(
                 new_path,
                 target_ext,
-                quality=100,
+                quality=90,
                 method=6,
                 optimize=True,
                 save_all=is_animated,

@@ -52,10 +52,10 @@ class ImageResizer:
     def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
         """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""
         zoom_scale: int = 1 + int(
-            max(width / self.screen_width, height / self.screen_height) / 5
+            max(width / self.screen_width, height / self.screen_height) / 4
         )
-        # w/h ratio divide by magic 6 since seemed best after testing
-        wh_ratio: int = 1 + max(width // height, height // width) // 6
+        # w/h ratio divide by magic 7 since seemed best after testing
+        wh_ratio: int = 1 + max(width // height, height // width) // 7
         return 1 + (0.25 * zoom_scale * zoom_level * wh_ratio)
 
     def _too_zoomed_in(self, dimensions: tuple[int, int], zoom_factor) -> bool:
