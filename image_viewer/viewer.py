@@ -130,10 +130,6 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Alt-Left>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Right>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Up>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Down>", self.canvas.handle_alt_arrow_keys)
 
         if os.name == "nt":
             app.bind(
@@ -399,7 +395,6 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.center_image()
         self.canvas.update_image_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
@@ -475,7 +470,7 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_image_display(frame)
+            self.canvas.update_existing_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 

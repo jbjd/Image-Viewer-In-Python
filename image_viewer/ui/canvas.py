@@ -2,17 +2,17 @@ from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TEXT_RGB, TOPBAR_TAG, Key
+from constants import TEXT_RGB, TOPBAR_TAG
 
 
 class CustomCanvas(Canvas):
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
+        "drag_start_x",
+        "drag_start_y",
         "file_name_text_id",
         "image_display_id",
-        "move_x",
-        "move_y",
         "screen_width",
         "screen_height",
         "topbar",
@@ -22,19 +22,43 @@ class CustomCanvas(Canvas):
         super().__init__(master, bg="black", highlightthickness=0)
         self.pack(anchor="nw", fill="both", expand=1)
 
-        self.move_x: int = 0
-        self.move_y: int = 0
-
         master.update()  # updates winfo width and height to the current size
         self.screen_width: int = master.winfo_width()
         self.screen_height: int = master.winfo_height()
+        self.drag_start_x: int
+        self.drag_start_y: int
 
         self.create_rectangle(
             0, 0, self.screen_width, self.screen_height, fill="black", tags="back"
         )
-        self.image_display_id = self.create_image(
-            self.screen_width >> 1, self.screen_height >> 1, anchor="center", tag="back"
-        )
+
+        self.bind("<ButtonPress-3>", self._move_from)
+        self.bind("<B3-Motion>", self._move_to)
+
+    def _move_from(self, event: Event) -> None:
+        self.drag_start_x = event.x
+        self.drag_start_y = event.y
+
+    def _move_to(self, event: Event) -> None:
+        drag_x = event.x - self.drag_start_x
+        drag_y = event.y - self.drag_start_y
+        self.drag_start_x += drag_x
+        self.drag_start_y += drag_y
+
+        bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
+        # Keep in bounds horizontally
+        if drag_x < 0 and bbox[2] + drag_x <= 0:
+            drag_x = -bbox[2]
+        elif drag_x > 0 and bbox[0] + drag_x >= self.screen_width:
+            drag_x = self.screen_width - bbox[0]
+
+        # Keep in bounds vertically
+        if drag_y < 0 and bbox[3] + drag_y <= 0:
+            drag_y = -bbox[3]
+        elif drag_y > 0 and bbox[1] + drag_y >= self.screen_height:
+            drag_y = self.screen_height - bbox[1]
+
+        self.move(self.image_display_id, drag_x, drag_y)
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
@@ -54,46 +78,26 @@ class CustomCanvas(Canvas):
             tags=TOPBAR_TAG,
         )
 
-    def center_image(self) -> None:
-        """Moves image back to center if user moved it"""
-        # Can't use moveto since it was inconsistent, this is
-        self.move(self.image_display_id, self.move_x, self.move_y)
-        self.move_x = self.move_y = 0
-
     def update_image_display(self, new_image: PhotoImage) -> None:
-        """Updates display with a new image and forces state update"""
-        self.itemconfigure(self.image_display_id, image=new_image)
+        """Puts a new image on screen"""
+        try:
+            self.delete(self.image_display_id)
+        except AttributeError:
+            pass
+        self.image_display_id = self.create_image(
+            self.screen_width >> 1,
+            self.screen_height >> 1,
+            anchor="center",
+            tag="back",
+            image=new_image,
+        )
+        self.tag_raise("topbar")
         self.master.update_idletasks()
 
-    def handle_alt_arrow_keys(self, event: Event) -> None:
-        """Move onscreen image when alt+arrow key clicked/held"""
-        if event.widget is not self.master:
-            return
-
-        bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
-        x = y = 0
-        match event.keycode:
-            case Key.LEFT:
-                x = -10
-                if not (bbox[2] > self.screen_width) and (bbox[0] + x) < 0:
-                    return
-            case Key.UP:
-                y = -10
-                if not (bbox[3] > self.screen_height) and (bbox[1] + y) < 0:
-                    return
-            case Key.RIGHT:
-                x = 10
-                if (bbox[2] + x) > self.screen_width and not (bbox[0] < 0):
-                    return
-            case Key.DOWN:
-                y = 10
-                if (bbox[3] + y) > self.screen_height and not (bbox[1] < 0):
-                    return
-        self.move_x -= x
-        self.move_y -= y
-
-        # TODO: scale x/y to screen
-        self.move(self.image_display_id, x, y)
+    def update_existing_image_display(self, new_image: PhotoImage) -> None:
+        """Updates existing image on screen with a new PhotoImage"""
+        self.itemconfig(self.image_display_id, image=new_image)
+        self.master.update_idletasks()
 
     def update_file_name(self, new_name: str) -> int:
         """Updates file name. Returns width of new name"""
