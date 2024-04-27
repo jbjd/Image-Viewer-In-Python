@@ -1,6 +1,5 @@
-from typing import Iterable
-
 from tkinter.filedialog import askopenfilename
+from typing import Iterable
 
 
 class FileDialogAsker:
