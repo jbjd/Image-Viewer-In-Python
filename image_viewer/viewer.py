@@ -282,7 +282,7 @@ class ViewerApp:
             self.file_manager.path_to_image, zoom_in
         )
         if new_image is not None:
-            self.canvas.update_image_display(new_image)
+            self.canvas.update_existing_image_display(new_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore

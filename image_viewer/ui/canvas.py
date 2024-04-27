@@ -115,4 +115,4 @@ class CustomCanvas(Canvas):
 
     def is_widget_visible(self, tag_or_id: str | int) -> bool:
         """Returns bool of if provided tag/id is visible"""
-        return self.itemcget(tag_or_id, "state") == "normal"
+        return self.itemcget(tag_or_id, "state") != "hidden"
