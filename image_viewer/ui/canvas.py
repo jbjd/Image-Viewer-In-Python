@@ -84,7 +84,7 @@ class CustomCanvas(Canvas):
             self.delete(self.image_display_id)
         except AttributeError:
             pass
-        self.image_display_id = self.create_image(
+        self.image_display_id: int = self.create_image(
             self.screen_width >> 1,
             self.screen_height >> 1,
             anchor="center",
