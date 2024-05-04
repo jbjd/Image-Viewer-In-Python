@@ -1,5 +1,0 @@
-Standard Priority:
-    Documentation
-
-Low Priority:
-    Cropping images with preview
