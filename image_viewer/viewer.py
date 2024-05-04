@@ -359,7 +359,7 @@ class ViewerApp:
         """Move current image to trash and moves to next"""
         self.clear_image()
         self.hide_rename_window()
-        self.remove_image(True)
+        self.delete_current_image()
         self.load_image_unblocking()
 
     def hide_rename_window(self) -> None:
@@ -408,7 +408,7 @@ class ViewerApp:
 
         # When load fails, keep removing bad image and trying to load next
         while (current_image := self._load_image_at_current_path()) is None:
-            self.remove_image(False)
+            self.remove_current_image()
 
         self.update_after_image_load(current_image)
         if self.canvas.is_widget_visible(TOPBAR_TAG):
@@ -433,10 +433,17 @@ class ViewerApp:
         self.canvas.itemconfigure(TOPBAR_TAG, state="hidden")
         self.hide_rename_window()
 
-    def remove_image(self, delete_from_disk: bool) -> None:
+    def remove_current_image(self) -> None:
         """Removes current image from internal image list"""
         try:
-            self.file_manager.remove_current_image(delete_from_disk)
+            self.file_manager.remove_current_image()
+        except IndexError:
+            self.exit()
+
+    def delete_current_image(self) -> None:
+        """Deletes current image from disk list"""
+        try:
+            self.file_manager.delete_current_image()
         except IndexError:
             self.exit()
 

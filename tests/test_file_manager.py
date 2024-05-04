@@ -47,12 +47,12 @@ def test_image_file_manager(manager: ImageFileManager):
 
     # test remove_current_image functionality
     for _ in range(4):
-        manager.remove_current_image(False)
+        manager.remove_current_image()
     assert len(manager._files) == 1
 
     # Should raise index error after last file removed
     with pytest.raises(IndexError):
-        manager.remove_current_image(False)
+        manager.remove_current_image()
 
 
 def test_bad_path(image_cache: ImageCache):
@@ -90,7 +90,7 @@ def test_delete_file(manager: ImageFileManager):
 
     with tempfile.NamedTemporaryFile() as tmp:
         manager.path_to_image = tmp.name
-        manager.remove_current_image(True)
+        manager.delete_current_image()
         assert len(manager._files) == 1
 
 

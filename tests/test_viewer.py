@@ -132,12 +132,11 @@ def test_remove_image(viewer: ViewerApp):
     """Should remove image and exit when none left"""
 
     viewer.file_manager = MockImageFileManager()
-    _ = False  # input to this function is not important
 
     # When remove successful, does not call exit
     with patch.object(MockImageFileManager, "remove_current_image") as mock_remove:
         with patch.object(ViewerApp, "exit") as mock_exit:
-            viewer.remove_image(_)
+            viewer.remove_current_image()
             mock_remove.assert_called_once()
             mock_exit.assert_not_called()
 
@@ -146,5 +145,5 @@ def test_remove_image(viewer: ViewerApp):
         MockImageFileManager, "remove_current_image", side_effect=IndexError
     ):
         with patch.object(ViewerApp, "exit") as mock_exit:
-            viewer.remove_image(_)
+            viewer.remove_current_image()
             mock_exit.assert_called_once()
