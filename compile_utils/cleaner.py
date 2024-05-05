@@ -11,6 +11,7 @@ from compile_utils.code_to_skip import (
     classes_to_skip,
     function_calls_to_skip,
     functions_to_skip,
+    modules_to_not_autoflake,
     vars_to_skip,
 )
 
@@ -116,6 +117,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_ImportFrom(self, node: ast.ImportFrom):
         """Skip unnecessary futures imports"""
+        # TODO: only skip futures for unsupported versions
         if node.module == "__future__":
             return
 
@@ -130,13 +132,15 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         ast.NodeTransformer().visit(parsed_source)
     )
 
-    if autoflake is not None:
+    if autoflake is not None and module_name not in modules_to_not_autoflake:
         contents = autoflake.fix_code(
             contents,
             remove_all_unused_imports=True,
             remove_duplicate_keys=True,
             remove_unused_variables=True,
             remove_rhs_for_unused_variables=True,
+            ignore_pass_statements=True,
+            ignore_pass_after_docstring=True,
         )
 
     with open(new_path, "w", encoding="utf-8") as fp:

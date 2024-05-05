@@ -56,3 +56,5 @@ function_calls_to_skip: defaultdict[str, set] = defaultdict(
 )
 vars_to_skip: defaultdict[str, set] = defaultdict(set, **_vars_kwargs)
 classes_to_skip: defaultdict[str, set] = defaultdict(set, **_classes_kwargs)
+
+modules_to_not_autoflake: set[str] = {"send2trash.compat"}

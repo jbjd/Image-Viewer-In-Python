@@ -63,33 +63,33 @@ class ImageName:
 
 class ImageNameList(list[ImageName]):
 
-    __slots__ = "index"
+    __slots__ = "display_index"
 
     def __init__(self, iterable: Iterable[ImageName]) -> None:
         super().__init__(iterable)
-        self.index: int = 0
+        self.display_index: int = 0
 
     def get_current_image(self) -> ImageName:
-        return self[self.index]
+        return self[self.display_index]
 
     def move_index(self, amount: int) -> None:
         image_count: int = len(self)
         if image_count > 0:
-            self.index = (self.index + amount) % len(self)
+            self.display_index = (self.display_index + amount) % len(self)
 
-    def sort(self, image_to_start_at: str) -> None:
-        """Sorts and moves internal index to provided image"""
+    def sort_and_preserve_index(self, image_to_start_at: str) -> None:
+        """Sorts and keeps index at the same image"""
         super().sort()
-        self.index = self.binary_search(image_to_start_at)[0]
+        self.display_index = self.binary_search(image_to_start_at)[0]
 
     def pop_current_image(self) -> None:
         """Pops current index and raises IndexError if last image popped"""
-        super().pop(self.index)
+        super().pop(self.display_index)
 
         image_count: int = len(self)
 
-        if self.index >= image_count:
-            self.index = image_count - 1
+        if self.display_index >= image_count:
+            self.display_index = image_count - 1
 
         # This needs to be after index check if we catch IndexError and add
         # a new image, index will be -1 which works for newly added image

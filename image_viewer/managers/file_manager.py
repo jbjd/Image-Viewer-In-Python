@@ -72,7 +72,7 @@ class ImageFileManager:
             self.find_all_images()
 
         index, found = self._files.binary_search(choosen_file)
-        self._files.index = index
+        self._files.display_index = index
         if not found:
             self.add_new_image(choosen_file, index=index)
         else:
@@ -106,7 +106,7 @@ class ImageFileManager:
             ]
         )
 
-        self._files.sort(image_to_start_at)
+        self._files.sort_and_preserve_index(image_to_start_at)
         self._update_after_move_or_edit()
 
     def refresh_image_list(self) -> None:
@@ -160,12 +160,17 @@ class ImageFileManager:
         self._files.move_index(amount)
         self._update_after_move_or_edit()
 
-    def remove_current_image(self, delete_from_disk: bool) -> None:
-        """Deletes image from files array, cache, and optionally disk"""
-        if delete_from_disk:
+    def delete_current_image(self) -> None:
+        """Safely deletes the image at the current file path"""
+        try:
             trash_file(self.path_to_image)
             self.action_undoer.append(Delete(self.path_to_image))
+        except (OSError, FileNotFoundError):
+            pass
+        self.remove_current_image()
 
+    def remove_current_image(self) -> None:
+        """Deletes image from files array, cache, and optionally disk"""
         self._clear_current_image_data()
         self._update_after_move_or_edit()
 
@@ -270,7 +275,7 @@ class ImageFileManager:
             f"Converted file to {new_format}, delete old file?",
         ):
             try:
-                self.remove_current_image(True)
+                self.delete_current_image()
             except IndexError:
                 pass  # even if no images left, a new one will be added after this
             deleted = True
@@ -302,7 +307,7 @@ class ImageFileManager:
             index = self._files.binary_search(image_data.name)[0]
 
         self._files.insert(index, image_data)
-        if preserve_index and index <= self._files.index:
+        if preserve_index and index <= self._files.display_index:
             self._files.move_index(1)
         self._update_after_move_or_edit()
 

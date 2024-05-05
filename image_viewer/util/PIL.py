@@ -18,7 +18,7 @@ def save_image(
     image: Image,
     fp: str | IOBase,
     format: str | None = None,
-    quality: int = 100,
+    quality: int = 90,
     is_animated: bool | None = None,
 ) -> None:
     """Saves a PIL image to disk"""

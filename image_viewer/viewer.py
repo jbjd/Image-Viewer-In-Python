@@ -130,10 +130,6 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
-        app.bind("<Alt-Left>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Right>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Up>", self.canvas.handle_alt_arrow_keys)
-        app.bind("<Alt-Down>", self.canvas.handle_alt_arrow_keys)
 
         if os.name == "nt":
             app.bind(
@@ -286,7 +282,7 @@ class ViewerApp:
             self.file_manager.path_to_image, zoom_in
         )
         if new_image is not None:
-            self.canvas.update_image_display(new_image)
+            self.canvas.update_existing_image_display(new_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
@@ -363,7 +359,7 @@ class ViewerApp:
         """Move current image to trash and moves to next"""
         self.clear_image()
         self.hide_rename_window()
-        self.remove_image(True)
+        self.delete_current_image()
         self.load_image_unblocking()
 
     def hide_rename_window(self) -> None:
@@ -399,7 +395,6 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
-        self.canvas.center_image()
         self.canvas.update_image_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
@@ -413,7 +408,7 @@ class ViewerApp:
 
         # When load fails, keep removing bad image and trying to load next
         while (current_image := self._load_image_at_current_path()) is None:
-            self.remove_image(False)
+            self.remove_current_image()
 
         self.update_after_image_load(current_image)
         if self.canvas.is_widget_visible(TOPBAR_TAG):
@@ -438,10 +433,17 @@ class ViewerApp:
         self.canvas.itemconfigure(TOPBAR_TAG, state="hidden")
         self.hide_rename_window()
 
-    def remove_image(self, delete_from_disk: bool) -> None:
+    def remove_current_image(self) -> None:
         """Removes current image from internal image list"""
         try:
-            self.file_manager.remove_current_image(delete_from_disk)
+            self.file_manager.remove_current_image()
+        except IndexError:
+            self.exit()
+
+    def delete_current_image(self) -> None:
+        """Deletes current image from disk list"""
+        try:
+            self.file_manager.delete_current_image()
         except IndexError:
             self.exit()
 
@@ -475,7 +477,7 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_image_display(frame)
+            self.canvas.update_existing_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 
