@@ -5,7 +5,7 @@ Contains classes and functions to help with storing and reading images
 from os import stat
 from typing import Iterable
 
-from PIL.ImageTk import PhotoImage
+from PIL.Image import Image
 
 from util.os import OS_name_cmp
 
@@ -17,7 +17,7 @@ class CachedImage:
 
     def __init__(
         self,
-        image: PhotoImage,
+        image: Image,
         dimensions: tuple[int, int],
         size_display: str,
         byte_size: int,
@@ -26,7 +26,7 @@ class CachedImage:
         self.width: int
         self.height: int
         self.width, self.height = dimensions
-        self.image: PhotoImage = image
+        self.image: Image = image
         self.size_display: str = size_display
         self.byte_size: int = byte_size
         self.mode: str = mode

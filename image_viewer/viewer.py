@@ -4,8 +4,9 @@ from tkinter import Event, Tk
 from typing import Literal, NoReturn
 
 from PIL.ImageTk import PhotoImage
+from PIL.Image import Image
 
-from constants import TOPBAR_TAG, Key
+from constants import TOPBAR_TAG, Key, Rotation
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -22,6 +23,7 @@ class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
 
     __slots__ = (
+        "_display_image",
         "animation_id",
         "app",
         "canvas",
@@ -101,7 +103,7 @@ class ViewerApp:
         """Loads first image and then finds all images files in the directory"""
         # Don't call this class's load_image here since we only consider there
         # to be one image now, and that function would throw if that one failed to load
-        current_image: PhotoImage | None = self._load_image_at_current_path()
+        current_image: Image | None = self._load_image_at_current_path()
 
         if current_image is not None:
             self.update_after_image_load(current_image)
@@ -130,6 +132,10 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
+        app.bind("<Alt-Left>", self.handle_rotate_image)
+        app.bind("<Alt-Right>", self.handle_rotate_image)
+        app.bind("<Alt-Up>", self.handle_rotate_image)
+        app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
             app.bind(
@@ -220,6 +226,19 @@ class ViewerApp:
 
     # Functions handling specific user input
 
+    def handle_rotate_image(self, event: Event) -> None:
+        match event.keycode:
+            case Key.LEFT:
+                angle = Rotation.LEFT
+            case Key.RIGHT:
+                angle = Rotation.RIGHT
+            case Key.DOWN:
+                angle = Rotation.FLIP
+            case _:
+                angle = Rotation.ORIGINAL
+
+        self.load_image_unblocking(angle)
+
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
         if self.canvas.is_widget_visible(TOPBAR_TAG):
@@ -278,11 +297,12 @@ class ViewerApp:
     ) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
         zoom_in: bool = keycode == Key.EQUALS
-        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(
+        new_image: Image | None = self.image_loader.get_zoomed_image(
             self.file_manager.path_to_image, zoom_in
         )
         if new_image is not None:
-            self.canvas.update_existing_image_display(new_image)
+            self._display_image = PhotoImage(new_image)
+            self.canvas.update_existing_image_display(self._display_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
@@ -393,21 +413,22 @@ class ViewerApp:
         self.hide_rename_window()
         self.load_image_unblocking()
 
-    def update_after_image_load(self, current_image: PhotoImage) -> None:
+    def update_after_image_load(self, current_image: Image) -> None:
         """Updates app title and displayed image"""
-        self.canvas.update_image_display(current_image)
+        self._display_image = PhotoImage(current_image)
+        self.canvas.update_image_display(self._display_image)
         self.app.title(self.file_manager.current_image.name)
 
-    def _load_image_at_current_path(self):
+    def _load_image_at_current_path(self, angle: Rotation = Rotation.ORIGINAL):
         """Wraps ImageLoader's load call with path from FileManager"""
-        return self.image_loader.load_image(self.file_manager.path_to_image)
+        return self.image_loader.load_image(self.file_manager.path_to_image, angle)
 
-    def load_image(self) -> None:
+    def load_image(self, angle: Rotation = Rotation.ORIGINAL) -> None:
         """Loads an image and updates display"""
         self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
-        while (current_image := self._load_image_at_current_path()) is None:
+        while (current_image := self._load_image_at_current_path(angle)) is None:
             self.remove_current_image()
 
         self.update_after_image_load(current_image)
@@ -416,12 +437,12 @@ class ViewerApp:
 
         self.image_load_id = ""
 
-    def load_image_unblocking(self) -> None:
+    def load_image_unblocking(self, angle: Rotation = Rotation.ORIGINAL) -> None:
         """Loads an image without blocking main thread"""
         self.dropdown.need_refresh = True
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
-        self.image_load_id = self.app.after(0, self.load_image)
+        self.image_load_id = self.app.after(0, self.load_image, angle)
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
@@ -470,14 +491,14 @@ class ViewerApp:
     def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
         start: float = perf_counter()
-        frame: PhotoImage | None
+        frame: Image | None
         ms_until_next_frame: int
         frame, ms_until_next_frame = self.image_loader.get_next_frame()
 
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_existing_image_display(frame)
+            self.canvas.update_existing_image_display(PhotoImage(frame))
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 

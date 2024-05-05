@@ -4,13 +4,11 @@ from tkinter.messagebox import askyesno, showinfo
 
 from PIL.Image import Image
 
-from constants import Rotation
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import CachedImage, ImageCache, ImageName, ImageNameList
 from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
-from util.PIL import rotate_image, save_image
 
 
 class ImageFileManager:
@@ -350,10 +348,11 @@ class ImageFileManager:
         """Checks if cached image is still up to date"""
         return self.image_cache.image_cache_still_fresh(self.path_to_image)
 
-    def rotate_image_and_save(self, image: Image, angle: Rotation) -> None:
-        """Rotates and saves updated image on disk"""
-        path: str = self.get_path_to_image()
-        with open(path, "+wb") as fp:
-            fp.read()
-            rotated_image: Image = rotate_image(image, angle)
-            save_image(rotated_image, fp)
+    # TODO
+    # def rotate_image_and_save(self, image: Image, angle: Rotation) -> None:
+    #     """Rotates and saves updated image on disk"""
+    #     path: str = self.get_path_to_image()
+    #     with open(path, "+wb") as fp:
+    #         fp.read()
+    #         rotated_image: Image = rotate_image(image, angle)
+    #         save_image(rotated_image, fp)

@@ -2,7 +2,6 @@ import os
 from typing import Final
 
 from PIL.Image import Image, Resampling, fromarray
-from PIL.ImageTk import PhotoImage
 from turbojpeg import TJPF_RGB, TurboJPEG
 
 from util.PIL import resize
@@ -25,9 +24,7 @@ class ImageResizer:
             else None
         )
 
-    def get_zoomed_image(
-        self, image: Image, zoom_level: int
-    ) -> tuple[PhotoImage, bool]:
+    def get_zoomed_image(self, image: Image, zoom_level: int) -> tuple[Image, bool]:
         """Resizes image using the provided zoom_level and bool if max zoom reached"""
         width, height = image.size
         zoom_factor: float = self._calc_zoom_factor(width, height, zoom_level)
@@ -47,7 +44,7 @@ class ImageResizer:
         else:
             max_zoom_hit = False
 
-        return PhotoImage(resize(image, dimensions, interpolation)), max_zoom_hit
+        return resize(image, dimensions, interpolation), max_zoom_hit
 
     def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
         """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""
@@ -85,7 +82,7 @@ class ImageResizer:
             return (1, 2)
         return None
 
-    def _get_jpeg_fit_to_screen(self, image: Image) -> PhotoImage:
+    def _get_jpeg_fit_to_screen(self, image: Image) -> Image:
         """Resizes a JPEG utilizing libjpegturbo to shrink very large images"""
         image_width, image_height = image.size
         scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
@@ -104,11 +101,11 @@ class ImageResizer:
         )
         return self._fit_to_screen(fromarray(image_as_array))
 
-    def _fit_to_screen(self, image: Image) -> PhotoImage:
+    def _fit_to_screen(self, image: Image) -> Image:
         """Resizes image to screen and returns it as a PhotoImage"""
-        return PhotoImage(resize(image, *self.dimension_finder(*image.size)))
+        return resize(image, *self.dimension_finder(*image.size))
 
-    def get_image_fit_to_screen(self, image: Image) -> PhotoImage:
+    def get_image_fit_to_screen(self, image: Image) -> Image:
         """Returns resized image as a PhotoImage"""
         if image.format == "JPEG":
             return self._get_jpeg_fit_to_screen(image)

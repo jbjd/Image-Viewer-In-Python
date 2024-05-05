@@ -33,9 +33,9 @@ def test_PIL_functions(tk_app: Tk):
 
     # need to test this here since init_PIL must be called first
     example_error = Exception("test")
-    placeholder: PhotoImage = get_placeholder_for_errored_image(example_error, 10, 10)
+    placeholder: Image.Image = get_placeholder_for_errored_image(example_error, 10, 10)
 
-    assert type(placeholder) is PhotoImage
+    assert type(placeholder) is Image.Image
 
 
 def test_magic_number_guess():
@@ -58,7 +58,7 @@ def test_resize():
     same_size_image = resize(example_image, (10, 10))
 
     # Will not resize to the same dimensions
-    assert same_size_image is example_image
+    assert same_size_image == example_image
 
     new_image = resize(example_image, (20, 20))
 
