@@ -91,7 +91,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
 
 def get_placeholder_for_errored_image(
     error: Exception, screen_width: int, screen_height: int
-) -> PhotoImage:
+) -> list[Image]:
     """Returns a PhotoImage with error message to display"""
     error_title: str = f"{type(error).__name__} occurred while trying to load file"
 
@@ -116,7 +116,7 @@ def get_placeholder_for_errored_image(
     x_offset = (screen_width - w) >> 1
     draw.text((x_offset, y_offset), formated_error, TEXT_RGB)
 
-    return PhotoImage(draw._image)  # type: ignore
+    return [draw._image]  # type: ignore
 
 
 def _preinit() -> None:  # pragma: no cover

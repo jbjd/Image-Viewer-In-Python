@@ -44,12 +44,12 @@ def test_get_fit_to_screen(image_resizer: ImageResizer):
 
     # JPEG is special case
     with patch.object(ImageResizer, "_get_jpeg_fit_to_screen") as mock_jpeg_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format="JPEG"))
+        image_resizer.get_image_pyramid(MockImage(format="JPEG"))
         mock_jpeg_fit.assert_called_once()
 
     # Any other type should use generic resize functions
     with patch.object(ImageResizer, "_fit_to_screen") as mock_generic_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format="PNG"))
+        image_resizer.get_image_pyramid(MockImage(format="PNG"))
         mock_generic_fit.assert_called_once()
 
 
@@ -59,7 +59,7 @@ def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer)
     image: Image = new_image("RGB", (1000, 1000))  # smaller than screen
 
     with patch.object(TurboJPEG, "decode") as mock_decode:
-        image_resizer._get_jpeg_fit_to_screen(image)
+        image_resizer._get_jpeg_pyramid(image)
         mock_decode.assert_not_called()
 
 

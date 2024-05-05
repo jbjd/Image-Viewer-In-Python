@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from os import stat
+from math import log
 from threading import Thread
 
 from PIL import UnidentifiedImageError
@@ -24,10 +25,10 @@ class ImageLoader:
         "animation_callback",
         "frame_index",
         "image_cache",
+        "image_pyramid",
         "image_resizer",
         "PIL_image",
         "zoom_state",
-        "zoomed_image_cache",
     )
 
     def __init__(
@@ -42,11 +43,27 @@ class ImageLoader:
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
         self.PIL_image = Image()
+        self.image_pyramid: list[Image]
 
         self.animation_frames: list[tuple[PhotoImage | None, int]] = []
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
-        self.zoomed_image_cache: list[PhotoImage] = []
+
+    def get_zoomed_image(self, zoom_in: bool):
+        zoom_changed = self.zoom_state.try_update_zoom_level(zoom_in)
+        if not zoom_changed:
+            return None
+
+        if self.zoom_state.level == 1:
+            return PhotoImage(self.image_pyramid[-1])
+
+        zoom_scale: float = self.zoom_state.zoom_scale
+
+        pyramid_index: int = -2 - int(log(zoom_scale, 2))
+        if -pyramid_index > len(self.image_pyramid):
+            pyramid_index = 0
+        image = self.image_pyramid[pyramid_index]
+        return PhotoImage(self.image_resizer.get_zoomed_image(image, zoom_scale))
 
     def get_next_frame(self) -> tuple[PhotoImage | None, int]:
         """Gets next frame of animated image or None while its being loaded"""
@@ -68,13 +85,13 @@ class ImageLoader:
         )
         return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
 
-    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
+    def begin_animation(self, current_image: Image, frame_count: int) -> None:
         """Begins new thread to handle displaying frames of an aniamted image"""
         self.animation_frames = [(None, 0)] * frame_count
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
 
-        self.animation_frames[0] = current_image, ms_until_next_frame
+        self.animation_frames[0] = PhotoImage(current_image), ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_remaining_frames,
@@ -99,17 +116,16 @@ class ImageLoader:
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
-        current_image: PhotoImage
         cached_image_data = self.image_cache.get(path_to_image)
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
-            current_image = cached_image_data.image
+            self.image_pyramid = cached_image_data.image
         else:
             original_mode: str = self.PIL_image.mode
-            current_image = self._load_image_from_disk()
+            self.image_pyramid = self._load_image_from_disk()
             size_display: str = get_byte_display(byte_size)
 
             self.image_cache[path_to_image] = CachedImage(
-                current_image,
+                self.image_pyramid,
                 self.PIL_image.size,
                 size_display,
                 byte_size,
@@ -119,21 +135,19 @@ class ImageLoader:
         frame_count: int = getattr(self.PIL_image, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finished loading
-            self.begin_animation(current_image, frame_count)
+            self.begin_animation(self.image_pyramid[0], frame_count)
         else:
             self.PIL_image.close()
 
-        # first zoom level is just the image as is
-        self.zoomed_image_cache = [current_image]
-
+        current_image: PhotoImage = PhotoImage(self.image_pyramid[-1])
         return current_image
 
-    def _load_image_from_disk(self) -> PhotoImage:
+    def _load_image_from_disk(self) -> list[Image]:
         """Resizes PIL image, which forces a load from disk.
         Caches it and returns it as a PhotoImage"""
-        current_image: PhotoImage
+        current_image: list[Image]
         try:
-            current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)
+            current_image = self.image_resizer.get_image_pyramid(self.PIL_image)
         except OSError as e:
             current_image = get_placeholder_for_errored_image(
                 e,
@@ -142,32 +156,6 @@ class ImageLoader:
             )
 
         return current_image
-
-    def get_zoomed_image(self, path_to_image: str, zoom_in: bool) -> PhotoImage | None:
-        """Handles getting and caching zoomed versions of the current image"""
-        if not self.zoom_state.try_update_zoom_level(zoom_in):
-            return None
-
-        zoom_level: int = self.zoom_state.level
-        if zoom_level < len(self.zoomed_image_cache):
-            return self.zoomed_image_cache[zoom_level]
-
-        # Not in cache, resize to new zoom
-        try:
-            with open_image(path_to_image) as fp:
-                zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
-                    fp, zoom_level
-                )
-            if hit_zoom_cap:
-                self.zoom_state.hit_cap()
-
-            self.zoomed_image_cache.append(zoomed_image)
-
-            return zoomed_image
-        except (FileNotFoundError, UnidentifiedImageError):
-            pass
-
-        return None
 
     def load_remaining_frames(
         self,
@@ -186,7 +174,7 @@ class ImageLoader:
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.animation_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(PIL_image),
+                    PhotoImage(self.image_resizer.get_image_pyramid(PIL_image)[0]),
                     ms_until_next_frame,
                 )
             except Exception:
@@ -204,4 +192,3 @@ class ImageLoader:
         self.frame_index = 0
         self.PIL_image.close()
         self.zoom_state.reset()
-        self.zoomed_image_cache = []

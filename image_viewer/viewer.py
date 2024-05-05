@@ -32,6 +32,7 @@ class ViewerApp:
         "image_load_id",
         "move_id",
         "need_to_redraw",
+        "photo_image_display",
         "rename_button_id",
         "rename_entry",
         "width_ratio",
@@ -278,10 +279,9 @@ class ViewerApp:
     ) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
         zoom_in: bool = keycode == Key.EQUALS
-        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(
-            self.file_manager.path_to_image, zoom_in
-        )
+        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(zoom_in)
         if new_image is not None:
+            self.photo_image_display = new_image
             self.canvas.update_existing_image_display(new_image)
 
     def handle_zoom(
@@ -395,10 +395,11 @@ class ViewerApp:
 
     def update_after_image_load(self, current_image: PhotoImage) -> None:
         """Updates app title and displayed image"""
+        self.photo_image_display = current_image
         self.canvas.update_image_display(current_image)
         self.app.title(self.file_manager.current_image.name)
 
-    def _load_image_at_current_path(self):
+    def _load_image_at_current_path(self) -> PhotoImage | None:
         """Wraps ImageLoader's load call with path from FileManager"""
         return self.image_loader.load_image(self.file_manager.path_to_image)
 
@@ -407,6 +408,7 @@ class ViewerApp:
         self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
+        current_image: PhotoImage | None
         while (current_image := self._load_image_at_current_path()) is None:
             self.remove_current_image()
 
