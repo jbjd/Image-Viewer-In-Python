@@ -3,8 +3,8 @@ from time import perf_counter
 from tkinter import Event, Tk
 from typing import Literal, NoReturn
 
-from PIL.ImageTk import PhotoImage
 from PIL.Image import Image
+from PIL.ImageTk import PhotoImage
 
 from constants import TOPBAR_TAG, Key, Rotation
 from factories.icon_factory import IconFactory
