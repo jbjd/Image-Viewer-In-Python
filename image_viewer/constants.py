@@ -24,7 +24,6 @@ class Key(IntEnum):
 class Rotation(IntEnum):
     """Denotes angle of rotation"""
 
-    ORIGINAL = 0
     LEFT = 90
     RIGHT = 270
     FLIP = 180

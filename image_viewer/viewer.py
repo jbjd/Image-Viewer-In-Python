@@ -234,12 +234,13 @@ class ViewerApp:
                 angle = Rotation.LEFT
             case Key.RIGHT:
                 angle = Rotation.RIGHT
-            case Key.DOWN:
-                angle = Rotation.FLIP
             case _:
-                angle = Rotation.ORIGINAL
+                angle = Rotation.FLIP
 
-        self.load_image_unblocking(angle)
+        self.image_loader.reset_and_setup()
+        image: Image = self.image_loader.get_PIL_image(self.file_manager.path_to_image)
+        self.file_manager.rotate_image_and_save(image, angle)
+        self.load_image_unblocking()
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
@@ -421,16 +422,16 @@ class ViewerApp:
         self.canvas.update_image_display(self._display_image)
         self.app.title(self.file_manager.current_image.name)
 
-    def _load_image_at_current_path(self, angle: Rotation = Rotation.ORIGINAL):
+    def _load_image_at_current_path(self):
         """Wraps ImageLoader's load call with path from FileManager"""
-        return self.image_loader.load_image(self.file_manager.path_to_image, angle)
+        return self.image_loader.load_image(self.file_manager.path_to_image)
 
-    def load_image(self, angle: Rotation = Rotation.ORIGINAL) -> None:
+    def load_image(self) -> None:
         """Loads an image and updates display"""
         self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
-        while (current_image := self._load_image_at_current_path(angle)) is None:
+        while (current_image := self._load_image_at_current_path()) is None:
             self.remove_current_image()
 
         self.update_after_image_load(current_image)
@@ -439,12 +440,12 @@ class ViewerApp:
 
         self.image_load_id = ""
 
-    def load_image_unblocking(self, angle: Rotation = Rotation.ORIGINAL) -> None:
+    def load_image_unblocking(self) -> None:
         """Loads an image without blocking main thread"""
         self.dropdown.need_refresh = True
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
-        self.image_load_id = self.app.after(0, self.load_image, angle)
+        self.image_load_id = self.app.after(0, self.load_image)
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
@@ -500,7 +501,8 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_existing_image_display(PhotoImage(frame))
+            self._display_image = PhotoImage(frame)
+            self.canvas.update_existing_image_display(self._display_image)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 

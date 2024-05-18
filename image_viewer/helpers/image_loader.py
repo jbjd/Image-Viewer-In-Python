@@ -6,12 +6,11 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
-from constants import Rotation
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
 from util.image import CachedImage, ImageCache, magic_number_guess
 from util.os import get_byte_display
-from util.PIL import get_placeholder_for_errored_image, rotate_image
+from util.PIL import get_placeholder_for_errored_image
 
 
 class ImageLoader:
@@ -85,16 +84,16 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
-    def load_image(
-        self, path_to_image: str, angle: Rotation = Rotation.ORIGINAL
-    ) -> Image | None:
+    def get_PIL_image(self, path_to_image: str) -> Image:
+        fp = open(path_to_image, "rb")
+        type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
+        return open_image(fp, "r", type_to_try_loading)
+
+    def load_image(self, path_to_image: str) -> Image | None:
         """Loads an image and resizes it to fit on the screen
         Returns Image or None on failure to load"""
         try:
-            # open even if in cache to throw error if user deleted it outside of program
-            fp = open(path_to_image, "rb")
-            type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
-            self.PIL_image = open_image(fp, "r", type_to_try_loading)
+            self.PIL_image = self.get_PIL_image(path_to_image)
         except (FileNotFoundError, UnidentifiedImageError):
             return None
 
@@ -103,25 +102,20 @@ class ImageLoader:
         # check if was cached and not changed outside of program
         current_image: Image
         cached_image_data = self.image_cache.get(path_to_image)
-        if (
-            cached_image_data is not None
-            and byte_size == cached_image_data.byte_size
-            and angle == Rotation.ORIGINAL
-        ):
+        if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             current_image = cached_image_data.image
         else:
             original_mode: str = self.PIL_image.mode
-            current_image = self._load_image_from_disk(angle)
+            current_image = self._load_image_from_disk()
             size_display: str = get_byte_display(byte_size)
 
-            if angle == Rotation.ORIGINAL:
-                self.image_cache[path_to_image] = CachedImage(
-                    current_image,
-                    self.PIL_image.size,
-                    size_display,
-                    byte_size,
-                    original_mode,
-                )
+            self.image_cache[path_to_image] = CachedImage(
+                current_image,
+                self.PIL_image.size,
+                size_display,
+                byte_size,
+                original_mode,
+            )
 
         frame_count: int = getattr(self.PIL_image, "n_frames", 1)
         if frame_count > 1:
@@ -135,12 +129,9 @@ class ImageLoader:
 
         return current_image
 
-    def _load_image_from_disk(self, angle: Rotation = Rotation.ORIGINAL) -> Image:
+    def _load_image_from_disk(self) -> Image:
         """Resizes PIL image, which forces a load from disk.
         Caches it and returns it as a PhotoImage"""
-        if angle != Rotation.ORIGINAL:
-            self.PIL_image = rotate_image(self.PIL_image, angle)
-
         current_image: Image
         try:
             current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)

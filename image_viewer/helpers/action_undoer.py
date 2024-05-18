@@ -83,7 +83,10 @@ class ActionUndoer(deque[FileAction]):
             return (action.original_path, "")
 
         elif type(action) is Rotate:
-            raise NotImplementedError  # TODO: implement!
+
+            with open(action.original_path, "wb") as fp:
+                fp.write(action.original_bytes)
+            return ("", "")
 
         else:
             assert False  # Unreachable
