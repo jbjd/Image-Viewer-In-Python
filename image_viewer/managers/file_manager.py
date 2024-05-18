@@ -177,17 +177,17 @@ class ImageFileManager:
         self._clear_current_image_data()
         self._update_after_move_or_edit()
 
-    def _clear_image_data(self, index: int) -> None:
-        deleted_name: str = self._files.pop(index).name
-        key: str = self.get_path_to_image(deleted_name)
-        self.image_cache.pop_safe(key)
-
     def _clear_current_image_data(self) -> None:
         try:
             self._files.pop_current_image()
         except IndexError:
             pass
         self.image_cache.pop_safe(self.path_to_image)
+
+    def _clear_image_data(self, index: int) -> None:
+        deleted_name: str = self._files.pop(index).name
+        key: str = self.get_path_to_image(deleted_name)
+        self.image_cache.pop_safe(key)
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
