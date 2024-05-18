@@ -122,7 +122,9 @@ class ViewerApp:
         app.bind("<Control-r>", self.refresh)
         app.bind(
             "<Control-d>",
-            lambda _: self.file_manager.show_image_details(self.image_loader.PIL_image),
+            lambda _: self.file_manager.show_image_detail_popup(
+                self.image_loader.PIL_image
+            ),
         )
         app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_rename_or_convert)

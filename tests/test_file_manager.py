@@ -135,7 +135,7 @@ def test_get_and_show_details(manager: ImageFileManager):
     PIL_image = MockImage()
     PIL_image.info["comment"] = b"test"
     with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
-        manager.show_image_details(PIL_image)
+        manager.show_image_detail_popup(PIL_image)
         mock_show_info.assert_not_called()
 
     manager.image_cache[manager.path_to_image] = CachedImage(
@@ -147,13 +147,13 @@ def test_get_and_show_details(manager: ImageFileManager):
 
     with patch.object(os, "stat", return_value=MockStatResult(0)):
         with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
-            manager.show_image_details(PIL_image)
+            manager.show_image_detail_popup(PIL_image)
             mock_show_info.assert_called_once()
 
     # Will not fail on OSError
     with patch.object(os, "stat", side_effect=OSError):
         with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
-            manager.show_image_details(PIL_image)
+            manager.show_image_detail_popup(PIL_image)
             mock_show_info.assert_called_once()
 
 

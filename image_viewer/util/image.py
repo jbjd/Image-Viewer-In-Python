@@ -35,7 +35,7 @@ class CachedImage:
 class ImageCache(dict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
-    def safe_pop(self, image_path: str) -> None:
+    def pop_safe(self, image_path: str) -> None:
         self.pop(image_path, None)
 
     def image_cache_still_fresh(self, image_path: str) -> bool:
@@ -80,7 +80,7 @@ class ImageNameList(list[ImageName]):
     def sort_and_preserve_index(self, image_to_start_at: str) -> None:
         """Sorts and keeps index at the same image"""
         super().sort()
-        self.display_index = self.binary_search(image_to_start_at)[0]
+        self.display_index, _ = self.binary_search(image_to_start_at)
 
     def pop_current_image(self) -> None:
         """Pops current index and raises IndexError if last image popped"""

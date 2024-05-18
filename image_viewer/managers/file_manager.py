@@ -1,4 +1,5 @@
 import os
+from os import stat_result
 from time import ctime
 from tkinter.messagebox import askyesno, showinfo
 
@@ -57,7 +58,8 @@ class ImageFileManager:
         return image_name
 
     def move_to_new_directory(self) -> bool:
-        """Asks user new image to go to and move to that image's directory"""
+        """Asks user new image to go to and move to that image's directory
+        Returns True if moving to new directory succeeded"""
         new_file_path: str = self.file_dialog_asker.ask_open_image(self.image_directory)
         if new_file_path == "":
             return False
@@ -69,6 +71,8 @@ class ImageFileManager:
             self.image_directory = new_dir
             self.find_all_images()
 
+        index: int
+        found: bool
         index, found = self._files.binary_search(choosen_file)
         self._files.display_index = index
         if not found:
@@ -121,30 +125,31 @@ class ImageFileManager:
             "1": "Black And White",
         }.get(mode, mode)
 
-        dimension_text: str = f"Pixels: {image_info.width}x{image_info.height}"
-        size_text: str = f"Size: {image_info.size_display}"
-        mode_text: str = f"Pixel Format: {bpp} bpp {readable_mode}"
+        text: str = (
+            f"Pixels: {image_info.width}x{image_info.height}\n"
+            f"Size: {image_info.size_display}\n"
+            f"Pixel Format: {bpp} bpp {readable_mode}"
+        )
+        return text
 
-        return f"{dimension_text}\n{size_text}\n{mode_text}"
-
-    def show_image_details(self, PIL_Image: Image) -> None:
-        """Shows a popup with image details"""
+    def show_image_detail_popup(self, PIL_Image: Image) -> None:
         try:
             details: str = f"{self.get_cached_details()}\n"
         except KeyError:
             return  # don't fail trying to read, if not in cache just exit
 
         try:
-            os_info = os.stat(self.path_to_image)
+            image_metadata: stat_result = os.stat(self.path_to_image)
             # [4:] chops of 3 character day like Mon/Tue/etc.
-            created_time: str = ctime(os_info.st_ctime)[4:]
-            last_modifed_time: str = ctime(os_info.st_mtime)[4:]
+            created_time: str = ctime(image_metadata.st_ctime)[4:]
+            last_modifed_time: str = ctime(image_metadata.st_mtime)[4:]
             details += f"Created: {created_time}\nLast Modified: {last_modifed_time}\n"
         except (OSError, ValueError):
             pass  # don't include if can't get
 
         # Can add more here, just didn't see any others I felt were important enough
-        if comment := PIL_Image.info.get("comment"):
+        comment: bytes | None = PIL_Image.info.get("comment")
+        if comment:
             details += f"Comment: {comment.decode('utf-8')}\n"
 
         showinfo("Image Details", details)
@@ -168,51 +173,49 @@ class ImageFileManager:
         self._clear_current_image_data()
         self._update_after_move_or_edit()
 
-    def _clear_image_data(self, index: int) -> None:
-        deleted_name: str = self._files.pop(index).name
-        key: str = self.construct_path_to_image(deleted_name)
-        self.image_cache.safe_pop(key)
-
     def _clear_current_image_data(self) -> None:
         try:
             self._files.pop_current_image()
         except IndexError:
             pass
-        self.image_cache.safe_pop(self.path_to_image)
+        self.image_cache.pop_safe(self.path_to_image)
+
+    def _clear_image_data(self, index: int) -> None:
+        deleted_name: str = self._files.pop(index).name
+        key: str = self.construct_path_to_image(deleted_name)
+        self.image_cache.pop_safe(key)
 
     def rename_or_convert_current_image(self, new_name_or_path: str) -> None:
         """Try to either rename or convert based on input"""
+        new_dir: str
+        new_name: str
         new_dir, new_name = self._split_dir_and_name(new_name_or_path)
 
-        new_image_data = ImageName(new_name)
-        if new_image_data.suffix not in self.VALID_FILE_TYPES:
+        new_image_name: ImageName = ImageName(new_name)
+        if new_image_name.suffix not in self.VALID_FILE_TYPES:
             new_name += f".{self.current_image.suffix}"
-            new_image_data = ImageName(new_name)
+            new_image_name = ImageName(new_name)
 
         original_path: str = self.path_to_image
-        new_full_path: str = self._construct_path_for_rename(
-            new_dir, new_image_data.name
-        )
+        new_path: str = self._construct_path_for_rename(new_dir, new_image_name.name)
 
         result: Rename
         if (
-            new_image_data.suffix != self.current_image.suffix
+            new_image_name.suffix != self.current_image.suffix
             and try_convert_file_and_save_new(
-                original_path,
-                new_full_path,
-                new_image_data.suffix,
+                original_path, new_path, new_image_name.suffix
             )
         ):
             result = self._ask_to_delete_old_image_after_convert(
-                original_path, new_full_path, new_image_data.suffix
+                original_path, new_path, new_image_name.suffix
             )
         else:
-            result = self._rename(original_path, new_full_path)
+            result = self._rename(original_path, new_path)
 
         self.action_undoer.append(result)
 
-        # Only add image if its still in the same directory
-        if get_dir_name(new_full_path) == get_dir_name(original_path):
+        # Only add image if its still in the directory we are currently in
+        if get_dir_name(new_path) == get_dir_name(original_path):
             preserve_index: bool = self._should_perserve_index(result)
             self.add_new_image(new_name, preserve_index)
         else:
@@ -284,8 +287,8 @@ class ImageFileManager:
 
     @staticmethod
     def _should_perserve_index(result: Rename) -> bool:
-        """Returns True when special adjustment needed to stay
-        on current index"""
+        """Returns True when image list shifted or changed size so internal index
+        needs to be changed to keep on the same image"""
         if isinstance(result, Convert):
             return not result.original_file_deleted
 
@@ -296,11 +299,11 @@ class ImageFileManager:
     ) -> None:
         """Adds a new image to the image list
         preserve_index: try to keep index at the same image it was before adding"""
-        image_data = ImageName(new_name)
+        image_name: ImageName = ImageName(new_name)
         if index < 0:
-            index = self._files.binary_search(image_data.name)[0]
+            index, _ = self._files.binary_search(image_name.name)
 
-        self._files.insert(index, image_data)
+        self._files.insert(index, image_name)
         if preserve_index and index <= self._files.display_index:
             self._files.move_index(1)
         self._update_after_move_or_edit()
@@ -311,20 +314,24 @@ class ImageFileManager:
         if not self._ask_undo_last_action():
             return False
 
+        image_to_add_path: str
+        image_to_remove_path: str
         try:
-            image_to_add, image_to_remove = self.action_undoer.undo()
+            image_to_add_path, image_to_remove_path = self.action_undoer.undo()
         except OSError:
             return False  # TODO: error popup?
 
-        image_to_add = os.path.basename(image_to_add)
-        image_to_remove = os.path.basename(image_to_remove)
+        image_to_add: str = os.path.basename(image_to_add_path)
+        image_to_remove: str = os.path.basename(image_to_remove_path)
 
-        if image_to_remove:
+        if image_to_remove != "":
+            index: int
+            found: bool
             index, found = self._files.binary_search(image_to_remove)
             if found:
                 self._clear_image_data(index)
 
-        if image_to_add:
+        if image_to_add != "":
             preserve_index: bool = image_to_remove == ""
             self.add_new_image(image_to_add, preserve_index)
         else:
@@ -337,9 +344,10 @@ class ImageFileManager:
         try:
             undo_message: str = self.action_undoer.get_undo_message()
         except IndexError:
-            return False
+            return False  # There was no action to undo
+
         return askyesno("Undo Rename/Convert", undo_message)
 
     def current_image_cache_still_fresh(self) -> bool:
-        """Checks if cached image is still up to date"""
+        """Checks if cache for currently displayed image is still up to date"""
         return self.image_cache.image_cache_still_fresh(self.path_to_image)
