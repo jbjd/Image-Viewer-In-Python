@@ -57,7 +57,7 @@ else:  # assume linux for now
 
 
 def clean_str_for_OS_path(path: str) -> str:
-    """Removes characters that paths can't have on this OS"""
+    """Removes characters that paths on this OS can't have"""
     return illegal_char.sub("", path)
 
 
@@ -68,7 +68,7 @@ def get_byte_display(bytes: int) -> str:
 
 
 def trash_file(path: str) -> None:
-    """OS generic send file to trash"""
+    """OS generic way to send files to trash"""
     send2trash(os.path.normpath(path))
 
 

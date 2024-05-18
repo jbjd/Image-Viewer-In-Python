@@ -11,15 +11,15 @@ from util.PIL import save_image
 def try_convert_file_and_save_new(
     old_path: str, new_path: str, target_ext: str
 ) -> bool:
-    """Tries to convert to new file format.
+    """Tries to convert to a target format.
     Raises ValueError if converting animated file to non-animated format
-    Returns bool if conversion performed, false when converting to the same type
+    Returns True if conversion performed, False when converting to the same type
     """
     with open(old_path, "rb") as fp:
         original_ext: str = magic_number_guess(fp.read(4))[0]
 
-        # If trying to convert to same ext, no conversion needed
-        # Only first letter checked here so jpeg is considered the same as jpg and so on
+        # Only first letter checked since jpeg is the only supported file extension
+        # that has multiple variations and all start with 'j'
         if target_ext[0] == original_ext[0].lower():
             return False
 
