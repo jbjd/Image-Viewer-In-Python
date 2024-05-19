@@ -242,10 +242,18 @@ class ViewerApp:
                 angle = Rotation.FLIP
 
         self.image_loader.reset_and_setup()
-        image: Image = self.image_loader.get_PIL_image(self.file_manager.path_to_image)
-        if not image_is_animated(image):
-            self.file_manager.rotate_image_and_save(image, angle)
-            self.load_image_unblocking()
+
+        path: str = self.file_manager.path_to_image
+        image: Image | None = self.image_loader.get_PIL_image(path)
+
+        if image is not None and not image_is_animated(image):
+            try:
+                self.file_manager.rotate_image_and_save(image, angle)
+                self.load_image_unblocking()
+            except (FileNotFoundError, OSError):
+                pass
+            finally:
+                image.close()
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""

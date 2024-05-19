@@ -84,19 +84,24 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
-    def get_PIL_image(self, path_to_image: str) -> Image:
-        fp = open(path_to_image, "rb")
-        type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
-        return open_image(fp, "r", type_to_try_loading)
+    def get_PIL_image(self, path_to_image: str) -> Image | None:
+        """Trys to open file on disk as PIL Image
+        Returns Image or None on failure"""
+        try:
+            fp = open(path_to_image, "rb")
+            type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
+            return open_image(fp, "r", type_to_try_loading)
+        except (FileNotFoundError, UnidentifiedImageError, OSError):
+            return None
 
     def load_image(self, path_to_image: str) -> Image | None:
         """Loads an image and resizes it to fit on the screen
-        Returns Image or None on failure to load"""
-        try:
-            self.PIL_image = self.get_PIL_image(path_to_image)
-        except (FileNotFoundError, UnidentifiedImageError):
+        Returns Image or None on failure"""
+        PIL_image: Image | None = self.get_PIL_image(path_to_image)
+        if PIL_image is None:
             return None
 
+        self.PIL_image = PIL_image
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
