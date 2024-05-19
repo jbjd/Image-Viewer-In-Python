@@ -16,7 +16,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
-from util.PIL import create_dropdown_image, init_PIL, image_is_animated
+from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
 
 class ViewerApp:

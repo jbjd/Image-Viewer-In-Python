@@ -5,7 +5,7 @@ Deals with converting between image file types
 from PIL.Image import open as open_image
 
 from util.image import magic_number_guess
-from util.PIL import save_image, image_is_animated
+from util.PIL import image_is_animated, save_image
 
 
 def try_convert_file_and_save_new(

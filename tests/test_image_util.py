@@ -1,6 +1,6 @@
 from tkinter import Tk
 
-from PIL import Image
+from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
 from image_viewer.util.image import ImageName, magic_number_guess
@@ -26,16 +26,19 @@ def test_image_path():
 
 def test_PIL_functions(tk_app: Tk):
     """Ensure no error with font and that PIL.Image gets modified"""
+    from PIL import Image as _Image
+
     init_PIL(20)
-    assert len(Image._plugins) == 0  # type: ignore
+    assert len(_Image._plugins) == 0  # type: ignore
+    del _Image
 
     assert isinstance(create_dropdown_image("test\ntest"), PhotoImage)
 
     # need to test this here since init_PIL must be called first
     example_error = Exception("test")
-    placeholder: Image.Image = get_placeholder_for_errored_image(example_error, 10, 10)
+    placeholder: Image = get_placeholder_for_errored_image(example_error, 10, 10)
 
-    assert type(placeholder) is Image.Image
+    assert type(placeholder) is Image
 
 
 def test_magic_number_guess():
@@ -53,7 +56,7 @@ def test_magic_number_guess():
 def test_resize():
     """Test a variety of PIL Image resize scenarios"""
 
-    example_image = Image.new("P", (10, 10))
+    example_image = new("P", (10, 10))
 
     same_size_image = resize(example_image, (10, 10))
 
