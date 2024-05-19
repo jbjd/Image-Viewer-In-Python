@@ -16,7 +16,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
-from util.PIL import create_dropdown_image, init_PIL
+from util.PIL import create_dropdown_image, init_PIL, image_is_animated
 
 
 class ViewerApp:
@@ -229,6 +229,10 @@ class ViewerApp:
     # Functions handling specific user input
 
     def handle_rotate_image(self, event: Event) -> None:
+        """Rotates image, saves it to disk, and updates the display"""
+        if self._currently_animating():
+            return
+
         match event.keycode:
             case Key.LEFT:
                 angle = Rotation.LEFT
@@ -239,8 +243,9 @@ class ViewerApp:
 
         self.image_loader.reset_and_setup()
         image: Image = self.image_loader.get_PIL_image(self.file_manager.path_to_image)
-        self.file_manager.rotate_image_and_save(image, angle)
-        self.load_image_unblocking()
+        if not image_is_animated(image):
+            self.file_manager.rotate_image_and_save(image, angle)
+            self.load_image_unblocking()
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
@@ -311,7 +316,7 @@ class ViewerApp:
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
     ) -> None:
         """Handle user input of zooming in or out"""
-        if self.animation_id != "":
+        if self._currently_animating():
             return
 
         if self.image_load_id != "":
@@ -485,6 +490,10 @@ class ViewerApp:
 
         self.update_details_dropdown()
 
+    def _currently_animating(self) -> bool:
+        """Returns True when currently in an animation loop"""
+        return self.animation_id != ""
+
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
         """Handles looping between animation frames"""
         self.animation_id = self.app.after(
@@ -510,7 +519,7 @@ class ViewerApp:
 
     def clear_image(self) -> None:
         """Clears all image data"""
-        if self.animation_id != "":
+        if self._currently_animating():
             self.app.after_cancel(self.animation_id)
             self.animation_id = ""
         self.image_loader.reset_and_setup()

@@ -22,15 +22,18 @@ def save_image(
     is_animated: bool | None = None,
 ) -> None:
     """Saves a PIL image to disk"""
-    save_all: bool = (
-        getattr(image, "is_animated", False) if is_animated is None else is_animated
-    )
+    save_all: bool = image_is_animated(image) if is_animated is None else is_animated
     image.save(fp, format, optimize=True, method=6, quality=quality, save_all=save_all)
 
 
 def rotate_image(image: Image, angle: Rotation) -> Image:
     """Rotates an image with the highest quality"""
     return image.rotate(angle, Resampling.LANCZOS, expand=True)
+
+
+def image_is_animated(image: Image) -> bool:
+    """Returns True if PIL Image is animated"""
+    return getattr(image, "is_animated", False)
 
 
 def _resize_new(
