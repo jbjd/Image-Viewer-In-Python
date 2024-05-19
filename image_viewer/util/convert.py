@@ -5,6 +5,7 @@ Deals with converting between image file types
 from PIL.Image import open as open_image
 
 from util.image import magic_number_guess
+from util.PIL import image_is_animated, save_image
 
 
 def try_convert_file_and_save_new(
@@ -23,7 +24,7 @@ def try_convert_file_and_save_new(
             return False
 
         with open_image(fp) as temp_img:
-            is_animated: bool = getattr(temp_img, "is_animated", False)
+            is_animated: bool = image_is_animated(temp_img)
             if is_animated and target_ext not in ("webp", "gif", "png"):
                 raise ValueError
 
@@ -40,13 +41,11 @@ def try_convert_file_and_save_new(
                 case _:
                     return False
 
-            temp_img.save(
+            save_image(
+                temp_img,
                 new_path,
                 target_ext,
-                quality=90,
-                method=6,
-                optimize=True,
-                save_all=is_animated,
+                is_animated=is_animated,
             )
 
     return True

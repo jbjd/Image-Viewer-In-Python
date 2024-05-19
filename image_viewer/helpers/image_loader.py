@@ -5,7 +5,6 @@ from threading import Thread
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
-from PIL.ImageTk import PhotoImage
 
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
@@ -43,12 +42,12 @@ class ImageLoader:
 
         self.PIL_image = Image()
 
-        self.animation_frames: list[tuple[PhotoImage | None, int]] = []
+        self.animation_frames: list[tuple[Image | None, int]] = []
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
-        self.zoomed_image_cache: list[PhotoImage] = []
+        self.zoomed_image_cache: list[Image] = []
 
-    def get_next_frame(self) -> tuple[PhotoImage | None, int]:
+    def get_next_frame(self) -> tuple[Image | None, int]:
         """Gets next frame of animated image or None while its being loaded"""
         try:
             self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
@@ -68,7 +67,7 @@ class ImageLoader:
         )
         return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
 
-    def begin_animation(self, current_image: PhotoImage, frame_count: int) -> None:
+    def begin_animation(self, current_image: Image, frame_count: int) -> None:
         """Begins new thread to handle displaying frames of an aniamted image"""
         self.animation_frames = [(None, 0)] * frame_count
 
@@ -85,21 +84,28 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
-    def load_image(self, path_to_image) -> PhotoImage | None:
-        """Loads an image and resizes it to fit on the screen
-        Returns PhotoImage or None on failure to load"""
+    def get_PIL_image(self, path_to_image: str) -> Image | None:
+        """Trys to open file on disk as PIL Image
+        Returns Image or None on failure"""
         try:
-            # open even if in cache to throw error if user deleted it outside of program
             fp = open(path_to_image, "rb")
             type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
-            self.PIL_image = open_image(fp, "r", type_to_try_loading)
-        except (FileNotFoundError, UnidentifiedImageError):
+            return open_image(fp, "r", type_to_try_loading)
+        except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
+    def load_image(self, path_to_image: str) -> Image | None:
+        """Loads an image and resizes it to fit on the screen
+        Returns Image or None on failure"""
+        PIL_image: Image | None = self.get_PIL_image(path_to_image)
+        if PIL_image is None:
+            return None
+
+        self.PIL_image = PIL_image
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
-        current_image: PhotoImage
+        current_image: Image
         cached_image_data = self.image_cache.get(path_to_image)
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             current_image = cached_image_data.image
@@ -128,10 +134,10 @@ class ImageLoader:
 
         return current_image
 
-    def _load_image_from_disk(self) -> PhotoImage:
+    def _load_image_from_disk(self) -> Image:
         """Resizes PIL image, which forces a load from disk.
         Caches it and returns it as a PhotoImage"""
-        current_image: PhotoImage
+        current_image: Image
         try:
             current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)
         except OSError as e:
@@ -143,7 +149,7 @@ class ImageLoader:
 
         return current_image
 
-    def get_zoomed_image(self, path_to_image: str, zoom_in: bool) -> PhotoImage | None:
+    def get_zoomed_image(self, path_to_image: str, zoom_in: bool) -> Image | None:
         """Handles getting and caching zoomed versions of the current image"""
         if not self.zoom_state.try_update_zoom_level(zoom_in):
             return None
