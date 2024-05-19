@@ -309,8 +309,7 @@ class ViewerApp:
             self.file_manager.path_to_image, zoom_in
         )
         if new_image is not None:
-            self._display_image = PhotoImage(new_image)
-            self.canvas.update_existing_image_display(self._display_image)
+            self._update_image_display(new_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
@@ -421,10 +420,14 @@ class ViewerApp:
         self.hide_rename_window()
         self.load_image_unblocking()
 
-    def update_after_image_load(self, current_image: Image) -> None:
-        """Updates app title and displayed image"""
-        self._display_image = PhotoImage(current_image)
+    def _update_image_display(self, image: Image) -> None:
+        """Updates display with PhotoImage version of provided Image"""
+        self._display_image = PhotoImage(image)
         self.canvas.update_image_display(self._display_image)
+
+    def update_after_image_load(self, image: Image) -> None:
+        """Updates app title and displayed image"""
+        self._update_image_display(image)
         self.app.title(self.file_manager.current_image.name)
 
     def _load_image_at_current_path(self):
@@ -510,8 +513,7 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self._display_image = PhotoImage(frame)
-            self.canvas.update_existing_image_display(self._display_image)
+            self._update_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 
