@@ -2,6 +2,7 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
+from io import IOBase
 from textwrap import wrap
 
 from PIL import Image as _Image  # avoid name conflicts
@@ -10,7 +11,29 @@ from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
 
-from constants import TEXT_RGB
+from constants import TEXT_RGB, Rotation
+
+
+def save_image(
+    image: Image,
+    fp: str | IOBase,
+    format: str | None = None,
+    quality: int = 90,
+    is_animated: bool | None = None,
+) -> None:
+    """Saves a PIL image to disk"""
+    save_all: bool = image_is_animated(image) if is_animated is None else is_animated
+    image.save(fp, format, optimize=True, method=6, quality=quality, save_all=save_all)
+
+
+def rotate_image(image: Image, angle: Rotation) -> Image:
+    """Rotates an image with the highest quality"""
+    return image.rotate(angle, Resampling.LANCZOS, expand=True)
+
+
+def image_is_animated(image: Image) -> bool:
+    """Returns True if PIL Image is animated"""
+    return getattr(image, "is_animated", False)
 
 
 def _resize_new(
@@ -29,7 +52,7 @@ def resize(
     """Modified version of resize from PIL"""
     image.load()
     if image.size == size:
-        return image
+        return image.copy()
 
     box: tuple[int, int, int, int] = (0, 0) + image.size
     original_mode: str = image.mode
@@ -59,17 +82,18 @@ def get_image_draw(image: Image, mode=None) -> ImageDraw:
     return ImageDraw(image, mode)
 
 
-def _get_longest_line_bbox(input: str) -> tuple[int, int]:
+def _get_longest_line_dimensions(input: str) -> tuple[int, int]:
     """Returns width and height of longest string in a string with multiple lines"""
-    width_offset, height_offset, width, height = ImageDraw.font.getbbox(
-        max(input.split("\n"), key=len)
-    )
+    longest_line: str = max(input.split("\n"), key=len)
+
+    width_offset, height_offset, width, height = ImageDraw.font.getbbox(longest_line)
+
     return width + width_offset, height + height_offset
 
 
 def create_dropdown_image(text: str) -> PhotoImage:
     """Creates a new PhotoImage with current images metadata"""
-    line_width, line_height = _get_longest_line_bbox(text)
+    line_width, line_height = _get_longest_line_dimensions(text)
 
     line_count: int = text.count("\n") + 1
     line_spacing: int = round(line_height * 0.8)
@@ -92,17 +116,21 @@ def create_dropdown_image(text: str) -> PhotoImage:
 def get_placeholder_for_errored_image(
     error: Exception, screen_width: int, screen_height: int
 ) -> list[Image]:
-    """Returns a PhotoImage with error message to display"""
-    error_title: str = f"{type(error).__name__} occurred while trying to load file"
+    """Returns a list of a single Image with error message"""
+    error_type: str = type(error).__name__
+    error_title: str = f"{error_type} occurred while trying to load file"
 
     # Wrap each individual line, then join to preserve already existing new lines
+    error_text: str = str(error)
     formated_error: str = "\n".join(
-        ["\n".join(wrap(line, 100)) for line in str(error).split("\n")]
+        ["\n".join(wrap(line, 100)) for line in error_text.split("\n")]
     ).capitalize()
 
+    # Placeholder is black with brownish line going diagonally across
     blank_image: Image = new("RGB", (screen_width, screen_height))
     draw: ImageDraw = get_image_draw(blank_image)
-    draw.line((0, 0, screen_width, screen_height), (30, 20, 20), width=100)
+    LINE_RGB: tuple[int, int, int] = (30, 20, 20)
+    draw.line((0, 0, screen_width, screen_height), LINE_RGB, width=100)
 
     # Write title
     *_, w, h = ImageDraw.font.getbbox(error_title)
@@ -111,7 +139,7 @@ def get_placeholder_for_errored_image(
     draw.text((x_offset, y_offset), error_title, TEXT_RGB)
 
     # Write error body 2 lines of height below title
-    *_, w, h = _get_longest_line_bbox(formated_error)
+    w, h = _get_longest_line_dimensions(formated_error)
     y_offset += h * 2
     x_offset = (screen_width - w) >> 1
     draw.text((x_offset, y_offset), formated_error, TEXT_RGB)

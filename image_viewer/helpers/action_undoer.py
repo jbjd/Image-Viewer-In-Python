@@ -39,6 +39,16 @@ class Delete(FileAction):
     __slots__ = ()
 
 
+class Rotate(FileAction):
+    """Delete action"""
+
+    __slots__ = "original_bytes"
+
+    def __init__(self, original_path: str, original_bytes: bytes) -> None:
+        super().__init__(original_path)
+        self.original_bytes: bytes = original_bytes
+
+
 class ActionUndoer(deque[FileAction]):
     """Keeps information on recent file actions and can undo them"""
 
@@ -72,6 +82,12 @@ class ActionUndoer(deque[FileAction]):
             restore_from_bin(action.original_path)
             return (action.original_path, "")
 
+        elif type(action) is Rotate:
+
+            with open(action.original_path, "wb") as fp:
+                fp.write(action.original_bytes)
+            return ("", "")
+
         else:
             assert False  # Unreachable
 
@@ -91,5 +107,7 @@ class ActionUndoer(deque[FileAction]):
             return f"Delete {action.new_path}?"
         elif type(action) is Delete:
             return f"Restore {action.original_path} from trash?"
+        elif type(action) is Rotate:
+            return f"Undo rotation on {action.original_path}?"
         else:
             assert False  # Unreachable

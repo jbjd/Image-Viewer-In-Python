@@ -6,7 +6,7 @@ __pycache__/
 
 ERROR.log
 
-# nuitka artifacts
+# compile artifacts
 *.bin
 *.exe
 *.cmd
@@ -15,6 +15,6 @@ ERROR.log
 compilation-report.xml
 nuitka-crash-report.xml
 *tmp/
+*.egg-info
 
 *.ipynb
-*.egg-info

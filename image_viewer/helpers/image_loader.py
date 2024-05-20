@@ -6,7 +6,6 @@ from threading import Thread
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
-from PIL.ImageTk import PhotoImage
 
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
@@ -45,17 +44,17 @@ class ImageLoader:
         self.PIL_image = Image()
         self.image_pyramid: list[Image]
 
-        self.animation_frames: list[tuple[PhotoImage | None, int]] = []
+        self.animation_frames: list[tuple[Image | None, int]] = []
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
 
-    def get_zoomed_image(self, zoom_in: bool):
+    def get_zoomed_image(self, zoom_in: bool) -> Image | None:
         zoom_changed = self.zoom_state.try_update_zoom_level(zoom_in)
         if not zoom_changed:
             return None
 
         if self.zoom_state.level == 1:
-            return PhotoImage(self.image_pyramid[-1])
+            return self.image_pyramid[-1]
 
         zoom_scale: float = self.zoom_state.zoom_scale
 
@@ -63,9 +62,9 @@ class ImageLoader:
         if -pyramid_index > len(self.image_pyramid):
             pyramid_index = 0
         image = self.image_pyramid[pyramid_index]
-        return PhotoImage(self.image_resizer.get_zoomed_image(image, zoom_scale))
+        return self.image_resizer.get_zoomed_image(image, zoom_scale)
 
-    def get_next_frame(self) -> tuple[PhotoImage | None, int]:
+    def get_next_frame(self) -> tuple[Image | None, int]:
         """Gets next frame of animated image or None while its being loaded"""
         try:
             self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
@@ -91,7 +90,7 @@ class ImageLoader:
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
 
-        self.animation_frames[0] = PhotoImage(current_image), ms_until_next_frame
+        self.animation_frames[0] = current_image, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_remaining_frames,
@@ -102,17 +101,24 @@ class ImageLoader:
         # Params: time until next frame, backoff time to help loading
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
-    def load_image(self, path_to_image) -> PhotoImage | None:
-        """Loads an image and resizes it to fit on the screen
-        Returns PhotoImage or None on failure to load"""
+    def get_PIL_image(self, path_to_image: str) -> Image | None:
+        """Trys to open file on disk as PIL Image
+        Returns Image or None on failure"""
         try:
-            # open even if in cache to throw error if user deleted it outside of program
             fp = open(path_to_image, "rb")
             type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
-            self.PIL_image = open_image(fp, "r", type_to_try_loading)
-        except (FileNotFoundError, UnidentifiedImageError):
+            return open_image(fp, "r", type_to_try_loading)
+        except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
+    def load_image(self, path_to_image: str) -> Image | None:
+        """Loads an image and resizes it to fit on the screen
+        Returns Image or None on failure"""
+        PIL_image: Image | None = self.get_PIL_image(path_to_image)
+        if PIL_image is None:
+            return None
+
+        self.PIL_image = PIL_image
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
@@ -139,8 +145,7 @@ class ImageLoader:
         else:
             self.PIL_image.close()
 
-        current_image: PhotoImage = PhotoImage(self.image_pyramid[-1])
-        return current_image
+        return self.image_pyramid[-1]
 
     def _load_image_from_disk(self) -> list[Image]:
         """Resizes PIL image, which forces a load from disk.
@@ -174,7 +179,7 @@ class ImageLoader:
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.animation_frames[i] = (
-                    PhotoImage(self.image_resizer.get_image_pyramid(PIL_image)[0]),
+                    self.image_resizer.get_image_pyramid(PIL_image)[0],
                     ms_until_next_frame,
                 )
             except Exception:

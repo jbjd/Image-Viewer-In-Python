@@ -64,13 +64,13 @@ def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer)
 
 
 def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
-    """Should resize and return PIL image as PhotoImage"""
+    """Should resize and return PIL image"""
     image: Image = new_image("RGB", (10, 10))
 
     with patch(
         "image_viewer.helpers.image_resizer.resize", return_value=image
     ) as mock_resize:
-        assert type(image_resizer._fit_to_screen(image)) is PhotoImage
+        assert type(image_resizer._fit_to_screen(image)) is Image
         mock_resize.assert_called_once()
 
 

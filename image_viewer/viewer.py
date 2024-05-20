@@ -3,9 +3,10 @@ from time import perf_counter
 from tkinter import Event, Tk
 from typing import Literal, NoReturn
 
+from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG, Key
+from constants import TOPBAR_TAG, Key, Rotation
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -15,13 +16,14 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImage
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
-from util.PIL import create_dropdown_image, init_PIL
+from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
 
 class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
 
     __slots__ = (
+        "_display_image",
         "animation_id",
         "app",
         "canvas",
@@ -102,7 +104,7 @@ class ViewerApp:
         """Loads first image and then finds all images files in the directory"""
         # Don't call this class's load_image here since we only consider there
         # to be one image now, and that function would throw if that one failed to load
-        current_image: PhotoImage | None = self._load_image_at_current_path()
+        current_image: Image | None = self._load_image_at_current_path()
 
         if current_image is not None:
             self.update_after_image_load(current_image)
@@ -123,7 +125,9 @@ class ViewerApp:
         app.bind("<Control-r>", self.refresh)
         app.bind(
             "<Control-d>",
-            lambda _: self.file_manager.show_image_details(self.image_loader.PIL_image),
+            lambda _: self.file_manager.show_image_detail_popup(
+                self.image_loader.PIL_image
+            ),
         )
         app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_rename_or_convert)
@@ -131,6 +135,10 @@ class ViewerApp:
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
         app.bind("<Down>", self.show_topbar)
+        app.bind("<Alt-Left>", self.handle_rotate_image)
+        app.bind("<Alt-Right>", self.handle_rotate_image)
+        app.bind("<Alt-Up>", self.handle_rotate_image)
+        app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
             app.bind(
@@ -221,6 +229,33 @@ class ViewerApp:
 
     # Functions handling specific user input
 
+    def handle_rotate_image(self, event: Event) -> None:
+        """Rotates image, saves it to disk, and updates the display"""
+        if self._currently_animating():
+            return
+
+        match event.keycode:
+            case Key.LEFT:
+                angle = Rotation.LEFT
+            case Key.RIGHT:
+                angle = Rotation.RIGHT
+            case _:
+                angle = Rotation.FLIP
+
+        self.image_loader.reset_and_setup()
+
+        path: str = self.file_manager.path_to_image
+        image: Image | None = self.image_loader.get_PIL_image(path)
+
+        if image is not None and not image_is_animated(image):
+            try:
+                self.file_manager.rotate_image_and_save(image, angle)
+                self.load_image_unblocking()
+            except (FileNotFoundError, OSError):
+                pass
+            finally:
+                image.close()
+
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
         if self.canvas.is_widget_visible(TOPBAR_TAG):
@@ -279,16 +314,16 @@ class ViewerApp:
     ) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
         zoom_in: bool = keycode == Key.EQUALS
-        new_image: PhotoImage | None = self.image_loader.get_zoomed_image(zoom_in)
+        new_image: Image | None = self.image_loader.get_zoomed_image(zoom_in)
+
         if new_image is not None:
-            self.photo_image_display = new_image
-            self.canvas.update_existing_image_display(new_image)
+            self._update_image_display(new_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
     ) -> None:
         """Handle user input of zooming in or out"""
-        if self.animation_id != "":
+        if self._currently_animating():
             return
 
         if self.image_load_id != "":
@@ -393,13 +428,17 @@ class ViewerApp:
         self.hide_rename_window()
         self.load_image_unblocking()
 
-    def update_after_image_load(self, current_image: PhotoImage) -> None:
+    def _update_image_display(self, image: Image) -> None:
+        """Updates display with PhotoImage version of provided Image"""
+        self._display_image = PhotoImage(image)
+        self.canvas.update_image_display(self._display_image)
+
+    def update_after_image_load(self, image: Image) -> None:
         """Updates app title and displayed image"""
-        self.photo_image_display = current_image
-        self.canvas.update_image_display(current_image)
+        self._update_image_display(image)
         self.app.title(self.file_manager.current_image.name)
 
-    def _load_image_at_current_path(self) -> PhotoImage | None:
+    def _load_image_at_current_path(self) -> Image | None:
         """Wraps ImageLoader's load call with path from FileManager"""
         return self.image_loader.load_image(self.file_manager.path_to_image)
 
@@ -408,7 +447,7 @@ class ViewerApp:
         self.clear_image()
 
         # When load fails, keep removing bad image and trying to load next
-        current_image: PhotoImage | None
+        current_image: Image | None
         while (current_image := self._load_image_at_current_path()) is None:
             self.remove_current_image()
 
@@ -463,6 +502,10 @@ class ViewerApp:
 
         self.update_details_dropdown()
 
+    def _currently_animating(self) -> bool:
+        """Returns True when currently in an animation loop"""
+        return self.animation_id != ""
+
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
         """Handles looping between animation frames"""
         self.animation_id = self.app.after(
@@ -472,14 +515,14 @@ class ViewerApp:
     def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
         start: float = perf_counter()
-        frame: PhotoImage | None
+        frame: Image | None
         ms_until_next_frame: int
         frame, ms_until_next_frame = self.image_loader.get_next_frame()
 
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self.canvas.update_existing_image_display(frame)
+            self._update_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 
@@ -487,7 +530,7 @@ class ViewerApp:
 
     def clear_image(self) -> None:
         """Clears all image data"""
-        if self.animation_id != "":
+        if self._currently_animating():
             self.app.after_cancel(self.animation_id)
             self.animation_id = ""
         self.image_loader.reset_and_setup()
