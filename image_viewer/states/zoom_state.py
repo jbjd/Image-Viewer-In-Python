@@ -1,6 +1,6 @@
 class ZoomState:
 
-    ZOOM_DELTA: float = 1.3
+    ZOOM_DELTA: float = 1.1
 
     __slots__ = "zoom_scale", "level", "level_cap"
 
@@ -9,16 +9,18 @@ class ZoomState:
         self.level: int = 0
         self.level_cap: int = 1024
 
-    def try_update_zoom_level(self, zoom_in: bool) -> bool:
-        """Updates zoom level and scale within bounds of upper cap and
-        never allows zooming out more than initial size"""
-        previous_level: int = self.level
+    def try_update_zoom_level(self, zoom_change: int) -> bool:
+        """Updates zoom level without allowing zoom smaller than initial size
+        Returns True when zoom level was updated"""
+        if zoom_change == 0:
+            return False
 
-        if zoom_in:
-            self.level += 1
+        previous_level: int = self.level
+        self.level += zoom_change
+
+        if zoom_change > 0:
             self.zoom_scale *= self.ZOOM_DELTA
-        elif self.level > 0:
-            self.level -= 1
+        else:
             self.zoom_scale /= self.ZOOM_DELTA
 
         return self.level != previous_level

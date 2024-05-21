@@ -7,6 +7,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
+from constants import MouseWheelDirection
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
 from util.image import CachedImage, ImageCache, magic_number_guess
@@ -48,12 +49,12 @@ class ImageLoader:
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
 
-    def get_zoomed_image(self, zoom_in: bool) -> Image | None:
-        zoom_changed = self.zoom_state.try_update_zoom_level(zoom_in)
+    def get_zoomed_image(self, direction: MouseWheelDirection) -> Image | None:
+        zoom_changed = self.zoom_state.try_update_zoom_level(direction)
         if not zoom_changed:
             return None
 
-        if self.zoom_state.level == 1:
+        if self.zoom_state.level == 0:
             return self.image_pyramid[-1]
 
         zoom_scale: float = self.zoom_state.zoom_scale
@@ -141,7 +142,7 @@ class ImageLoader:
         frame_count: int = getattr(self.PIL_image, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finished loading
-            self.begin_animation(self.image_pyramid[0], frame_count)
+            self.begin_animation(self.image_pyramid[-1], frame_count)
         else:
             self.PIL_image.close()
 

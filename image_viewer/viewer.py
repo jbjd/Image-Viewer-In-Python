@@ -1,12 +1,12 @@
 import os
 from time import perf_counter
 from tkinter import Event, Tk
-from typing import Literal, NoReturn
+from typing import NoReturn
 
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG, Key, Rotation
+from constants import TOPBAR_TAG, Key, Rotation, MouseWheelDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -142,11 +142,12 @@ class ViewerApp:
 
         if os.name == "nt":
             app.bind(
-                "<MouseWheel>", lambda event: self.move(-1 if event.delta > 0 else 1)
+                "<MouseWheel>",
+                lambda event: self.handle_mouse_wheel(event),
             )
         else:
-            app.bind("<Button-4>", lambda _: self.move(-1))
-            app.bind("<Button-5>", lambda _: self.move(1))
+            app.bind("<Button-4>", lambda event: self.handle_mouse_wheel(event))
+            app.bind("<Button-5>", lambda event: self.handle_mouse_wheel(event))
 
     def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
@@ -229,6 +230,21 @@ class ViewerApp:
 
     # Functions handling specific user input
 
+    def handle_mouse_wheel(self, event: Event) -> None:
+        """On mouse wheel, either moves between images
+        or zooms when right mosue also held"""
+        right_mouse_held: bool = event.state & 1024  # type: ignore
+
+        mouse_wheel_direction: MouseWheelDirection = (
+            MouseWheelDirection.UP if event.delta > 0 else MouseWheelDirection.DOWN
+        )
+
+        if right_mouse_held:
+            self.handle_zoom(mouse_wheel_direction)
+        else:
+            # Minus so up wheel moves left
+            self.move(-mouse_wheel_direction)
+
     def handle_rotate_image(self, event: Event) -> None:
         """Rotates image, saves it to disk, and updates the display"""
         if self._currently_animating():
@@ -269,8 +285,6 @@ class ViewerApp:
             match event.keycode:
                 case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
-                case Key.MINUS | Key.EQUALS:
-                    self.handle_zoom(event.keycode)
                 case Key.R:
                     self.toggle_show_rename_window(event)
 
@@ -309,19 +323,14 @@ class ViewerApp:
         self.dropdown.toggle_display()
         self.update_details_dropdown()
 
-    def _load_zoomed_image(
-        self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
-    ) -> None:
+    def _load_zoomed_image(self, direction: MouseWheelDirection) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
-        zoom_in: bool = keycode == Key.EQUALS
-        new_image: Image | None = self.image_loader.get_zoomed_image(zoom_in)
+        new_image: Image | None = self.image_loader.get_zoomed_image(direction)
 
         if new_image is not None:
             self._update_image_display(new_image)
 
-    def handle_zoom(
-        self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
-    ) -> None:
+    def handle_zoom(self, direction: MouseWheelDirection) -> None:
         """Handle user input of zooming in or out"""
         if self._currently_animating():
             return
@@ -329,7 +338,7 @@ class ViewerApp:
         if self.image_load_id != "":
             self.app.after_cancel(self.image_load_id)
 
-        self.image_load_id = self.app.after(0, self._load_zoomed_image, keycode)
+        self.image_load_id = self.app.after(0, self._load_zoomed_image, direction)
 
     # End functions handling specific user input
 

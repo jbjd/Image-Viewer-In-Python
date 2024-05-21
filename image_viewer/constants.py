@@ -16,8 +16,6 @@ class Key(IntEnum):
     UP = 38
     RIGHT = 39
     DOWN = 40
-    EQUALS = 187
-    MINUS = 189
     R = 82
 
 
@@ -27,3 +25,10 @@ class Rotation(IntEnum):
     LEFT = 90
     RIGHT = 270
     FLIP = 180
+
+
+class MouseWheelDirection(IntEnum):
+    """Either up or down on the mouse wheel"""
+
+    UP = 1
+    DOWN = -1
