@@ -325,10 +325,11 @@ class ViewerApp:
 
     def _load_zoomed_image(self, direction: MouseWheelDirection) -> None:
         """Function to be called in Tk thread for loading image with zoom"""
-        new_image: Image | None = self.image_loader.get_zoomed_image(direction)
+        zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
 
-        if new_image is not None:
-            self._update_image_display(new_image)
+        if zoomed_image is not None:
+            self._display_image = PhotoImage(zoomed_image)
+            self.canvas.update_existing_image_display(self._display_image)
 
     def handle_zoom(self, direction: MouseWheelDirection) -> None:
         """Handle user input of zooming in or out"""
