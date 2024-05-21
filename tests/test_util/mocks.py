@@ -3,7 +3,6 @@ from __future__ import annotations
 from tkinter import Event, Tk
 
 from PIL.Image import Image
-from PIL.ImageTk import PhotoImage
 
 from image_viewer.helpers.action_undoer import ActionUndoer
 from image_viewer.managers.file_manager import ImageFileManager
@@ -20,6 +19,14 @@ class MockStatResult:
         self.st_size: int = st_size
 
 
+class MockFilePointer:
+    def seek(self, _):
+        pass
+
+    def read(self):
+        pass
+
+
 class MockEvent(Event):
     """Mocks Tk Event"""
 
@@ -34,7 +41,7 @@ class MockImage(Image):
 
     mode: str = "P"
     info: dict = {}
-    _size: tuple[int, int] = (0, 0)
+    _size: tuple[int, int] = (1, 1)
 
     def __init__(self, n_frames: int = 1, format: str = "") -> None:
         self.format: str = format  # type: ignore
@@ -48,16 +55,6 @@ class MockImage(Image):
         return self
 
     def save(self, *_, **kwargs) -> None:
-        pass
-
-
-class MockPhotoImage(PhotoImage):
-    """Mocks PIL's PhotoImage"""
-
-    def __init__(self) -> None:
-        pass
-
-    def __del__(self) -> None:
         pass
 
 

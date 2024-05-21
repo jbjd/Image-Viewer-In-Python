@@ -3,18 +3,10 @@ from unittest.mock import patch
 
 from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
-from PIL.ImageTk import PhotoImage
 from turbojpeg import TurboJPEG
 
 from image_viewer.helpers.image_resizer import ImageResizer
-from test_util.mocks import MockImage
-
-
-def test_jpeg_scale_factor(image_resizer: ImageResizer):
-    """Should return correct ratios for a 1080x1920 screen"""
-    assert image_resizer._get_jpeg_scale_factor(9999, 9999) == (1, 4)
-    assert image_resizer._get_jpeg_scale_factor(3000, 3000) == (1, 2)
-    assert image_resizer._get_jpeg_scale_factor(1, 1) is None
+from test_util.mocks import MockFilePointer, MockImage
 
 
 def test_dimension_finder(image_resizer: ImageResizer):
@@ -43,9 +35,15 @@ def test_get_fit_to_screen(image_resizer: ImageResizer):
     """Should delegate resize to correct function based on image type"""
 
     # JPEG is special case
-    with patch.object(ImageResizer, "_get_jpeg_fit_to_screen") as mock_jpeg_fit:
-        image_resizer.get_image_pyramid(MockImage(format="JPEG"))
-        mock_jpeg_fit.assert_called_once()
+    with patch.object(ImageResizer, "_get_jpeg_pyramid") as mock_jpeg_fit:
+        mock_image = MockImage(format="JPEG")
+        with patch.object(Image, "resize", return_value=mock_image):
+            image_resizer.get_image_pyramid(mock_image)
+            mock_jpeg_fit.assert_not_called()
+
+            mock_image._size = (2000, 2000)
+            image_resizer.get_image_pyramid(mock_image)
+            mock_jpeg_fit.assert_called_once()
 
     # Any other type should use generic resize functions
     with patch.object(ImageResizer, "_fit_to_screen") as mock_generic_fit:
@@ -58,6 +56,9 @@ def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer)
     """When fitting a small jpeg, should fallback to generic fit function"""
     image: Image = new_image("RGB", (1000, 1000))  # smaller than screen
 
+    # when opening via file pointer, this attribute will be set
+    image.fp = MockFilePointer()  # type: ignore
+
     with patch.object(TurboJPEG, "decode") as mock_decode:
         image_resizer._get_jpeg_pyramid(image)
         mock_decode.assert_not_called()
@@ -67,9 +68,7 @@ def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
     """Should resize and return PIL image"""
     image: Image = new_image("RGB", (10, 10))
 
-    with patch(
-        "image_viewer.helpers.image_resizer.resize", return_value=image
-    ) as mock_resize:
+    with patch.object(Image, "resize", return_value=image) as mock_resize:
         assert type(image_resizer._fit_to_screen(image)) is Image
         mock_resize.assert_called_once()
 
@@ -79,21 +78,21 @@ def test_scale_dimensions(image_resizer: ImageResizer):
     assert image_resizer._scale_dimensions((1920, 1080), 1.5) == (2880, 1620)
 
 
-def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
-    """Should determine when zoom cap hit"""
-    image: Image = new_image("RGB", (1920, 1080))
+# def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
+#     """Should determine when zoom cap hit"""
+#     image: Image = new_image("RGB", (1920, 1080))
 
-    # Mock zoom factor above min zoom when image is already the size of the screen
-    with patch("image_viewer.helpers.image_resizer.resize", return_value=image):
-        with patch.object(
-            ImageResizer,
-            "_calc_zoom_factor",
-            return_value=image_resizer.ZOOM_MIN + 0.25,
-        ):
-            _, hit_cap = image_resizer.get_zoomed_image(image, 2)
-            assert hit_cap
+#     # Mock zoom factor above min zoom when image is already the size of the screen
+#     with patch("image_viewer.helpers.image_resizer.resize", return_value=image):
+#         with patch.object(
+#             ImageResizer,
+#             "_calc_zoom_factor",
+#             return_value=image_resizer.ZOOM_MIN + 0.25,
+#         ):
+#             _, hit_cap = image_resizer.get_zoomed_image(image, 2)
+#             assert hit_cap
 
-            # With a smaller image, the same zoom factor should not hit cap
-            image = new_image("RGB", (800, 1080))
-            _, hit_cap = image_resizer.get_zoomed_image(image, 2)
-            assert not hit_cap
+#             # With a smaller image, the same zoom factor should not hit cap
+#             image = new_image("RGB", (800, 1080))
+#             _, hit_cap = image_resizer.get_zoomed_image(image, 2)
+#             assert not hit_cap

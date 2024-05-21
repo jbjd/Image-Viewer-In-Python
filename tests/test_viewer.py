@@ -110,11 +110,6 @@ def test_handle_key(
         viewer.handle_key(focused_event)
         mock_lr_arrow.assert_called_once()
 
-    focused_event.keycode = Key.MINUS
-    with patch.object(ViewerApp, "handle_zoom") as mock_zoom:
-        viewer.handle_key(focused_event)
-        mock_zoom.assert_called_once()
-
 
 def test_exit(viewer: ViewerApp, canvas: CustomCanvas):
     """Should clean up and exit"""

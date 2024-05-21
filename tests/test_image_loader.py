@@ -6,7 +6,7 @@ from PIL.Image import Image
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.util.image import CachedImage
-from test_util.mocks import MockPhotoImage, MockStatResult
+from test_util.mocks import MockStatResult
 
 
 def test_next_frame(image_loader: ImageLoader):
@@ -72,18 +72,20 @@ def test_load_image_in_cache(image_loader: ImageLoader):
 
     # setup cache for test
     image_byte_size: int = 10
-    cached_image = MockPhotoImage()
-    cached_data = CachedImage(cached_image, (10, 10), "10kb", image_byte_size, "RGB")
+    cached_image_pyramid = [Image()]
+    cached_data = CachedImage(
+        cached_image_pyramid, (10, 10), "10kb", image_byte_size, "RGB"
+    )
     image_loader.image_cache["some/path"] = cached_data
 
     mock_os_stat = MockStatResult(image_byte_size)
     with patch("image_viewer.helpers.image_loader.stat", lambda _: mock_os_stat):
-        assert image_loader.load_image("some/path") is cached_image
+        assert image_loader.load_image("some/path") is cached_image_pyramid[0]
 
 
 def test_load_image_resize_error(image_loader: ImageLoader):
     """Should get placeholder image when resize errors"""
-    with patch.object(ImageResizer, "get_image_fit_to_screen", side_effect=OSError):
+    with patch.object(ImageResizer, "get_image_pyramid", side_effect=OSError):
         with patch(
             "image_viewer.helpers.image_loader.get_placeholder_for_errored_image"
         ) as mock_get_placeholder:

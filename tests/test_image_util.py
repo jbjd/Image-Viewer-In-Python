@@ -36,9 +36,9 @@ def test_PIL_functions(tk_app: Tk):
 
     # need to test this here since init_PIL must be called first
     example_error = Exception("test")
-    placeholder: Image = get_placeholder_for_errored_image(example_error, 10, 10)
+    placeholder: list[Image] = get_placeholder_for_errored_image(example_error, 10, 10)
 
-    assert type(placeholder) is Image
+    assert type(placeholder[0]) is Image
 
 
 def test_magic_number_guess():
