@@ -317,7 +317,7 @@ class ViewerApp:
             self.file_manager.path_to_image, zoom_in
         )
         if new_image is not None:
-            self._update_image_display(new_image)
+            self._update_existing_image_display(new_image)
 
     def handle_zoom(
         self, keycode: Literal[Key.MINUS, Key.EQUALS]  # type: ignore
@@ -428,8 +428,15 @@ class ViewerApp:
         self.hide_rename_window()
         self.load_image_unblocking()
 
+    def _update_existing_image_display(self, image: Image) -> None:
+        """Updates display with PhotoImage version of provided Image.
+        Call this when the new image is the same or a varient of the displaying image"""
+        self._display_image = PhotoImage(image)
+        self.canvas.update_existing_image_display(self._display_image)
+
     def _update_image_display(self, image: Image) -> None:
-        """Updates display with PhotoImage version of provided Image"""
+        """Updates display with PhotoImage version of provided Image.
+        This will re-center the image and create a new display"""
         self._display_image = PhotoImage(image)
         self.canvas.update_image_display(self._display_image)
 
@@ -438,7 +445,7 @@ class ViewerApp:
         self._update_image_display(image)
         self.app.title(self.file_manager.current_image.name)
 
-    def _load_image_at_current_path(self):
+    def _load_image_at_current_path(self) -> Image | None:
         """Wraps ImageLoader's load call with path from FileManager"""
         return self.image_loader.load_image(self.file_manager.path_to_image)
 
@@ -521,7 +528,7 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self._update_image_display(frame)
+            self._update_existing_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 

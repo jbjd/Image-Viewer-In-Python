@@ -115,7 +115,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             pass
         super().visit_If(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Skip unnecessary futures imports"""
         # TODO: only skip futures for unsupported versions
         if node.module == "__future__":

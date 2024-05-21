@@ -31,7 +31,7 @@ class IconFactory:
         """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
         return PhotoImage(self._resize_icon(draw._image))  # type: ignore
 
-    def _new_rgb_image(self, rgb: tuple[int, int, int]):
+    def _new_rgb_image(self, rgb: tuple[int, int, int]) -> Image:
         return new_image("RGB", self.DEFAULT_SIZE, rgb)
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
