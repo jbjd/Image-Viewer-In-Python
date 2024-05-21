@@ -328,8 +328,7 @@ class ViewerApp:
         zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
 
         if zoomed_image is not None:
-            self._display_image = PhotoImage(zoomed_image)
-            self.canvas.update_existing_image_display(self._display_image)
+            self._update_existing_image_display(zoomed_image)
 
     def handle_zoom(self, direction: MouseWheelDirection) -> None:
         """Handle user input of zooming in or out"""
@@ -438,8 +437,15 @@ class ViewerApp:
         self.hide_rename_window()
         self.load_image_unblocking()
 
+    def _update_existing_image_display(self, image: Image) -> None:
+        """Updates display with PhotoImage version of provided Image.
+        Call this when the new image is the same or a varient of the displaying image"""
+        self._display_image = PhotoImage(image)
+        self.canvas.update_existing_image_display(self._display_image)
+
     def _update_image_display(self, image: Image) -> None:
-        """Updates display with PhotoImage version of provided Image"""
+        """Updates display with PhotoImage version of provided Image.
+        This will re-center the image and create a new display"""
         self._display_image = PhotoImage(image)
         self.canvas.update_image_display(self._display_image)
 
@@ -532,7 +538,7 @@ class ViewerApp:
         if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
         else:
-            self._update_image_display(frame)
+            self._update_existing_image_display(frame)
             elapsed: int = round((perf_counter() - start) * 1000)
             ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
 

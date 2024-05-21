@@ -50,7 +50,8 @@ class ImageLoader:
         self.zoom_state = ZoomState()
 
     def get_zoomed_image(self, direction: MouseWheelDirection) -> Image | None:
-        zoom_changed = self.zoom_state.try_update_zoom_level(direction)
+        """Returns loaded image at a varying level of zoom"""
+        zoom_changed: bool = self.zoom_state.try_update_zoom_level(direction)
         if not zoom_changed:
             return None
 
@@ -62,6 +63,7 @@ class ImageLoader:
         pyramid_index: int = -2 - int(log(zoom_scale, 2))
         if -pyramid_index > len(self.image_pyramid):
             pyramid_index = 0
+
         image = self.image_pyramid[pyramid_index]
         return self.image_resizer.get_zoomed_image(image, zoom_scale)
 
