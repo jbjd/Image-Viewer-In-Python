@@ -2,3 +2,4 @@ Pillow==10.3.0
 PyTurboJPEG==1.7.3
 numpy==1.26.4
 send2trash==1.8.3
+winshell>=0.6; platform_system == "Windows"

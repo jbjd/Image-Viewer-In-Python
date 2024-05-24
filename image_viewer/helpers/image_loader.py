@@ -85,7 +85,7 @@ class ImageLoader:
         self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
 
     def get_PIL_image(self, path_to_image: str) -> Image | None:
-        """Trys to open file on disk as PIL Image
+        """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
             fp = open(path_to_image, "rb")

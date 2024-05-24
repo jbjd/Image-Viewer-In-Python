@@ -431,7 +431,7 @@ class ViewerApp:
 
     def _update_existing_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
-        Call this when the new image is the same or a varient of the displaying image"""
+        Call this when the new image is the same or a variant of the displaying image"""
         self._display_image = PhotoImage(image)
         self.canvas.update_existing_image_display(self._display_image)
 
