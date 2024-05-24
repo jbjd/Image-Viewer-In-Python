@@ -13,7 +13,7 @@ def icon_factory() -> IconFactory:
 
 def test_create_icons(tk_app: Tk, icon_factory: IconFactory):
     """Ensure all photoimages created successfully"""
-    topbar: PhotoImage = icon_factory.make_topbar(1920)
+    topbar: PhotoImage = icon_factory.make_topbar_image(1920)
     assert isinstance(topbar, PhotoImage)
 
     icon, icon_hovered = icon_factory.make_exit_icons()

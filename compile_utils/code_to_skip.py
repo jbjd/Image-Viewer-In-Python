@@ -50,11 +50,11 @@ _classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageFile": {"_Tile"},
 }
 
-functions_to_skip: defaultdict[str, set] = defaultdict(set, **_function_kwargs)
-function_calls_to_skip: defaultdict[str, set] = defaultdict(
+functions_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_function_kwargs)
+function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_function_call_kwargs
 )
-vars_to_skip: defaultdict[str, set] = defaultdict(set, **_vars_kwargs)
-classes_to_skip: defaultdict[str, set] = defaultdict(set, **_classes_kwargs)
+vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_vars_kwargs)
+classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_classes_kwargs)
 
 modules_to_not_autoflake: set[str] = {"send2trash.compat"}

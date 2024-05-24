@@ -39,6 +39,7 @@ class MockImage(Image):
     def __init__(self, n_frames: int = 1, format: str = "") -> None:
         self.format: str = format  # type: ignore
         self.n_frames: int = n_frames
+        self.closed: bool = False
 
         if n_frames > 1:  # Like PIL, only set for animtions
             self.is_animated: bool = True
@@ -49,6 +50,15 @@ class MockImage(Image):
 
     def save(self, *_, **kwargs) -> None:
         pass
+
+    def close(self, *_) -> None:
+        self.closed: bool = True
+
+    def __enter__(self) -> "MockImage":
+        return self
+
+    def __exit__(self, *_) -> None:
+        self.close()
 
 
 class MockPhotoImage(PhotoImage):

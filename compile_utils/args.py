@@ -60,7 +60,10 @@ class CompileArgumentParser(ArgumentParser):
         )
         self.add_argument("args", nargs=REMAINDER)
 
-    def parse_known_args(self, working_dir: str) -> tuple[Namespace, list[str]]:
+    # for some reason mypy gets the super type wrong
+    def parse_known_args(  # type: ignore
+        self, working_dir: str
+    ) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
         user_args, nuitka_args = super().parse_known_args()
         self._validate_args(nuitka_args, user_args.debug)

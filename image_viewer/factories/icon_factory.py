@@ -40,7 +40,7 @@ class IconFactory:
             self._new_rgb_image(self.ICON_HOVERED_RGB)
         )
 
-    def make_topbar(self, screen_width: int) -> PhotoImage:
+    def make_topbar_image(self, screen_width: int) -> PhotoImage:
         TOPBAR_RGBA: tuple[int, int, int, int] = (60, 60, 60, 170)
         size: tuple[int, int] = (screen_width, self.icon_size[0])
         return PhotoImage(new_image("RGBA", size, TOPBAR_RGBA))
