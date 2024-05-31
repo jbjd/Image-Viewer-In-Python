@@ -38,8 +38,8 @@ else:
 class TypeHintRemover(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
 
-    def __init__(self, module_name: str = "", **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, module_name: str = "") -> None:
+        super().__init__()
 
         self.func_to_skip: set[str] = functions_to_skip[module_name]
         self.vars_to_skip: set[str] = vars_to_skip[module_name]

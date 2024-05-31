@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from tkinter import Event, Tk
+from typing import Self
 
 from PIL.Image import Image
-from PIL.ImageTk import PhotoImage
 
 from image_viewer.helpers.action_undoer import ActionUndoer
 from image_viewer.managers.file_manager import ImageFileManager
@@ -44,7 +44,7 @@ class MockImage(Image):
         if n_frames > 1:  # Like PIL, only set for animtions
             self.is_animated: bool = True
 
-    def convert(self, new_mode: str) -> MockImage:  # type: ignore
+    def convert(self, new_mode: str) -> Self:  # type: ignore
         self.mode = new_mode
         return self
 
@@ -52,23 +52,13 @@ class MockImage(Image):
         pass
 
     def close(self, *_) -> None:
-        self.closed: bool = True
+        self.closed = True
 
-    def __enter__(self) -> "MockImage":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_) -> None:
         self.close()
-
-
-class MockPhotoImage(PhotoImage):
-    """Mocks PIL's PhotoImage"""
-
-    def __init__(self) -> None:
-        pass
-
-    def __del__(self) -> None:
-        pass
 
 
 class MockActionUndoer(ActionUndoer):
@@ -88,7 +78,7 @@ class MockImageFileManager(ImageFileManager):
     def __init__(self) -> None:
         pass
 
-    def remove_current_image(self, _: bool) -> None:
+    def remove_current_image(self) -> None:
         pass
 
     def current_image_cache_still_fresh(self) -> bool:

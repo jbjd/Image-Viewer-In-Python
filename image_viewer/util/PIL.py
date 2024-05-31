@@ -86,7 +86,9 @@ def _get_longest_line_dimensions(input: str) -> tuple[int, int]:
     """Returns width and height of longest string in a string with multiple lines"""
     longest_line: str = max(input.split("\n"), key=len)
 
-    width_offset, height_offset, width, height = ImageDraw.font.getbbox(longest_line)
+    width_offset, height_offset, width, height = ImageDraw.font.getbbox(  # type: ignore
+        longest_line
+    )
 
     return width + width_offset, height + height_offset
 
@@ -133,7 +135,7 @@ def get_placeholder_for_errored_image(
     draw.line((0, 0, screen_width, screen_height), LINE_RGB, width=100)
 
     # Write title
-    *_, w, h = ImageDraw.font.getbbox(error_title)
+    *_, w, h = ImageDraw.font.getbbox(error_title)  # type: ignore
     y_offset: int = screen_height - (h * (5 + formated_error.count("\n"))) >> 1
     x_offset: int = (screen_width - w) >> 1
     draw.text((x_offset, y_offset), error_title, TEXT_RGB)
@@ -157,9 +159,12 @@ def _preinit() -> None:  # pragma: no cover
     __import__("PIL.PngImagePlugin", globals(), locals(), ())
     __import__("PIL.WebPImagePlugin", globals(), locals(), ())
 
+    def new_jpeg_factory(fp=None, filename=None) -> JpegImageFile:
+        return JpegImageFile(fp, filename)
+
     register_open(
         "JPEG",
-        lambda fp=None, filename=None: JpegImageFile(fp, filename),
+        new_jpeg_factory,
         lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
     )
 
@@ -186,7 +191,8 @@ def init_PIL(font_size: int) -> None:
     from PIL.ImageFont import truetype
 
     ImageDraw.font = truetype("arial.ttf", font_size)
-    ImageDraw.fontmode = "L"  # antialiasing
+    # add antialiasing
+    ImageDraw.fontmode = "L"  # type: ignore
     del truetype
 
     _stop_unwanted_PIL_imports()

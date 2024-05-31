@@ -6,7 +6,7 @@ from PIL.Image import Image
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.util.image import CachedImage
-from test_util.mocks import MockPhotoImage, MockStatResult
+from test_util.mocks import MockStatResult
 
 
 def test_next_frame(image_loader: ImageLoader):
@@ -72,7 +72,7 @@ def test_load_image_in_cache(image_loader: ImageLoader):
 
     # setup cache for test
     image_byte_size: int = 10
-    cached_image = MockPhotoImage()
+    cached_image = Image()
     cached_data = CachedImage(cached_image, (10, 10), "10kb", image_byte_size, "RGB")
     image_loader.image_cache["some/path"] = cached_data
 
