@@ -15,7 +15,7 @@ class CompileArgumentParser(ArgumentParser):
         "--verbose",
         "--show-scons",
         "--show-memory",
-        "--enable-console",
+        "--windows-console-mode",
     }
 
     def __init__(self, install_path: str) -> None:
@@ -78,7 +78,7 @@ class CompileArgumentParser(ArgumentParser):
             raise_if_not_root()
 
         for extra_arg in nuitka_args:
-            if extra_arg not in self.VALID_NUITKA_ARGS:
+            if extra_arg.split("=")[0] not in self.VALID_NUITKA_ARGS:
                 raise ValueError(f"Unknown argument {extra_arg}")
 
     @staticmethod
@@ -103,8 +103,8 @@ class CompileArgumentParser(ArgumentParser):
                 for skipped_import in imports_to_skip
             ]
 
-        ENABLE_CONSOLE: str = "--enable-console"
-        DISABLE_CONSOLE: str = "--disable-console"
+        ENABLE_CONSOLE: str = "--windows-console-mode=force"
+        DISABLE_CONSOLE: str = "--windows-console-mode=disable"
         if ENABLE_CONSOLE not in nuitka_args and DISABLE_CONSOLE not in nuitka_args:
             nuitka_args.append(ENABLE_CONSOLE if user_args.debug else DISABLE_CONSOLE)
 
