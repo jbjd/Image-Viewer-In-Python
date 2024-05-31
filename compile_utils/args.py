@@ -105,7 +105,12 @@ class CompileArgumentParser(ArgumentParser):
 
         ENABLE_CONSOLE: str = "--windows-console-mode=force"
         DISABLE_CONSOLE: str = "--windows-console-mode=disable"
-        if ENABLE_CONSOLE not in nuitka_args and DISABLE_CONSOLE not in nuitka_args:
+        ATTACH_CONSOLE: str = "--windows-console-mode=attach"
+        if (
+            ENABLE_CONSOLE not in nuitka_args
+            and DISABLE_CONSOLE not in nuitka_args
+            and ATTACH_CONSOLE not in nuitka_args
+        ):
             nuitka_args.append(ENABLE_CONSOLE if user_args.debug else DISABLE_CONSOLE)
 
         return nuitka_args
