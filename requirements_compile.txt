@@ -1,2 +1,2 @@
-nuitka==2.3.0
+nuitka==2.3.1
 autoflake==2.3.1

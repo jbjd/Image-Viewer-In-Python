@@ -249,7 +249,7 @@ class ImageFileManager:
         new_full_path: str
         if will_move_dirs:
             if not os.path.isabs(new_dir):
-                new_dir = os.path.join(self.image_directory, new_dir)
+                new_dir = os.path.normpath(os.path.join(self.image_directory, new_dir))
             if not os.path.exists(new_dir):
                 raise OSError
             new_full_path = os.path.join(new_dir, new_name)
