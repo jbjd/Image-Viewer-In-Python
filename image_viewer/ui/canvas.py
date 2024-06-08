@@ -40,8 +40,8 @@ class CustomCanvas(Canvas):
         self.drag_start_y = event.y
 
     def _move_to(self, event: Event) -> None:
-        drag_x = event.x - self.drag_start_x
-        drag_y = event.y - self.drag_start_y
+        drag_x: int = event.x - self.drag_start_x
+        drag_y: int = event.y - self.drag_start_y
         self.drag_start_x += drag_x
         self.drag_start_y += drag_y
 
@@ -62,7 +62,7 @@ class CustomCanvas(Canvas):
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
-        self.topbar = topbar_img  # need to do this so garbage collector doesn't kill it
+        self.topbar: PhotoImage = topbar_img  # save from garbage collector
         self.create_image(
             0, 0, image=topbar_img, anchor="nw", tag=TOPBAR_TAG, state="hidden"
         )

@@ -20,7 +20,7 @@ def test_exception_hook_when_user_accepts():
 
     with patch("builtins.open", side_effect=OSError):
         # Should catch and not fail writing to file
-        exception_hook(type(exception), exception, None, "")
+        exception_hook(type(exception), exception, None, "")  # type: ignore
 
     with patch("builtins.open", new_callable=mock_open) as mock_bultins_open:
         exception_hook(type(exception), exception, None, "")  # type: ignore

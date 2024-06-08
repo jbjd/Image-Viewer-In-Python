@@ -17,8 +17,13 @@ if os.name == "nt":
     illegal_char = compile(r'[<>:"|?*]')
     kb_size = 1024
 
-    def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
-        """Show windows message box with error. Returns True when user says no"""
+    def OS_name_cmp(a: str, b: str) -> bool:
+        return windll.shlwapi.StrCmpLogicalW(a, b) < 0
+
+    def ask_write_on_fatal_error(
+        error_type: type[BaseException], error: BaseException, error_file: str
+    ) -> bool:
+        """Show windows message box with error. Returns True when user says yes"""
         MB_YESNO: int = 0x4
         MB_ICONERROR: int = 0x10
         IDYES: int = 6
@@ -29,10 +34,7 @@ if os.name == "nt":
             f"Unhandled {error_type.__name__} Occurred",
             MB_YESNO | MB_ICONERROR,
         )
-        return response != IDYES
-
-    def OS_name_cmp(a: str, b: str) -> bool:
-        return windll.shlwapi.StrCmpLogicalW(a, b) < 0
+        return response == IDYES
 
     def restore_from_bin(original_path: str) -> None:
         try:
@@ -49,7 +51,9 @@ else:  # assume linux for now
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
 
-    def ask_write_on_fatal_error(error_type, error: Exception, error_file: str) -> bool:
+    def ask_write_on_fatal_error(
+        error_type: type[BaseException], error: BaseException, error_file: str
+    ) -> bool:
         return True  # TODO: add option for linux
 
     def restore_from_bin(original_path: str) -> None:
