@@ -558,7 +558,7 @@ class ViewerApp:
                     return  # data not present in cache
 
                 # remove last line since I don't want to show mode in this dropdown
-                details = details[: details.rfind("\n") - 1]
+                details = details[: details.rfind("\n", 0, -9) - 1]
                 dropdown.image = create_dropdown_image(details)
 
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")

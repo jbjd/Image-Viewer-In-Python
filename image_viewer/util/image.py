@@ -52,7 +52,7 @@ class ImageCache(OrderedDict[str, CachedImage]):
         """Adds check for items in the cache and purges LRU if over limit"""
         if self.__len__() >= MAX_ITEMS_IN_CACHE:
             self.popitem(last=False)
-        return super().__setitem__(key, value)
+        super().__setitem__(key, value)
 
 
 class ImageName:

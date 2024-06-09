@@ -49,6 +49,9 @@ class ImageFileManager:
         self.action_undoer: ActionUndoer = ActionUndoer()
         self.file_dialog_asker: FileDialogAsker = FileDialogAsker(self.VALID_FILE_TYPES)
         self._files: ImageNameList = ImageNameList([first_image_name])
+
+        self.current_image: ImageName
+        self.path_to_image: str
         self._update_after_move_or_edit()
 
     def _make_name_with_validation(self, path: str) -> ImageName:
@@ -134,13 +137,13 @@ class ImageFileManager:
         text: str = (
             f"Pixels: {image_info.width}x{image_info.height}\n"
             f"Size: {image_info.size_display}\n"
-            f"Pixel Format: {bpp} bpp {readable_mode}"
+            f"Pixel Format: {bpp} bpp {readable_mode}\n"
         )
         return text
 
     def show_image_detail_popup(self, PIL_Image: Image) -> None:
         try:
-            details: str = f"{self.get_cached_details()}\n"
+            details: str = self.get_cached_details()
         except KeyError:
             return  # don't fail trying to read, if not in cache just exit
 
