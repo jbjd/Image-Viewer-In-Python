@@ -3,7 +3,7 @@ from typing import Callable
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG
+from constants import TkTags
 
 
 class HoverableButton:
@@ -30,7 +30,7 @@ class HoverableButton:
             y_offset,
             image=self.icon,
             anchor="nw",
-            tag=TOPBAR_TAG,
+            tag=TkTags.TOPBAR,
             state="hidden",
         )
 

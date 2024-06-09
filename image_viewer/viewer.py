@@ -6,7 +6,7 @@ from typing import Literal, NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG, Key, Rotation
+from constants import Key, Rotation, TkTags
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -80,7 +80,7 @@ class ViewerApp:
 
         self._init_image_display()
 
-        self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
+        self.canvas.tag_bind(TkTags.BACKGROUND, "<Button-1>", self.handle_canvas_click)
         self._add_keybinds_to_tk()
 
         self.app.mainloop()
@@ -203,7 +203,7 @@ class ViewerApp:
         self.rename_button_id: int = rename_button.id
 
         dropdown_id: int = canvas.create_image(
-            screen_width, icon_size, anchor="ne", tag=TOPBAR_TAG, state="hidden"
+            screen_width, icon_size, anchor="ne", tag=TkTags.TOPBAR, state="hidden"
         )
         self.dropdown: DropdownImage = DropdownImage(dropdown_id)
 
@@ -261,7 +261,7 @@ class ViewerApp:
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
-        if self.canvas.is_widget_visible(TOPBAR_TAG):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.hide_topbar()
         else:
             self.show_topbar()
@@ -412,7 +412,7 @@ class ViewerApp:
             self.hide_rename_window()
             return
 
-        if not self.canvas.is_widget_visible(TOPBAR_TAG):
+        if not self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.show_topbar()
 
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
@@ -464,7 +464,7 @@ class ViewerApp:
             self.remove_current_image()
 
         self.update_after_image_load(current_image)
-        if self.canvas.is_widget_visible(TOPBAR_TAG):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.update_topbar()
 
         self.image_load_id = ""
@@ -478,12 +478,12 @@ class ViewerApp:
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
-        self.canvas.itemconfigure(TOPBAR_TAG, state="normal")
+        self.canvas.itemconfigure(TkTags.TOPBAR, state="normal")
         self.update_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
-        self.canvas.itemconfigure(TOPBAR_TAG, state="hidden")
+        self.canvas.itemconfigure(TkTags.TOPBAR, state="hidden")
         self.hide_rename_window()
 
     def remove_current_image(self) -> None:

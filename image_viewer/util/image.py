@@ -2,11 +2,13 @@
 Contains classes and functions to help with storing and reading images
 """
 
+from collections import OrderedDict
 from os import stat
 from typing import Iterable
 
 from PIL.Image import Image
 
+from constants import MAX_ITEMS_IN_CACHE
 from util.os import OS_name_cmp
 
 
@@ -32,7 +34,7 @@ class CachedImage:
         self.mode: str = mode
 
 
-class ImageCache(dict[str, CachedImage]):
+class ImageCache(OrderedDict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
     def pop_safe(self, image_path: str) -> None:
@@ -45,6 +47,13 @@ class ImageCache(dict[str, CachedImage]):
             return stat(image_path).st_size == self[image_path].byte_size
         except (OSError, ValueError, KeyError):
             return False
+
+    def __setitem__(self, key: str, value: CachedImage) -> None:
+        """Adds check for items in the cache and purges LRU if over limit"""
+        if self.__len__() >= MAX_ITEMS_IN_CACHE:
+            self.popitem(last=False)
+        print(self.__len__())
+        return super().__setitem__(key, value)
 
 
 class ImageName:

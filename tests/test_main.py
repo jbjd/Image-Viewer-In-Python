@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 from image_viewer.__main__ import exception_hook
 
 
-@patch("util.os.ask_write_on_fatal_error", lambda *_: True)
+@patch("util.os.ask_write_on_fatal_error", lambda *_: False)
 def test_exception_hook_when_user_declines():
     """Do not write to file when user says no"""
     exception = Exception("problem!")
@@ -13,7 +13,7 @@ def test_exception_hook_when_user_declines():
         mock_bultins_open.assert_not_called()
 
 
-@patch("util.os.ask_write_on_fatal_error", lambda *_: False)
+@patch("util.os.ask_write_on_fatal_error", lambda *_: True)
 def test_exception_hook_when_user_accepts():
     """Write to file when user says so"""
     exception = Exception("problem!")

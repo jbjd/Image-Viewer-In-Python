@@ -2,11 +2,7 @@
 File with constants needed in multiple spots of the codebase
 """
 
-from enum import IntEnum
-
-TOPBAR_TAG: str = "topbar"
-
-TEXT_RGB: str = "#FEFEFE"
+from enum import IntEnum, StrEnum
 
 
 class Key(IntEnum):
@@ -27,3 +23,16 @@ class Rotation(IntEnum):
     LEFT = 90
     RIGHT = 270
     FLIP = 180
+
+
+class TkTags(StrEnum):
+    """Tags for items on the UI"""
+
+    TOPBAR = "topbar"
+    BACKGROUND = "back"
+
+
+# TODO: Below, these could be configurable
+TEXT_RGB: str = "#FEFEFE"
+
+MAX_ITEMS_IN_CACHE: int = 20
