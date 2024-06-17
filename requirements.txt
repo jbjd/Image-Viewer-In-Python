@@ -1,6 +1,6 @@
 Pillow==10.3.0
 PyTurboJPEG==1.7.3
-numpy==1.26.4
+numpy==1.26.4  # TODO: numpy==2.0.0 had import issues
 send2trash==1.8.3
-winshell>=0.6; platform_system == "Windows"
+winshell==0.6; platform_system == "Windows"
 pywin32==306; platform_system == "Windows"
