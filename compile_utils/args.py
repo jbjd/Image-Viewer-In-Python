@@ -10,6 +10,7 @@ class CompileArgumentParser(ArgumentParser):
     VALID_NUITKA_ARGS: set[str] = {
         "--mingw64",
         "--clang",
+        "--msvc",
         "--standalone",
         "--quiet",
         "--verbose",

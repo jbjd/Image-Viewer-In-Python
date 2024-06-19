@@ -128,11 +128,16 @@ class ImageFileManager:
 
         mode: str = image_info.mode
         bpp: int = len(mode) * 8 if mode != "1" else 1
-        readable_mode: str = {
-            "P": "Palette",
-            "L": "Grayscale",
-            "1": "Black And White",
-        }.get(mode, mode)
+        readable_mode: str
+        match mode:
+            case "P":
+                readable_mode = "Palette"
+            case "L":
+                readable_mode = "Grayscale"
+            case "1":
+                readable_mode = "Black And White"
+            case _:
+                readable_mode = mode
 
         text: str = (
             f"Pixels: {image_info.width}x{image_info.height}\n"
