@@ -6,6 +6,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
+from constants import ZoomDirection
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
 from util.image import CachedImage, ImageCache, magic_number_guess
@@ -149,9 +150,11 @@ class ImageLoader:
 
         return current_image
 
-    def get_zoomed_image(self, path_to_image: str, zoom_in: bool) -> Image | None:
+    def get_zoomed_image(
+        self, path_to_image: str, direction: ZoomDirection
+    ) -> Image | None:
         """Handles getting and caching zoomed versions of the current image"""
-        if not self.zoom_state.try_update_zoom_level(zoom_in):
+        if not self.zoom_state.try_update_zoom_level(direction):
             return None
 
         zoom_level: int = self.zoom_state.level

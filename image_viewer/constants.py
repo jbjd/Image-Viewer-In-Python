@@ -25,6 +25,13 @@ class Rotation(IntEnum):
     FLIP = 180
 
 
+class ZoomDirection(IntEnum):
+    """Either up or down on the mouse wheel"""
+
+    IN = 1
+    OUT = -1
+
+
 class TkTags(StrEnum):
     """Tags for items on the UI"""
 
