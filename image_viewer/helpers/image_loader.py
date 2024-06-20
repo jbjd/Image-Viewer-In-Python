@@ -7,7 +7,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
-from constants import MouseWheelDirection
+from constants import ZoomDirection
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
 from util.image import CachedImage, ImageCache, magic_number_guess
@@ -49,7 +49,7 @@ class ImageLoader:
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
 
-    def get_zoomed_image(self, direction: MouseWheelDirection) -> Image | None:
+    def get_zoomed_image(self, direction: ZoomDirection) -> Image | None:
         """Returns loaded image at a varying level of zoom"""
         zoom_changed: bool = self.zoom_state.try_update_zoom_level(direction)
         if not zoom_changed:

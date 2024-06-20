@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import os
 from time import perf_counter
 from tkinter import Event, Tk
@@ -6,7 +7,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from constants import Key, Rotation, MouseWheelDirection, TkTags
+from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -34,7 +35,6 @@ class ViewerApp:
         "image_load_id",
         "move_id",
         "need_to_redraw",
-        "photo_image_display",
         "rename_button_id",
         "rename_entry",
         "width_ratio",
@@ -237,15 +237,12 @@ class ViewerApp:
         or zooms when right mosue also held"""
         right_mouse_held: bool = event.state & 1024  # type: ignore
 
-        mouse_wheel_direction: MouseWheelDirection = (
-            MouseWheelDirection.UP if event.delta > 0 else MouseWheelDirection.DOWN
-        )
-
         if right_mouse_held:
-            self.handle_zoom(mouse_wheel_direction)
+            self.load_zoomed_image_unblocking(
+                ZoomDirection.IN if event.delta > 0 else ZoomDirection.OUT
+            )
         else:
-            # Minus so up wheel moves left
-            self.move(-mouse_wheel_direction)
+            self.move(-1 if event.delta > 0 else 1)
 
     def handle_rotate_image(self, event: Event) -> None:
         """Rotates image, saves it to disk, and updates the display"""
@@ -289,6 +286,10 @@ class ViewerApp:
             match event.keycode:
                 case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
+                case Key.EQUALS:
+                    self.load_zoomed_image_unblocking(ZoomDirection.IN)
+                case Key.MINUS:
+                    self.load_zoomed_image_unblocking(ZoomDirection.OUT)
                 case Key.R:
                     self.toggle_show_rename_window(event)
 
@@ -327,22 +328,20 @@ class ViewerApp:
         self.dropdown.toggle_display()
         self.update_details_dropdown()
 
-    def _load_zoomed_image(self, direction: MouseWheelDirection) -> None:
-        """Function to be called in Tk thread for loading image with zoom"""
+    def load_zoomed_image(self, direction: ZoomDirection) -> None:
+        """Loads zoomed image and updates display"""
         zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
-
         if zoomed_image is not None:
             self._update_existing_image_display(zoomed_image)
 
-    def handle_zoom(self, direction: MouseWheelDirection) -> None:
-        """Handle user input of zooming in or out"""
+        self._end_image_load()
+
+    def load_zoomed_image_unblocking(self, direction: ZoomDirection) -> None:
+        """Starts new thread for loading zoomed image"""
         if self._currently_animating():
             return
 
-        if self.image_load_id != "":
-            self.app.after_cancel(self.image_load_id)
-
-        self.image_load_id = self.app.after(0, self._load_zoomed_image, direction)
+        self._start_image_load(self.load_zoomed_image, direction)
 
     # End functions handling specific user input
 
@@ -477,14 +476,12 @@ class ViewerApp:
         if self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.update_topbar()
 
-        self.image_load_id = ""
+        self._end_image_load()
 
     def load_image_unblocking(self) -> None:
-        """Loads an image without blocking main thread"""
+        """Starts new thread for loading image"""
         self.dropdown.need_refresh = True
-        if self.image_load_id != "":
-            self.app.after_cancel(self.image_load_id)
-        self.image_load_id = self.app.after(0, self.load_image)
+        self._start_image_load(self.load_image)
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
@@ -574,3 +571,14 @@ class ViewerApp:
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
             self.canvas.itemconfigure(dropdown.id, state="hidden")
+
+    def _start_image_load(self, function: Callable, *args):
+        """Cancels any previous image load thread and starts a new one"""
+        if self.image_load_id != "":
+            self.app.after_cancel(self.image_load_id)
+
+        self.image_load_id = self.app.after(0, function, *args)
+
+    def _end_image_load(self) -> None:
+        """Indicates function called by _start_image_load has finished"""
+        self.image_load_id = ""

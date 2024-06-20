@@ -1,3 +1,6 @@
+from constants import ZoomDirection
+
+
 class ZoomState:
 
     ZOOM_DELTA: float = 1.1
@@ -9,22 +12,20 @@ class ZoomState:
         self.level: int = 0
         self.level_cap: int = 1024
 
-    def try_update_zoom_level(self, zoom_change_amount: int) -> bool:
-        """Updates zoom level without allowing zoom smaller than initial size
-        Returns True when zoom level was updated"""
-        if zoom_change_amount == 0:
-            return False
-
+    def try_update_zoom_level(self, direction: ZoomDirection) -> bool:
+        """Tries to zoom in or out. Returns True when zoom level changed"""
         previous_level: int = self.level
-        self.level += zoom_change_amount
-        if self.level < 0:
-            self.level = 0
+
+        if direction == ZoomDirection.IN:
+            self.level += 1
+        elif direction == ZoomDirection.OUT and previous_level > 0:
+            self.level -= 1
 
         zoom_did_not_changed: bool = self.level == previous_level
         if zoom_did_not_changed:
             return False
 
-        if zoom_change_amount > 0:
+        if direction == ZoomDirection.IN:
             self.zoom_scale *= self.ZOOM_DELTA
         else:
             self.zoom_scale /= self.ZOOM_DELTA
