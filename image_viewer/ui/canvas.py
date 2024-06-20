@@ -2,7 +2,7 @@ from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TEXT_RGB, TOPBAR_TAG
+from constants import TEXT_RGB, TkTags
 
 
 class CustomCanvas(Canvas):
@@ -29,7 +29,12 @@ class CustomCanvas(Canvas):
         self.drag_start_y: int
 
         self.create_rectangle(
-            0, 0, self.screen_width, self.screen_height, fill="black", tags="back"
+            0,
+            0,
+            self.screen_width,
+            self.screen_height,
+            fill="black",
+            tags=TkTags.BACKGROUND,
         )
 
         self.bind("<ButtonPress-3>", self._move_from)
@@ -40,8 +45,8 @@ class CustomCanvas(Canvas):
         self.drag_start_y = event.y
 
     def _move_to(self, event: Event) -> None:
-        drag_x = event.x - self.drag_start_x
-        drag_y = event.y - self.drag_start_y
+        drag_x: int = event.x - self.drag_start_x
+        drag_y: int = event.y - self.drag_start_y
         self.drag_start_x += drag_x
         self.drag_start_y += drag_y
 
@@ -62,9 +67,9 @@ class CustomCanvas(Canvas):
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
-        self.topbar = topbar_img  # need to do this so garbage collector doesn't kill it
+        self.topbar: PhotoImage = topbar_img  # save from garbage collector
         self.create_image(
-            0, 0, image=topbar_img, anchor="nw", tag=TOPBAR_TAG, state="hidden"
+            0, 0, image=topbar_img, anchor="nw", tag=TkTags.TOPBAR, state="hidden"
         )
 
     def create_name_text(self, x: int, y: int, font: str) -> None:
@@ -75,7 +80,7 @@ class CustomCanvas(Canvas):
             fill=TEXT_RGB,
             anchor="w",
             font=font,
-            tags=TOPBAR_TAG,
+            tags=TkTags.TOPBAR,
         )
 
     def update_image_display(self, new_image: PhotoImage) -> None:
@@ -88,7 +93,7 @@ class CustomCanvas(Canvas):
             self.screen_width >> 1,
             self.screen_height >> 1,
             anchor="center",
-            tag="back",
+            tag=TkTags.BACKGROUND,
             image=new_image,
         )
         self.tag_raise("topbar")

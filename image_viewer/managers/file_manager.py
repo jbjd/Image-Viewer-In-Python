@@ -49,6 +49,9 @@ class ImageFileManager:
         self.action_undoer: ActionUndoer = ActionUndoer()
         self.file_dialog_asker: FileDialogAsker = FileDialogAsker(self.VALID_FILE_TYPES)
         self._files: ImageNameList = ImageNameList([first_image_name])
+
+        self.current_image: ImageName
+        self.path_to_image: str
         self._update_after_move_or_edit()
 
     def _make_name_with_validation(self, path: str) -> ImageName:
@@ -125,22 +128,27 @@ class ImageFileManager:
 
         mode: str = image_info.mode
         bpp: int = len(mode) * 8 if mode != "1" else 1
-        readable_mode: str = {
-            "P": "Palette",
-            "L": "Grayscale",
-            "1": "Black And White",
-        }.get(mode, mode)
+        readable_mode: str
+        match mode:
+            case "P":
+                readable_mode = "Palette"
+            case "L":
+                readable_mode = "Grayscale"
+            case "1":
+                readable_mode = "Black And White"
+            case _:
+                readable_mode = mode
 
         text: str = (
             f"Pixels: {image_info.width}x{image_info.height}\n"
             f"Size: {image_info.size_display}\n"
-            f"Pixel Format: {bpp} bpp {readable_mode}"
+            f"Pixel Format: {bpp} bpp {readable_mode}\n"
         )
         return text
 
     def show_image_detail_popup(self, PIL_Image: Image) -> None:
         try:
-            details: str = f"{self.get_cached_details()}\n"
+            details: str = self.get_cached_details()
         except KeyError:
             return  # don't fail trying to read, if not in cache just exit
 
@@ -249,7 +257,7 @@ class ImageFileManager:
         new_full_path: str
         if will_move_dirs:
             if not os.path.isabs(new_dir):
-                new_dir = os.path.join(self.image_directory, new_dir)
+                new_dir = os.path.normpath(os.path.join(self.image_directory, new_dir))
             if not os.path.exists(new_dir):
                 raise OSError
             new_full_path = os.path.join(new_dir, new_name)

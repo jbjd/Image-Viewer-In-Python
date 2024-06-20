@@ -10,12 +10,13 @@ class CompileArgumentParser(ArgumentParser):
     VALID_NUITKA_ARGS: set[str] = {
         "--mingw64",
         "--clang",
+        "--msvc",
         "--standalone",
         "--quiet",
         "--verbose",
         "--show-scons",
         "--show-memory",
-        "--enable-console",
+        "--windows-console-mode",
     }
 
     def __init__(self, install_path: str) -> None:
@@ -60,7 +61,10 @@ class CompileArgumentParser(ArgumentParser):
         )
         self.add_argument("args", nargs=REMAINDER)
 
-    def parse_known_args(self, working_dir: str) -> tuple[Namespace, list[str]]:
+    # for some reason mypy gets the super type wrong
+    def parse_known_args(  # type: ignore
+        self, working_dir: str
+    ) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
         user_args, nuitka_args = super().parse_known_args()
         self._validate_args(nuitka_args, user_args.debug)
@@ -75,7 +79,7 @@ class CompileArgumentParser(ArgumentParser):
             raise_if_not_root()
 
         for extra_arg in nuitka_args:
-            if extra_arg not in self.VALID_NUITKA_ARGS:
+            if extra_arg.split("=")[0] not in self.VALID_NUITKA_ARGS:
                 raise ValueError(f"Unknown argument {extra_arg}")
 
     @staticmethod
@@ -100,9 +104,14 @@ class CompileArgumentParser(ArgumentParser):
                 for skipped_import in imports_to_skip
             ]
 
-        ENABLE_CONSOLE: str = "--enable-console"
-        DISABLE_CONSOLE: str = "--disable-console"
-        if ENABLE_CONSOLE not in nuitka_args and DISABLE_CONSOLE not in nuitka_args:
+        ENABLE_CONSOLE: str = "--windows-console-mode=force"
+        DISABLE_CONSOLE: str = "--windows-console-mode=disable"
+        ATTACH_CONSOLE: str = "--windows-console-mode=attach"
+        if (
+            ENABLE_CONSOLE not in nuitka_args
+            and DISABLE_CONSOLE not in nuitka_args
+            and ATTACH_CONSOLE not in nuitka_args
+        ):
             nuitka_args.append(ENABLE_CONSOLE if user_args.debug else DISABLE_CONSOLE)
 
         return nuitka_args

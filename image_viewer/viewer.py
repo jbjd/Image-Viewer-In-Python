@@ -6,7 +6,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG, Key, Rotation, MouseWheelDirection
+from constants import Key, Rotation, MouseWheelDirection, TkTags
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
 from helpers.image_resizer import ImageResizer
@@ -42,11 +42,13 @@ class ViewerApp:
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
         # make FileManager first since it will validate path
-        image_cache = ImageCache()
+        image_cache: ImageCache = ImageCache()
         try:
-            self.file_manager = ImageFileManager(first_image_path, image_cache)
+            self.file_manager: ImageFileManager = ImageFileManager(
+                first_image_path, image_cache
+            )
         except ValueError:
-            self.exit(exit_code=1)
+            self.exit()
 
         self.need_to_redraw: bool = False
         self.move_id: str = ""
@@ -54,37 +56,40 @@ class ViewerApp:
         self.animation_id: str = ""
 
         self.app: Tk = self._setup_tk_app(path_to_exe)
-        canvas = CustomCanvas(self.app)
-        self.canvas = canvas
+        self.canvas: CustomCanvas = CustomCanvas(self.app)
+        screen_height: int = self.canvas.screen_height
+        screen_width: int = self.canvas.screen_width
 
-        self.height_ratio: float = canvas.screen_height / 1080
-        self.width_ratio: float = canvas.screen_width / 1920
+        self.height_ratio: float = screen_height / 1080
+        self.width_ratio: float = screen_width / 1920
 
         self._load_assests(
-            self.app, canvas, canvas.screen_width, self._scale_pixels_to_height(32)
+            self.app,
+            self.canvas,
+            self.canvas.screen_width,
+            self._scale_pixels_to_height(32),
         )
 
-        # set up and draw first image, then get all image paths in directory
-        self.image_loader = ImageLoader(
-            ImageResizer(canvas.screen_width, canvas.screen_height, path_to_exe),
-            image_cache,
-            self.animation_loop,
+        image_resizer: ImageResizer = ImageResizer(
+            screen_width, screen_height, path_to_exe
+        )
+        self.image_loader: ImageLoader = ImageLoader(
+            image_resizer, image_cache, self.animation_loop
         )
 
         init_PIL(self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
-        self.canvas.tag_bind("back", "<Button-1>", self.handle_canvas_click)
+        self.canvas.tag_bind(TkTags.BACKGROUND, "<Button-1>", self.handle_canvas_click)
         self._add_keybinds_to_tk()
 
-        self.bring_tk_to_front()
         self.app.mainloop()
 
     @staticmethod
     def _setup_tk_app(path_to_exe: str) -> Tk:
         """Creates and setups Tk class"""
-        app = Tk()
+        app: Tk = Tk()
         app.attributes("-fullscreen", True)
 
         if os.name == "nt":
@@ -104,20 +109,20 @@ class ViewerApp:
         """Loads first image and then finds all images files in the directory"""
         # Don't call this class's load_image here since we only consider there
         # to be one image now, and that function would throw if that one failed to load
-        current_image: Image | None = self._load_image_at_current_path()
+        image: Image | None = self._load_image_at_current_path()
 
-        if current_image is not None:
-            self.update_after_image_load(current_image)
+        if image is not None:
+            self.update_after_image_load(image)
 
         self.file_manager.find_all_images()
 
-        # if first load failed, load new one now that all images are loaded
-        if current_image is None:
+        # if first load failed, load new one now that all other images are found
+        if image is None:
             self.load_image()
 
     def _add_keybinds_to_tk(self) -> None:
         """Assigns keybinds to app"""
-        app = self.app
+        app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
         app.bind("<KeyPress>", self.handle_key)
@@ -152,19 +157,16 @@ class ViewerApp:
     def _load_assests(  # TODO: port this into canvas.py?
         self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
     ) -> None:
-        """
-        Load all assets on topbar from factory and create tkinter objects
-        topbar_height: size to make icons/topbar
-        """
+        """Load all assets on topbar and create canvas items"""
 
         icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
         # negative makes it an absolute size for consistency with different monitors
         FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
 
-        icon_factory = IconFactory(icon_size)
+        icon_factory: IconFactory = IconFactory(icon_size)
 
-        canvas.create_topbar(icon_factory.make_topbar(screen_width))
+        canvas.create_topbar(icon_factory.make_topbar_image(screen_width))
         # weird case, scale x offset by height, not width, since icon to its left
         # is scaled by height, small screen could overlap otherwise
         canvas.create_name_text(
@@ -172,44 +174,50 @@ class ViewerApp:
         )
 
         button_x_offset: int = screen_width - icon_size
-        HoverableButton(
-            canvas, *icon_factory.make_exit_icons(), self.exit, button_x_offset
-        )
-
-        button_x_offset -= icon_size
-        HoverableButton(
-            canvas, *icon_factory.make_minify_icons(), self.minimize, button_x_offset
-        )
-
-        button_x_offset -= icon_size
-        ToggleButton(
+        exit_button: HoverableButton = HoverableButton(
             canvas,
-            *icon_factory.make_dropdown_icons(),
-            self.handle_dropdown,
-            button_x_offset,
+            *icon_factory.make_exit_icons(),
+            self.exit,
         )
+        exit_button.add_to_canvas(button_x_offset)
 
-        HoverableButton(canvas, *icon_factory.make_trash_icons(), self.trash_image)
+        button_x_offset -= icon_size
+        minify_button: HoverableButton = HoverableButton(
+            canvas, *icon_factory.make_minify_icons(), self.minimize
+        )
+        minify_button.add_to_canvas(button_x_offset)
 
-        rename_button = HoverableButton(
+        button_x_offset -= icon_size
+        dropdown_button: ToggleButton = ToggleButton(
+            canvas, *icon_factory.make_dropdown_icons(), self.handle_dropdown
+        )
+        dropdown_button.add_to_canvas(button_x_offset)
+
+        trash_button: HoverableButton = HoverableButton(
+            canvas, *icon_factory.make_trash_icons(), self.trash_image
+        )
+        trash_button.add_to_canvas()
+
+        rename_button: HoverableButton = HoverableButton(
             canvas, *icon_factory.make_rename_icons(), self.toggle_show_rename_window
         )
+        rename_button.add_to_canvas()
         self.rename_button_id: int = rename_button.id
 
         dropdown_id: int = canvas.create_image(
-            screen_width, icon_size, anchor="ne", tag=TOPBAR_TAG, state="hidden"
+            screen_width, icon_size, anchor="ne", tag=TkTags.TOPBAR, state="hidden"
         )
-        self.dropdown = DropdownImage(dropdown_id)
+        self.dropdown: DropdownImage = DropdownImage(dropdown_id)
 
         rename_window_width: int = self._scale_pixels_to_width(250)
         rename_id: int = canvas.create_window(
             0,
             0,
             width=rename_window_width,
-            height=int(icon_size * 0.78),
+            height=int(icon_size * 0.8),
             anchor="nw",
         )
-        self.rename_entry = RenameEntry(
+        self.rename_entry: RenameEntry = RenameEntry(
             app, canvas, rename_id, rename_window_width, font=FONT
         )
         self.rename_entry.bind("<Return>", self.rename_or_convert)
@@ -221,12 +229,6 @@ class ViewerApp:
     def _scale_pixels_to_width(self, original_pixels: int) -> int:
         """Normalize all pixels relative to a 1080 pixel tall screen"""
         return int(original_pixels * self.width_ratio)
-
-    def bring_tk_to_front(self) -> None:
-        """Hack to force Tk window to front of screen"""
-        self.app.wm_attributes("-topmost", True)
-        self.app.update_idletasks()
-        self.app.wm_attributes("-topmost", False)
 
     # Functions handling specific user input
 
@@ -262,19 +264,21 @@ class ViewerApp:
 
         path: str = self.file_manager.path_to_image
         image: Image | None = self.image_loader.get_PIL_image(path)
+        if image is None:
+            return
 
-        if image is not None and not image_is_animated(image):
+        with image:
+            if image_is_animated(image):
+                return
             try:
                 self.file_manager.rotate_image_and_save(image, angle)
                 self.load_image_unblocking()
             except (FileNotFoundError, OSError):
                 pass
-            finally:
-                image.close()
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
-        if self.canvas.is_widget_visible(TOPBAR_TAG):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.hide_topbar()
         else:
             self.show_topbar()
@@ -350,16 +354,18 @@ class ViewerApp:
 
     def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
+        # This prevents an ignored exception since Tk may clean up
+        # before PIL does. Lets leave the work to Tk when exiting
+        del PhotoImage.__del__
+
         try:
-            self.image_loader.reset_and_setup()
             self.canvas.delete(self.canvas.file_name_text_id)
-            # Dangerous: this prevents an ignored exception since Tk may clean up
-            # before PIL does. Lets leave the work to Tk when exiting
-            del PhotoImage.__del__
             self.app.quit()
             self.app.destroy()
+            self.image_loader.reset_and_setup()
         except AttributeError:
             pass
+
         raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
 
     def minimize(self, _: Event) -> None:
@@ -415,7 +421,7 @@ class ViewerApp:
             self.hide_rename_window()
             return
 
-        if not self.canvas.is_widget_visible(TOPBAR_TAG):
+        if not self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.show_topbar()
 
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
@@ -439,7 +445,7 @@ class ViewerApp:
 
     def _update_existing_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
-        Call this when the new image is the same or a varient of the displaying image"""
+        Call this when the new image is the same or a variant of the displaying image"""
         self._display_image = PhotoImage(image)
         self.canvas.update_existing_image_display(self._display_image)
 
@@ -468,7 +474,7 @@ class ViewerApp:
             self.remove_current_image()
 
         self.update_after_image_load(current_image)
-        if self.canvas.is_widget_visible(TOPBAR_TAG):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.update_topbar()
 
         self.image_load_id = ""
@@ -482,12 +488,12 @@ class ViewerApp:
 
     def show_topbar(self, _: Event | None = None) -> None:
         """Shows all topbar elements and updates its display"""
-        self.canvas.itemconfigure(TOPBAR_TAG, state="normal")
+        self.canvas.itemconfigure(TkTags.TOPBAR, state="normal")
         self.update_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
         """Hides/removes focus from all topbar elements"""
-        self.canvas.itemconfigure(TOPBAR_TAG, state="hidden")
+        self.canvas.itemconfigure(TkTags.TOPBAR, state="hidden")
         self.hide_rename_window()
 
     def remove_current_image(self) -> None:
@@ -562,7 +568,7 @@ class ViewerApp:
                     return  # data not present in cache
 
                 # remove last line since I don't want to show mode in this dropdown
-                details = details[: details.rfind("\n") - 1]
+                details = details[: details.rfind("\n", 0, -9) - 1]
                 dropdown.image = create_dropdown_image(details)
 
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")

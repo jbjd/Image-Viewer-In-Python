@@ -15,7 +15,7 @@ class FileAction(ABC):
 
 
 class Rename(FileAction):
-    """Any actions that results in the path of a file being changed"""
+    """File path changed action"""
 
     __slots__ = "new_path", "original_file_deleted"
 
@@ -28,19 +28,19 @@ class Rename(FileAction):
 
 
 class Convert(Rename):
-    """Convert action"""
+    """File extension converted action"""
 
     __slots__ = ()
 
 
 class Delete(FileAction):
-    """Delete action"""
+    """File deleted action"""
 
     __slots__ = ()
 
 
 class Rotate(FileAction):
-    """Delete action"""
+    """Image display rotated action"""
 
     __slots__ = "original_bytes"
 

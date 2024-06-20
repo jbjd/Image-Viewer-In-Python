@@ -3,7 +3,7 @@ from typing import Callable
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TOPBAR_TAG
+from constants import TkTags
 
 
 class HoverableButton:
@@ -17,33 +17,34 @@ class HoverableButton:
         icon: PhotoImage,
         icon_hovered: PhotoImage,
         function_to_bind: Callable[[Event], None],
-        x_offset: int = 0,
     ) -> None:
         self.canvas: Canvas = canvas
         self.icon: PhotoImage = icon
         self.icon_hovered: PhotoImage = icon_hovered
         self.function_to_bind: Callable[[Event], None] = function_to_bind
 
+    def add_to_canvas(self, x_offset: int = 0, y_offset: int = 0) -> None:
+        """Adds self to canvas"""
         self.id: int = self.canvas.create_image(
             x_offset,
-            0,
+            y_offset,
             image=self.icon,
             anchor="nw",
-            tag=TOPBAR_TAG,
+            tag=TkTags.TOPBAR,
             state="hidden",
         )
 
-        self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
-        self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
-        self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.on_click)
+        self.canvas.tag_bind(self.id, "<Enter>", self._on_enter)
+        self.canvas.tag_bind(self.id, "<Leave>", self._on_leave)
+        self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self._on_click)
 
-    def on_enter(self, _: Event | None = None) -> None:
+    def _on_enter(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(self.id, image=self._get_hovered_icon())
 
-    def on_leave(self, _: Event | None = None) -> None:
+    def _on_leave(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(self.id, image=self._get_default_icon())
 
-    def on_click(self, event: Event) -> None:
+    def _on_click(self, event: Event) -> None:
         self.function_to_bind(event)
 
     def _get_hovered_icon(self) -> PhotoImage:
@@ -66,9 +67,8 @@ class ToggleButton(HoverableButton):
         icon_hovered: PhotoImage,
         active_icon_hovered: PhotoImage,
         function_to_bind: Callable[[Event], None],
-        x_offset: int = 0,
     ) -> None:
-        super().__init__(canvas, icon, icon_hovered, function_to_bind, x_offset)
+        super().__init__(canvas, icon, icon_hovered, function_to_bind)
         self.active_icon: PhotoImage = active_icon
         self.active_icon_hovered: PhotoImage = active_icon_hovered
         self.is_active: bool = False
@@ -79,7 +79,7 @@ class ToggleButton(HoverableButton):
     def _get_default_icon(self) -> PhotoImage:
         return self.active_icon if self.is_active else self.icon
 
-    def on_click(self, event: Event) -> None:
+    def _on_click(self, event: Event) -> None:
         self.is_active = not self.is_active
-        self.on_enter()  # fake mouse hover
+        self._on_enter()  # fake mouse hover
         self.function_to_bind(event)

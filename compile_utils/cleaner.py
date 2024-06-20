@@ -38,8 +38,8 @@ else:
 class TypeHintRemover(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
 
-    def __init__(self, module_name: str = "", **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, module_name: str = "") -> None:
+        super().__init__()
 
         self.func_to_skip: set[str] = functions_to_skip[module_name]
         self.vars_to_skip: set[str] = vars_to_skip[module_name]
@@ -100,10 +100,8 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             else:
                 # Can only reach here if annotation must be kept for formatting a class
                 self.write(": ")
-                new_node = ast.Name()
-                new_node.ctx = None  # type: ignore
                 # These might refer to removed things, so make them all "Any"
-                new_node.id = '"Any"'
+                new_node = ast.Name(id='"Any"', ctx=None)  # type: ignore
                 self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:

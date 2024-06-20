@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tkinter import Event, Tk
+from typing import Self
 
 from PIL.Image import Image
 
@@ -46,16 +47,20 @@ class MockImage(Image):
     def __init__(self, n_frames: int = 1, format: str = "") -> None:
         self.format: str = format  # type: ignore
         self.n_frames: int = n_frames
+        self.closed: bool = False
 
         if n_frames > 1:  # Like PIL, only set for animtions
             self.is_animated: bool = True
 
-    def convert(self, new_mode: str) -> MockImage:  # type: ignore
+    def convert(self, new_mode: str) -> Self:  # type: ignore
         self.mode = new_mode
         return self
 
     def save(self, *_, **kwargs) -> None:
         pass
+
+    def close(self, *_) -> None:
+        self.closed = True
 
 
 class MockActionUndoer(ActionUndoer):
@@ -75,7 +80,7 @@ class MockImageFileManager(ImageFileManager):
     def __init__(self) -> None:
         pass
 
-    def remove_current_image(self, _: bool) -> None:
+    def remove_current_image(self) -> None:
         pass
 
     def current_image_cache_still_fresh(self) -> bool:

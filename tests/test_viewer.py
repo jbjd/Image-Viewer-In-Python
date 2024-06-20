@@ -9,7 +9,7 @@ from image_viewer.constants import Key
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.viewer import ViewerApp
-from test_util.mocks import MockEvent, MockImageFileManager
+from test_util.mocks import MockEvent, MockImage, MockImageFileManager
 
 
 @pytest.fixture
@@ -19,6 +19,7 @@ def viewer(tk_app: Tk, image_loader: ImageLoader) -> ViewerApp:
         self.height_ratio = 1
         self.width_ratio = 1
         self.image_loader = image_loader
+        self.animation_id = ""
 
     with patch.object(ViewerApp, "__init__", mock_viewer_init):
         return ViewerApp("", "")
@@ -78,8 +79,6 @@ def test_redraw(
 
 def test_clear_image(viewer: ViewerApp):
     """Should stop animations and ask image loader to also clear data"""
-    viewer.animation_id = ""
-
     with patch.object(Tk, "after_cancel") as mock_after_cancel:
         viewer.clear_image()
         mock_after_cancel.assert_not_called()
@@ -129,11 +128,13 @@ def test_remove_image(viewer: ViewerApp):
     viewer.file_manager = MockImageFileManager()
 
     # When remove successful, does not call exit
-    with patch.object(MockImageFileManager, "remove_current_image") as mock_remove:
-        with patch.object(ViewerApp, "exit") as mock_exit:
-            viewer.remove_current_image()
-            mock_remove.assert_called_once()
-            mock_exit.assert_not_called()
+    with (
+        patch.object(MockImageFileManager, "remove_current_image") as mock_remove,
+        patch.object(ViewerApp, "exit") as mock_exit,
+    ):
+        viewer.remove_current_image()
+        mock_remove.assert_called_once()
+        mock_exit.assert_not_called()
 
     # Removed last image, calls exit
     with patch.object(
@@ -142,3 +143,25 @@ def test_remove_image(viewer: ViewerApp):
         with patch.object(ViewerApp, "exit") as mock_exit:
             viewer.remove_current_image()
             mock_exit.assert_called_once()
+
+
+def test_handle_rotate_animated_image(viewer: ViewerApp):
+    """Should exit if animating. Should close the image if not currently animating,
+    but the underlying image itself is an animation"""
+    mock_event = MockEvent()
+
+    with (
+        patch.object(ViewerApp, "_currently_animating", lambda _: True),
+        patch.object(ImageLoader, "get_PIL_image") as mock_get_PIL_image,
+    ):
+        viewer.handle_rotate_image(mock_event)
+        mock_get_PIL_image.assert_not_called()
+
+    mock_image = MockImage(n_frames=3)
+    viewer.file_manager = MockImageFileManager()
+    with patch.object(
+        ImageLoader, "get_PIL_image", return_value=mock_image
+    ) as mock_get_PIL_image:
+        viewer.handle_rotate_image(mock_event)
+        mock_get_PIL_image.assert_called_once()
+        assert mock_image.closed
