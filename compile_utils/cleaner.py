@@ -2,6 +2,7 @@
 
 import ast
 import os
+import re
 from _ast import Name
 from glob import glob
 from re import sub
@@ -12,6 +13,7 @@ from compile_utils.code_to_skip import (
     function_calls_to_skip,
     functions_to_skip,
     modules_to_not_autoflake,
+    regex_to_apply,
     vars_to_skip,
 )
 
@@ -125,8 +127,14 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
     with open(path, "r", encoding="utf-8") as fp:
-        parsed_source = ast.parse(fp.read())
+        source: str = fp.read()
 
+    if module_name in regex_to_apply:
+        regex_and_replacement: set[tuple[str, str]] = regex_to_apply[module_name]
+        for regex, replacement in regex_and_replacement:
+            source = re.sub(regex, replacement, source, flags=re.DOTALL)
+
+    parsed_source: ast.Module = ast.parse(source)
     contents: str = TypeHintRemover(module_name).visit(
         ast.NodeTransformer().visit(parsed_source)
     )

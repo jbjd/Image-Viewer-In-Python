@@ -68,4 +68,19 @@ function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_classes_kwargs)
 
+regex_to_apply: dict[str, set[tuple[str, str]]] = {
+    "send2trash.compat": {
+        (
+            ".+",
+            """
+import os
+text_type = str
+binary_type = bytes
+if os.supports_bytes_environ:
+    environb = os.environb
+from collections.abc import Iterable as iterable_type""",
+        )
+    },
+}
+
 modules_to_not_autoflake: set[str] = {"send2trash.compat"}
