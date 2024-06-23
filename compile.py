@@ -89,7 +89,7 @@ try:
 
     # tcl/tzdata is for timezones, which are not used in this program
     # tk/images contains the tk logo
-    folder_to_exclude: list[str] = ["tcl/tzdata", "tk/images"]
+    folder_to_exclude: list[str] = ["tcl/tzdata", "tk/images", "tcl/http1.0"]
     for folder in folder_to_exclude:
         shutil.rmtree(os.path.join(COMPILE_DIR, folder), ignore_errors=True)
 
