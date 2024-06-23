@@ -100,8 +100,9 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             else:
                 # Can only reach here if annotation must be kept for formatting a class
                 self.write(": ")
-                # These might refer to removed things, so make them all "Any"
-                new_node = ast.Name(id='"Any"', ctx=None)  # type: ignore
+                # These might refer to removed things, so make them all something
+                placeholder_id: str = '"Any"'
+                new_node = ast.Name(id=placeholder_id, ctx=None)  # type: ignore
                 self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:

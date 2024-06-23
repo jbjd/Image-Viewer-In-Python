@@ -46,7 +46,7 @@ class CompileArgumentParser(ArgumentParser):
             action="store_true",
             help=(
                 "Doesn't move compiled code to install path, doesn't check for root, "
-                "doesn't pass Go, doesn't collect $200, "
+                "doesn't cleanup, doesn't pass Go, doesn't collect $200, "
                 "adds --enable-console, --warn-implicit-exceptions, "
                 "--warn-unusual-code, --report=compilation-report.xml flags to nuitka"
             ),
@@ -55,8 +55,16 @@ class CompileArgumentParser(ArgumentParser):
             "--skip-nuitka",
             action="store_true",
             help=(
-                "Will not compile, will only create tmp directory"
+                "Will not compile, will only create tmp directory "
                 "with cleaned .py files. This option is exposed for debugging"
+            ),
+        )
+        self.add_argument(
+            "--no-cleanup",
+            action="store_true",
+            help=(
+                "Does not delete temporary files used for build/distribtion"
+                "This option is exposed for debugging"
             ),
         )
         self.add_argument("args", nargs=REMAINDER)

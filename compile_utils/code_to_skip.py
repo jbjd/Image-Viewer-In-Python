@@ -31,6 +31,7 @@ _function_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImageDraw": {"getdraw"},
     "PIL.ImageFile": {"verify", "raise_oserror"},
+    "PIL.ImageTk": {"_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
     "PIL.JpegImagePlugin": {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
     "PIL.PngImagePlugin": {"getxmp"},

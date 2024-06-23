@@ -1,6 +1,7 @@
 import os
 import shutil
 from argparse import Namespace
+from glob import glob
 from importlib import import_module
 from subprocess import Popen
 from typing import Final
@@ -91,13 +92,18 @@ try:
     tzdata_path: str = "tcl/tzdata"
     shutil.rmtree(os.path.join(COMPILE_DIR, tzdata_path), ignore_errors=True)
 
+    # tcl testing files are inlucded in dist by nuitka
+    tcl_test_glob: str = "tcl*/**/tcltest*.tm"
+    for f in glob(os.path.join(COMPILE_DIR, tcl_test_glob), recursive=True):
+        os.remove(f)
+
     if args.debug:
         exit(0)
 
     shutil.rmtree(install_path, ignore_errors=True)
     os.rename(COMPILE_DIR, install_path)
 finally:
-    if not args.debug:
+    if not args.debug and not args.no_cleanup:
         shutil.rmtree(BUILD_DIR, ignore_errors=True)
         shutil.rmtree(COMPILE_DIR, ignore_errors=True)
         if not args.skip_nuitka:
