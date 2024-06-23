@@ -12,7 +12,6 @@ from compile_utils.code_to_skip import (
     classes_to_skip,
     function_calls_to_skip,
     functions_to_skip,
-    modules_to_not_autoflake,
     regex_to_apply,
     vars_to_skip,
 )
@@ -139,7 +138,7 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         ast.NodeTransformer().visit(parsed_source)
     )
 
-    if autoflake is not None and module_name not in modules_to_not_autoflake:
+    if autoflake is not None:
         contents = autoflake.fix_code(
             contents,
             remove_all_unused_imports=True,

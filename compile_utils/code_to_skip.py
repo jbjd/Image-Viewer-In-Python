@@ -78,9 +78,8 @@ text_type = str
 binary_type = bytes
 if os.supports_bytes_environ:
     environb = os.environb
-from collections.abc import Iterable as iterable_type""",
+from collections.abc import Iterable
+iterable_type = Iterable""",
         )
     },
 }
-
-modules_to_not_autoflake: set[str] = {"send2trash.compat"}
