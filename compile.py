@@ -87,15 +87,17 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
-    # Remove tzdata which nuitka copies for tcl
-    # Its for timezones which is not used in this program
-    tzdata_path: str = "tcl/tzdata"
-    shutil.rmtree(os.path.join(COMPILE_DIR, tzdata_path), ignore_errors=True)
+    # tcl/tzdata is for timezones, which are not used in this program
+    # tk/images contains the tk logo
+    folder_to_exclude: list[str] = ["tcl/tzdata", "tk/images"]
+    for folder in folder_to_exclude:
+        shutil.rmtree(os.path.join(COMPILE_DIR, folder), ignore_errors=True)
 
-    # tcl testing files are inlucded in dist by nuitka
-    tcl_test_glob: str = "tcl*/**/tcltest*.tm"
-    for f in glob(os.path.join(COMPILE_DIR, tcl_test_glob), recursive=True):
-        os.remove(f)
+    # tcl testing and http files are inlucded in dist by nuitka
+    tcl_glob: str = "tcl*/**/*.tm"
+    for file in glob(os.path.join(COMPILE_DIR, tcl_glob), recursive=True):
+        if "http-" in file or "tcltest-" in file:
+            os.remove(file)
 
     if args.debug:
         exit(0)
