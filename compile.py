@@ -86,6 +86,11 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         shutil.copy(old_path, new_path)
 
+    # Remove tzdata which nuitka copies for tcl
+    # Its for timezones which is not used in this program
+    tzdata_path: str = "tcl/tzdata"
+    shutil.rmtree(os.path.join(COMPILE_DIR, tzdata_path), ignore_errors=True)
+
     if args.debug:
         exit(0)
 
