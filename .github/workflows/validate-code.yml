@@ -16,5 +16,6 @@ jobs:
 
       - name: Validate Formatting
         run: |
+          chmod +x ./format.sh
           ./format.sh
         shell: bash
