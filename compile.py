@@ -91,9 +91,6 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_folder(old_path, new_path)
 
-    if args.debug:
-        exit(0)
-
     # tcl/tzdata is for timezones, which are not used in this program
     # tk/images contains the tk logo
     folders_to_exclude: list[str] = [
@@ -114,8 +111,17 @@ try:
     ]
     delete_file_globs(file_globs_to_exclude)
 
-    delete_folder(install_path)
+    if args.debug:
+        exit(0)
+
+    existing_install_folder_backup: str = f"{os.path.normpath(install_path)}.backup"
+    delete_folder(existing_install_folder_backup)
+    try:
+        os.rename(install_path, existing_install_folder_backup)
+    except FileNotFoundError:
+        pass
     os.rename(COMPILE_DIR, install_path)
+    delete_folder(existing_install_folder_backup)
 finally:
     if not args.debug and not args.no_cleanup:
         delete_folders([BUILD_DIR, COMPILE_DIR, TMP_DIR])
