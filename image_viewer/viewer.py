@@ -1,5 +1,5 @@
-from collections.abc import Callable
 import os
+from collections.abc import Callable
 from time import perf_counter
 from tkinter import Event, Tk
 from typing import NoReturn

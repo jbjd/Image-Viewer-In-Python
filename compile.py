@@ -1,13 +1,17 @@
 import os
-import shutil
 from argparse import Namespace
-from glob import glob
 from importlib import import_module
 from subprocess import Popen
 from typing import Final
 
 from compile_utils.args import CompileArgumentParser
 from compile_utils.cleaner import clean_file_and_copy, move_files_to_tmp_and_clean
+from compile_utils.file_operations import (
+    copy_folder,
+    delete_file_globs,
+    delete_folder,
+    delete_folders,
+)
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.validation import raise_if_unsupported_python_version
 
@@ -41,7 +45,7 @@ if os.name == "nt":
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
-shutil.rmtree(TMP_DIR, ignore_errors=True)
+delete_folder(TMP_DIR)
 try:
     # use "" as module for image_viewer should it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
@@ -85,35 +89,37 @@ try:
         old_path = os.path.join(CODE_DIR, data_file_path)
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
-        shutil.copy(old_path, new_path)
-
-    # tcl/tzdata is for timezones, which are not used in this program
-    # tk/images contains the tk logo
-    folder_to_exclude: list[str] = ["tcl/tzdata", "tk/images", "tcl/http1.0"]
-    for folder in folder_to_exclude:
-        shutil.rmtree(os.path.join(COMPILE_DIR, folder), ignore_errors=True)
-
-    # tcl testing and http files are inlucded in dist by nuitka
-    tcl_glob: str = "tcl*/**/*.tm"
-    for file in glob(os.path.join(COMPILE_DIR, tcl_glob), recursive=True):
-        if "http-" in file or "tcltest-" in file:
-            os.remove(file)
+        copy_folder(old_path, new_path)
 
     if args.debug:
         exit(0)
 
-    shutil.rmtree(install_path, ignore_errors=True)
+    # tcl/tzdata is for timezones, which are not used in this program
+    # tk/images contains the tk logo
+    folders_to_exclude: list[str] = [
+        os.path.join(COMPILE_DIR, rel_path)
+        for rel_path in ["tcl/tzdata", "tk/images", "tcl/http1.0"]
+    ]
+    delete_folders(folders_to_exclude)
+
+    # tcl testing and http files are inlucded in dist by nuitka
+    file_globs_to_exclude: list[str] = [
+        os.path.join(COMPILE_DIR, rel_path)
+        for rel_path in [
+            "tcl*/**/http-*.tm",
+            "tcl*/**/tcltest-*.tm",
+            "libcrypto-*",
+            "_hashlib.pyd",
+        ]
+    ]
+    delete_file_globs(file_globs_to_exclude)
+
+    delete_folder(install_path)
     os.rename(COMPILE_DIR, install_path)
 finally:
     if not args.debug and not args.no_cleanup:
-        shutil.rmtree(BUILD_DIR, ignore_errors=True)
-        shutil.rmtree(COMPILE_DIR, ignore_errors=True)
-        if not args.skip_nuitka:
-            shutil.rmtree(TMP_DIR, ignore_errors=True)
-        try:
-            os.remove(os.path.join(WORKING_DIR, f"{FILE}.cmd"))
-        except FileNotFoundError:
-            pass
+        delete_folders([BUILD_DIR, COMPILE_DIR, TMP_DIR])
+        delete_file_globs([os.path.join(WORKING_DIR, f"{FILE}.cmd")])
 
 print("\nFinished")
 print("Installed to", install_path)

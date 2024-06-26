@@ -102,7 +102,10 @@ class CompileArgumentParser(ArgumentParser):
                 nuitka_args += ["--warn-implicit-exceptions", "--warn-unusual-code"]
 
         if not user_args.debug:
-            nuitka_args += ["--deployment", "--remove-output"]
+            nuitka_args.append("--deployment")
+
+            if not user_args.no_cleanup:
+                nuitka_args.append("--remove-output")
 
         if "--standalone" in nuitka_args:
             nuitka_args.append("--enable-plugin=tk-inter")
