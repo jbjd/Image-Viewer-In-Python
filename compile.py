@@ -99,7 +99,7 @@ try:
     # tk/images contains the tk logo
     folders_to_exclude: list[str] = [
         os.path.join(COMPILE_DIR, rel_path)
-        for rel_path in ["tcl/tzdata", "tk/images", "tcl/http1.0"]
+        for rel_path in ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/msgs"]
     ]
     delete_folders(folders_to_exclude)
 
@@ -131,14 +131,18 @@ try:
     )
 
     # delete comments in tcl files
+    strip_comments = RegexReplacement(pattern=r"^\s*#.*", replacement="")
+    strip_whitespace = RegexReplacement(pattern=r"\n\s+", replacement="\n")
+
     for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
         os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
     ):
-        strip_comments = RegexReplacement(pattern=r"^\s*#.*", replacement="")
         regex_replace(code_file, strip_comments, flags=re.MULTILINE)
-
-        strip_whitespace = RegexReplacement(pattern=r"\n\s+", replacement="\n")
         regex_replace(code_file, strip_whitespace, flags=re.MULTILINE)
+
+    regex_replace(
+        os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace, flags=re.MULTILINE
+    )
 
     if args.debug:
         exit(0)
