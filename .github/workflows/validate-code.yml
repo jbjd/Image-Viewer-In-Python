@@ -1,0 +1,20 @@
+name: Validate Code
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Formatting
+        run: |
+          ./format.sh
+        shell: bash
