@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from glob import glob
 from typing import Iterable
@@ -21,3 +22,13 @@ def delete_folders(folders: Iterable[str]) -> None:
 
 def copy_folder(source: str, destination: str) -> None:
     shutil.copy(source, destination)
+
+
+def regex_replace(path: str, pattern: str, replacement: str, flags=0) -> None:
+    with open(path) as fp:
+        contents = fp.read()
+
+    contents = re.sub(pattern, replacement, contents, flags=flags)
+
+    with open(path, "w") as fp:
+        fp.write(contents)
