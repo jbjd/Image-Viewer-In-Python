@@ -124,8 +124,10 @@ try:
     )
 
     # delete comments in tcl files
-    for tcl_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True):
-        regex_replace(tcl_file, "^#.*", "", flags=re.MULTILINE)
+    for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
+        os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
+    ):
+        regex_replace(code_file, "^#.*", "", flags=re.MULTILINE)
 
     if args.debug:
         exit(0)
