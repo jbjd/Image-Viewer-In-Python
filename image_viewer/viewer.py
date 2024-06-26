@@ -234,7 +234,7 @@ class ViewerApp:
 
     def handle_mouse_wheel(self, event: Event) -> None:
         """On mouse wheel, either moves between images
-        or zooms when right mosue also held"""
+        or zooms when right mouse also held"""
         right_mouse_held: bool = event.state & 1024  # type: ignore
 
         if right_mouse_held:

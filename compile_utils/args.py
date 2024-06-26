@@ -63,7 +63,7 @@ class CompileArgumentParser(ArgumentParser):
             "--no-cleanup",
             action="store_true",
             help=(
-                "Does not delete temporary files used for build/distribtion"
+                "Does not delete temporary files used for build/distribution"
                 "This option is exposed for debugging"
             ),
         )
