@@ -107,6 +107,7 @@ try:
             "tcl*/**/tcltest-*.tm",
             "libcrypto-*",
             "_hashlib.pyd",
+            "_lzma.pyd",
         ]
     ]
     delete_file_globs(file_globs_to_exclude)
