@@ -1,6 +1,7 @@
 import os
 import re
 from argparse import Namespace
+from glob import glob
 from importlib import import_module
 from subprocess import Popen
 from typing import Final
@@ -121,6 +122,10 @@ try:
         "proc ttk::LoadThemes {} {}",
         flags=re.DOTALL,
     )
+
+    # delete comments in tcl files
+    for tcl_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True):
+        regex_replace(tcl_file, "^#.*", "", flags=re.MULTILINE)
 
     if args.debug:
         exit(0)
