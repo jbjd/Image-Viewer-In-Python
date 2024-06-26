@@ -130,7 +130,7 @@ try:
     for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
         os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
     ):
-        strip_comments = RegexReplacement(pattern="^#.*", replacement="")
+        strip_comments = RegexReplacement(pattern=r"^\s*#.*", replacement="")
         regex_replace(code_file, strip_comments, flags=re.MULTILINE)
 
         strip_whitespace = RegexReplacement(pattern=r"\n\s+", replacement="\n")
