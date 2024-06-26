@@ -104,15 +104,19 @@ try:
     delete_folders(folders_to_exclude)
 
     # tcl testing and http files are inlucded in dist by nuitka
+    rel_paths: list[str] = [
+        "tcl*/**/http-*.tm",
+        "tcl*/**/tcltest-*.tm",
+        "libcrypto-*",
+        "_hashlib.pyd",
+        "_lzma.pyd",
+        "_bz2.pyd",
+    ]
+    if os.name == "nt":
+        rel_paths.append("select.pyd")
+
     file_globs_to_exclude: list[str] = [
-        os.path.join(COMPILE_DIR, rel_path)
-        for rel_path in [
-            "tcl*/**/http-*.tm",
-            "tcl*/**/tcltest-*.tm",
-            "libcrypto-*",
-            "_hashlib.pyd",
-            "_lzma.pyd",
-        ]
+        os.path.join(COMPILE_DIR, rel_path) for rel_path in rel_paths
     ]
     delete_file_globs(file_globs_to_exclude)
 
