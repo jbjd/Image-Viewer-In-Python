@@ -16,6 +16,7 @@ from compile_utils.file_operations import (
     regex_replace,
 )
 from compile_utils.nuitka import start_nuitka_compilation
+from compile_utils.regex import RegexReplacement
 from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
@@ -115,11 +116,13 @@ try:
     ]
     delete_file_globs(file_globs_to_exclude)
 
-    # Regex edits removing unused Tk code so we can delete more unused files
+    # Removing unused Tk code so we can delete more unused files
     regex_replace(
         os.path.join(COMPILE_DIR, "tk/ttk/ttk.tcl"),
-        "proc ttk::LoadThemes.*?\n}",
-        "proc ttk::LoadThemes {} {}",
+        RegexReplacement(
+            pattern="proc ttk::LoadThemes.*?\n}",
+            replacement="proc ttk::LoadThemes {} {}",
+        ),
         flags=re.DOTALL,
     )
 
@@ -127,7 +130,11 @@ try:
     for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
         os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
     ):
-        regex_replace(code_file, "^#.*", "", flags=re.MULTILINE)
+        strip_comments = RegexReplacement(pattern="^#.*", replacement="")
+        regex_replace(code_file, strip_comments, flags=re.MULTILINE)
+
+        strip_whitespace = RegexReplacement(pattern=r"\n\s+", replacement="\n")
+        regex_replace(code_file, strip_whitespace, flags=re.MULTILINE)
 
     if args.debug:
         exit(0)

@@ -2,6 +2,8 @@
 
 from collections import defaultdict
 
+from compile_utils.regex import RegexReplacement
+
 _function_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
         "crop_multiple",
@@ -68,11 +70,11 @@ function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_classes_kwargs)
 
-regex_to_apply: dict[str, set[tuple[str, str]]] = {
+regex_to_apply: dict[str, set[RegexReplacement]] = {
     "send2trash.compat": {
-        (
-            ".+",
-            """
+        RegexReplacement(
+            pattern=".+",
+            replacement="""
 import os
 text_type = str
 binary_type = bytes

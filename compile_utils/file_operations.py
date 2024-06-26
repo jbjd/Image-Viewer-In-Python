@@ -4,6 +4,8 @@ import shutil
 from glob import glob
 from typing import Iterable
 
+from compile_utils.regex import RegexReplacement
+
 
 def delete_file_globs(glob_patterns: Iterable[str]) -> None:
     for glob_pattern in glob_patterns:
@@ -24,11 +26,20 @@ def copy_folder(source: str, destination: str) -> None:
     shutil.copy(source, destination)
 
 
-def regex_replace(path: str, pattern: str, replacement: str, flags=0) -> None:
+def regex_replace(
+    path: str,
+    regex_replacement: RegexReplacement,
+    flags=0,
+) -> None:
     with open(path) as fp:
         contents = fp.read()
 
-    contents = re.sub(pattern, replacement, contents, flags=flags)
+    contents = re.sub(
+        regex_replacement.pattern,
+        regex_replacement.replacement,
+        contents,
+        flags=flags,
+    )
 
     with open(path, "w") as fp:
         fp.write(contents)
