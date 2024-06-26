@@ -126,23 +126,27 @@ try:
         RegexReplacement(
             pattern="proc ttk::LoadThemes.*?\n}",
             replacement="proc ttk::LoadThemes {} {}",
+            flags=re.DOTALL,
         ),
-        flags=re.DOTALL,
     )
 
     # delete comments in tcl files
-    strip_comments = RegexReplacement(pattern=r"^\s*#.*", replacement="")
-    strip_whitespace = RegexReplacement(pattern=r"\n\s+", replacement="\n")
+    strip_comments = RegexReplacement(
+        pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
+    )
+    strip_whitespace = RegexReplacement(
+        pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
+    )
+    strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
 
     for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
         os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
     ):
-        regex_replace(code_file, strip_comments, flags=re.MULTILINE)
-        regex_replace(code_file, strip_whitespace, flags=re.MULTILINE)
+        regex_replace(
+            code_file, [strip_comments, strip_whitespace, strip_starting_whitespace]
+        )
 
-    regex_replace(
-        os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace, flags=re.MULTILINE
-    )
+    regex_replace(os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace)
 
     if args.debug:
         exit(0)

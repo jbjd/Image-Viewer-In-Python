@@ -27,19 +27,22 @@ def copy_folder(source: str, destination: str) -> None:
 
 
 def regex_replace(
-    path: str,
-    regex_replacement: RegexReplacement,
-    flags=0,
+    path: str, regex_replacements: RegexReplacement | Iterable[RegexReplacement]
 ) -> None:
     with open(path) as fp:
         contents = fp.read()
 
-    contents = re.sub(
-        regex_replacement.pattern,
-        regex_replacement.replacement,
-        contents,
-        flags=flags,
-    )
+    if isinstance(regex_replacements, RegexReplacement):
+        regex_replacements = [regex_replacements]
+
+    regex_replacement: RegexReplacement
+    for regex_replacement in regex_replacements:
+        contents = re.sub(
+            regex_replacement.pattern,
+            regex_replacement.replacement,
+            contents,
+            flags=regex_replacement.flags,
+        )
 
     with open(path, "w") as fp:
         fp.write(contents)

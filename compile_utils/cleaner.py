@@ -15,6 +15,7 @@ from compile_utils.code_to_skip import (
     regex_to_apply,
     vars_to_skip,
 )
+from compile_utils.regex import RegexReplacement
 
 try:
     import autoflake
@@ -129,9 +130,9 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         source: str = fp.read()
 
     if module_name in regex_to_apply:
-        regex_and_replacement: set[tuple[str, str]] = regex_to_apply[module_name]
-        for regex, replacement in regex_and_replacement:
-            source = re.sub(regex, replacement, source, flags=re.DOTALL)
+        regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
+        for regex, replacement, flags in regex_and_replacement:
+            source = re.sub(regex, replacement, source, flags=flags)
 
     parsed_source: ast.Module = ast.parse(source)
     contents: str = TypeHintRemover(module_name).visit(

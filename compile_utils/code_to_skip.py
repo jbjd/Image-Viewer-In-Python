@@ -1,5 +1,6 @@
 """Collections of various bits of code that should not be included during compilation"""
 
+import re
 from collections import defaultdict
 
 from compile_utils.regex import RegexReplacement
@@ -82,6 +83,7 @@ if os.supports_bytes_environ:
     environb = os.environb
 from collections.abc import Iterable
 iterable_type = Iterable""",
+            flags=re.DOTALL,
         )
     },
 }
