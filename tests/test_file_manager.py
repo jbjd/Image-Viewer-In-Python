@@ -89,7 +89,7 @@ def test_delete_file(manager: ImageFileManager):
     # add one extra image so it doesn't error after removing the only file
     manager.add_new_image("Some_image.png", False)
 
-    tempfile._TemporaryFileWrapper.close = safe_wrapper(
+    tempfile._TemporaryFileWrapper.close = safe_wrapper(  # type: ignore
         tempfile._TemporaryFileWrapper.close
     )
 
