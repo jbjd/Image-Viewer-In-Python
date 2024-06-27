@@ -45,7 +45,7 @@ if os.name == "nt":
 else:  # assume linux for now
     from send2trash import send2trash
 
-    illegal_char = compile(r"[]")
+    illegal_char = compile("")
     kb_size = 1000
 
     def OS_name_cmp(a: str, b: str) -> bool:
