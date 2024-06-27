@@ -7,6 +7,7 @@ import pytest
 from conftest import IMG_DIR
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import CachedImage, ImageCache
+from test_util.exception import safe_wrapper
 from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
 
@@ -87,6 +88,10 @@ def test_delete_file(manager: ImageFileManager):
 
     # add one extra image so it doesn't error after removing the only file
     manager.add_new_image("Some_image.png", False)
+
+    tempfile._TemporaryFileWrapper.close = safe_wrapper(
+        tempfile._TemporaryFileWrapper.close
+    )
 
     with tempfile.NamedTemporaryFile() as tmp:
         manager.path_to_image = tmp.name
