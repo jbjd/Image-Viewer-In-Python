@@ -33,6 +33,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           sudo apt-get install -y libturbojpeg
+          sudo apt-get install -y ttf-mscorefonts-installer
 
         # xvfb enables tkinter in these tests
       - name: Unit Tests
