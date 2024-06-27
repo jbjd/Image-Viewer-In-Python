@@ -32,7 +32,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          apt-get install -y libjpeg-turbo
+          sudo apt-get install -y libjpeg-turbo
 
       - name: Unit Tests
         run: |
