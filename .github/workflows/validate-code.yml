@@ -29,3 +29,9 @@ jobs:
           chmod +x ./validate.sh
           ./validate.sh
         shell: bash
+
+      - name: Unit Tests
+        run: |
+          chmod +x ./run_tests.sh
+          ./run_tests.sh
+        shell: bash

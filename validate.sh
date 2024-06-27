@@ -10,7 +10,7 @@ black . --check
 black_status=$?
 echo
 
-echo "Formatting complete" && echo
+echo "Formatting check complete" && echo
 
 echo "Running mypy type checker"
 mypy . --check-untyped-defs
