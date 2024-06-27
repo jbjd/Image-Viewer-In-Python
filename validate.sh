@@ -1,11 +1,13 @@
 #!/bin/sh
 
 echo "Running isort"
-isort .
+isort . -m 3 --tc --check
+isort_status=$?
 echo
 
 echo "Running black formatter"
-black .
+black . --check
+black_status=$?
 echo
 
 echo "Formatting complete" && echo
@@ -21,7 +23,7 @@ codespell image_viewer tests compile_utils compile.py README.md
 codespell_status=$?
 echo
 
-if [ $mypy_status -ne 0 ] || [ $codespell_status -ne 0 ]
+if [ $mypy_status -ne 0 ] || [ $codespell_status -ne 0 ] || [ $isort_status -ne 0 ] || [ $black_status -ne 0 ]
 then
     printf "Some checks failed"
     exit 1
