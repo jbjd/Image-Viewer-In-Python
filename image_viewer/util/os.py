@@ -9,7 +9,7 @@ from re import Pattern, compile
 illegal_char: Pattern[str]
 kb_size: int
 if os.name == "nt":
-    from ctypes import windll
+    from ctypes import windll  # type: ignore
 
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell

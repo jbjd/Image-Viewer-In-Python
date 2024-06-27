@@ -20,7 +20,7 @@ def raise_if_not_root() -> None:
     if os.name == "nt":
         import ctypes
 
-        is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0
+        is_root = ctypes.windll.shell32.IsUserAnAdmin() != 0  # type: ignore
     else:
         # On windows, mypy complains
         is_root = os.geteuid() == 0  # type: ignore

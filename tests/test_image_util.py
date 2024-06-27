@@ -29,7 +29,7 @@ def test_PIL_functions(tk_app: Tk):
     from PIL import Image as _Image
 
     init_PIL(20)
-    assert len(_Image._plugins) == 0  # type: ignore
+    assert len(_Image._plugins) == 0
     del _Image
 
     assert isinstance(create_dropdown_image("test\ntest"), PhotoImage)

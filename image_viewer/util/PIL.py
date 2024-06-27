@@ -112,7 +112,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
     draw: ImageDraw = get_image_draw(image)
     draw.text((10, line_spacing), text, fill="white", spacing=line_spacing)
 
-    return PhotoImage(draw._image)  # type: ignore
+    return PhotoImage(draw._image)
 
 
 def get_placeholder_for_errored_image(
@@ -146,12 +146,12 @@ def get_placeholder_for_errored_image(
     x_offset = (screen_width - w) >> 1
     draw.text((x_offset, y_offset), formated_error, TEXT_RGB)
 
-    return draw._image  # type: ignore
+    return draw._image
 
 
 def _preinit() -> None:  # pragma: no cover
     """Edited version of PIL's preinit to be used as a replacement"""
-    if _Image._initialized > 0:  # type: ignore
+    if _Image._initialized > 0:
         return
 
     __import__("PIL.JpegImagePlugin", globals(), locals(), ())
@@ -168,7 +168,7 @@ def _preinit() -> None:  # pragma: no cover
         lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
     )
 
-    _Image._initialized = 2  # type: ignore
+    _Image._initialized = 2
 
 
 def _stop_unwanted_PIL_imports() -> None:
@@ -182,7 +182,7 @@ def _stop_unwanted_PIL_imports() -> None:
     del MARKER, Skip
 
     # Edit plugins and preinit to avoid importing many unused image modules
-    _Image._plugins = []  # type: ignore
+    _Image._plugins = []
     _Image.preinit = _preinit
 
 

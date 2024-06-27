@@ -29,7 +29,7 @@ class IconFactory:
 
     def make_icon_from_draw(self, draw: ImageDraw) -> PhotoImage:
         """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
-        return PhotoImage(self._resize_icon(draw._image))  # type: ignore
+        return PhotoImage(self._resize_icon(draw._image))
 
     def _new_rgb_image(self, rgb: tuple[int, int, int]) -> Image:
         return new_image("RGB", self.DEFAULT_SIZE, rgb)
@@ -79,7 +79,7 @@ class IconFactory:
     def _draw_down_arrow(self, draw: ImageDraw) -> tuple[PhotoImage, PhotoImage]:
         draw.line((6, 11, 16, 21), self.LINE_RGB, 2)
         draw.line((16, 21, 26, 11), self.LINE_RGB, 2)
-        resised_img: Image = self._resize_icon(draw._image)  # type: ignore
+        resised_img: Image = self._resize_icon(draw._image)
         return PhotoImage(resised_img), PhotoImage(ImageOps.flip(resised_img))
 
     def make_dropdown_icons(

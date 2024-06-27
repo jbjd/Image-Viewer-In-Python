@@ -40,8 +40,8 @@ def test_pixel_scaling(viewer: ViewerApp):
 
     assert viewer._scale_pixels_to_height(1080) == 1080
     assert viewer._scale_pixels_to_width(1920) == 1920
-    viewer.height_ratio = 2.21  # type: ignore
-    viewer.width_ratio = 1.21  # type: ignore
+    viewer.height_ratio = 2.21
+    viewer.width_ratio = 1.21
     assert viewer._scale_pixels_to_height(1080) == 2386
     assert viewer._scale_pixels_to_width(1920) == 2323
 

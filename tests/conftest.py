@@ -42,6 +42,6 @@ def tk_app() -> Tk:
 @pytest.fixture
 def canvas(tk_app) -> CustomCanvas:
     custom_canvas = CustomCanvas(tk_app)
-    custom_canvas.screen_height = 1080  # type: ignore
-    custom_canvas.screen_width = 1080  # type: ignore
+    custom_canvas.screen_height = 1080
+    custom_canvas.screen_width = 1080
     return custom_canvas
