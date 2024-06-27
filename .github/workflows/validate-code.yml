@@ -34,8 +34,11 @@ jobs:
           pip install -r requirements.txt
           sudo apt-get install -y libturbojpeg
 
+        # xvfb enables tkinter in these tests
       - name: Unit Tests
         run: |
+          export DISPLAY=:99
+          Xvfb :99 &
           chmod +x ./run_tests.sh
           ./run_tests.sh
         shell: bash
