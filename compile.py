@@ -107,6 +107,7 @@ try:
     rel_paths: list[str] = [
         "tcl*/**/http-*.tm",
         "tcl*/**/tcltest-*.tm",
+        "tk/ttk/*Theme.tcl",
         "libcrypto-*",
         "_hashlib.pyd",
         "_lzma.pyd",
