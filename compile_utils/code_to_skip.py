@@ -72,18 +72,25 @@ vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_classes_kwargs)
 
 regex_to_apply: dict[str, set[RegexReplacement]] = {
+    "PIL._deprecate": {
+        RegexReplacement(
+            pattern=r"def deprecate\(.*($|(?=\n[^\s]))",
+            replacement="""
+def deprecate():
+    pass""",
+            flags=re.DOTALL,
+        )
+    },
     "send2trash.compat": {
         RegexReplacement(
-            pattern=".+",
+            pattern="""
+try:
+    from collections.abc import Iterable as iterable_type
+except ImportError:
+    from collections import Iterable as iterable_type.*""",
             replacement="""
-import os
-text_type = str
-binary_type = bytes
-if os.supports_bytes_environ:
-    environb = os.environb
 from collections.abc import Iterable
 iterable_type = Iterable""",
-            flags=re.DOTALL,
         )
     },
 }
