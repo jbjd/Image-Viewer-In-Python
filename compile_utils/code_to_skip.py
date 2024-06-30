@@ -81,6 +81,7 @@ def deprecate():
             flags=re.DOTALL,
         )
     },
+    # Fix issue with autoflake
     "send2trash.compat": {
         RegexReplacement(
             pattern="""
@@ -91,6 +92,13 @@ except ImportError:
             replacement="""
 from collections.abc import Iterable
 iterable_type = Iterable""",
+        )
+    },
+    # We don't use pathlib's Path, remove support for it
+    "send2trash.util": {
+        RegexReplacement(
+            pattern=r""".*\[path\.__fspath__\(\).*\]""",
+            replacement="",
         )
     },
 }
