@@ -1,6 +1,7 @@
 """Collections of various bits of code that should not be included during compilation"""
 
 from collections import defaultdict
+import re
 
 from compile_utils.regex import RegexReplacement
 
@@ -80,6 +81,21 @@ vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
 regex_to_apply: dict[str, set[RegexReplacement]] = {
+    "PIL.Image": {
+        RegexReplacement(
+            pattern="""try:
+    from defusedxml import ElementTree
+except ImportError:
+    ElementTree = None""",
+            replacement="",
+        )
+    },
+    "send2trash.__init__": {
+        RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
+    },
+    "send2trash.win.__init__": {
+        RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
+    },
     # Fix issue with autoflake
     "send2trash.compat": {
         RegexReplacement(
