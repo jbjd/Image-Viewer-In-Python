@@ -1,12 +1,11 @@
 """Collections of various bits of code that should not be included during compilation"""
 
-from collections import defaultdict
 import platform
 import re
-
-from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
+from collections import defaultdict
 
 from compile_utils.regex import RegexReplacement
+from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
     "turbojpeg": {

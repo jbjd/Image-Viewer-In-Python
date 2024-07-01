@@ -18,11 +18,20 @@ class ImageResizer:
         self.screen_width: Final[int] = screen_width
         self.screen_height: Final[int] = screen_height
 
-        self.jpeg_helper = TurboJPEG(
-            os.path.join(path_to_exe, "dll/libturbojpeg.dll")
-            if os.name == "nt"
-            else None
-        )
+        turbo_jpeg_lib_path: str | None = None  # None will auto detect
+
+        if os.name == "nt":
+            import platform
+
+            suffix: str = "_x86" if platform.architecture()[0] == "32bit" else ""
+            turbo_jpeg_lib_path = os.path.join(
+                path_to_exe,
+                f"dll/libturbojpeg{suffix}.dll",
+            )
+
+            del platform
+
+        self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
     def get_zoomed_image(self, image: Image, zoom_level: int) -> tuple[Image, bool]:
         """Resizes image using the provided zoom_level and bool if max zoom reached"""
