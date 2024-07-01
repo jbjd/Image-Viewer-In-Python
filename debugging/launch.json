@@ -10,7 +10,7 @@
                 "c:/photos/test.jpg"
             ],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         },
         {
             "name": "Compile",
@@ -19,11 +19,12 @@
             "program": "C:/Python/Viewer/compile.py",
             "args": [
                 "--debug",
+                "--no-cleanup",
                 "--mingw64",
                 "--standalone"
             ],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         }
     ]
 }

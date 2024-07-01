@@ -76,6 +76,13 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.write_annotations_without_value = previous_ignore
 
     def visit_Call(self, node: ast.Call) -> None:
+        # Skips warnings.warn() calls
+        if (
+            getattr(node.func, "attr", "") == "warn"
+            and getattr(node.func, "value", ast.Name("")).id == "warnings"
+        ):
+            super().visit_Pass(node)
+            return
         if (
             getattr(node.func, "attr", "") not in self.func_calls_to_skip
             and getattr(node.func, "id", "") not in self.func_calls_to_skip
