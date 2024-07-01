@@ -11,6 +11,7 @@ from shutil import copyfile
 from compile_utils.code_to_skip import (
     classes_to_skip,
     function_calls_to_skip,
+    functions_to_noop,
     functions_to_skip,
     regex_to_apply,
     vars_to_skip,
@@ -47,6 +48,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.vars_to_skip: set[str] = vars_to_skip[module_name]
         self.classes_to_skip: set[str] = classes_to_skip[module_name]
         self.func_calls_to_skip: set[str] = function_calls_to_skip[module_name]
+        self.func_to_noop: set[str] = functions_to_noop[module_name]
 
         self.vars_to_skip.add("__author__")
 
@@ -66,6 +68,10 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Removes type hints from functions"""
         if node.name in self.func_to_skip:
+            return
+
+        if node.name in self.func_to_noop:
+            super().visit_Pass(node)
             return
 
         # always ignore inside of function context

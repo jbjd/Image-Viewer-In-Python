@@ -1,11 +1,10 @@
 """Collections of various bits of code that should not be included during compilation"""
 
-import re
 from collections import defaultdict
 
 from compile_utils.regex import RegexReplacement
 
-_function_kwargs: dict[str, set[str]] = {
+_skip_functions_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
         "crop_multiple",
         "scale_with_quality",
@@ -42,9 +41,9 @@ _function_kwargs: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
-_function_call_kwargs: dict[str, set[str]] = {"PIL.TiffTags": {"_populate"}}
+_skip_function_calls_kwargs: dict[str, set[str]] = {"PIL.TiffTags": {"_populate"}}
 
-_vars_kwargs: dict[str, set[str]] = {
+_skip_vars_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
         "TJERR_FATAL",
         "TJCS_CMYK",
@@ -60,27 +59,27 @@ _vars_kwargs: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
-_classes_kwargs: dict[str, set[str]] = {
+_skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageFile": {"_Tile"},
 }
 
-functions_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_function_kwargs)
-function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_function_call_kwargs
+_noop_functions_kwargs: dict[str, set[str]] = {
+    "PIL._deprecate": {"deprecate"},
+}
+
+functions_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_functions_kwargs
 )
-vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_vars_kwargs)
-classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_classes_kwargs)
+function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_function_calls_kwargs
+)
+functions_to_noop: defaultdict[str, set[str]] = defaultdict(
+    set, **_noop_functions_kwargs
+)
+vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
+classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
 regex_to_apply: dict[str, set[RegexReplacement]] = {
-    "PIL._deprecate": {
-        RegexReplacement(
-            pattern=r"def deprecate\(.*($|(?=\n[^\s]))",
-            replacement="""
-def deprecate():
-    pass""",
-            flags=re.DOTALL,
-        )
-    },
     # Fix issue with autoflake
     "send2trash.compat": {
         RegexReplacement(
