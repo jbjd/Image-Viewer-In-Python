@@ -73,13 +73,13 @@ class CompileArgumentParser(ArgumentParser):
 
     # for some reason mypy gets the super type wrong
     def parse_known_args(  # type: ignore
-        self, working_dir: str
+        self, imports_to_skip: list[str]
     ) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
         user_args, nuitka_args = super().parse_known_args()
         self._validate_args(nuitka_args, user_args.debug)
 
-        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, working_dir)
+        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, imports_to_skip)
 
         return user_args, nuitka_args
 
@@ -94,7 +94,7 @@ class CompileArgumentParser(ArgumentParser):
 
     @staticmethod
     def _expand_nuitka_args(
-        user_args: Namespace, nuitka_args: list[str], working_dir: str
+        user_args: Namespace, nuitka_args: list[str], imports_to_skip: list[str]
     ) -> list[str]:
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""
@@ -111,9 +111,6 @@ class CompileArgumentParser(ArgumentParser):
 
         if "--standalone" in nuitka_args:
             nuitka_args.append("--enable-plugin=tk-inter")
-
-            with open(os.path.join(working_dir, "skippable_imports.txt"), "r") as fp:
-                imports_to_skip: list[str] = fp.read().strip().split("\n")
 
             nuitka_args += [
                 f"--nofollow-import-to={skipped_import}"

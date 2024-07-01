@@ -91,10 +91,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_Call(self, node: ast.Call) -> None:
         # Skips warnings.warn() calls
-        if (
-            getattr(node.func, "attr", "") == "warn"
-            and getattr(node.func, "value", ast.Name("")).id == "warnings"
-        ):
+        if self._node_is_logging(node):
             super().visit_Pass(node)
             return
         if (
@@ -102,6 +99,16 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             and getattr(node.func, "id", "") not in self.func_calls_to_skip
         ):
             super().visit_Call(node)
+
+    @staticmethod
+    def _node_is_logging(node: ast.Call) -> bool:
+        return (
+            getattr(node.func, "attr", "") == "warn"
+            and getattr(node.func, "value", ast.Name("")).id == "warnings"
+        ) or (
+            getattr(node.func, "attr", "") == "debug"
+            and "log" in getattr(node.func, "value", ast.Name("")).id
+        )
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""
@@ -183,7 +190,9 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         fp.write(contents)
 
 
-def move_files_to_tmp_and_clean(dir: str, tmp_dir: str, mod_prefix: str) -> None:
+def move_files_to_tmp_and_clean(
+    dir: str, tmp_dir: str, mod_prefix: str, modules_to_skip: list[str] | None = None
+) -> None:
     """Moves python files from dir to temp_dir and removes unused/unneeded code"""
     for python_file in iter(
         os.path.abspath(p)
@@ -201,6 +210,7 @@ def move_files_to_tmp_and_clean(dir: str, tmp_dir: str, mod_prefix: str) -> None
 
         if python_file.endswith(".py"):
             mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
-            clean_file_and_copy(python_file, new_path, mod_name)
+            if modules_to_skip is None or mod_name not in modules_to_skip:
+                clean_file_and_copy(python_file, new_path, mod_name)
         else:
             copyfile(python_file, new_path)

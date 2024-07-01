@@ -39,9 +39,12 @@ else:
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
+with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
+    imports_to_skip: list[str] = fp.read().strip().split("\n")
+
 args: Namespace
 nuitka_args: list[str]
-args, nuitka_args = parser.parse_known_args(WORKING_DIR)
+args, nuitka_args = parser.parse_known_args(imports_to_skip)
 
 if os.name == "nt":
     windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
@@ -63,7 +66,7 @@ try:
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
-                os.path.dirname(module.__file__), TMP_DIR, mod_name
+                os.path.dirname(module.__file__), TMP_DIR, mod_name, imports_to_skip
             )
         else:
             # its just one file
