@@ -10,6 +10,7 @@ from shutil import copyfile
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
+    dict_keys_to_skip,
     function_calls_to_skip,
     functions_to_noop,
     functions_to_skip,
@@ -49,6 +50,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.classes_to_skip: set[str] = classes_to_skip[module_name]
         self.func_calls_to_skip: set[str] = function_calls_to_skip[module_name]
         self.func_to_noop: set[str] = functions_to_noop[module_name]
+        self.dict_keys_to_skip: set[str] = dict_keys_to_skip[module_name]
 
         self.vars_to_skip.add("__author__")
 
@@ -71,7 +73,8 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             return
 
         if node.name in self.func_to_noop:
-            super().visit_Pass(node)
+            node.body = [ast.Pass()]
+            super().visit_FunctionDef(node)
             return
 
         # always ignore inside of function context
@@ -136,6 +139,15 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             return
 
         super().visit_ImportFrom(node)
+
+    def visit_Dict(self, node: ast.Dict) -> None:
+        """Replace some dict constants"""
+        node.keys = [
+            k
+            for k in node.keys
+            if getattr(k, "value", "") not in self.dict_keys_to_skip
+        ]
+        super().visit_Dict(node)
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:

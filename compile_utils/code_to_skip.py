@@ -1,7 +1,10 @@
 """Collections of various bits of code that should not be included during compilation"""
 
 from collections import defaultdict
+import platform
 import re
+
+from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 from compile_utils.regex import RegexReplacement
 
@@ -68,6 +71,16 @@ _noop_functions_kwargs: dict[str, set[str]] = {
     "PIL._deprecate": {"deprecate"},
 }
 
+_skip_dict_keys_kwargs: dict[str, set[str]] = {
+    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}.union(
+        {"Windows"}
+    )
+}
+
+
+dict_keys_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_dict_keys_kwargs
+)
 functions_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_functions_kwargs
 )
