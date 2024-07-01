@@ -149,7 +149,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Skip unnecessary futures imports"""
-        if node.module == "__future__" and node.names[0].name != "annotations":
+        if node.module == "__future__":
             return
 
         super().visit_ImportFrom(node)

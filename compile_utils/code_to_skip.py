@@ -68,6 +68,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
+    "PIL.Image": {"DecompressionBombWarning"},
     "PIL.ImageFile": {"_Tile"},
 }
 
@@ -105,7 +106,14 @@ regex_to_apply: dict[str, set[RegexReplacement]] = {
 except ImportError:
     ElementTree = None""",
             replacement="",
-        )
+        ),
+        RegexReplacement(
+            pattern="""try:
+    import cffi
+except ImportError:
+    cffi = None""",
+            replacement="cffi = None",
+        ),
     },
     "send2trash.__init__": {
         RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
