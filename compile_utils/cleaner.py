@@ -112,6 +112,9 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Skips over some variables"""
+        if getattr(getattr(node.value, "func", object), "attr", "") == "getLogger":
+            return
+
         var_name: str = getattr(node.targets[0], "id", "")
         if var_name not in self.vars_to_skip:
             super().visit_Assign(node)
