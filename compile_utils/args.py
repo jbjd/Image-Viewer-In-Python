@@ -7,6 +7,8 @@ from compile_utils.validation import raise_if_not_root
 class CompileArgumentParser(ArgumentParser):
     """Argument Parser for compilation flags"""
 
+    __slots__ = ()
+
     VALID_NUITKA_ARGS: set[str] = {
         "--mingw64",
         "--clang",
