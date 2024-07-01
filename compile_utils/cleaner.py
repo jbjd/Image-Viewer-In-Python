@@ -68,7 +68,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         self.write_annotations_without_value = False
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Removes type hints from functions"""
+        """Skips some functions and removes type hints from the rest"""
         if node.name in self.func_to_skip:
             return
 
@@ -76,6 +76,11 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             node.body = [ast.Pass()]
             super().visit_FunctionDef(node)
             return
+
+        argument: ast.arg
+        for argument in node.args.args:
+            argument.annotation = None
+        node.returns = None
 
         # always ignore inside of function context
         previous_ignore: bool = self.write_annotations_without_value
@@ -134,8 +139,7 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Skip unnecessary futures imports"""
-        # TODO: only skip futures for unsupported versions
-        if node.module == "__future__":
+        if node.module == "__future__" and node.names[0].name != "annotations":
             return
 
         super().visit_ImportFrom(node)
