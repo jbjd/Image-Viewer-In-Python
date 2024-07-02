@@ -114,6 +114,9 @@ except ImportError:
             replacement="cffi = None",
         ),
     },
+    "PIL.PngImagePlugin": {
+        RegexReplacement(pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError")
+    },
     "send2trash.__init__": {
         RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
     },
