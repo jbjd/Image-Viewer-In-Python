@@ -21,7 +21,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.Image": {
         "__getstate__",
         "__setstate__",
-        "_getxmp",
         "_repr_image",
         "_repr_jpeg_",
         "_repr_pretty_",
@@ -30,6 +29,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "fromqimage",
         "fromqpixmap",
         "getexif",
+        "getxmp",
         "preinit",
         "effect_mandelbrot",
         "get_child_images",
@@ -43,9 +43,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageFile": {"get_format_mimetype", "verify", "raise_oserror"},
     "PIL.ImageTk": {"_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
-    "PIL.JpegImagePlugin": {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
-    "PIL.PngImagePlugin": {"getxmp"},
-    "PIL.WebPImagePlugin": {"getxmp"},
+    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
     "PIL.TiffTags": {"_populate"},
 }
 
@@ -67,7 +65,6 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJPF_ARGB",
         "TJFLAG_LIMITSCANS",
     },
-    "PIL.Image": {"MIME"},
     "PIL.GifImagePlugin": {"format_description"},
     "PIL.JpegImagePlugin": {"format_description"},
     "PIL.PngImagePlugin": {"format_description"},
@@ -120,6 +117,16 @@ except ImportError:
 except ImportError:
     cffi = None""",
             replacement="cffi = None",
+        ),
+    },
+    "PIL.ImageMode": {
+        RegexReplacement(
+            pattern="from typing import NamedTuple",
+            replacement="from collections import namedtuple",
+        ),
+        RegexReplacement(
+            pattern=r"\(NamedTuple\):",
+            replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
         ),
     },
     "PIL.PngImagePlugin": {

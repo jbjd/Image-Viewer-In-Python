@@ -3,6 +3,7 @@
 import ast
 import os
 import re
+import warnings
 from _ast import Name
 from glob import glob
 from re import sub
@@ -22,15 +23,12 @@ from compile_utils.regex import RegexReplacement
 try:
     import autoflake
 except ImportError:
-    import warnings
-
     warnings.warn(
         (
             "You do not have the autoflake package installed. "
             "Installing it will allow for a slightly smaller output\n"
         )
     )
-    del warnings
     autoflake = None
 
 if os.name == "nt":
@@ -39,26 +37,44 @@ else:
     separators = r"[/]"
 
 
-class TypeHintRemover(ast._Unparser):  # type: ignore
+class CleanUnpsarser(ast._Unparser):  # type: ignore
     """Functions copied from base class, mainly edited to remove type hints"""
+
+    VARS_TRACKING_REMOVED = [
+        "func_to_skip",
+        "vars_to_skip",
+        "classes_to_skip",
+        "func_calls_to_skip",
+        "func_to_noop",
+    ]
 
     def __init__(self, module_name: str = "") -> None:
         super().__init__()
 
-        self.func_to_skip: set[str] = functions_to_skip[module_name]
-        self.vars_to_skip: set[str] = vars_to_skip[module_name]
-        self.classes_to_skip: set[str] = classes_to_skip[module_name]
-        self.func_calls_to_skip: set[str] = function_calls_to_skip[module_name]
-        self.func_to_noop: set[str] = functions_to_noop[module_name]
-        self.dict_keys_to_skip: set[str] = dict_keys_to_skip[module_name]
-
-        self.vars_to_skip.add("__author__")
+        # dict to track if provided values are used
+        self.func_to_skip: dict[str, int] = {
+            k: 0 for k in functions_to_skip[module_name]
+        }
+        self.vars_to_skip: dict[str, int] = {k: 0 for k in vars_to_skip[module_name]}
+        self.classes_to_skip: dict[str, int] = {
+            k: 0 for k in classes_to_skip[module_name]
+        }
+        self.func_calls_to_skip: dict[str, int] = {
+            k: 0 for k in function_calls_to_skip[module_name]
+        }
+        self.func_to_noop: dict[str, int] = {
+            k: 0 for k in functions_to_noop[module_name]
+        }
+        self.dict_keys_to_skip: dict[str, int] = {
+            k: 0 for k in dict_keys_to_skip[module_name]
+        }
 
         self.write_annotations_without_value: bool = False
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Disable removing annotations within class vars for safety"""
         if node.name in self.classes_to_skip:
+            self.classes_to_skip[node.name] += 1
             return
 
         node.bases = [base for base in node.bases if getattr(base, "id", "") != "ABC"]
@@ -70,9 +86,11 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Skips some functions and removes type hints from the rest"""
         if node.name in self.func_to_skip:
+            self.func_to_skip[node.name] += 1
             return
 
         if node.name in self.func_to_noop:
+            self.func_to_noop[node.name] += 1
             node.body = [ast.Pass()]
             super().visit_FunctionDef(node)
             return
@@ -99,6 +117,10 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
             and getattr(node.func, "id", "") not in self.func_calls_to_skip
         ):
             super().visit_Call(node)
+        else:
+            self.func_calls_to_skip[
+                getattr(node.func, "attr", "") or getattr(node.func, "id", "")
+            ] += 1
 
     @staticmethod
     def _node_is_logging(node: ast.Call) -> bool:
@@ -118,6 +140,8 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
         var_name: str = getattr(node.targets[0], "id", "")
         if var_name not in self.vars_to_skip:
             super().visit_Assign(node)
+        else:
+            self.vars_to_skip[var_name] += 1
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""
@@ -181,9 +205,20 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             source = re.sub(regex, replacement, source, flags=flags)
 
     parsed_source: ast.Module = ast.parse(source)
-    contents: str = TypeHintRemover(module_name).visit(
-        ast.NodeTransformer().visit(parsed_source)
-    )
+    code_cleaner = CleanUnpsarser(module_name)
+    contents: str = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
+
+    # Check for code that was marked to ksip, but was not found in the module
+    for var in code_cleaner.VARS_TRACKING_REMOVED:
+        tracker = getattr(code_cleaner, var)
+        unused_but_requested: set[str] = {k for k, v in tracker.items() if v == 0}
+        if unused_but_requested:
+            warnings.warn(
+                (
+                    f"{module_name}: {','.join(unused_but_requested)} requested to skip"
+                    f" in {var} but was not present"
+                )
+            )
 
     if autoflake is not None:
         contents = autoflake.fix_code(
