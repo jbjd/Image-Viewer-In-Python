@@ -139,12 +139,19 @@ class TypeHintRemover(ast._Unparser):  # type: ignore
                 self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:
-        """Skip if __name__ == "__main__" blocks"""
+        # Skip if __name__ = "__main__"
         try:
             if node.test.left.id == "__name__":  # type: ignore
                 return
         except AttributeError:
             pass
+
+        # Skip PIL's blocks about typechecking
+        if isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING":
+            if node.orelse:
+                super().traverse(node.orelse)
+            return
+
         super().visit_If(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
