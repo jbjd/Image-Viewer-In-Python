@@ -1,4 +1,3 @@
-Flags I have tested which did nothing/should not be included in compilation:
+Flags which should not be included in compilation:
     CCFLAGS:
-        -fno-signed-zeros (Had no result on compiled size)
         -Ofast / -fallow-store-data-races (Unsafe in multithreaded context)
