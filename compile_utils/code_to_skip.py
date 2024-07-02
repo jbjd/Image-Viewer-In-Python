@@ -34,12 +34,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "effect_mandelbrot",
         "get_child_images",
         "load_from_fp",
+        "register_mime",
         "show",
         "toqimage",
         "toqpixmap",
     },
     "PIL.ImageDraw": {"getdraw"},
-    "PIL.ImageFile": {"verify", "raise_oserror"},
+    "PIL.ImageFile": {"get_format_mimetype", "verify", "raise_oserror"},
     "PIL.ImageTk": {"_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
     "PIL.JpegImagePlugin": {"getxmp", "_getexif", "_save_cjpeg", "load_djpeg"},
@@ -48,7 +49,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
-_skip_function_calls_kwargs: dict[str, set[str]] = {"PIL.TiffTags": {"_populate"}}
+_skip_function_calls_kwargs: dict[str, set[str]] = {
+    "PIL.GifImagePlugin": {"register_mime"},
+    "PIL.JpegImagePlugin": {"register_mime"},
+    "PIL.PngImagePlugin": {"register_mime"},
+    "PIL.WebPImagePlugin": {"register_mime"},
+    "PIL.TiffTags": {"_populate"},
+}
 
 _skip_vars_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
@@ -60,6 +67,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJPF_ARGB",
         "TJFLAG_LIMITSCANS",
     },
+    "PIL.Image": {"MIME"},
     "PIL.GifImagePlugin": {"format_description"},
     "PIL.JpegImagePlugin": {"format_description"},
     "PIL.PngImagePlugin": {"format_description"},
