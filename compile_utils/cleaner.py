@@ -146,6 +146,10 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""
         if node.value or self.write_annotations_without_value:
+            var_name: str = getattr(node.target, "id", "")
+            if var_name in self.vars_to_skip:
+                self.vars_to_skip[var_name] += 1
+                return
             self.fill()
             with self.delimit_if(
                 "(", ")", not node.simple and isinstance(node.target, Name)
