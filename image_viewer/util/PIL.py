@@ -2,8 +2,8 @@
 Functions for manipulating PIL and PIL's image objects
 """
 
-from io import IOBase
 from textwrap import wrap
+from typing import IO
 
 from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
@@ -16,7 +16,7 @@ from constants import TEXT_RGB, Rotation
 
 def save_image(
     image: Image,
-    fp: str | IOBase,
+    fp: str | IO[bytes],
     format: str | None = None,
     quality: int = 90,
     is_animated: bool | None = None,
@@ -90,7 +90,7 @@ def _get_longest_line_dimensions(input: str) -> tuple[int, int]:
         longest_line
     )
 
-    return width + width_offset, height + height_offset
+    return int(width + width_offset), int(height + height_offset)
 
 
 def create_dropdown_image(text: str) -> PhotoImage:
@@ -135,6 +135,8 @@ def get_placeholder_for_errored_image(
     draw.line((0, 0, screen_width, screen_height), LINE_RGB, width=100)
 
     # Write title
+    w: int
+    h: int
     *_, w, h = ImageDraw.font.getbbox(error_title)  # type: ignore
     y_offset: int = screen_height - (h * (5 + formated_error.count("\n"))) >> 1
     x_offset: int = (screen_width - w) >> 1

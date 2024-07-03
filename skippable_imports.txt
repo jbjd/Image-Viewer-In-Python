@@ -7,9 +7,12 @@ numpy.testing
 packaging
 PIL._deprecate
 PIL._tkinter_finder
+PIL._typing
+PIL.BdfFontFile
 PIL.BlpImagePlugin
 PIL.BmpImagePlugin
 PIL.BufrStubImagePlugin
+PIL.ContainerIO
 PIL.CurImagePlugin
 PIL.DcxImagePlugin
 PIL.DdsImagePlugin
@@ -18,6 +21,7 @@ PIL.FitsImagePlugin
 PIL.FliImagePlugin
 PIL.FpxImagePlugin
 PIL.FtexImagePlugin
+PIL.GdImageFile
 PIL.GbrImagePlugin
 PIL.GribStubImagePlugin
 PIL.Hdf5StubImagePlugin
@@ -36,9 +40,11 @@ PIL.PalmImagePlugin
 PIL.PcdImagePlugin
 PIL.PcxImagePlugin
 PIL.PdfImagePlugin
+PIL.PdfParser
 PIL.PixarImagePlugin
 PIL.PpmImagePlugin
 PIL.PsdImagePlugin
+PIL.PSDraw
 PIL.QoiImagePlugin
 PIL.SgiImagePlugin
 PIL.SpiderImagePlugin

@@ -100,6 +100,11 @@ vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
 regex_to_apply: dict[str, set[RegexReplacement]] = {
+    "PIL.__init__": {
+        RegexReplacement(
+            pattern=r"_plugins = \[.*?\]", replacement="_plugins = []", flags=re.DOTALL
+        )
+    },
     "PIL.Image": {
         RegexReplacement(
             pattern="""try:

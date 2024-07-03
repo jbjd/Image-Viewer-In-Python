@@ -200,7 +200,7 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 
     parsed_source: ast.Module = ast.parse(source)
     code_cleaner = CleanUnpsarser(module_name)
-    contents: str = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
+    source = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
 
     # Check for code that was marked to ksip, but was not found in the module
     for var in code_cleaner.VARS_TRACKING_REMOVED:
@@ -215,18 +215,16 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             )
 
     if autoflake is not None:
-        contents = autoflake.fix_code(
-            contents,
+        source = autoflake.fix_code(
+            source,
             remove_all_unused_imports=True,
             remove_duplicate_keys=True,
             remove_unused_variables=True,
             remove_rhs_for_unused_variables=True,
-            ignore_pass_statements=True,
-            ignore_pass_after_docstring=True,
         )
 
     with open(new_path, "w", encoding="utf-8") as fp:
-        fp.write(contents)
+        fp.write(source)
 
 
 def move_files_to_tmp_and_clean(
@@ -236,7 +234,7 @@ def move_files_to_tmp_and_clean(
     for python_file in iter(
         os.path.abspath(p)
         for p in glob(f"{dir}/**/*", recursive=True)
-        if p.endswith((".py", ".pyi", ".pyd"))
+        if p.endswith((".py", ".pyd"))
     ):
         if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
             continue  # skip __main__ in modules other than this one
