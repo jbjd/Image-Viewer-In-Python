@@ -5,6 +5,7 @@ defusedxml
 email*
 numpy.testing
 packaging
+PIL._deprecate
 PIL._tkinter_finder
 PIL.BlpImagePlugin
 PIL.BmpImagePlugin

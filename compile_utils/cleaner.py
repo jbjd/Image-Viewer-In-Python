@@ -13,7 +13,6 @@ from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
     function_calls_to_skip,
-    functions_to_noop,
     functions_to_skip,
     regex_to_apply,
     vars_to_skip,
@@ -45,7 +44,6 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
         "vars_to_skip",
         "classes_to_skip",
         "func_calls_to_skip",
-        "func_to_noop",
     ]
 
     def __init__(self, module_name: str = "") -> None:
@@ -61,9 +59,6 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
         }
         self.func_calls_to_skip: dict[str, int] = {
             k: 0 for k in function_calls_to_skip[module_name]
-        }
-        self.func_to_noop: dict[str, int] = {
-            k: 0 for k in functions_to_noop[module_name]
         }
         self.dict_keys_to_skip: dict[str, int] = {
             k: 0 for k in dict_keys_to_skip[module_name]
@@ -89,12 +84,6 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             self.func_to_skip[node.name] += 1
             return
 
-        if node.name in self.func_to_noop:
-            self.func_to_noop[node.name] += 1
-            node.body = [ast.Pass()]
-            super().visit_FunctionDef(node)
-            return
-
         argument: ast.arg
         for argument in node.args.args:
             argument.annotation = None
@@ -118,6 +107,7 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
         ):
             super().visit_Call(node)
         else:
+            super().visit_Pass(node)
             self.func_calls_to_skip[
                 getattr(node.func, "attr", "") or getattr(node.func, "id", "")
             ] += 1

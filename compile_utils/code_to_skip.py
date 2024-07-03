@@ -44,10 +44,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageTk": {"_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
+    "PIL.ImageMath": {"eval", "unsafe_eval"},
     "PIL.TiffTags": {"_populate"},
 }
 
 _skip_function_calls_kwargs: dict[str, set[str]] = {
+    "PIL.Image": {"deprecate"},
+    "PIL.ImageMode": {"deprecate"},
     "PIL.GifImagePlugin": {"register_mime"},
     "PIL.JpegImagePlugin": {"register_mime"},
     "PIL.PngImagePlugin": {"register_mime"},
@@ -77,10 +80,6 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageFile": {"_Tile"},
 }
 
-_noop_functions_kwargs: dict[str, set[str]] = {
-    "PIL._deprecate": {"deprecate"},
-}
-
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
     "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}.union(
         {"Windows"}
@@ -96,9 +95,6 @@ functions_to_skip: defaultdict[str, set[str]] = defaultdict(
 )
 function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_function_calls_kwargs
-)
-functions_to_noop: defaultdict[str, set[str]] = defaultdict(
-    set, **_noop_functions_kwargs
 )
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
@@ -119,6 +115,7 @@ except ImportError:
     cffi = None""",
             replacement="cffi = None",
         ),
+        RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
     },
     "PIL.ImageMode": {
         RegexReplacement(
@@ -129,6 +126,7 @@ except ImportError:
             pattern=r"\(NamedTuple\):",
             replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
         ),
+        RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
     },
     "PIL.PngImagePlugin": {
         RegexReplacement(pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError")
