@@ -1,7 +1,5 @@
 argparse
-cffi
 csv
-defusedxml
 email*
 numpy.testing
 packaging
@@ -51,6 +49,7 @@ PIL.SpiderImagePlugin
 PIL.SunImagePlugin
 PIL.TgaImagePlugin
 PIL.TiffImagePlugin
+PIL.WalImageFile
 PIL.WmfImagePlugin
 PIL.XbmImagePlugin
 PIL.XpmImagePlugin
@@ -62,6 +61,8 @@ PIL.ImageQt
 PIL.ImageShow
 PIL.ImageWin
 PIL.PyAccess
+PIL.TarIO
+PIL.report
 py_compile
 pydoc
 selectors

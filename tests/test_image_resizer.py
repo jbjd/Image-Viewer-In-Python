@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
-from PIL.ImageTk import PhotoImage
 from turbojpeg import TurboJPEG
 
 from image_viewer.helpers.image_resizer import ImageResizer

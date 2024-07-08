@@ -41,7 +41,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImageDraw": {"getdraw"},
     "PIL.ImageFile": {"get_format_mimetype", "verify", "raise_oserror"},
-    "PIL.ImageTk": {"_show"},
+    "PIL.ImageTk": {"_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
     "PIL.ImageMath": {"eval", "unsafe_eval"},
@@ -69,6 +69,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJFLAG_LIMITSCANS",
     },
     "PIL.Image": {"MIME"},
+    "PIL.ImageTk": {"_pilbitmap_ok"},
     "PIL.GifImagePlugin": {"format_description", "_Palette"},
     "PIL.JpegImagePlugin": {"format_description"},
     "PIL.PngImagePlugin": {"format_description"},
@@ -78,12 +79,11 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.Image": {"DecompressionBombWarning"},
     "PIL.ImageFile": {"_Tile"},
+    "PIL.ImageTk": {"BitmapImage"},
 }
 
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
-    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}.union(
-        {"Windows"}
-    )
+    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
 }
 
 
@@ -121,6 +121,14 @@ except ImportError:
             replacement="cffi = None",
         ),
         RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
+        RegexReplacement(
+            pattern=r"def __array_interface__\(self\):.*?return[^\n]*",
+            replacement="""def __array_interface__(self):
+        new = {}
+        new['shape'], new['typestr'] = _conv_type_shape(self)
+        return new""",
+            flags=re.DOTALL,
+        ),
     },
     "PIL.ImageMode": {
         RegexReplacement(
