@@ -21,11 +21,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.Image": {
         "__getstate__",
         "__setstate__",
+        "_apply_env_variables",
         "_repr_image",
         "_repr_jpeg_",
         "_repr_pretty_",
         "_repr_png_",
         "_show",
+        "_wedge",
         "fromqimage",
         "fromqpixmap",
         "getexif",
@@ -49,7 +51,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
 }
 
 _skip_function_calls_kwargs: dict[str, set[str]] = {
-    "PIL.Image": {"deprecate"},
+    "PIL.Image": {"_apply_env_variables", "deprecate"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.GifImagePlugin": {"register_mime"},
     "PIL.JpegImagePlugin": {"register_mime"},

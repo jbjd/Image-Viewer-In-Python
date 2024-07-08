@@ -206,7 +206,9 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     if module_name in regex_to_apply:
         regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
         for regex, replacement, flags in regex_and_replacement:
-            source = re.sub(regex, replacement, source, flags=flags)
+            source, count_replaced = re.subn(regex, replacement, source, flags=flags)
+            if count_replaced == 0:
+                warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
 
     parsed_source: ast.Module = ast.parse(source)
     code_cleaner = CleanUnpsarser(module_name)
