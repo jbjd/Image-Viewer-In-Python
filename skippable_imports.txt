@@ -36,6 +36,7 @@ PIL.MpoImagePlugin
 PIL.MspImagePlugin
 PIL.PalmImagePlugin
 PIL.PcdImagePlugin
+PIL.PcfFontFile
 PIL.PcxImagePlugin
 PIL.PdfImagePlugin
 PIL.PdfParser

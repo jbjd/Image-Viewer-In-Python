@@ -84,6 +84,15 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             self.func_to_skip[node.name] += 1
             return
 
+        # Remove doc string to speed up parse/write
+        if isinstance(node.body[0], ast.Expr) and isinstance(
+            node.body[0].value, ast.Constant
+        ):
+            node.body = node.body[1:]
+            if not node.body:
+                super().visit_Pass(node)
+                return
+
         argument: ast.arg
         for argument in node.args.args:
             argument.annotation = None
