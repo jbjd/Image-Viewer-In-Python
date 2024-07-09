@@ -57,6 +57,7 @@ PIL.XpmImagePlugin
 PIL.XVThumbImagePlugin
 PIL.ImageCms
 PIL.ImageDraw2
+PIL.ImageEnhance
 PIL.ImageFilter
 PIL.ImageQt
 PIL.ImageShow

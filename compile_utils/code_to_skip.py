@@ -41,7 +41,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "toqimage",
         "toqpixmap",
     },
-    "PIL.ImageDraw": {"getdraw"},
+    "PIL.ImageDraw": {"_color_diff", "getdraw", "floodfill"},
     "PIL.ImageFile": {"get_format_mimetype", "verify", "raise_oserror"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
@@ -151,6 +151,7 @@ except ImportError:
             flags=re.DOTALL,
         ),
     },
+    "PIL.ImageDraw": {RegexReplacement(pattern="_Ink =.*", replacement="")},
     "PIL.ImageMode": {
         RegexReplacement(
             pattern="from typing import NamedTuple",
