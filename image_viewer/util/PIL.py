@@ -193,8 +193,6 @@ def init_PIL(font_size: int) -> None:
     from PIL.ImageFont import truetype
 
     ImageDraw.font = truetype("arial.ttf", font_size)
-    # add antialiasing
-    ImageDraw.fontmode = "L"  # type: ignore
     del truetype
 
     _stop_unwanted_PIL_imports()

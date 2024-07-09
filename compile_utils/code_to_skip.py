@@ -84,7 +84,16 @@ _skip_classes_kwargs: dict[str, set[str]] = {
         "SupportsArrayInterface",
         "SupportsGetData",
     },
-    "PIL.ImageFile": {"_Tile"},
+    "PIL.ImageFile": {
+        "_Tile",
+        "Parser",
+        "PyCodec",
+        "PyCodecState",
+        "PyDecoder",
+        "PyEncoder",
+        "StubHandler",
+        "StubImageFile",
+    },
     "PIL.ImageTk": {"BitmapImage"},
 }
 
@@ -106,6 +115,7 @@ vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
 regex_to_apply: dict[str, set[RegexReplacement]] = {
+    "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]", replacement="")},
     "PIL.__init__": {
         RegexReplacement(
             pattern=r"_plugins = \[.*?\]", replacement="_plugins = []", flags=re.DOTALL
