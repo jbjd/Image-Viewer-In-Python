@@ -167,3 +167,10 @@ finally:
 
 print("\nFinished")
 print("Installed to", install_path)
+
+install_byte_size: int = sum(
+    os.stat(p).st_size
+    for p in glob(f"{install_path}/**/*", recursive=True)
+    if os.path.isfile(p)
+)
+print(f"Install Size: {install_byte_size:,} bytes")

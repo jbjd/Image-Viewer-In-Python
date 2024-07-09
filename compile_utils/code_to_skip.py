@@ -79,7 +79,11 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
-    "PIL.Image": {"DecompressionBombWarning"},
+    "PIL.Image": {
+        "DecompressionBombWarning",
+        "SupportsArrayInterface",
+        "SupportsGetData",
+    },
     "PIL.ImageFile": {"_Tile"},
     "PIL.ImageTk": {"BitmapImage"},
 }
