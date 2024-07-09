@@ -76,12 +76,6 @@ def resize(
     return resized_image
 
 
-def get_image_draw(image: Image, mode=None) -> ImageDraw:
-    """Turns PIL Image into PIL ImageDraw.
-    This is a simplified version of PIL's Draw function"""
-    return ImageDraw(image, mode)
-
-
 def _get_longest_line_dimensions(input: str) -> tuple[int, int]:
     """Returns width and height of longest string in a string with multiple lines"""
     longest_line: str = max(input.split("\n"), key=len)
@@ -109,7 +103,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
     DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
     image: Image = new("RGBA", (width, height), DROPDOWN_RGBA)
 
-    draw: ImageDraw = get_image_draw(image)
+    draw: ImageDraw = ImageDraw(image)
     draw.text((10, line_spacing), text, fill="white", spacing=line_spacing)
 
     return PhotoImage(draw._image)
@@ -130,7 +124,7 @@ def get_placeholder_for_errored_image(
 
     # Placeholder is black with brownish line going diagonally across
     blank_image: Image = new("RGB", (screen_width, screen_height))
-    draw: ImageDraw = get_image_draw(blank_image)
+    draw: ImageDraw = ImageDraw(blank_image)
     LINE_RGB: tuple[int, int, int] = (30, 20, 20)
     draw.line((0, 0, screen_width, screen_height), LINE_RGB, width=100)
 

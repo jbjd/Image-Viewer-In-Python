@@ -151,7 +151,14 @@ except ImportError:
             flags=re.DOTALL,
         ),
     },
-    "PIL.ImageDraw": {RegexReplacement(pattern="_Ink =.*", replacement="")},
+    "PIL.ImageDraw": {
+        RegexReplacement(pattern="_Ink =.*", replacement=""),
+        RegexReplacement(
+            pattern=r"def Draw.*?return ImageDraw.*?\)",
+            replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
+            flags=re.DOTALL,
+        ),
+    },
     "PIL.ImageMode": {
         RegexReplacement(
             pattern="from typing import NamedTuple",
