@@ -1,9 +1,17 @@
+from collections import namedtuple
 from tkinter import Canvas, Event
 from typing import Callable
 
 from PIL.ImageTk import PhotoImage
 
 from constants import TkTags
+
+
+class IconImages(namedtuple("IconImages", ["default", "hovered"])):
+    """Tuple with default and hovered icons for on-screen buttons"""
+
+    default: PhotoImage
+    hovered: PhotoImage
 
 
 class HoverableButton:
@@ -14,13 +22,12 @@ class HoverableButton:
     def __init__(
         self,
         canvas: Canvas,
-        icon: PhotoImage,
-        icon_hovered: PhotoImage,
+        icon: IconImages,
         function_to_bind: Callable[[Event], None],
     ) -> None:
         self.canvas: Canvas = canvas
-        self.icon: PhotoImage = icon
-        self.icon_hovered: PhotoImage = icon_hovered
+        self.icon: PhotoImage = icon.default
+        self.icon_hovered: PhotoImage = icon.hovered
         self.function_to_bind: Callable[[Event], None] = function_to_bind
 
     def add_to_canvas(self, x_offset: int = 0, y_offset: int = 0) -> None:
@@ -62,15 +69,13 @@ class ToggleButton(HoverableButton):
     def __init__(
         self,
         canvas: Canvas,
-        icon: PhotoImage,
-        active_icon: PhotoImage,
-        icon_hovered: PhotoImage,
-        active_icon_hovered: PhotoImage,
+        icon: IconImages,
+        active_icon: IconImages,
         function_to_bind: Callable[[Event], None],
     ) -> None:
-        super().__init__(canvas, icon, icon_hovered, function_to_bind)
-        self.active_icon: PhotoImage = active_icon
-        self.active_icon_hovered: PhotoImage = active_icon_hovered
+        super().__init__(canvas, icon, function_to_bind)
+        self.active_icon: PhotoImage = active_icon.default
+        self.active_icon_hovered: PhotoImage = active_icon.hovered
         self.is_active: bool = False
 
     def _get_hovered_icon(self) -> PhotoImage:

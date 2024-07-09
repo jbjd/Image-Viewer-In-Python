@@ -176,14 +176,14 @@ class ViewerApp:
         button_x_offset: int = screen_width - icon_size
         exit_button: HoverableButton = HoverableButton(
             canvas,
-            *icon_factory.make_exit_icons(),
+            icon_factory.make_exit_icons(),
             self.exit,
         )
         exit_button.add_to_canvas(button_x_offset)
 
         button_x_offset -= icon_size
         minify_button: HoverableButton = HoverableButton(
-            canvas, *icon_factory.make_minify_icons(), self.minimize
+            canvas, icon_factory.make_minify_icons(), self.minimize
         )
         minify_button.add_to_canvas(button_x_offset)
 
@@ -194,12 +194,12 @@ class ViewerApp:
         dropdown_button.add_to_canvas(button_x_offset)
 
         trash_button: HoverableButton = HoverableButton(
-            canvas, *icon_factory.make_trash_icons(), self.trash_image
+            canvas, icon_factory.make_trash_icons(), self.trash_image
         )
         trash_button.add_to_canvas()
 
         rename_button: HoverableButton = HoverableButton(
-            canvas, *icon_factory.make_rename_icons(), self.toggle_show_rename_window
+            canvas, icon_factory.make_rename_icons(), self.toggle_show_rename_window
         )
         rename_button.add_to_canvas()
         self.rename_button_id: int = rename_button.id

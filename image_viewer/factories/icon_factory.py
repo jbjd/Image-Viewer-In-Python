@@ -6,6 +6,7 @@ from PIL.Image import new as new_image
 from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 
+from ui.button import IconImages
 from util.PIL import resize
 
 
@@ -45,13 +46,13 @@ class IconFactory:
         size: tuple[int, int] = (screen_width, self.icon_size[0])
         return PhotoImage(new_image("RGBA", size, TOPBAR_RGBA))
 
-    def make_exit_icons(self) -> tuple[PhotoImage, PhotoImage]:
+    def make_exit_icons(self) -> IconImages:
         EXIT_RGB: tuple[int, int, int] = (190, 40, 40)
         EXIT_HOVER_RGB: tuple[int, int, int] = (180, 25, 20)
         draw = ImageDraw(self._new_rgb_image(EXIT_HOVER_RGB))
         draw.line((6, 6, 26, 26), self.LINE_RGB, 2)
         draw.line((6, 26, 26, 6), self.LINE_RGB, 2)
-        return (
+        return IconImages(
             PhotoImage(self._resize_icon(self._new_rgb_image(EXIT_RGB))),
             self.make_icon_from_draw(draw),
         )
@@ -60,9 +61,11 @@ class IconFactory:
         draw.line((6, 24, 24, 24), self.LINE_RGB, 2)
         return self.make_icon_from_draw(draw)
 
-    def make_minify_icons(self) -> tuple[PhotoImage, PhotoImage]:
+    def make_minify_icons(self) -> IconImages:
         draw, draw_hovered = self._make_icon_base()
-        return self._draw_minify_symbol(draw), self._draw_minify_symbol(draw_hovered)
+        return IconImages(
+            self._draw_minify_symbol(draw), self._draw_minify_symbol(draw_hovered)
+        )
 
     def _draw_trash_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.line((9, 9, 9, 22), self.LINE_RGB, 2)
@@ -72,23 +75,24 @@ class IconFactory:
         draw.line((12, 8, 19, 8), self.LINE_RGB, 3)
         return self.make_icon_from_draw(draw)
 
-    def make_trash_icons(self) -> tuple[PhotoImage, PhotoImage]:
+    def make_trash_icons(self) -> IconImages:
         draw, draw_hovered = self._make_icon_base()
-        return self._draw_trash_symbol(draw), self._draw_trash_symbol(draw_hovered)
+        return IconImages(
+            self._draw_trash_symbol(draw), self._draw_trash_symbol(draw_hovered)
+        )
 
-    def _draw_down_arrow(self, draw: ImageDraw) -> tuple[PhotoImage, PhotoImage]:
+    def _draw_down_and_up_arrow(self, draw: ImageDraw) -> tuple[PhotoImage, PhotoImage]:
         draw.line((6, 11, 16, 21), self.LINE_RGB, 2)
         draw.line((16, 21, 26, 11), self.LINE_RGB, 2)
         resised_img: Image = self._resize_icon(draw._image)
         return PhotoImage(resised_img), PhotoImage(ImageOps.flip(resised_img))
 
-    def make_dropdown_icons(
-        self,
-    ) -> tuple[PhotoImage, PhotoImage, PhotoImage, PhotoImage]:
-        """Return tuple of down arrow default, hovered and up arrow
-        default hovered icons in that order"""
+    def make_dropdown_icons(self) -> tuple[IconImages, IconImages]:
+        """Return down arrow icon and up arrow icon as a tuple"""
         draw, draw_hovered = self._make_icon_base()
-        return self._draw_down_arrow(draw) + self._draw_down_arrow(draw_hovered)
+        down, up = self._draw_down_and_up_arrow(draw)
+        down_hovered, up_hovered = self._draw_down_and_up_arrow(draw_hovered)
+        return IconImages(down, down_hovered), IconImages(up, up_hovered)
 
     def _draw_rename_symbol(self, draw: ImageDraw) -> PhotoImage:
         draw.rectangle((7, 10, 25, 22), None, self.LINE_RGB, 1)
@@ -96,9 +100,11 @@ class IconFactory:
         draw.line((16, 8, 16, 24), self.LINE_RGB, 2)
         return self.make_icon_from_draw(draw)
 
-    def make_rename_icons(self) -> tuple[PhotoImage, PhotoImage]:
+    def make_rename_icons(self) -> IconImages:
         transparent_icon: Image = new_image("RGBA", self.DEFAULT_SIZE)
         draw: ImageDraw = ImageDraw(transparent_icon.copy())
         draw_hovered: ImageDraw = ImageDraw(transparent_icon)
         draw_hovered.rectangle((4, 5, 28, 27), self.ICON_HOVERED_RGB, width=1)
-        return self._draw_rename_symbol(draw), self._draw_rename_symbol(draw_hovered)
+        return IconImages(
+            self._draw_rename_symbol(draw), self._draw_rename_symbol(draw_hovered)
+        )
