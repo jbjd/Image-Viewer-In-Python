@@ -70,7 +70,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJPF_ARGB",
         "TJFLAG_LIMITSCANS",
     },
-    "PIL.Image": {"MIME"},
+    "PIL.Image": {"USE_CFFI_ACCESS", "MIME"},
     "PIL.ImageTk": {"_pilbitmap_ok"},
     "PIL.GifImagePlugin": {"format_description", "_Palette"},
     "PIL.JpegImagePlugin": {"format_description"},
@@ -120,9 +120,14 @@ except ImportError:
     import cffi
 except ImportError:
     cffi = None""",
-            replacement="cffi = None",
+            replacement="",
         ),
         RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
+        RegexReplacement(
+            pattern=r" +if cffi.*?PyAccess.*?return self.pyaccess",
+            replacement="",
+            flags=re.DOTALL,
+        ),
         RegexReplacement(
             pattern=r"def __array_interface__\(self\):.*?return[^\n]*",
             replacement="""def __array_interface__(self):
