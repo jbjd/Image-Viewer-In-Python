@@ -18,7 +18,7 @@ def rename_entry(tk_app: Tk, canvas: CustomCanvas) -> RenameEntry:
         height=20,
         anchor="nw",
     )
-    return RenameEntry(tk_app, canvas, rename_id, 250, "arial 18")
+    return RenameEntry(tk_app, canvas, rename_id, 250, "roboto 18")
 
 
 def test_get(rename_entry: RenameEntry):

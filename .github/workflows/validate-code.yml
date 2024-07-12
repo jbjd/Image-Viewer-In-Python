@@ -32,9 +32,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          sudo apt-get install -y libturbojpeg
-
-          curl -L -o /usr/share/fonts/arial.ttf https://ultralytics.com/assets/Arial.ttf
+          sudo apt-get install -y libturbojpeg fonts-roboto
 
         # xvfb enables tkinter in these tests
       - name: Unit Tests

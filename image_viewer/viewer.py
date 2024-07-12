@@ -63,6 +63,8 @@ class ViewerApp:
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
 
+        font_path: str = os.path.join(path_to_exe, "font/Roboto-Regular.ttf")
+
         self._load_assests(
             self.app,
             self.canvas,
@@ -77,7 +79,7 @@ class ViewerApp:
             image_resizer, image_cache, self.animation_loop
         )
 
-        init_PIL(self._scale_pixels_to_height(23))
+        init_PIL(font_path, self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
@@ -161,7 +163,7 @@ class ViewerApp:
 
         icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
-        # negative makes it an absolute size for consistency with different monitors
+        # negative size makes font absolute for consistency with different monitors
         FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
 
         icon_factory: IconFactory = IconFactory(icon_size)

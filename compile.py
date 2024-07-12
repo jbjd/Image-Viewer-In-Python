@@ -40,6 +40,8 @@ else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]
 
+DATA_FILE_PATHS += ["font/LICENSE", "font/Roboto-Regular.ttf"]
+
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
 with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
@@ -145,12 +147,21 @@ try:
         pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
     )
     strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
+    strip_consecutive_whitespace = RegexReplacement(
+        pattern="[ \t][ \t]+", replacement=" "
+    )
 
     for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
         os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
     ):
         regex_replace(
-            code_file, [strip_comments, strip_whitespace, strip_starting_whitespace]
+            code_file,
+            [
+                strip_comments,
+                strip_whitespace,
+                strip_starting_whitespace,
+                strip_consecutive_whitespace,
+            ],
         )
 
     regex_replace(os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace)

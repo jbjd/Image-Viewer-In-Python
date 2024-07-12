@@ -17,7 +17,12 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "__map_luminance_to_dc_dct_coefficient",
         "__get_dc_dqt_element",
     },
-    "PIL.ImageFont": {"__getstate__", "__setstate__"},
+    "PIL.ImageFont": {
+        "__getstate__",
+        "__setstate__",
+        "load_default_imagefont",
+        "load_default",
+    },
     "PIL.Image": {
         "__getstate__",
         "__setstate__",
