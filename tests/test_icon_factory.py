@@ -3,8 +3,8 @@ from tkinter import Tk
 import pytest
 from PIL.ImageTk import PhotoImage
 
-from image_viewer.ui.button import IconImages
 from image_viewer.factories.icon_factory import IconFactory
+from image_viewer.ui.button import IconImages
 
 
 @pytest.fixture
