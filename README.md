@@ -14,7 +14,7 @@ Feel free to take this code and edit it however you like.
 
 1. Have Python 3.11+ installed.
 
-2. Linux Users: you will need to install libjpeg-turbo-official and fonts-roboto
+2. Linux Users: you will need to install libjpeg-turbo-official
 
 3. Install pip packages listed in requirements.txt, this can be done with "pip install -r requirements.txt".
 

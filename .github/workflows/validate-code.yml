@@ -32,7 +32,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          sudo apt-get install -y libturbojpeg fonts-roboto
+          sudo apt-get install -y libturbojpeg
 
         # xvfb enables tkinter in these tests
       - name: Unit Tests

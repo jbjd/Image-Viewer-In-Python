@@ -42,7 +42,7 @@ else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]
 
-DATA_FILE_PATHS += ["font/LICENSE", "font/Roboto-Regular.ttf"]
+DATA_FILE_PATHS.append("config.ini")
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
@@ -61,6 +61,7 @@ if os.name == "nt":
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
 delete_folder(TMP_DIR)
+delete_folder(COMPILE_DIR)
 try:
     # use "" as module for image_viewer should it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
