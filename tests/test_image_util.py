@@ -28,7 +28,7 @@ def test_PIL_functions(tk_app: Tk):
     """Ensure no error with font and that PIL.Image gets modified"""
     from PIL import Image as _Image
 
-    init_PIL("../image_viewer/font/Roboto-Regular.ttf", 20)
+    init_PIL(20)
     assert len(_Image._plugins) == 0
     del _Image
 

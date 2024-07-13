@@ -12,4 +12,4 @@ except KeyError:
     default_font = ""
 
 if not default_font:
-    default_font: str = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+    default_font = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
