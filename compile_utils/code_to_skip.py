@@ -10,13 +10,16 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
     "turbojpeg": {
+        "__define_cropping_regions",
+        "__find_dqt",
+        "__get_dc_dqt_element",
+        "__map_luminance_to_dc_dct_coefficient",
+        "__need_fill_background",
         "crop_multiple",
-        "scale_with_quality",
-        "encode_from_yuv",
         "decode_to_yuv",
         "decode_to_yuv_planes",
-        "__map_luminance_to_dc_dct_coefficient",
-        "__get_dc_dqt_element",
+        "encode_from_yuv",
+        "scale_with_quality",
     },
     "PIL.ImageFont": {
         "__getstate__",
@@ -120,92 +123,113 @@ function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
-regex_to_apply: dict[str, set[RegexReplacement]] = {
-    "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]", replacement="")},
-    "PIL.__init__": {
-        RegexReplacement(
-            pattern=r"_plugins = \[.*?\]", replacement="_plugins = []", flags=re.DOTALL
-        )
-    },
-    "PIL.Image": {
-        RegexReplacement(
-            pattern="""try:
+regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
+    set,
+    {
+        "util.PIL": {
+            RegexReplacement(pattern=r"_Image._plugins = \[\]", replacement="")
+        },
+        "PIL.__init__": {
+            RegexReplacement(
+                pattern=r"_plugins = \[.*?\]",
+                replacement="_plugins = []",
+                flags=re.DOTALL,
+            )
+        },
+        "PIL.Image": {
+            RegexReplacement(
+                pattern="""try:
     from defusedxml import ElementTree
 except ImportError:
     ElementTree = None""",
-            replacement="",
-        ),
-        RegexReplacement(
-            pattern="""try:
+                replacement="",
+            ),
+            RegexReplacement(
+                pattern="""try:
     import cffi
 except ImportError:
     cffi = None""",
-            replacement="",
-        ),
-        RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
-        RegexReplacement(
-            pattern=r" +if cffi.*?PyAccess.*?return self.pyaccess",
-            replacement="",
-            flags=re.DOTALL,
-        ),
-        RegexReplacement(
-            pattern=r"def __array_interface__\(self\):.*?return[^\n]*",
-            replacement="""def __array_interface__(self):
+                replacement="",
+            ),
+            RegexReplacement(
+                pattern="from ._deprecate import deprecate", replacement=""
+            ),
+            RegexReplacement(
+                pattern=r" +if cffi.*?PyAccess.*?return self.pyaccess",
+                replacement="",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"def __array_interface__\(self\):.*?return[^\n]*",
+                replacement="""def __array_interface__(self):
         new = {}
         new['shape'], new['typestr'] = _conv_type_shape(self)
         return new""",
-            flags=re.DOTALL,
-        ),
-    },
-    "PIL.ImageDraw": {
-        RegexReplacement(pattern="_Ink =.*", replacement=""),
-        RegexReplacement(
-            pattern=r"def Draw.*?return ImageDraw.*?\)",
-            replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
-            flags=re.DOTALL,
-        ),
-    },
-    "PIL.ImageMode": {
-        RegexReplacement(
-            pattern="from typing import NamedTuple",
-            replacement="from collections import namedtuple",
-        ),
-        RegexReplacement(
-            pattern=r"\(NamedTuple\):",
-            replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
-        ),
-        RegexReplacement(pattern="from ._deprecate import deprecate", replacement=""),
-    },
-    "PIL.PngImagePlugin": {
-        RegexReplacement(pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError")
-    },
-    "send2trash.__init__": {
-        RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
-    },
-    "send2trash.win.__init__": {
-        RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
-    },
-    # Fix issue with autoflake
-    "send2trash.compat": {
-        RegexReplacement(
-            pattern="""
+                flags=re.DOTALL,
+            ),
+        },
+        "PIL.ImageDraw": {
+            RegexReplacement(pattern="_Ink =.*", replacement=""),
+            RegexReplacement(
+                pattern=r"def Draw.*?return ImageDraw.*?\)",
+                replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
+                flags=re.DOTALL,
+            ),
+        },
+        "PIL.ImageMode": {
+            RegexReplacement(
+                pattern="from typing import NamedTuple",
+                replacement="from collections import namedtuple",
+            ),
+            RegexReplacement(
+                pattern=r"\(NamedTuple\):",
+                replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
+            ),
+            RegexReplacement(
+                pattern="from ._deprecate import deprecate", replacement=""
+            ),
+        },
+        "PIL.PngImagePlugin": {
+            RegexReplacement(
+                pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
+            )
+        },
+        "send2trash.__init__": {
+            RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
+        },
+        "send2trash.win.__init__": {
+            RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
+        },
+        # Fix issue with autoflake
+        "send2trash.compat": {
+            RegexReplacement(
+                pattern="""
 try:
     from collections.abc import Iterable as iterable_type
 except ImportError:
     from collections import Iterable as iterable_type.*""",
-            replacement="""
+                replacement="""
 from collections.abc import Iterable
 iterable_type = Iterable""",
-        )
+            )
+        },
+        # We don't use pathlib's Path, remove support for it
+        "send2trash.util": {
+            RegexReplacement(
+                pattern=r".*\[path\.__fspath__\(\).*\]",
+                replacement="",
+            )
+        },
     },
-    # We don't use pathlib's Path, remove support for it
-    "send2trash.util": {
+)
+if os.name == "nt":
+    regex_to_apply["turbojpeg"].add(
         RegexReplacement(
-            pattern=r""".*\[path\.__fspath__\(\).*\]""",
+            pattern=r"if platform.system\(\) == 'Linux'.*return lib_path",
             replacement="",
+            flags=re.DOTALL,
         )
-    },
-}
+    )
 
 folders_to_exlcude: list[str] = ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/msgs"]
 # tcl testing and http files are inlucded in dist by nuitka
