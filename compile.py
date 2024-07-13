@@ -1,6 +1,5 @@
 import os
 import platform
-import re
 from argparse import Namespace
 from glob import glob
 from importlib import import_module
@@ -8,16 +7,18 @@ from subprocess import Popen
 from typing import Final
 
 from compile_utils.args import CompileArgumentParser
-from compile_utils.cleaner import clean_file_and_copy, move_files_to_tmp_and_clean
+from compile_utils.cleaner import (
+    clean_file_and_copy,
+    clean_or_delete_auto_included_files,
+    move_files_to_tmp_and_clean,
+)
 from compile_utils.file_operations import (
     copy_folder,
     delete_file_globs,
     delete_folder,
     delete_folders,
-    regex_replace,
 )
 from compile_utils.nuitka import start_nuitka_compilation
-from compile_utils.regex import RegexReplacement
 from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
@@ -107,69 +108,8 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_folder(old_path, new_path)
 
-    if is_standalone:  # TODO: move this logic to its own function
-        # tcl/tzdata is for timezones, which are not used in this program
-        # tk/images contains the tk logo
-        folders_to_exclude: list[str] = [
-            os.path.join(COMPILE_DIR, rel_path)
-            for rel_path in ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/msgs"]
-        ]
-        delete_folders(folders_to_exclude)
-
-        # tcl testing and http files are inlucded in dist by nuitka
-        rel_paths: list[str] = [
-            "tcl*/**/http-*.tm",
-            "tcl*/**/tcltest-*.tm",
-            "tk/ttk/*Theme.tcl",
-            "libcrypto-*",
-            "_hashlib.pyd",
-            "_lzma.pyd",
-            "_bz2.pyd",
-        ]
-        if os.name == "nt":
-            rel_paths.append("select.pyd")
-
-        file_globs_to_exclude: list[str] = [
-            os.path.join(COMPILE_DIR, rel_path) for rel_path in rel_paths
-        ]
-        delete_file_globs(file_globs_to_exclude)
-
-        # Removing unused Tk code so we can delete more unused files
-        regex_replace(
-            os.path.join(COMPILE_DIR, "tk/ttk/ttk.tcl"),
-            RegexReplacement(
-                pattern="proc ttk::LoadThemes.*?\n}",
-                replacement="proc ttk::LoadThemes {} {}",
-                flags=re.DOTALL,
-            ),
-        )
-
-        # delete comments in tcl files
-        strip_comments = RegexReplacement(
-            pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
-        )
-        strip_whitespace = RegexReplacement(
-            pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
-        )
-        strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
-        strip_consecutive_whitespace = RegexReplacement(
-            pattern="[ \t][ \t]+", replacement=" "
-        )
-
-        for code_file in glob(
-            os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True
-        ) + glob(os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True):
-            regex_replace(
-                code_file,
-                [
-                    strip_comments,
-                    strip_whitespace,
-                    strip_starting_whitespace,
-                    strip_consecutive_whitespace,
-                ],
-            )
-
-        regex_replace(os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace)
+    if is_standalone:
+        clean_or_delete_auto_included_files(COMPILE_DIR)
     else:
         # nuitka puts exe outside of dist when not standalone
         os.rename(

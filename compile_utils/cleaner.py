@@ -12,10 +12,17 @@ from shutil import copyfile
 from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
+    folders_to_exlcude,
     function_calls_to_skip,
     functions_to_skip,
+    globs_to_exlucde,
     regex_to_apply,
     vars_to_skip,
+)
+from compile_utils.file_operations import (
+    delete_file_globs,
+    delete_folders,
+    regex_replace,
 )
 from compile_utils.regex import RegexReplacement
 
@@ -272,3 +279,56 @@ def move_files_to_tmp_and_clean(
                 clean_file_and_copy(python_file, new_path, mod_name)
         else:
             copyfile(python_file, new_path)
+
+
+def clean_or_delete_auto_included_files(compile_dir: str) -> None:
+    """Removes unwanted files that nuitka auto includes in standalone
+    and cleans up comments/whitespace from necesary tcl files"""
+    # tcl/tzdata is for timezones, which are not used in this program
+    # tk/images contains the tk logo
+    absolute_folders_to_exclude: list[str] = [
+        os.path.join(compile_dir, rel_path) for rel_path in folders_to_exlcude
+    ]
+    delete_folders(absolute_folders_to_exclude)
+
+    absolute_globs_to_exclude: list[str] = [
+        os.path.join(compile_dir, rel_path) for rel_path in globs_to_exlucde
+    ]
+    delete_file_globs(absolute_globs_to_exclude)
+
+    # Removing unused Tk code so we can delete more unused files
+    regex_replace(
+        os.path.join(compile_dir, "tk/ttk/ttk.tcl"),
+        RegexReplacement(
+            pattern="proc ttk::LoadThemes.*?\n}",
+            replacement="proc ttk::LoadThemes {} {}",
+            flags=re.DOTALL,
+        ),
+    )
+
+    # delete comments in tcl files
+    strip_comments = RegexReplacement(
+        pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
+    )
+    strip_whitespace = RegexReplacement(
+        pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
+    )
+    strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
+    strip_consecutive_whitespace = RegexReplacement(
+        pattern="[ \t][ \t]+", replacement=" "
+    )
+
+    for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
+        os.path.join(compile_dir, "**/*.tm"), recursive=True
+    ):
+        regex_replace(
+            code_file,
+            [
+                strip_comments,
+                strip_whitespace,
+                strip_starting_whitespace,
+                strip_consecutive_whitespace,
+            ],
+        )
+
+    regex_replace(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)
