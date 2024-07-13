@@ -28,6 +28,8 @@ TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
 COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.dist")
 BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
+EXECUTABLE_EXT: Final[str] = ".exe" if os.name == "nt" else ".bin"
+EXECUTABLE_NAME: Final[str] = f"viewer{EXECUTABLE_EXT}"
 DEFAULT_INSTALL_PATH: str
 DATA_FILE_PATHS: list[str]
 
@@ -50,6 +52,7 @@ with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
 args: Namespace
 nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(imports_to_skip)
+is_standalone = "--standalone" in nuitka_args
 
 if os.name == "nt":
     windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
@@ -103,68 +106,75 @@ try:
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_folder(old_path, new_path)
 
-    # tcl/tzdata is for timezones, which are not used in this program
-    # tk/images contains the tk logo
-    folders_to_exclude: list[str] = [
-        os.path.join(COMPILE_DIR, rel_path)
-        for rel_path in ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/msgs"]
-    ]
-    delete_folders(folders_to_exclude)
+    if is_standalone:  # TODO: move this logic to its own function
+        # tcl/tzdata is for timezones, which are not used in this program
+        # tk/images contains the tk logo
+        folders_to_exclude: list[str] = [
+            os.path.join(COMPILE_DIR, rel_path)
+            for rel_path in ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/msgs"]
+        ]
+        delete_folders(folders_to_exclude)
 
-    # tcl testing and http files are inlucded in dist by nuitka
-    rel_paths: list[str] = [
-        "tcl*/**/http-*.tm",
-        "tcl*/**/tcltest-*.tm",
-        "tk/ttk/*Theme.tcl",
-        "libcrypto-*",
-        "_hashlib.pyd",
-        "_lzma.pyd",
-        "_bz2.pyd",
-    ]
-    if os.name == "nt":
-        rel_paths.append("select.pyd")
+        # tcl testing and http files are inlucded in dist by nuitka
+        rel_paths: list[str] = [
+            "tcl*/**/http-*.tm",
+            "tcl*/**/tcltest-*.tm",
+            "tk/ttk/*Theme.tcl",
+            "libcrypto-*",
+            "_hashlib.pyd",
+            "_lzma.pyd",
+            "_bz2.pyd",
+        ]
+        if os.name == "nt":
+            rel_paths.append("select.pyd")
 
-    file_globs_to_exclude: list[str] = [
-        os.path.join(COMPILE_DIR, rel_path) for rel_path in rel_paths
-    ]
-    delete_file_globs(file_globs_to_exclude)
+        file_globs_to_exclude: list[str] = [
+            os.path.join(COMPILE_DIR, rel_path) for rel_path in rel_paths
+        ]
+        delete_file_globs(file_globs_to_exclude)
 
-    # Removing unused Tk code so we can delete more unused files
-    regex_replace(
-        os.path.join(COMPILE_DIR, "tk/ttk/ttk.tcl"),
-        RegexReplacement(
-            pattern="proc ttk::LoadThemes.*?\n}",
-            replacement="proc ttk::LoadThemes {} {}",
-            flags=re.DOTALL,
-        ),
-    )
-
-    # delete comments in tcl files
-    strip_comments = RegexReplacement(
-        pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
-    )
-    strip_whitespace = RegexReplacement(
-        pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
-    )
-    strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
-    strip_consecutive_whitespace = RegexReplacement(
-        pattern="[ \t][ \t]+", replacement=" "
-    )
-
-    for code_file in glob(os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True) + glob(
-        os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True
-    ):
+        # Removing unused Tk code so we can delete more unused files
         regex_replace(
-            code_file,
-            [
-                strip_comments,
-                strip_whitespace,
-                strip_starting_whitespace,
-                strip_consecutive_whitespace,
-            ],
+            os.path.join(COMPILE_DIR, "tk/ttk/ttk.tcl"),
+            RegexReplacement(
+                pattern="proc ttk::LoadThemes.*?\n}",
+                replacement="proc ttk::LoadThemes {} {}",
+                flags=re.DOTALL,
+            ),
         )
 
-    regex_replace(os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace)
+        # delete comments in tcl files
+        strip_comments = RegexReplacement(
+            pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
+        )
+        strip_whitespace = RegexReplacement(
+            pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
+        )
+        strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
+        strip_consecutive_whitespace = RegexReplacement(
+            pattern="[ \t][ \t]+", replacement=" "
+        )
+
+        for code_file in glob(
+            os.path.join(COMPILE_DIR, "**/*.tcl"), recursive=True
+        ) + glob(os.path.join(COMPILE_DIR, "**/*.tm"), recursive=True):
+            regex_replace(
+                code_file,
+                [
+                    strip_comments,
+                    strip_whitespace,
+                    strip_starting_whitespace,
+                    strip_consecutive_whitespace,
+                ],
+            )
+
+        regex_replace(os.path.join(COMPILE_DIR, "tcl/tclIndex"), strip_whitespace)
+    else:
+        # nuitka puts exe outside of dist when not standalone
+        os.rename(
+            os.path.join(WORKING_DIR, EXECUTABLE_NAME),
+            os.path.join(COMPILE_DIR, EXECUTABLE_NAME),
+        )
 
     if args.debug:
         exit(0)
