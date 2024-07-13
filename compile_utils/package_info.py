@@ -8,6 +8,7 @@ MODULES: list[str] = [
     "states",
     "ui",
     "util",
+    "config",
     "constants",
     "viewer",
 ]

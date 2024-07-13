@@ -7,6 +7,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
+from config import default_font
 from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
@@ -63,8 +64,6 @@ class ViewerApp:
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
 
-        font_path: str = os.path.join(path_to_exe, "font/Roboto-Regular.ttf")
-
         self._load_assests(
             self.app,
             self.canvas,
@@ -79,7 +78,7 @@ class ViewerApp:
             image_resizer, image_cache, self.animation_loop
         )
 
-        init_PIL(font_path, self._scale_pixels_to_height(23))
+        init_PIL(self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
@@ -163,8 +162,9 @@ class ViewerApp:
 
         icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
+        font_family: str = default_font[:-4].lower()  # -4 chops extension .ttf/.otf
         # negative size makes font absolute for consistency with different monitors
-        FONT: str = f"arial -{self._scale_pixels_to_height(18)}"
+        FONT: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
 
         icon_factory: IconFactory = IconFactory(icon_size)
 

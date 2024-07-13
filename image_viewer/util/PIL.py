@@ -182,11 +182,14 @@ def _stop_unwanted_PIL_imports() -> None:
     _Image.preinit = _preinit
 
 
-def init_PIL(font_path: str, font_size: int) -> None:
+def init_PIL(font_size: int) -> None:
     """Sets up font and edit PIL's internal list of plugins to load"""
     from PIL.ImageFont import truetype
 
-    ImageDraw.font = truetype(font_path, font_size)
+    from config import default_font
+
+    ImageDraw.font = truetype(default_font, font_size)
     del truetype
+    del default_font
 
     _stop_unwanted_PIL_imports()
