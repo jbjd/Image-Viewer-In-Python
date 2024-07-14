@@ -5,8 +5,13 @@ numpy._pyinstaller
 numpy._pytesttester
 numpy.conftest
 numpy.doc.ufuncs
+numpy.f2py
+numpy.f2py._backends
 numpy.f2py.tests
+numpy.fft
 numpy.fft.tests
+numpy.linalg.linalg
+numpy.linalg.tests
 numpy.ma.tests
 numpy.matrixlib.tests
 numpy.polynomial.tests
