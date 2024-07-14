@@ -1,8 +1,12 @@
 argparse
 csv
 email*
+numpy._core._add_newdocs
+numpy._core._add_newdocs_scalars
+numpy._core.tests
 numpy._pyinstaller
 numpy._pytesttester
+numpy._typing
 numpy.conftest
 numpy.doc.ufuncs
 numpy.f2py
@@ -10,6 +14,7 @@ numpy.f2py._backends
 numpy.f2py.tests
 numpy.fft
 numpy.fft.tests
+numpy.lib.tests
 numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma.tests
@@ -22,6 +27,7 @@ numpy.testing
 numpy.testing._private
 numpy.testing.tests
 numpy.tests
+numpy.typing
 numpy.typing.tests
 numpy.typing.tests.data.pass
 packaging

@@ -142,6 +142,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern="elif attr == .f2py.:.*?return f2py", flags=re.DOTALL
             ),
+            RegexReplacement(
+                pattern="elif attr == .typing.:.*?return typing", flags=re.DOTALL
+            ),
         },
         "numpy._core.__init__": {
             remove_numpy_pytester_re,
@@ -149,6 +152,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
                 flags=re.DOTALL,
             ),
+            RegexReplacement(pattern=r"from \. import _add_newdocs.*"),
         },
         "numpy._core.overrides": {
             RegexReplacement(
@@ -166,6 +170,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
+        },
+        "numpy.linalg._linalg": {
+            RegexReplacement(pattern="from numpy._typing.*"),
         },
         "numpy.ma.__init__": {remove_numpy_pytester_re},
         "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
