@@ -135,21 +135,32 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
     {
         "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
         "numpy.__init__": {
-            remove_numpy_pytester_re,
             RegexReplacement(
-                pattern="elif attr == .fft.:.*?return fft", flags=re.DOTALL
-            ),
-            RegexReplacement(
-                pattern="elif attr == .f2py.:.*?return f2py", flags=re.DOTALL
-            ),
-            RegexReplacement(
-                pattern="elif attr == .typing.:.*?return typing", flags=re.DOTALL
-            ),
-            RegexReplacement(  # These are all deprecation warnings
-                pattern=r"if attr in _.*?\)", flags=re.DOTALL
-            ),
-            RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
-        },
+                pattern="elif attr == .{0}.:.*?return {0}".format(module),
+                flags=re.DOTALL,
+            )
+            for module in ("fft", "f2py", "typing", "polynomial", "testing")
+        }.union(
+            {
+                remove_numpy_pytester_re,
+                RegexReplacement(
+                    pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
+                    flags=re.DOTALL,
+                ),
+                RegexReplacement(  # These are all deprecation warnings
+                    pattern=r"if attr in _.*?\)", flags=re.DOTALL
+                ),
+                RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
+                RegexReplacement(
+                    pattern=r"def _mac_os_check\(\):.*?del _mac_os_check",
+                    flags=re.DOTALL,
+                ),
+                RegexReplacement(
+                    pattern=r"def _sanity_check\(\):.*?del _sanity_check",
+                    flags=re.DOTALL,
+                ),
+            }
+        ),
         "numpy._core.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(

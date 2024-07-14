@@ -20,6 +20,7 @@ numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma.tests
 numpy.matrixlib.tests
+numpy.polynomial
 numpy.polynomial.tests
 numpy.random._examples.cffi
 numpy.random._examples.numba

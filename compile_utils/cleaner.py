@@ -131,7 +131,7 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
     @staticmethod
     def _node_is_logging(node: ast.Call) -> bool:
         return (
-            getattr(node.func, "attr", "") == "warn"
+            getattr(node.func, "attr", "") in ("warn", "filterwarnings", "simplefilter")
             and getattr(node.func, "value", ast.Name("")).id == "warnings"
         ) or (
             getattr(node.func, "attr", "") == "debug"
