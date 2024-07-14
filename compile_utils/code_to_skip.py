@@ -60,6 +60,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
 }
 
 _skip_function_calls_kwargs: dict[str, set[str]] = {
+    "numpy._core.overrides": {"add_docstring"},
     "PIL.Image": {"_apply_env_variables", "deprecate"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.GifImagePlugin": {"register_mime"},

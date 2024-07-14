@@ -219,6 +219,9 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
+    # TODO #6: Find all triple quotes strings, not just ones that start a file
+    source = re.sub(r"^\s*\"\"\".*?\"\"\"", "", source, flags=re.DOTALL)
+
     if module_name in regex_to_apply:
         regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
         for regex, replacement, flags in regex_and_replacement:
