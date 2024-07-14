@@ -129,6 +129,33 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
         "util.PIL": {
             RegexReplacement(pattern=r"_Image._plugins = \[\]", replacement="")
         },
+        "numpy._core.__init__": {
+            RegexReplacement(
+                pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
+                replacement="",
+                flags=re.DOTALL,
+            )
+        },
+        "numpy._core.overrides": {
+            RegexReplacement(
+                pattern=r"add_docstring\(implementation, dispatcher\.__doc__\)",
+                replacement="add_docstring(implementation, '')",
+            ),
+            RegexReplacement(
+                pattern="def set_array_function_like_doc.*?return public_api",
+                replacement="def set_array_function_like_doc(a): return a",
+                flags=re.DOTALL,
+            ),
+        },
+        "numpy._pytesttester": {
+            RegexReplacement(
+                pattern="^.*$",
+                replacement="""class PytestTester:
+    def __init__(self, name):
+        pass""",
+                flags=re.DOTALL,
+            )
+        },
         "PIL.__init__": {
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",

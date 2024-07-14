@@ -13,6 +13,7 @@ from compile_utils.cleaner import (
     move_files_to_tmp_and_clean,
 )
 from compile_utils.file_operations import (
+    copy_file,
     copy_folder,
     delete_file_globs,
     delete_folder,
@@ -62,17 +63,20 @@ if os.name == "nt":
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
 delete_folder(TMP_DIR)
-delete_folder(COMPILE_DIR)
 try:
     # use "" as module for image_viewer should it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
 
-    for mod_name in ["turbojpeg", "send2trash", "PIL"]:  # TODO: consider adding numpy
+    for mod_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
         module = import_module(mod_name)
         if module.__file__ is None:
             print(f"Error getting module {mod_name}'s filepath")
             continue
         base_file_name: str = os.path.basename(module.__file__)
+        if mod_name == "numpy":
+            site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
+            lib_path: str = os.path.join(site_packages_path, "numpy.libs")
+            copy_folder(lib_path, os.path.join(TMP_DIR, "numpy.libs"))
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
@@ -89,6 +93,7 @@ try:
     if args.skip_nuitka:
         exit(0)
 
+    delete_folder(COMPILE_DIR)
     input_file: str = f"{TMP_DIR}/{FILE}.py"
     process: Popen = start_nuitka_compilation(
         args.python_path, input_file, WORKING_DIR, nuitka_args
@@ -106,7 +111,7 @@ try:
         old_path = os.path.join(CODE_DIR, data_file_path)
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
-        copy_folder(old_path, new_path)
+        copy_file(old_path, new_path)
 
     if is_standalone:
         clean_or_delete_auto_included_files(COMPILE_DIR)
@@ -117,11 +122,9 @@ try:
             os.path.join(COMPILE_DIR, EXECUTABLE_NAME),
         )
 
-    if args.debug:
-        exit(0)
-
-    delete_folder(install_path)
-    os.rename(COMPILE_DIR, install_path)
+    if not args.debug:
+        delete_folder(install_path)
+        os.rename(COMPILE_DIR, install_path)
 finally:
     if not args.debug and not args.no_cleanup:
         delete_folders([BUILD_DIR, COMPILE_DIR, TMP_DIR])
@@ -130,9 +133,10 @@ finally:
 print("\nFinished")
 print("Installed to", install_path)
 
+path_to_check: str = install_path if not args.debug else COMPILE_DIR
 install_byte_size: int = sum(
     os.stat(p).st_size
-    for p in glob(f"{install_path}/**/*", recursive=True)
+    for p in glob(f"{path_to_check}/**/*", recursive=True)
     if os.path.isfile(p)
 )
 print(f"Install Size: {install_byte_size:,} bytes")

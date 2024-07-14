@@ -22,8 +22,12 @@ def delete_folders(folders: Iterable[str]) -> None:
         shutil.rmtree(folder, ignore_errors=True)
 
 
-def copy_folder(source: str, destination: str) -> None:
+def copy_file(source: str, destination: str) -> None:
     shutil.copy(source, destination)
+
+
+def copy_folder(source: str, destination: str) -> None:
+    shutil.copytree(source, destination)
 
 
 def regex_replace(

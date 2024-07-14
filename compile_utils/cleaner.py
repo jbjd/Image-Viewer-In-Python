@@ -243,9 +243,11 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             )
 
     if autoflake is not None:
+        # Numpy often imports other imports which this would break
+        edit_imports: bool = module_name[:5] != "numpy"
         source = autoflake.fix_code(
             source,
-            remove_all_unused_imports=True,
+            remove_all_unused_imports=edit_imports,
             remove_duplicate_keys=True,
             remove_unused_variables=True,
             remove_rhs_for_unused_variables=True,
@@ -259,6 +261,9 @@ def move_files_to_tmp_and_clean(
     dir: str, tmp_dir: str, mod_prefix: str, modules_to_skip: list[str] | None = None
 ) -> None:
     """Moves python files from dir to temp_dir and removes unused/unneeded code"""
+    if modules_to_skip is None:
+        modules_to_skip = []
+
     for python_file in iter(
         os.path.abspath(p)
         for p in glob(f"{dir}/**/*", recursive=True)
@@ -275,8 +280,13 @@ def move_files_to_tmp_and_clean(
 
         if python_file.endswith(".py"):
             mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
-            if modules_to_skip is None or mod_name not in modules_to_skip:
-                clean_file_and_copy(python_file, new_path, mod_name)
+            if mod_name in modules_to_skip:
+                continue
+            elif "." in mod_name:
+                package_name: str = mod_name[: mod_name.rfind(".")]
+                if package_name in modules_to_skip:
+                    continue
+            clean_file_and_copy(python_file, new_path, mod_name)
         else:
             copyfile(python_file, new_path)
 
