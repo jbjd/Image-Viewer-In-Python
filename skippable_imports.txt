@@ -11,6 +11,7 @@ numpy._typing
 numpy.char
 numpy.conftest
 numpy.doc.ufuncs
+numpy.dtypes
 numpy.f2py
 numpy.f2py._backends
 numpy.f2py.tests

@@ -71,6 +71,7 @@ _skip_function_calls_kwargs: dict[str, set[str]] = {
 }
 
 _skip_vars_kwargs: dict[str, set[str]] = {
+    "numpy.version": {"full_version", "git_revision", "release"},
     "turbojpeg": {
         "TJERR_FATAL",
         "TJCS_CMYK",
@@ -138,7 +139,15 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern="elif attr == .{0}.:.*?return {0}".format(module),
                 flags=re.DOTALL,
             )
-            for module in ("fft", "f2py", "typing", "polynomial", "testing", "random")
+            for module in (
+                "fft",
+                "f2py",
+                "typing",
+                "polynomial",
+                "testing",
+                "random",
+                "dtypes",
+            )
         }.union(
             {
                 remove_numpy_pytester_re,
