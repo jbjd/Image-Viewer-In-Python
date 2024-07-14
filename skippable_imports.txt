@@ -2,6 +2,8 @@ argparse
 csv
 email*
 numpy._pyinstaller
+numpy._pytesttester
+numpy.conftest
 numpy.doc.ufuncs
 numpy.f2py.tests
 numpy.fft.tests

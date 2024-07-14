@@ -9,6 +9,7 @@ from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
+    "numpy.f2py.__init__": {"__getattr__"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -124,18 +125,26 @@ function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
 
+remove_all_re = RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
+remove_numpy_pytester_re = RegexReplacement(
+    pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",  # noqa E501
+    replacement="",
+    flags=re.DOTALL,
+)
 regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
     set,
     {
         "util.PIL": {
             RegexReplacement(pattern=r"_Image._plugins = \[\]", replacement="")
         },
+        "numpy.__init__": {remove_numpy_pytester_re},
         "numpy._core.__init__": {
+            remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
                 replacement="",
                 flags=re.DOTALL,
-            )
+            ),
         },
         "numpy._core.overrides": {
             RegexReplacement(
@@ -148,15 +157,14 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
-        "numpy._pytesttester": {
-            RegexReplacement(
-                pattern="^.*$",
-                replacement="""class PytestTester:
-    def __init__(self, name):
-        pass""",
-                flags=re.DOTALL,
-            )
-        },
+        "numpy.fft.__init__": {remove_numpy_pytester_re},
+        "numpy.lib.__init__": {remove_numpy_pytester_re},
+        "numpy.linalg.__init__": {remove_numpy_pytester_re},
+        "numpy.ma.__init__": {remove_numpy_pytester_re},
+        "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
+        "numpy.polynomial.__init__": {remove_numpy_pytester_re},
+        "numpy.random.__init__": {remove_numpy_pytester_re},
+        "numpy.typing.__init__": {remove_numpy_pytester_re},
         "PIL.__init__": {
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
@@ -222,12 +230,8 @@ except ImportError:
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
             )
         },
-        "send2trash.__init__": {
-            RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
-        },
-        "send2trash.win.__init__": {
-            RegexReplacement(pattern=".*", replacement="", flags=re.DOTALL)
-        },
+        "send2trash.__init__": {remove_all_re},
+        "send2trash.win.__init__": {remove_all_re},
         # Fix issue with autoflake
         "send2trash.compat": {
             RegexReplacement(
