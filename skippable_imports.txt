@@ -4,6 +4,7 @@ email*
 numpy._core._add_newdocs
 numpy._core._add_newdocs_scalars
 numpy._core.tests
+numpy._expired_attrs_2_0
 numpy._pyinstaller
 numpy._pytesttester
 numpy._typing

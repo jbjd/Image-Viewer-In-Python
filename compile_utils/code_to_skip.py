@@ -145,6 +145,10 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern="elif attr == .typing.:.*?return typing", flags=re.DOTALL
             ),
+            RegexReplacement(  # These are all deprecation warnings
+                pattern=r"if attr in _.*?\)", flags=re.DOTALL
+            ),
+            RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
         },
         "numpy._core.__init__": {
             remove_numpy_pytester_re,
