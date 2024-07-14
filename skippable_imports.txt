@@ -8,6 +8,7 @@ numpy._expired_attrs_2_0
 numpy._pyinstaller
 numpy._pytesttester
 numpy._typing
+numpy.char
 numpy.conftest
 numpy.doc.ufuncs
 numpy.f2py
@@ -22,6 +23,7 @@ numpy.ma.tests
 numpy.matrixlib.tests
 numpy.polynomial
 numpy.polynomial.tests
+numpy.random
 numpy.random._examples.cffi
 numpy.random._examples.numba
 numpy.random.tests

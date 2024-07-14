@@ -9,7 +9,6 @@ from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
-    "numpy.f2py.__init__": {"__getattr__"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -139,7 +138,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern="elif attr == .{0}.:.*?return {0}".format(module),
                 flags=re.DOTALL,
             )
-            for module in ("fft", "f2py", "typing", "polynomial", "testing")
+            for module in ("fft", "f2py", "typing", "polynomial", "testing", "random")
         }.union(
             {
                 remove_numpy_pytester_re,
@@ -180,7 +179,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
-        "numpy.fft.__init__": {remove_numpy_pytester_re},
         "numpy.lib.__init__": {remove_numpy_pytester_re},
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
@@ -191,9 +189,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
         },
         "numpy.ma.__init__": {remove_numpy_pytester_re},
         "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
-        "numpy.polynomial.__init__": {remove_numpy_pytester_re},
-        "numpy.random.__init__": {remove_numpy_pytester_re},
-        "numpy.typing.__init__": {remove_numpy_pytester_re},
         "PIL.__init__": {
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
