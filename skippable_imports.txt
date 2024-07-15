@@ -106,4 +106,3 @@ socket
 statistics
 urllib.error
 urllib.request
-yaml
