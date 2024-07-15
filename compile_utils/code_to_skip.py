@@ -9,6 +9,7 @@ from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
+    "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
     "numpy._utils.__init__": {"_rename_parameter"},
     "turbojpeg": {
         "__define_cropping_regions",
@@ -72,6 +73,7 @@ _skip_function_calls_kwargs: dict[str, set[str]] = {
 }
 
 _skip_vars_kwargs: dict[str, set[str]] = {
+    "numpy.__init__": {"__array_api_version__", "__future_scalars__"},
     "numpy.version": {"full_version", "git_revision", "release"},
     "turbojpeg": {
         "TJERR_FATAL",
@@ -135,6 +137,11 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
     set,
     {
         "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
+        "numpy.__config__": {
+            RegexReplacement(
+                pattern="^.*$", replacement="def show(): return {}", flags=re.DOTALL
+            )
+        },
         "numpy.__init__": {
             RegexReplacement(
                 pattern="elif attr == .{0}.:.*?return {0}".format(module),

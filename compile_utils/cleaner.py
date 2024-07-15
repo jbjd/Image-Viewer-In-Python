@@ -81,6 +81,12 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
 
         node.bases = [base for base in node.bases if getattr(base, "id", "") != "ABC"]
 
+        # Remove class doc strings, does not affect compile size but speeds up writing to file
+        if isinstance(node.body[0], ast.Expr) and isinstance(
+            node.body[0].value, ast.Constant
+        ):
+            node.body[0].value.value = ""
+
         self.write_annotations_without_value = True
         super().visit_ClassDef(node)
         self.write_annotations_without_value = False
