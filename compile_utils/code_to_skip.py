@@ -9,6 +9,7 @@ from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
+    "numpy._utils.__init__": {"_rename_parameter"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -139,15 +140,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern="elif attr == .{0}.:.*?return {0}".format(module),
                 flags=re.DOTALL,
             )
-            for module in (
-                "fft",
-                "f2py",
-                "typing",
-                "polynomial",
-                "testing",
-                "random",
-                "dtypes",
-            )
+            for module in ("fft", "f2py", "typing", "polynomial", "testing", "random")
         }.union(
             {
                 remove_numpy_pytester_re,
@@ -176,6 +169,10 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"from \. import _add_newdocs.*"),
+            RegexReplacement(
+                pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
+                flags=re.DOTALL,
+            ),
         },
         "numpy._core.overrides": {
             RegexReplacement(
