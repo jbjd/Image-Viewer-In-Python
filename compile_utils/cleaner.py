@@ -285,7 +285,7 @@ def move_files_to_tmp_and_clean(
             mod_prefix, python_file.replace(dir, "").strip("/\\")
         )
         new_path: str = os.path.join(tmp_dir, relative_path)
-        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        dir_path: str = os.path.dirname(new_path)
 
         if python_file.endswith(".py"):
             mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
@@ -295,8 +295,10 @@ def move_files_to_tmp_and_clean(
                 package_name: str = mod_name[: mod_name.rfind(".")]
                 if package_name in modules_to_skip:
                     continue
+            os.makedirs(dir_path, exist_ok=True)
             clean_file_and_copy(python_file, new_path, mod_name)
         else:
+            os.makedirs(dir_path, exist_ok=True)
             copyfile(python_file, new_path)
 
 

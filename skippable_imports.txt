@@ -27,6 +27,7 @@ numpy.random
 numpy.random._examples.cffi
 numpy.random._examples.numba
 numpy.random.tests
+numpy.rec
 numpy.testing
 numpy.testing._private
 numpy.testing.tests

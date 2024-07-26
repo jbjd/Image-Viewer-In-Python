@@ -155,7 +155,15 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern="elif attr == .{0}.:.*?return {0}".format(module),
                 flags=re.DOTALL,
             )
-            for module in ("fft", "f2py", "typing", "polynomial", "testing", "random")
+            for module in (
+                "fft",
+                "f2py",
+                "typing",
+                "polynomial",
+                "testing",
+                "random",
+                "rec",
+            )
         }.union(
             {
                 remove_numpy_pytester_re,
