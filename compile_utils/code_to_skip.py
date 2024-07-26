@@ -245,7 +245,7 @@ except ImportError:
                 flags=re.DOTALL,
             ),
             RegexReplacement(
-                pattern=r"try:.*?from \. import _imaging as core.*?except.*?raise",
+                pattern=r"try:\n    #.*?from \. import _imaging as core.*?except.*?raise",  # noqa: E501
                 replacement="from . import _imaging as core",
                 flags=re.DOTALL,
             ),
