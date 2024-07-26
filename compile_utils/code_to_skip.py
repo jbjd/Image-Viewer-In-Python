@@ -23,12 +23,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "encode_from_yuv",
         "scale_with_quality",
     },
-    "PIL.ImageFont": {
-        "__getstate__",
-        "__setstate__",
-        "load_default_imagefont",
-        "load_default",
-    },
     "PIL.Image": {
         "__getstate__",
         "__setstate__",
@@ -52,8 +46,24 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "toqimage",
         "toqpixmap",
     },
+    "PIL.ImageChops": {
+        "blend",
+        "composite",
+        "darker",
+        "duplicate",
+        "lighter",
+        "soft_light",
+        "hard_light",
+    },
     "PIL.ImageDraw": {"_color_diff", "getdraw", "floodfill"},
     "PIL.ImageFile": {"get_format_mimetype", "verify", "raise_oserror"},
+    "PIL.ImageFont": {
+        "__getstate__",
+        "__setstate__",
+        "load_default_imagefont",
+        "load_default",
+    },
+    "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
@@ -93,11 +103,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
-    "PIL.Image": {
-        "DecompressionBombWarning",
-        "SupportsArrayInterface",
-        "SupportsGetData",
-    },
+    "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "_Tile",
         "Parser",
@@ -108,6 +114,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
         "StubHandler",
         "StubImageFile",
     },
+    "PIL.ImageFont": {"TransposedFont"},
     "PIL.ImageTk": {"BitmapImage"},
 }
 
@@ -207,7 +214,10 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"_plugins = \[.*?\]",
                 replacement="_plugins = []",
                 flags=re.DOTALL,
-            )
+            ),
+            RegexReplacement(
+                pattern=r"from \. import _version.*del _version", flags=re.DOTALL
+            ),
         },
         "PIL.Image": {
             RegexReplacement(
@@ -232,6 +242,11 @@ except ImportError:
         new = {}
         new['shape'], new['typestr'] = _conv_type_shape(self)
         return new""",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"try:.*?from \. import _imaging as core.*?except.*?raise",
+                replacement="from . import _imaging as core",
                 flags=re.DOTALL,
             ),
         },
