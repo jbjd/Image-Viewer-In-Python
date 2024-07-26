@@ -4,6 +4,7 @@ import os
 import platform
 import re
 from collections import defaultdict
+import sys
 
 from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
@@ -162,6 +163,12 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                     pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
                     flags=re.DOTALL,
                 ),
+                RegexReplacement(
+                    pattern=r"elif attr == .array_api.:.*?\)", flags=re.DOTALL
+                ),
+                RegexReplacement(
+                    pattern=r"elif attr == .distutils.:.*?\)", flags=re.DOTALL
+                ),
                 RegexReplacement(  # These are all deprecation warnings
                     pattern=r"if attr in _.*?\)", flags=re.DOTALL
                 ),
@@ -172,6 +179,15 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 ),
                 RegexReplacement(
                     pattern=r"def _sanity_check\(\):.*?del _sanity_check",
+                    flags=re.DOTALL,
+                ),
+                RegexReplacement(
+                    pattern=r"os\.environ\.get\(.NPY_PROMOTION_STATE., .weak.\)",
+                    replacement="'weak'",
+                ),
+                RegexReplacement(
+                    pattern=r"try:\s*__NUMPY_SETUP__.*?__NUMPY_SETUP__ = False",
+                    replacement="__NUMPY_SETUP__ = False",
                     flags=re.DOTALL,
                 ),
             }
@@ -297,6 +313,16 @@ if os.name == "nt":
     regex_to_apply["turbojpeg"].add(
         RegexReplacement(
             pattern=r"if platform.system\(\) == 'Linux'.*return lib_path",
+            flags=re.DOTALL,
+        )
+    )
+
+# Use platform since that what this function checks in numpy
+if sys.platform != "linux":
+    regex_to_apply["numpy.__init__"].add(
+        RegexReplacement(
+            pattern=r"def hugepage_setup\(\):.*?del hugepage_setup",
+            replacement="_core.multiarray._set_madvise_hugepage(1)",
             flags=re.DOTALL,
         )
     )
