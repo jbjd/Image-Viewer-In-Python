@@ -111,7 +111,11 @@ _skip_function_calls_kwargs: dict[str, set[str]] = {
 }
 
 _skip_vars_kwargs: dict[str, set[str]] = {
-    "numpy.__init__": {"__array_api_version__", "__future_scalars__"},
+    "numpy.__init__": {
+        "__array_api_version__",
+        "__future_scalars__",
+        "__former_attrs__",
+    },
     "numpy.version": {"full_version", "git_revision", "release", "short_version"},
     "turbojpeg": {
         "TJERR_FATAL",
@@ -134,6 +138,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
+    "numpy._globals": {"_CopyMode"},
     "numpy.lib._utils_impl": {"_Deprecate"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
@@ -177,11 +182,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
     set,
     {
         "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
-        "numpy.__config__": {
-            RegexReplacement(
-                pattern="^.*$", replacement="def show(): return {}", flags=re.DOTALL
-            )
-        },
         "numpy.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(
@@ -211,7 +211,11 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 replacement="__NUMPY_SETUP__ = False",
                 flags=re.DOTALL,
             ),
+            RegexReplacement(
+                pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
+            ),
             RegexReplacement(pattern=", einsum, einsum_path"),
+            RegexReplacement(pattern=", (_CopyMode|show_config)"),
             RegexReplacement(pattern=", .(ctypeslib|__version__)."),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
@@ -274,6 +278,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
+        "numpy._globals": {RegexReplacement(pattern=", ._CopyMode.")},
         "numpy.lib.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(

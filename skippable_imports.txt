@@ -3,6 +3,7 @@ csv
 email
 email.message
 email.parser
+numpy.__config__
 numpy._configtool
 numpy._core._add_newdocs
 numpy._core.cversions
