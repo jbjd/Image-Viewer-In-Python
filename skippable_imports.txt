@@ -3,7 +3,9 @@ csv
 email
 email.message
 email.parser
+numpy._configtool
 numpy._core._add_newdocs
+numpy._core.defchararray
 numpy._core.tests
 numpy._expired_attrs_2_0
 numpy._pyinstaller
@@ -22,10 +24,12 @@ numpy.lib.tests
 numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma.tests
+numpy.matlib
 numpy.matrixlib.tests
 numpy.polynomial
 numpy.random
 numpy.rec
+numpy.strings
 numpy.testing
 numpy.tests
 numpy.typing

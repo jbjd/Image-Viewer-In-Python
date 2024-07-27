@@ -186,11 +186,13 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 "core",
                 "fft",
                 "f2py",
-                "typing",
+                "matlib",
                 "polynomial",
-                "testing",
                 "random",
                 "rec",
+                "strings",
+                "testing",
+                "typing",
             )
         }.union(
             {
