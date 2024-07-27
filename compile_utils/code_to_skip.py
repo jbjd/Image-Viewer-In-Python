@@ -158,6 +158,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             )
             for module in (
+                "core",
                 "fft",
                 "f2py",
                 "typing",
