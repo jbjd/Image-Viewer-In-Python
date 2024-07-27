@@ -150,7 +150,8 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             return
 
         if (
-            getattr(getattr(node.value, "func", object), "id", "")
+            self._node_is_doc_string_assign(node)
+            or getattr(getattr(node.value, "func", object), "id", "")
             in self.func_calls_to_skip
         ):
             super().visit_Pass(node)
@@ -161,6 +162,13 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             super().visit_Assign(node)
         else:
             self.vars_to_skip[var_name] += 1
+
+    @staticmethod
+    def _node_is_doc_string_assign(node: ast.Assign) -> bool:
+        return (
+            isinstance(node.targets[0], ast.Attribute)
+            and node.targets[0].attr == "__doc__"
+        )
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Remove var annotations and declares like 'var: type' without an = after"""

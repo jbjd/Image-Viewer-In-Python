@@ -12,6 +12,7 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
     "numpy._utils.__init__": {"_rename_parameter"},
+    "numpy.lib._utils_impl": {"deprecate", "deprecate_with_doc"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -104,6 +105,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
+    "numpy.lib._utils_impl": {"_Deprecate"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "_Tile",
@@ -223,7 +225,17 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
-        "numpy.lib.__init__": {remove_numpy_pytester_re},
+        "numpy.lib.__init__": {
+            remove_numpy_pytester_re,
+            RegexReplacement(
+                pattern=r"elif attr == .emath.*else:\s*",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"from numpy\._core\.function_base import add_newdoc"
+            ),
+            RegexReplacement(pattern=", .add_newdoc."),
+        },
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
