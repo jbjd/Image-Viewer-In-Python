@@ -5,7 +5,9 @@ email.message
 email.parser
 numpy._configtool
 numpy._core._add_newdocs
+numpy._core.cversions
 numpy._core.defchararray
+numpy._core.einsumfunc
 numpy._core.tests
 numpy._expired_attrs_2_0
 numpy._pyinstaller

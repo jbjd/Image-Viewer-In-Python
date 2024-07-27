@@ -228,6 +228,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                     replacement="__NUMPY_SETUP__ = False",
                     flags=re.DOTALL,
                 ),
+                RegexReplacement(pattern=", einsum, einsum_path"),
             }
         ),
         "numpy._core.__init__": {
@@ -240,6 +241,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
                 flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r".*?einsumfunc.*",
             ),
         },
         "numpy._core.overrides": {
