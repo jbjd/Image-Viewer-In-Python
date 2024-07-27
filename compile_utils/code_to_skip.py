@@ -236,6 +236,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"from numpy\._core\.function_base import add_newdoc"
             ),
             RegexReplacement(pattern=", .add_newdoc."),
+            RegexReplacement(pattern=r"from \. import _version"),
+            RegexReplacement(pattern=r"from \._version import NumpyVersion"),
+            RegexReplacement(pattern=", .NumpyVersion."),
         },
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,

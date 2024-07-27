@@ -275,11 +275,13 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 
 
 def move_files_to_tmp_and_clean(
-    dir: str, tmp_dir: str, mod_prefix: str, modules_to_skip: list[str] | None = None
+    dir: str, tmp_dir: str, mod_prefix: str, modules_to_skip: set[str] | None = None
 ) -> None:
     """Moves python files from dir to temp_dir and removes unused/unneeded code"""
-    if modules_to_skip is None:
-        modules_to_skip = []
+    if modules_to_skip:
+        modules_to_skip_re = f"^({'|'.join(modules_to_skip)})"
+    else:
+        modules_to_skip_re = ""
 
     for python_file in iter(
         os.path.abspath(p)
@@ -297,17 +299,24 @@ def move_files_to_tmp_and_clean(
 
         if python_file.endswith(".py"):
             mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
-            if mod_name in modules_to_skip:
+            if modules_to_skip is not None and (
+                skip_match := re.match(modules_to_skip_re, mod_name)
+            ):
+                match: str = skip_match.string[: skip_match.end()]
+                if match in modules_to_skip:
+                    modules_to_skip.remove(match)
                 continue
-            elif "." in mod_name:
-                package_name: str = mod_name[: mod_name.rfind(".")]
-                if package_name in modules_to_skip:
-                    continue
             os.makedirs(dir_path, exist_ok=True)
             clean_file_and_copy(python_file, new_path, mod_name)
         else:
             os.makedirs(dir_path, exist_ok=True)
             copyfile(python_file, new_path)
+
+    if modules_to_skip:
+        warnings.warn(
+            "Some imports where marked to skip but not found: "
+            + " ".join(modules_to_skip)
+        )
 
 
 def clean_or_delete_auto_included_files(compile_dir: str) -> None:

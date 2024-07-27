@@ -68,6 +68,10 @@ try:
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
 
     for mod_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
+        modules_to_skip: set[str] = set(
+            i for i in imports_to_skip if i.startswith(mod_name)
+        )
+
         module = import_module(mod_name)
         if module.__file__ is None:
             print(f"Error getting module {mod_name}'s filepath")
@@ -80,7 +84,7 @@ try:
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
-                os.path.dirname(module.__file__), TMP_DIR, mod_name, imports_to_skip
+                os.path.dirname(module.__file__), TMP_DIR, mod_name, modules_to_skip
             )
         else:
             # its just one file
