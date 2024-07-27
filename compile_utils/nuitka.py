@@ -21,7 +21,6 @@ def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
         cmd_args.append(f"--follow-import-to={module}")
 
     cmd_args.append("--include-module=numpy._core._exceptions")
-    cmd_args.append("--include-module=numpy._core._multiarray_tests")
 
     return cmd_args
 
