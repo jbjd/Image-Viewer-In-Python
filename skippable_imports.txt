@@ -24,7 +24,6 @@ numpy.ma.tests
 numpy.matrixlib.tests
 numpy.polynomial
 numpy.random
-numpy.random.tests
 numpy.rec
 numpy.testing
 numpy.tests

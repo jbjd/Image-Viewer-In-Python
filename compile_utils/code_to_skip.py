@@ -29,6 +29,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "__getstate__",
         "__setstate__",
         "_apply_env_variables",
+        "_dump",
         "_repr_image",
         "_repr_jpeg_",
         "_repr_pretty_",
@@ -51,6 +52,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageChops": {
         "blend",
         "composite",
+        "constant",
         "darker",
         "duplicate",
         "lighter",
@@ -64,6 +66,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "__setstate__",
         "load_default_imagefont",
         "load_default",
+        "load_path",
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
@@ -185,11 +188,11 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 ),
                 RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
                 RegexReplacement(
-                    pattern=r"def _mac_os_check\(\):.*?del _mac_os_check",
+                    pattern=r"def _mac_os_check\(.*?del _mac_os_check",
                     flags=re.DOTALL,
                 ),
                 RegexReplacement(
-                    pattern=r"def _sanity_check\(\):.*?del _sanity_check",
+                    pattern=r"def _sanity_check\(.*?del _sanity_check",
                     flags=re.DOTALL,
                 ),
                 RegexReplacement(
@@ -341,7 +344,7 @@ if os.name == "nt":
         )
     )
 
-# Use platform since that what this function checks in numpy
+# Use platform since that what these modules check
 if sys.platform != "linux":
     regex_to_apply["numpy.__init__"].add(
         RegexReplacement(
