@@ -12,7 +12,7 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
     "numpy._utils.__init__": {"_rename_parameter"},
-    "numpy.lib._utils_impl": {"deprecate", "deprecate_with_doc"},
+    "numpy.lib._utils_impl": {"deprecate", "deprecate_with_doc", "show_runtime"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -207,8 +207,15 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=", einsum, einsum_path"),
-            RegexReplacement(pattern=", .ctypeslib."),
-            RegexReplacement(pattern=r"from \. import _distributor_init"),
+            RegexReplacement(pattern=", .(ctypeslib|__version__)."),
+            RegexReplacement(
+                pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
+            ),
+            RegexReplacement(
+                pattern=r"from .lib._npyio_impl import .*?\)", flags=re.DOTALL
+            ),
+            RegexReplacement(pattern=r" show_runtime,"),
+            RegexReplacement(pattern=r"lib\._npyio_impl\.__all__"),
         }.union(
             {
                 RegexReplacement(
@@ -237,6 +244,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"from \. import _add_newdocs.*"),
+            RegexReplacement(pattern=r"from numpy\.version import .*"),
             RegexReplacement(
                 pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
                 flags=re.DOTALL,
@@ -266,9 +274,14 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"from numpy\._core\.function_base import add_newdoc"
             ),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
-            RegexReplacement(pattern=r"from \. import (_version|introspect|mixins)"),
-            RegexReplacement(pattern=", .(add_newdoc|NumpyVersion|introspect|mixins)."),
+            RegexReplacement(
+                pattern=r"from \. import (_version|introspect|mixins|npyio|_npyio_impl)"
+            ),
+            RegexReplacement(
+                pattern=", .(add_newdoc|NumpyVersion|introspect|mixins|npyio)."
+            ),
         },
+        "numpy.lib._utils_impl": {RegexReplacement(pattern=r", .show_runtime.")},
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
