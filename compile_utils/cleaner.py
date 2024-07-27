@@ -355,7 +355,6 @@ def clean_or_delete_auto_included_files(compile_dir: str) -> None:
     strip_consecutive_whitespace = RegexReplacement(
         pattern="[ \t][ \t]+", replacement=" "
     )
-    condense_brackets = RegexReplacement(pattern="\n}", replacement="}")
 
     for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
         os.path.join(compile_dir, "**/*.tm"), recursive=True
@@ -367,7 +366,6 @@ def clean_or_delete_auto_included_files(compile_dir: str) -> None:
                 strip_whitespace,
                 strip_starting_whitespace,
                 strip_consecutive_whitespace,
-                condense_brackets,
             ],
         )
 
