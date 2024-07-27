@@ -18,6 +18,7 @@ numpy.char
 numpy.compat
 numpy.conftest
 numpy.core
+numpy.ctypeslib
 numpy.doc.ufuncs
 numpy.f2py
 numpy.fft

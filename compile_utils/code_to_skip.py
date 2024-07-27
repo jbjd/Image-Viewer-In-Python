@@ -184,6 +184,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             )
             for module in (
                 "core",
+                "ctypeslib",
                 "fft",
                 "f2py",
                 "matlib",
@@ -212,11 +213,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 ),
                 RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
                 RegexReplacement(
-                    pattern=r"def _mac_os_check\(.*?del _mac_os_check",
-                    flags=re.DOTALL,
-                ),
-                RegexReplacement(
-                    pattern=r"def _sanity_check\(.*?del _sanity_check",
+                    pattern=r"def (_mac_os_check|_sanity_check)\(.*?del (_mac_os_check|_sanity_check)",  # noqa E501
                     flags=re.DOTALL,
                 ),
                 RegexReplacement(
@@ -229,6 +226,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                     flags=re.DOTALL,
                 ),
                 RegexReplacement(pattern=", einsum, einsum_path"),
+                RegexReplacement(pattern=", .ctypeslib."),
             }
         ),
         "numpy._core.__init__": {
