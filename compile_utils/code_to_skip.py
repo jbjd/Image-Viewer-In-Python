@@ -377,6 +377,7 @@ folders_to_exlcude: list[str] = ["tcl/http1.0", "tcl/tzdata", "tk/images", "tk/m
 # tcl testing and http files are inlucded in dist by nuitka
 globs_to_exlucde: list[str] = [
     "tcl*/**/http-*.tm",
+    "tcl*/**/shell-*.tm",
     "tcl*/**/tcltest-*.tm",
     "tk/ttk/*Theme.tcl",
     "libcrypto-*",

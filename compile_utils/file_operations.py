@@ -12,6 +12,10 @@ def delete_file_globs(glob_patterns: Iterable[str]) -> None:
         for file in glob(glob_pattern, recursive=True):
             os.remove(file)
 
+            dir: str = os.path.dirname(file)
+            if not os.listdir(dir):
+                os.rmdir(dir)
+
 
 def delete_folder(path: str) -> None:
     shutil.rmtree(path, ignore_errors=True)
