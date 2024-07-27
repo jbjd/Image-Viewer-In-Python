@@ -68,6 +68,17 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "load_default",
         "load_path",
     },
+    "PIL.ImageOps": {
+        "autocontrast",
+        "colorize",
+        "deform",
+        "equalize",
+        "exif_transpose",
+        "grayscale",
+        "mirror",
+        "posterize",
+        "solarize",
+    },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
@@ -121,6 +132,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
         "StubImageFile",
     },
     "PIL.ImageFont": {"TransposedFont"},
+    "PIL.ImageOps": {"SupportsGetMesh"},
     "PIL.ImageTk": {"BitmapImage"},
 }
 
@@ -300,7 +312,13 @@ except ImportError:
                 replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
                 flags=re.DOTALL,
             ),
+            RegexReplacement(
+                pattern=r"try:\s*Outline.*Outline = None", flags=re.DOTALL
+            ),
+            RegexReplacement(pattern="(L|l)ist, "),
+            RegexReplacement(pattern="List", replacement="list"),
         },
+        "PIL.ImageFile": {RegexReplacement(pattern="use_mmap = use_mmap.*")},
         "PIL.ImageMode": {
             RegexReplacement(
                 pattern="from typing import NamedTuple",
@@ -312,6 +330,7 @@ except ImportError:
             ),
             RegexReplacement(pattern="from ._deprecate import deprecate"),
         },
+        "PIL.ImagePalette": {RegexReplacement(pattern="tostring = tobytes")},
         "PIL.PngImagePlugin": {
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
