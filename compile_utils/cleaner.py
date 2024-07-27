@@ -79,7 +79,11 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             self.classes_to_skip[node.name] += 1
             return
 
-        node.bases = [base for base in node.bases if getattr(base, "id", "") != "ABC"]
+        node.bases = [
+            base
+            for base in node.bases
+            if getattr(base, "id", "") not in ("ABC", "object")
+        ]
 
         # Remove class doc strings to speed up writing to file
         if isinstance(node.body[0], ast.Expr) and isinstance(
@@ -297,19 +301,21 @@ def move_files_to_tmp_and_clean(
         new_path: str = os.path.join(tmp_dir, relative_path)
         dir_path: str = os.path.dirname(new_path)
 
+        mod_name_with_ext: str = sub(separators, ".", relative_path)
+
+        if modules_to_skip is not None and (
+            skip_match := re.match(modules_to_skip_re, mod_name_with_ext)
+        ):
+            match: str = skip_match.string[: skip_match.end()]
+            if match in modules_to_skip:
+                modules_to_skip.remove(match)
+            continue
+
+        os.makedirs(dir_path, exist_ok=True)
         if python_file.endswith(".py"):
-            mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops of .py
-            if modules_to_skip is not None and (
-                skip_match := re.match(modules_to_skip_re, mod_name)
-            ):
-                match: str = skip_match.string[: skip_match.end()]
-                if match in modules_to_skip:
-                    modules_to_skip.remove(match)
-                continue
-            os.makedirs(dir_path, exist_ok=True)
+            mod_name: str = mod_name_with_ext[:-3]  # chops .py
             clean_file_and_copy(python_file, new_path, mod_name)
         else:
-            os.makedirs(dir_path, exist_ok=True)
             copyfile(python_file, new_path)
 
     if modules_to_skip:

@@ -11,6 +11,7 @@ numpy._pytesttester
 numpy._typing
 numpy._utils._pep440
 numpy.char
+numpy.compat
 numpy.conftest
 numpy.core
 numpy.doc.ufuncs

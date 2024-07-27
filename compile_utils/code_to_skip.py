@@ -60,6 +60,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "constant",
         "darker",
         "duplicate",
+        "invert",
         "lighter",
         "soft_light",
         "hard_light",
@@ -76,6 +77,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageOps": {
         "autocontrast",
         "colorize",
+        "cover",
         "deform",
         "equalize",
         "exif_transpose",
@@ -105,15 +107,18 @@ _skip_function_calls_kwargs: dict[str, set[str]] = {
 
 _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__array_api_version__", "__future_scalars__"},
-    "numpy.version": {"full_version", "git_revision", "release"},
+    "numpy.version": {"full_version", "git_revision", "release", "short_version"},
     "turbojpeg": {
         "TJERR_FATAL",
         "TJCS_CMYK",
-        "TJPF_BGRX",
-        "TJPF_BGRA",
         "TJPF_ABGR",
         "TJPF_ARGB",
+        "TJPF_BGRX",
+        "TJPF_BGRA",
+        "TJPF_CMYK",
+        "TJPF_XBGR",
         "TJFLAG_LIMITSCANS",
+        "TJFLAG_STOPONWARNING",
     },
     "PIL.Image": {"USE_CFFI_ACCESS", "MIME"},
     "PIL.ImageTk": {"_pilbitmap_ok"},
