@@ -23,6 +23,8 @@ numpy.ctypeslib
 numpy.doc.ufuncs
 numpy.f2py
 numpy.fft
+numpy.lib._datasource
+numpy.lib._npyio_impl
 numpy.lib._user_array_impl
 numpy.lib._version
 numpy.lib.introspect

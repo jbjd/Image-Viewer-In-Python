@@ -12,6 +12,11 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
     "numpy._utils.__init__": {"_rename_parameter"},
+    "numpy._core.function_base": {
+        "_add_docstring",
+        "_needs_add_docstring",
+        "add_newdoc",
+    },
     "numpy.lib._utils_impl": {"deprecate", "deprecate_with_doc", "show_runtime"},
     "turbojpeg": {
         "__define_cropping_regions",
@@ -255,12 +260,17 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
         },
         "numpy._core.overrides": {
             RegexReplacement(
-                pattern=r"add_docstring\(implementation, dispatcher\.__doc__\)",
-                replacement="add_docstring(implementation, '')",
-            ),
-            RegexReplacement(
                 pattern="def set_array_function_like_doc.*?return public_api",
                 replacement="def set_array_function_like_doc(a): return a",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"from numpy._core._multiarray_umath import .*?\)",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern="def decorator.*?return public_api",
+                replacement="def decorator(i): return i",
                 flags=re.DOTALL,
             ),
         },
@@ -270,15 +280,24 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"elif attr == .emath.*else:\s*",
                 flags=re.DOTALL,
             ),
-            RegexReplacement(
-                pattern=r"from numpy\._core\.function_base import add_newdoc"
-            ),
+            RegexReplacement(pattern=r"from \. import _.*"),
+            RegexReplacement(pattern=r"from numpy\._core.* import .*"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
+            RegexReplacement(pattern=r"from \. import (introspect|mixins|npyio)"),
             RegexReplacement(
-                pattern=r"from \. import (_version|introspect|mixins|npyio|_npyio_impl)"
-            ),
-            RegexReplacement(
-                pattern=", .(add_newdoc|NumpyVersion|introspect|mixins|npyio)."
+                pattern=r",\s+.({}).".format(
+                    "|".join(
+                        (
+                            "add_newdoc",
+                            "NumpyVersion",
+                            "introspect",
+                            "mixins",
+                            "npyio",
+                            "tracemalloc_domain",
+                            "add_docstring",
+                        )
+                    )
+                )
             ),
         },
         "numpy.lib._utils_impl": {RegexReplacement(pattern=r", .show_runtime.")},
