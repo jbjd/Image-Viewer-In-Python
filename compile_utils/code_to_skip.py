@@ -178,55 +178,56 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             )
         },
         "numpy.__init__": {
+            remove_numpy_pytester_re,
             RegexReplacement(
-                pattern="elif attr == .{0}.:.*?return {0}".format(module),
+                pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
                 flags=re.DOTALL,
-            )
-            for module in (
-                "core",
-                "ctypeslib",
-                "fft",
-                "f2py",
-                "matlib",
-                "polynomial",
-                "random",
-                "rec",
-                "strings",
-                "testing",
-                "typing",
-            )
+            ),
+            RegexReplacement(
+                pattern=r"elif attr == .array_api.:.*?\)", flags=re.DOTALL
+            ),
+            RegexReplacement(
+                pattern=r"elif attr == .distutils.:.*?\)", flags=re.DOTALL
+            ),
+            RegexReplacement(  # These are all deprecation warnings
+                pattern=r"if attr in _.*?\)", flags=re.DOTALL
+            ),
+            RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
+            RegexReplacement(
+                pattern=r"def (_mac_os_check|_sanity_check)\(.*?del (_mac_os_check|_sanity_check)",  # noqa E501
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"os\.environ\.get\(.NPY_PROMOTION_STATE., .weak.\)",
+                replacement="'weak'",
+            ),
+            RegexReplacement(
+                pattern=r"try:\s*__NUMPY_SETUP__.*?__NUMPY_SETUP__ = False",
+                replacement="__NUMPY_SETUP__ = False",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(pattern=", einsum, einsum_path"),
+            RegexReplacement(pattern=", .ctypeslib."),
+            RegexReplacement(pattern=r"from \. import _distributor_init"),
         }.union(
             {
-                remove_numpy_pytester_re,
                 RegexReplacement(
-                    pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
+                    pattern="elif attr == .{0}.:.*?return {0}".format(module),
                     flags=re.DOTALL,
-                ),
-                RegexReplacement(
-                    pattern=r"elif attr == .array_api.:.*?\)", flags=re.DOTALL
-                ),
-                RegexReplacement(
-                    pattern=r"elif attr == .distutils.:.*?\)", flags=re.DOTALL
-                ),
-                RegexReplacement(  # These are all deprecation warnings
-                    pattern=r"if attr in _.*?\)", flags=re.DOTALL
-                ),
-                RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
-                RegexReplacement(
-                    pattern=r"def (_mac_os_check|_sanity_check)\(.*?del (_mac_os_check|_sanity_check)",  # noqa E501
-                    flags=re.DOTALL,
-                ),
-                RegexReplacement(
-                    pattern=r"os\.environ\.get\(.NPY_PROMOTION_STATE., .weak.\)",
-                    replacement="'weak'",
-                ),
-                RegexReplacement(
-                    pattern=r"try:\s*__NUMPY_SETUP__.*?__NUMPY_SETUP__ = False",
-                    replacement="__NUMPY_SETUP__ = False",
-                    flags=re.DOTALL,
-                ),
-                RegexReplacement(pattern=", einsum, einsum_path"),
-                RegexReplacement(pattern=", .ctypeslib."),
+                )
+                for module in (
+                    "core",
+                    "ctypeslib",
+                    "fft",
+                    "f2py",
+                    "matlib",
+                    "polynomial",
+                    "random",
+                    "rec",
+                    "strings",
+                    "testing",
+                    "typing",
+                )
             }
         ),
         "numpy._core.__init__": {
@@ -264,10 +265,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"from numpy\._core\.function_base import add_newdoc"
             ),
-            RegexReplacement(pattern=", .add_newdoc."),
-            RegexReplacement(pattern=r"from \. import _version"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
-            RegexReplacement(pattern=", .NumpyVersion."),
+            RegexReplacement(pattern=r"from \. import (_version|introspect|mixins)"),
+            RegexReplacement(pattern=", .(add_newdoc|NumpyVersion|introspect|mixins)."),
         },
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,

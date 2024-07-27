@@ -9,6 +9,7 @@ numpy._core.cversions
 numpy._core.defchararray
 numpy._core.einsumfunc
 numpy._core.tests
+numpy._distributor_init
 numpy._expired_attrs_2_0
 numpy._pyinstaller
 numpy._pytesttester
@@ -23,6 +24,8 @@ numpy.doc.ufuncs
 numpy.f2py
 numpy.fft
 numpy.lib._version
+numpy.lib.introspect
+numpy.lib.mixins
 numpy.lib.tests
 numpy.linalg.linalg
 numpy.linalg.tests
