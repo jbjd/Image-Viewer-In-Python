@@ -20,22 +20,6 @@ if os.name == "nt":
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
-    def ask_write_on_fatal_error(
-        error_type: type[BaseException], error: BaseException, error_file: str
-    ) -> bool:
-        """Show windows message box with error. Returns True when user says yes"""
-        MB_YESNO: int = 0x4
-        MB_ICONERROR: int = 0x10
-        IDYES: int = 6
-
-        response: int = windll.user32.MessageBoxW(
-            0,
-            f"{error}\n\nWrite traceback to {error_file}?",
-            f"Unhandled {error_type.__name__} Occurred",
-            MB_YESNO | MB_ICONERROR,
-        )
-        return response == IDYES
-
     def restore_from_bin(original_path: str) -> None:
         try:
             undelete(os.path.normpath(original_path))
@@ -50,11 +34,6 @@ else:  # assume linux for now
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
-
-    def ask_write_on_fatal_error(
-        error_type: type[BaseException], error: BaseException, error_file: str
-    ) -> bool:
-        return True  # TODO: add option for linux
 
     def restore_from_bin(original_path: str) -> None:
         raise NotImplementedError  # TODO: add option for linux

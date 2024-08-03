@@ -7,8 +7,6 @@ import sys
 from functools import partial
 from types import TracebackType
 
-from viewer import ViewerApp
-
 
 def exception_hook(
     error_type: type[BaseException],
@@ -17,12 +15,7 @@ def exception_hook(
     destination_path: str,
 ) -> None:
     """Writes unhandled fatal exception to file"""
-    from util.os import ask_write_on_fatal_error
-
     error_file: str = os.path.join(destination_path, "ERROR.log")
-
-    if not ask_write_on_fatal_error(error_type, error, error_file):
-        return
 
     import traceback
 
@@ -42,5 +35,7 @@ if __name__ == "__main__" and len(sys.argv) > 1:  # pragma: no cover
         path_to_exe_folder = os.path.dirname(path_to_exe_folder)
 
     sys.excepthook = partial(exception_hook, destination_path=path_to_exe_folder)
+
+    from viewer import ViewerApp
 
     ViewerApp(sys.argv[1], path_to_exe_folder)
