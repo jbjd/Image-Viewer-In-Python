@@ -127,16 +127,13 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
         if self._node_is_logging(node):
             super().visit_Pass(node)
             return
-        if (
-            getattr(node.func, "attr", "") not in self.func_calls_to_skip
-            and getattr(node.func, "id", "") not in self.func_calls_to_skip
-        ):
+
+        function_name: str = self._get_node_id_or_attr(node.func)
+        if function_name not in self.func_calls_to_skip:
             super().visit_Call(node)
         else:
             super().visit_Pass(node)
-            self.func_calls_to_skip[
-                getattr(node.func, "attr", "") or getattr(node.func, "id", "")
-            ] += 1
+            self.func_calls_to_skip[function_name] += 1
 
     @staticmethod
     def _node_is_logging(node: ast.Call) -> bool:
@@ -161,11 +158,20 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             super().visit_Pass(node)
             return
 
-        var_name: str = getattr(node.targets[0], "id", "")
-        if var_name not in self.vars_to_skip:
+        var_name: str = self._get_node_id_or_attr(node.targets[0])
+        # TODO: Currently if a.b.c.d only "c" and "d" are checked
+        parent_var_name: str = getattr(
+            getattr(node.targets[0], "value", object), "attr", ""
+        )
+        if (
+            var_name not in self.vars_to_skip
+            and parent_var_name not in self.vars_to_skip
+        ):
             super().visit_Assign(node)
-        else:
+        elif var_name in self.vars_to_skip:
             self.vars_to_skip[var_name] += 1
+        else:
+            self.vars_to_skip[parent_var_name] += 1
 
     @staticmethod
     def _node_is_doc_string_assign(node: ast.Assign) -> bool:
@@ -231,6 +237,11 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
             node.keys = list(new_dict.keys())
             node.values = list(new_dict.values())
         super().visit_Dict(node)
+
+    @staticmethod
+    def _get_node_id_or_attr(node: ast.expr) -> str:
+        """Gets id or attr which both can represent var/function names"""
+        return getattr(node, "attr", "") or getattr(node, "id", "")
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:

@@ -118,6 +118,10 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     },
     "numpy.version": {"full_version", "git_revision", "release", "short_version"},
     "turbojpeg": {
+        "__buffer_size_YUV2",
+        "__compressFromYUV",
+        "__decompressToYUVPlanes",
+        "__decompressToYUV2",
         "TJERR_FATAL",
         "TJCS_CMYK",
         "TJPF_ABGR",
@@ -139,6 +143,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 
 _skip_classes_kwargs: dict[str, set[str]] = {
     "numpy._globals": {"_CopyMode"},
+    "numpy.exceptions": {"VisibleDeprecationWarning"},
     "numpy.lib._utils_impl": {"_Deprecate"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
@@ -216,7 +221,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=", einsum, einsum_path"),
             RegexReplacement(pattern=", (_CopyMode|show_config)"),
-            RegexReplacement(pattern=", .(ctypeslib|__version__)."),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
@@ -278,7 +282,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
-        "numpy._globals": {RegexReplacement(pattern=", ._CopyMode.")},
         "numpy.lib.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(
@@ -305,7 +308,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 )
             ),
         },
-        "numpy.lib._utils_impl": {RegexReplacement(pattern=r", .show_runtime.")},
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
