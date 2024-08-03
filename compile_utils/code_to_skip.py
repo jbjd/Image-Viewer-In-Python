@@ -17,6 +17,14 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_needs_add_docstring",
         "add_newdoc",
     },
+    "numpy.linalg._linalg": {
+        "_convertarray",
+        "_cholesky_dispatcher",
+        "_qr_dispatcher",
+        "_raise_linalgerror_qr",
+        "cholesky",
+        "qr",
+    },
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -328,6 +336,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
         },
         "numpy.linalg._linalg": {
             RegexReplacement(pattern="from numpy._typing.*"),
+            RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
         },
         "numpy.ma.__init__": {remove_numpy_pytester_re},
         "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
