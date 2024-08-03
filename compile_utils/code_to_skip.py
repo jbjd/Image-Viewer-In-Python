@@ -17,7 +17,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_needs_add_docstring",
         "add_newdoc",
     },
-    "numpy.lib._utils_impl": {"deprecate", "deprecate_with_doc", "show_runtime"},
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -115,6 +114,10 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "__array_api_version__",
         "__future_scalars__",
         "__former_attrs__",
+        "_int_extended_msg",
+        "_msg",
+        "_specific_msg",
+        "_type_info",
     },
     "numpy.version": {"full_version", "git_revision", "release", "short_version"},
     "turbojpeg": {
@@ -143,8 +146,13 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 
 _skip_classes_kwargs: dict[str, set[str]] = {
     "numpy._globals": {"_CopyMode"},
-    "numpy.exceptions": {"VisibleDeprecationWarning"},
-    "numpy.lib._utils_impl": {"_Deprecate"},
+    "numpy.exceptions": {
+        "ComplexWarning",
+        "ModuleDeprecationWarning",
+        "RankWarning",
+        "TooHardError",
+        "VisibleDeprecationWarning",
+    },
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "_Tile",
@@ -224,11 +232,12 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
+            RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from .lib._npyio_impl import .*?\)", flags=re.DOTALL
+                pattern=r"from \.lib\.(_npyio_impl|_utils_impl) import .*?\)",
+                flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r" show_runtime,"),
-            RegexReplacement(pattern=r"lib\._npyio_impl\.__all__"),
+            RegexReplacement(pattern=r"lib\.(_npyio_impl|_utils_impl)\.__all__"),
         }.union(
             {
                 RegexReplacement(
@@ -291,7 +300,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(pattern=r"from \. import _.*"),
             RegexReplacement(pattern=r"from numpy\._core.* import .*"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
-            RegexReplacement(pattern=r"from \. import (introspect|mixins|npyio)"),
+            RegexReplacement(
+                pattern=r"from \. import (introspect|mixins|npyio|scimath)"
+            ),
             RegexReplacement(
                 pattern=r",\s+.({}).".format(
                     "|".join(
@@ -307,6 +318,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                     )
                 )
             ),
+        },
+        "numpy.lib._polynomial_impl": {
+            RegexReplacement(pattern=r"from numpy\.exceptions import RankWarning")
         },
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,

@@ -224,6 +224,10 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
         if node.module == "__future__":
             return
 
+        node.names = list(filter(lambda alias: alias.name != "__doc__", node.names))
+        if not node.names:
+            return
+
         super().visit_ImportFrom(node)
 
     def visit_Dict(self, node: ast.Dict) -> None:
