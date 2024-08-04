@@ -18,6 +18,7 @@ numpy._expired_attrs_2_0
 numpy._pyinstaller
 numpy._pytesttester
 numpy._typing
+numpy._utils._inspect
 numpy._utils._pep440
 numpy.char
 numpy.compat

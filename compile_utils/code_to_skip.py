@@ -29,8 +29,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "add_newdoc",
     },
     "numpy._core.getlimits": {"__repr__"},
+    "numpy._core.numeric": {"_frombuffer", "_full_dispatcher"},
     "numpy._core.numerictypes": {"maximum_sctype"},
-    "numpy._core.records": {"__repr__"},
+    "numpy._core.overrides": {"verify_matching_signatures"},
+    "numpy._core.records": {"__repr__", "__str__"},
     "numpy._globals": {"__repr__"},
     "numpy.lib._histograms_impl": {
         "_histogram_bin_edges_dispatcher",
@@ -146,7 +148,8 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "_specific_msg",
         "_type_info",
     },
-    "numpy.version": {"full_version", "git_revision", "release", "short_version"},
+    "numpy._core.numerictypes": {"genericTypeRank"},
+    "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "turbojpeg": {
         "__buffer_size_YUV2",
         "__compressFromYUV",
@@ -324,6 +327,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(
+                pattern=r"from \.\._utils\._inspect import getargspec", count=1
+            ),
+            RegexReplacement(
                 pattern="def decorator.*?return public_api",
                 replacement="def decorator(i): return i",
                 flags=re.DOTALL,
@@ -357,9 +363,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 )
             ),
         },
-        "numpy.lib._polynomial_impl": {
-            RegexReplacement(pattern=r"from numpy\.exceptions import RankWarning")
-        },
         "numpy.linalg.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
@@ -368,7 +371,6 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
         },
-        "numpy.ma.__init__": {remove_numpy_pytester_re},
         "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
         "PIL.__init__": {
             RegexReplacement(
