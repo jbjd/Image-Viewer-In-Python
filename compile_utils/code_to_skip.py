@@ -33,6 +33,14 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy._core.numerictypes": {"maximum_sctype"},
     "numpy._core.overrides": {"verify_matching_signatures"},
     "numpy._core.records": {"__repr__", "__str__"},
+    "numpy._core.strings": {
+        "_join",
+        "_partition",
+        "_rpartition",
+        "_rsplit",
+        "_split",
+        "_splitlines",
+    },
     "numpy._globals": {"__repr__"},
     "numpy.lib._histograms_impl": {
         "_histogram_bin_edges_dispatcher",
@@ -258,7 +266,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
             RegexReplacement(pattern=", einsum, einsum_path"),
-            RegexReplacement(pattern=", (_CopyMode|show_config|histogram_bin_edges)"),
+            RegexReplacement(
+                pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap)"
+            ),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
@@ -301,6 +311,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"from \. import (_add_newdocs|_internal|_dtype).*"
             ),
+            RegexReplacement(pattern=r"from \.memmap import \*", count=1),
             RegexReplacement(pattern=r"from numpy\.version import .*"),
             RegexReplacement(
                 pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",

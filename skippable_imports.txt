@@ -12,6 +12,7 @@ numpy._core._internal
 numpy._core.cversions
 numpy._core.defchararray
 numpy._core.einsumfunc
+numpy._core.memmap
 numpy._core.tests
 numpy._distributor_init
 numpy._expired_attrs_2_0
@@ -60,6 +61,7 @@ packaging
 PIL._deprecate
 PIL._tkinter_finder
 PIL._typing
+PIL._version
 PIL.BdfFontFile
 PIL.BlpImagePlugin
 PIL.BmpImagePlugin
