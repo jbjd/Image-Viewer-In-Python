@@ -441,6 +441,8 @@ class ViewerApp:
         except (OSError, FileExistsError, ValueError):
             self.rename_entry.error_flash()
             return
+        except IndexError:
+            self.exit()
 
         # Cleanup after successful rename
         self.hide_rename_window()
