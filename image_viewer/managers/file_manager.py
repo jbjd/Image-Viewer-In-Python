@@ -74,7 +74,7 @@ class ImageFileManager:
 
         if new_dir != self.image_directory:
             self.image_directory = new_dir
-            self.find_all_images()
+            self.refresh_image_list()
 
         index: int
         found: bool
@@ -102,7 +102,7 @@ class ImageFileManager:
 
     def find_all_images(self) -> None:
         """Init only loads one file, load entire directory here"""
-        image_to_start_at: str = self._files.get_current_image().name
+        image_to_start_at: str = self._files.get_current_image_name()
 
         VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = ImageNameList(
@@ -183,18 +183,12 @@ class ImageFileManager:
         self.remove_current_image()
 
     def remove_current_image(self) -> None:
-        """Deletes image from files array, cache, and optionally disk"""
-        self._clear_current_image_data()
+        """Deletes image from files array and cache"""
+        self._files.remove_current_image()
+        self.image_cache.pop_safe(self.path_to_image)
         self._update_after_move_or_edit()
 
-    def _clear_current_image_data(self) -> None:
-        try:
-            self._files.pop_current_image()
-        except IndexError:
-            pass
-        self.image_cache.pop_safe(self.path_to_image)
-
-    def _clear_image_data(self, index: int) -> None:
+    def remove_image(self, index: int) -> None:
         deleted_name: str = self._files.pop(index).name
         key: str = self.get_path_to_image(deleted_name)
         self.image_cache.pop_safe(key)
@@ -225,6 +219,8 @@ class ImageFileManager:
             )
         else:
             result = self._rename(original_path, new_path)
+            self._files.remove_current_image()
+            self.image_cache.update_key(self.path_to_image, new_path)
 
         self.action_undoer.append(result)
 
@@ -293,11 +289,10 @@ class ImageFileManager:
 
         return Convert(original_path, new_full_path, deleted)
 
-    def _rename(self, original_path: str, new_full_path: str) -> Rename:
+    def _rename(self, original_path: str, new_path: str) -> Rename:
         """Renames a file and returns the rename result"""
-        os.rename(original_path, new_full_path)
-        self._clear_current_image_data()
-        return Rename(original_path, new_full_path)
+        os.rename(original_path, new_path)
+        return Rename(original_path, new_path)
 
     @staticmethod
     def _should_perserve_index(result: Rename) -> bool:
@@ -343,7 +338,7 @@ class ImageFileManager:
             found: bool
             index, found = self._files.binary_search(image_to_remove)
             if found:
-                self._clear_image_data(index)
+                self.remove_image(index)
 
         if image_to_add != "":
             preserve_index: bool = image_to_remove == ""

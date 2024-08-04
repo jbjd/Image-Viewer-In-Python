@@ -37,8 +37,8 @@ class CachedImage:
 class ImageCache(OrderedDict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
-    def pop_safe(self, image_path: str) -> None:
-        self.pop(image_path, None)
+    def pop_safe(self, image_path: str) -> CachedImage | None:
+        return self.pop(image_path, None)
 
     def image_cache_still_fresh(self, image_path: str) -> bool:
         """Returns True when cached image is the same size of the image on disk.
@@ -47,6 +47,14 @@ class ImageCache(OrderedDict[str, CachedImage]):
             return stat(image_path).st_size == self[image_path].byte_size
         except (OSError, ValueError, KeyError):
             return False
+
+    def update_key(self, old_key: str, new_key: str) -> None:
+        """Moves value from old_key to new_key deleting old_key
+        If new_key does not exist, nothing happens"""
+        target: CachedImage | None = self.pop_safe(old_key)
+
+        if target is not None:
+            self[new_key] = target
 
     def __setitem__(self, key: str, value: CachedImage) -> None:
         """Adds check for items in the cache and purges LRU if over limit"""
@@ -80,6 +88,9 @@ class ImageNameList(list[ImageName]):
     def get_current_image(self) -> ImageName:
         return self[self.display_index]
 
+    def get_current_image_name(self) -> str:
+        return self[self.display_index].name
+
     def move_index(self, amount: int) -> None:
         image_count: int = len(self)
         if image_count > 0:
@@ -90,19 +101,17 @@ class ImageNameList(list[ImageName]):
         super().sort()
         self.display_index, _ = self.binary_search(image_to_start_at)
 
-    def pop_current_image(self) -> None:
-        """Pops current index and raises IndexError if last image popped"""
-        super().pop(self.display_index)
+    def remove_current_image(self) -> None:
+        """Safely removes current index"""
+        try:
+            super().pop(self.display_index)
+        except IndexError:
+            pass
 
         image_count: int = len(self)
 
         if self.display_index >= image_count:
             self.display_index = image_count - 1
-
-        # This needs to be after index check if we catch IndexError and add
-        # a new image, index will be -1 which works for newly added image
-        if image_count == 0:
-            raise IndexError
 
     def binary_search(self, target_image: str) -> tuple[int, bool]:
         """Finds index of target_image.
