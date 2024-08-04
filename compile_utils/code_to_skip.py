@@ -12,11 +12,18 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
     "numpy._utils.__init__": {"_rename_parameter"},
+    "numpy._core._dtype": {
+        "__repr__",
+        "__str__",
+        "_name_get",
+        "_name_includes_bit_suffix",
+    },
     "numpy._core.function_base": {
         "_add_docstring",
         "_needs_add_docstring",
         "add_newdoc",
     },
+    "numpy._core.getlimits": {"__repr__"},
     "numpy.lib._histograms_impl": {
         "_histogram_bin_edges_dispatcher",
         "histogram_bin_edges",
@@ -246,7 +253,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.lib\.(_npyio_impl|_utils_impl) import .*?\)",
+                pattern=r"from \.(lib\.(_npyio_impl|_utils_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"lib\.(_npyio_impl|_utils_impl)\.__all__"),
