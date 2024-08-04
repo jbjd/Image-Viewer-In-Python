@@ -3,8 +3,8 @@
 import os
 import platform
 import re
-from collections import defaultdict
 import sys
+from collections import defaultdict
 
 from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
@@ -16,6 +16,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_add_docstring",
         "_needs_add_docstring",
         "add_newdoc",
+    },
+    "numpy.lib._histograms_impl": {
+        "_histogram_bin_edges_dispatcher",
+        "histogram_bin_edges",
     },
     "numpy.linalg._linalg": {
         "_convertarray",
@@ -236,7 +240,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
             RegexReplacement(pattern=", einsum, einsum_path"),
-            RegexReplacement(pattern=", (_CopyMode|show_config)"),
+            RegexReplacement(pattern=", (_CopyMode|show_config|histogram_bin_edges)"),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
@@ -257,6 +261,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                     "ctypeslib",
                     "fft",
                     "f2py",
+                    "ma",
                     "matlib",
                     "polynomial",
                     "random",
