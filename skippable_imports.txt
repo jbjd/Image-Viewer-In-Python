@@ -7,6 +7,8 @@ numpy.__config__
 numpy._configtool
 numpy._core._add_newdocs
 numpy._core._add_newdocs_scalars
+numpy._core._dtype
+numpy._core._internal
 numpy._core.cversions
 numpy._core.defchararray
 numpy._core.einsumfunc
@@ -27,6 +29,7 @@ numpy.f2py
 numpy.fft
 numpy.lib._datasource
 numpy.lib._npyio_impl
+numpy.lib._polynomial_impl
 numpy.lib._scimath_impl
 numpy.lib._user_array_impl
 numpy.lib._utils_impl

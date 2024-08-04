@@ -18,12 +18,20 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_name_get",
         "_name_includes_bit_suffix",
     },
+    "numpy._core.arrayprint": {
+        "_void_scalar_to_string",
+        "dtype_short_repr",
+        "set_string_function",
+    },
     "numpy._core.function_base": {
         "_add_docstring",
         "_needs_add_docstring",
         "add_newdoc",
     },
     "numpy._core.getlimits": {"__repr__"},
+    "numpy._core.numerictypes": {"maximum_sctype"},
+    "numpy._core.records": {"__repr__"},
+    "numpy._globals": {"__repr__"},
     "numpy.lib._histograms_impl": {
         "_histogram_bin_edges_dispatcher",
         "histogram_bin_edges",
@@ -253,10 +261,12 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_npyio_impl|_utils_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r"lib\.(_npyio_impl|_utils_impl)\.__all__"),
+            RegexReplacement(
+                pattern=r"lib\.(_npyio_impl|_utils_impl|_polynomial_impl)\.__all__"
+            ),
         }.union(
             {
                 RegexReplacement(
@@ -285,7 +295,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
                 flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r"from \. import _add_newdocs.*"),
+            RegexReplacement(
+                pattern=r"from \. import (_add_newdocs|_internal|_dtype).*"
+            ),
             RegexReplacement(pattern=r"from numpy\.version import .*"),
             RegexReplacement(
                 pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
@@ -294,6 +306,12 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r".*?einsumfunc.*",
             ),
+        },
+        "numpy._core._methods": {
+            RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
+        },
+        "numpy._core.numerictypes": {
+            RegexReplacement(pattern=r"from \._dtype import _kind_name", count=1),
         },
         "numpy._core.overrides": {
             RegexReplacement(

@@ -257,8 +257,10 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 
     if module_name in regex_to_apply:
         regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
-        for regex, replacement, flags in regex_and_replacement:
-            source, count_replaced = re.subn(regex, replacement, source, flags=flags)
+        for regex, replacement, flags, count in regex_and_replacement:
+            source, count_replaced = re.subn(
+                regex, replacement, source, flags=flags, count=count
+            )
             if count_replaced == 0:
                 warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
 
