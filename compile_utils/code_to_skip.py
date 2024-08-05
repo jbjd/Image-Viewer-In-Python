@@ -509,4 +509,8 @@ data_files_to_exclude: list[str] = [
     "tk/images",
     "tk/msgs",
 ]
+if sys.platform != "darwin":
+    # These are Mac specific encodings
+    data_files_to_exclude.append("tcl/encoding/mac*.enc")
+
 dlls_to_exclude: list[str] = ["libcrypto-*"]
