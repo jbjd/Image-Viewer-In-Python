@@ -148,6 +148,7 @@ _skip_function_calls_kwargs: dict[str, set[str]] = {
 
 _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {
+        "__all__",
         "__array_api_version__",
         "__future_scalars__",
         "__former_attrs__",
@@ -278,7 +279,7 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(
-                pattern=r"lib\.(_npyio_impl|_utils_impl|_polynomial_impl)\.__all__"
+                pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
             ),
         }.union(
             {
