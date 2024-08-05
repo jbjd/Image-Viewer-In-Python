@@ -12,18 +12,13 @@ from shutil import copyfile
 from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
-    folders_to_exlcude,
     function_calls_to_skip,
     functions_to_skip,
     globs_to_exlucde,
     regex_to_apply,
     vars_to_skip,
 )
-from compile_utils.file_operations import (
-    delete_file_globs,
-    delete_folders,
-    regex_replace,
-)
+from compile_utils.file_operations import delete_file_globs, regex_replace
 from compile_utils.regex import RegexReplacement
 
 try:
@@ -346,13 +341,6 @@ def move_files_to_tmp_and_clean(
 def clean_or_delete_auto_included_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
     and cleans up comments/whitespace from necesary tcl files"""
-    # tcl/tzdata is for timezones, which are not used in this program
-    # tk/images contains the tk logo
-    absolute_folders_to_exclude: list[str] = [
-        os.path.join(compile_dir, rel_path) for rel_path in folders_to_exlcude
-    ]
-    delete_folders(absolute_folders_to_exclude)
-
     absolute_globs_to_exclude: list[str] = [
         os.path.join(compile_dir, rel_path) for rel_path in globs_to_exlucde
     ]
