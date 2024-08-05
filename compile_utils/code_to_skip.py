@@ -347,6 +347,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         },
+        "numpy._utils.__init__": {
+            RegexReplacement(pattern=r"from \._convertions import .*", count=1)
+        },
         "numpy.lib.__init__": {
             remove_numpy_pytester_re,
             RegexReplacement(
