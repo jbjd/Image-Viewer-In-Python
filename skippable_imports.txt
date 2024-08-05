@@ -1,3 +1,6 @@
+_bz2
+_hashlib
+_lzma
 argparse
 csv
 email
@@ -127,6 +130,7 @@ PIL.features
 PIL.report
 py_compile
 pydoc
+select
 selectors
 send2trash.win.modern
 socket

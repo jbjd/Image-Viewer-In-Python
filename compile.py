@@ -9,7 +9,7 @@ from typing import Final
 from compile_utils.args import CompileArgumentParser
 from compile_utils.cleaner import (
     clean_file_and_copy,
-    clean_or_delete_auto_included_files,
+    clean_tk_files,
     move_files_to_tmp_and_clean,
 )
 from compile_utils.file_operations import (
@@ -124,7 +124,7 @@ try:
         copy_file(old_path, new_path)
 
     if is_standalone:
-        clean_or_delete_auto_included_files(COMPILE_DIR)
+        clean_tk_files(COMPILE_DIR)
     else:
         # nuitka puts exe outside of dist when not standalone
         os.rename(

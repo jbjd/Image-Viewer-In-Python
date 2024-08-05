@@ -14,11 +14,10 @@ from compile_utils.code_to_skip import (
     dict_keys_to_skip,
     function_calls_to_skip,
     functions_to_skip,
-    globs_to_exlucde,
     regex_to_apply,
     vars_to_skip,
 )
-from compile_utils.file_operations import delete_file_globs, regex_replace
+from compile_utils.file_operations import regex_replace
 from compile_utils.regex import RegexReplacement
 
 try:
@@ -338,14 +337,9 @@ def move_files_to_tmp_and_clean(
         )
 
 
-def clean_or_delete_auto_included_files(compile_dir: str) -> None:
+def clean_tk_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
     and cleans up comments/whitespace from necesary tcl files"""
-    absolute_globs_to_exclude: list[str] = [
-        os.path.join(compile_dir, rel_path) for rel_path in globs_to_exlucde
-    ]
-    delete_file_globs(absolute_globs_to_exclude)
-
     # Removing unused Tk code so we can delete more unused files
     regex_replace(
         os.path.join(compile_dir, "tk/ttk/ttk.tcl"),

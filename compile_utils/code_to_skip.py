@@ -509,13 +509,4 @@ data_files_to_exclude: list[str] = [
     "tk/images",
     "tk/msgs",
 ]
-dlls_to_exclude: list[str] = [
-    "libcrypto-*",
-]
-globs_to_exlucde: list[str] = [
-    "_hashlib.pyd",
-    "_lzma.pyd",
-    "_bz2.pyd",
-]
-if os.name == "nt":
-    globs_to_exlucde.append("select.pyd")
+dlls_to_exclude: list[str] = ["libcrypto-*"]
