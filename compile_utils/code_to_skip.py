@@ -509,9 +509,10 @@ data_files_to_exclude: list[str] = [
     "tk/images",
     "tk/msgs",
 ]
-# tcl testing and http files are inlucded in dist by nuitka
-globs_to_exlucde: list[str] = [
+dlls_to_exclude: list[str] = [
     "libcrypto-*",
+]
+globs_to_exlucde: list[str] = [
     "_hashlib.pyd",
     "_lzma.pyd",
     "_bz2.pyd",

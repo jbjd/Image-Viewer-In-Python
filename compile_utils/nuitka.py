@@ -3,7 +3,7 @@
 import os
 from subprocess import Popen
 
-from compile_utils.code_to_skip import data_files_to_exclude
+from compile_utils.code_to_skip import data_files_to_exclude, dlls_to_exclude
 from compile_utils.package_info import MODULES
 
 
@@ -21,6 +21,7 @@ def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
         ]
         + [f"--follow-import-to={module}" for module in MODULES]
         + [f"--noinclude-data-files={glob}" for glob in data_files_to_exclude]
+        + [f"--noinclude-dlls={glob}" for glob in dlls_to_exclude]
     )
 
     return cmd_args
