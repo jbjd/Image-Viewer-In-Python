@@ -30,6 +30,7 @@ numpy.ctypeslib
 numpy.doc.ufuncs
 numpy.f2py
 numpy.fft
+numpy.lib._arraypad_impl
 numpy.lib._datasource
 numpy.lib._npyio_impl
 numpy.lib._polynomial_impl

@@ -42,6 +42,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_splitlines",
     },
     "numpy._globals": {"__repr__"},
+    "numpy.lib._arraysetops_impl": {"_ediff1d_dispatcher", "ediff1d"},
     "numpy.lib._histograms_impl": {
         "_histogram_bin_edges_dispatcher",
         "histogram_bin_edges",
@@ -270,12 +271,14 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap)"
             ),
+            RegexReplacement(pattern="ediff1d,"),
+            RegexReplacement(pattern=r"from \. import matrixlib.*", count=1),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
