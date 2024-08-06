@@ -1,11 +1,10 @@
-_bz2
-_hashlib
-_lzma
 argparse
+bz2
 csv
 email
 email.message
 email.parser
+hashlib
 numpy.__config__
 numpy._configtool
 numpy._core._add_newdocs
@@ -62,6 +61,7 @@ numpy.testing
 numpy.tests
 numpy.typing
 numpy.version
+lzma
 packaging
 PIL._deprecate
 PIL._tkinter_finder
@@ -135,5 +135,6 @@ selectors
 send2trash.win.modern
 socket
 statistics
+tempfile
 urllib.error
 urllib.request
