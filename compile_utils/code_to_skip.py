@@ -19,7 +19,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_name_includes_bit_suffix",
     },
     "numpy._core.arrayprint": {
+        "_array_repr_dispatcher",
+        "_array_repr_implementation",
         "_void_scalar_to_string",
+        "array_repr",
         "dtype_short_repr",
         "set_string_function",
     },
@@ -104,6 +107,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "duplicate",
         "invert",
         "lighter",
+        "overlay",
         "soft_light",
         "hard_light",
     },
@@ -158,6 +162,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "_specific_msg",
         "_type_info",
     },
+    "numpy._core.arrayprint": {"_default_array_repr"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "turbojpeg": {
@@ -269,9 +274,9 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=", einsum, einsum_path"),
             RegexReplacement(
-                pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap)"
+                pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require)"
             ),
-            RegexReplacement(pattern="ediff1d,"),
+            RegexReplacement(pattern="(ediff1d|array_repr),"),
             RegexReplacement(pattern=r"from \. import matrixlib.*", count=1),
             RegexReplacement(
                 pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
@@ -325,8 +330,12 @@ regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         },
+        "numpy._core.arrayprint": {RegexReplacement(pattern=", .array_repr.")},
         "numpy._core._methods": {
             RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
+        },
+        "numpy._core.numeric": {
+            RegexReplacement(pattern=".*_asarray.*", count=3),
         },
         "numpy._core.numerictypes": {
             RegexReplacement(pattern=r"from \._dtype import _kind_name", count=1),

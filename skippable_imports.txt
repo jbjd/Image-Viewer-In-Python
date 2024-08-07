@@ -9,6 +9,7 @@ numpy.__config__
 numpy._configtool
 numpy._core._add_newdocs
 numpy._core._add_newdocs_scalars
+numpy._core._asarray
 numpy._core._dtype
 numpy._core._internal
 numpy._core.cversions
@@ -121,6 +122,7 @@ PIL.ImageCms
 PIL.ImageDraw2
 PIL.ImageEnhance
 PIL.ImageFilter
+PIL.ImageMorph
 PIL.ImageQt
 PIL.ImageShow
 PIL.ImageWin
