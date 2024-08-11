@@ -246,9 +246,6 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
-    # TODO #6: Find all triple quotes strings, not just ones that start a file
-    source = re.sub(r"^\s*\"\"\".*?\"\"\"", "", source, flags=re.DOTALL)
-
     if module_name in regex_to_apply:
         regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
         for regex, replacement, flags, count in regex_and_replacement:
@@ -340,7 +337,7 @@ def move_files_to_tmp_and_clean(
 def clean_tk_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
     and cleans up comments/whitespace from necesary tcl files"""
-    # Removing unused Tk code so we can delete more unused files
+    # TODO: Move this to code_to_skip so its easier to add new entries
     regex_replace(
         os.path.join(compile_dir, "tk/ttk/ttk.tcl"),
         RegexReplacement(
@@ -351,16 +348,16 @@ def clean_tk_files(compile_dir: str) -> None:
     )
 
     # delete comments in tcl files
-    strip_comments = RegexReplacement(
-        pattern=r"^\s*#.*", replacement="", flags=re.MULTILINE
-    )
+    strip_comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
     strip_whitespace = RegexReplacement(
         pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
     )
-    strip_starting_whitespace = RegexReplacement(pattern=r"^\s+", replacement="")
     strip_consecutive_whitespace = RegexReplacement(
         pattern="[ \t][ \t]+", replacement=" "
     )
+    remove_prints = RegexReplacement(pattern="^(puts|parray) .*", flags=re.MULTILINE)
+    clean_up_new_lines = RegexReplacement(pattern="\n\n+", replacement="\n")
+    clean_up_starting_new_line = RegexReplacement(pattern="^\n", count=1)
 
     for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
         os.path.join(compile_dir, "**/*.tm"), recursive=True
@@ -370,8 +367,10 @@ def clean_tk_files(compile_dir: str) -> None:
             [
                 strip_comments,
                 strip_whitespace,
-                strip_starting_whitespace,
                 strip_consecutive_whitespace,
+                remove_prints,
+                clean_up_new_lines,
+                clean_up_starting_new_line,
             ],
         )
 
