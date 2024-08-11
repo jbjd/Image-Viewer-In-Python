@@ -109,7 +109,7 @@ try:
         args.python_path, input_file, WORKING_DIR, nuitka_args
     )
 
-    install_path: str = args.install_path
+    install_path: str = args.install_path if not args.debug else COMPILE_DIR
     os.makedirs(install_path, exist_ok=True)
 
     print("Waiting for nuitka compilation...")
@@ -143,7 +143,7 @@ finally:
 print("\nFinished")
 print("Installed to", install_path)
 
-path_to_check: str = install_path if not args.debug else COMPILE_DIR
+path_to_check: str = install_path
 install_byte_size: int = sum(
     os.stat(p).st_size
     for p in glob(f"{path_to_check}/**/*", recursive=True)
