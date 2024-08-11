@@ -49,6 +49,7 @@ def regex_replace(
             regex_replacement.pattern,
             regex_replacement.replacement,
             contents,
+            count=regex_replacement.count,
             flags=regex_replacement.flags,
         )
 

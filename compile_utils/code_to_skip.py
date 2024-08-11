@@ -236,7 +236,7 @@ remove_numpy_pytester_re = RegexReplacement(
     pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",
     flags=re.DOTALL,
 )
-regex_to_apply: defaultdict[str, set[RegexReplacement]] = defaultdict(
+regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
     set,
     {
         "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
@@ -491,7 +491,7 @@ iterable_type = Iterable""",
     },
 )
 if os.name == "nt":
-    regex_to_apply["turbojpeg"].add(
+    regex_to_apply_py["turbojpeg"].add(
         RegexReplacement(
             pattern=r"if platform.system\(\) == 'Linux'.*return lib_path",
             flags=re.DOTALL,
@@ -500,12 +500,36 @@ if os.name == "nt":
 
 # Use platform since that what these modules check
 if sys.platform != "linux":
-    regex_to_apply["numpy.__init__"].add(
+    regex_to_apply_py["numpy.__init__"].add(
         RegexReplacement(
             pattern=r"def hugepage_setup\(\):.*?del hugepage_setup",
             replacement="_core.multiarray._set_madvise_hugepage(1)",
             flags=re.DOTALL,
         )
+    )
+
+# Keys are relative paths or globs. globs should target a single file
+regex_to_apply_tk: defaultdict[str, set[RegexReplacement]] = defaultdict(
+    set,
+    {
+        "tk/ttk/ttk.tcl": {
+            # Loads themes that are not used
+            RegexReplacement(
+                pattern="proc ttk::LoadThemes.*?\n}",
+                replacement="proc ttk::LoadThemes {} {}",
+                flags=re.DOTALL,
+            ),
+        },
+        "tcl8/*/platform-*.tm": {
+            # Discontinued OS
+            RegexReplacement(pattern=r"osf1 \{.*?\}", count=1, flags=re.DOTALL)
+        },
+    },
+)
+
+if sys.platform != "darwin":
+    regex_to_apply_tk["tcl8/*/platform-*.tm"].add(
+        RegexReplacement(pattern="set plat macosx", count=1)
     )
 
 data_files_to_exclude: list[str] = [

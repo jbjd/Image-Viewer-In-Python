@@ -14,7 +14,8 @@ from compile_utils.code_to_skip import (
     dict_keys_to_skip,
     function_calls_to_skip,
     functions_to_skip,
-    regex_to_apply,
+    regex_to_apply_py,
+    regex_to_apply_tk,
     vars_to_skip,
 )
 from compile_utils.file_operations import regex_replace
@@ -246,8 +247,8 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
-    if module_name in regex_to_apply:
-        regex_and_replacement: set[RegexReplacement] = regex_to_apply[module_name]
+    if module_name in regex_to_apply_py:
+        regex_and_replacement: set[RegexReplacement] = regex_to_apply_py[module_name]
         for regex, replacement, flags, count in regex_and_replacement:
             source, count_replaced = re.subn(
                 regex, replacement, source, flags=flags, count=count
@@ -337,15 +338,16 @@ def move_files_to_tmp_and_clean(
 def clean_tk_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
     and cleans up comments/whitespace from necesary tcl files"""
-    # TODO: Move this to code_to_skip so its easier to add new entries
-    regex_replace(
-        os.path.join(compile_dir, "tk/ttk/ttk.tcl"),
-        RegexReplacement(
-            pattern="proc ttk::LoadThemes.*?\n}",
-            replacement="proc ttk::LoadThemes {} {}",
-            flags=re.DOTALL,
-        ),
-    )
+    for path_or_glob, regexs in regex_to_apply_tk.items():
+        glob_result: list[str] = glob(os.path.join(compile_dir, path_or_glob))
+        if not glob_result:
+            warnings.warn(f"{path_or_glob}: Glob not found")
+            continue
+
+        # globs are used since files may have versioning in name
+        # They are intended to target a single file
+        code_file: str = glob_result[0]
+        regex_replace(code_file, regexs)
 
     # delete comments in tcl files
     strip_comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
