@@ -247,6 +247,9 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
+    # Remove module strings just so we have less to parse/write back to file
+    source = re.sub(r"^\s*\"\"\".*?\"\"\"", "", source, count=1, flags=re.DOTALL)
+
     if module_name in regex_to_apply_py:
         regex_and_replacement: set[RegexReplacement] = regex_to_apply_py[module_name]
         for regex, replacement, flags, count in regex_and_replacement:

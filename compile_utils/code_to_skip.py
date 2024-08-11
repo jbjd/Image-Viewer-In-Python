@@ -247,10 +247,7 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
             RegexReplacement(
-                pattern=r"elif attr == .array_api.:.*?\)", flags=re.DOTALL
-            ),
-            RegexReplacement(
-                pattern=r"elif attr == .distutils.:.*?\)", flags=re.DOTALL
+                pattern=r"elif attr == .(array_api|distutils).:.*?\)", flags=re.DOTALL
             ),
             RegexReplacement(  # These are all deprecation warnings
                 pattern=r"if attr in _.*?\)", flags=re.DOTALL
@@ -272,7 +269,7 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
-            RegexReplacement(pattern=", einsum, einsum_path"),
+            RegexReplacement(pattern=", einsum, einsum_path", count=1),
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require)"
             ),
@@ -330,10 +327,10 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         },
-        "numpy._core.arrayprint": {RegexReplacement(pattern=", .array_repr.")},
         "numpy._core._methods": {
             RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
         },
+        "numpy._core.arrayprint": {RegexReplacement(pattern=", .array_repr.")},
         "numpy._core.numeric": {
             RegexReplacement(pattern=".*_asarray.*", count=3),
         },
