@@ -163,9 +163,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Skip unnecessary futures imports"""
-        if node.module == "__future__":
-            return
-
         node.names = list(filter(lambda alias: alias.name != "__doc__", node.names))
         if not node.names:
             return
