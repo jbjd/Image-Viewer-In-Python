@@ -33,42 +33,22 @@ else:
 class CleanUnpsarser(MinifyUnparser):  # type: ignore
     """Removes various bits of unneeded code like type hints"""
 
-    VARS_TRACKING_REMOVED = ["func_to_skip", "vars_to_skip", "classes_to_skip"]
-
     def __init__(self, module_name: str = "") -> None:
-        super().__init__(target_python_version=MINIMUM_PYTHON_VERSION)
-
-        # dict to track if provided values are used
-        self.func_to_skip: dict[str, int] = {
-            k: 0 for k in functions_to_skip[module_name]
-        }
-        self.vars_to_skip: dict[str, int] = {k: 0 for k in vars_to_skip[module_name]}
-        self.classes_to_skip: dict[str, int] = {
-            k: 0 for k in classes_to_skip[module_name]
-        }
-        self.dict_keys_to_skip: dict[str, int] = {
-            k: 0 for k in dict_keys_to_skip[module_name]
-        }
+        super().__init__(
+            target_python_version=MINIMUM_PYTHON_VERSION,
+            functions_to_skip=functions_to_skip[module_name],
+            vars_to_skip=vars_to_skip[module_name],
+            classes_to_skip=classes_to_skip[module_name],
+            dict_keys_to_skip=dict_keys_to_skip[module_name],
+        )
 
     def visit_Pass(self, node: ast.Pass | None = None) -> None:
         super().visit_Pass(node if node else ast.Pass())
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Disable removing annotations within class vars for safety"""
-        if node.name in self.classes_to_skip:
-            self.classes_to_skip[node.name] += 1
-            return
-
+        # Remove ABC since its basically a parent class no-op
         base_classes_to_ignore: list[str] = ["ABC"]
         super().visit_ClassDef(node, base_classes_to_ignore=base_classes_to_ignore)
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Skips some functions and removes type hints from the rest"""
-        if node.name in self.func_to_skip:
-            self.func_to_skip[node.name] += 1
-            return
-
-        super().visit_FunctionDef(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         # Skips warnings.warn() calls
@@ -76,12 +56,7 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             self.visit_Pass()
             return
 
-        function_name: str = self._get_node_id_or_attr(node.func)
-        if function_name not in self.func_to_skip:
-            super().visit_Call(node)
-        else:
-            self.visit_Pass()
-            self.func_to_skip[function_name] += 1
+        super().visit_Call(node)
 
     @staticmethod
     def _node_is_logging(node: ast.Call) -> bool:
@@ -98,28 +73,7 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
         if getattr(getattr(node.value, "func", object), "attr", "") == "getLogger":
             return
 
-        if (
-            self._node_is_doc_string_assign(node)
-            or getattr(getattr(node.value, "func", object), "id", "")
-            in self.func_to_skip
-        ):
-            self.visit_Pass()
-            return
-
-        var_name: str = self._get_node_id_or_attr(node.targets[0])
-        # TODO: Currently if a.b.c.d only "c" and "d" are checked
-        parent_var_name: str = getattr(
-            getattr(node.targets[0], "value", object), "attr", ""
-        )
-        if (
-            var_name not in self.vars_to_skip
-            and parent_var_name not in self.vars_to_skip
-        ):
-            super().visit_Assign(node)
-        elif var_name in self.vars_to_skip:
-            self.vars_to_skip[var_name] += 1
-        else:
-            self.vars_to_skip[parent_var_name] += 1
+        super().visit_Assign(node)
 
     @staticmethod
     def _node_is_doc_string_assign(node: ast.Assign) -> bool:
@@ -127,14 +81,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             isinstance(node.targets[0], ast.Attribute)
             and node.targets[0].attr == "__doc__"
         )
-
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        var_name: str = self._get_node_id_or_attr(node.target)
-        if var_name in self.vars_to_skip:
-            self.vars_to_skip[var_name] += 1
-            return
-
-        super().visit_AnnAssign(node)
 
     def visit_If(self, node: ast.If) -> None:
         # Skip if __name__ = "__main__"
@@ -160,23 +106,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
 
         super().visit_ImportFrom(node)
 
-    def visit_Dict(self, node: ast.Dict) -> None:
-        """Replace some dict constants"""
-        if self.dict_keys_to_skip:
-            new_dict = {
-                k: v
-                for k, v in zip(node.keys, node.values)
-                if getattr(k, "value", "") not in self.dict_keys_to_skip
-            }
-            node.keys = list(new_dict.keys())
-            node.values = list(new_dict.values())
-        super().visit_Dict(node)
-
-    @staticmethod
-    def _get_node_id_or_attr(node: ast.expr) -> str:
-        """Gets id or attr which both can represent var/function names"""
-        return getattr(node, "attr", "") or getattr(node, "id", "")
-
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
     with open(path, "r", encoding="utf-8") as fp:
@@ -194,18 +123,6 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
     parsed_source: ast.Module = ast.parse(source)
     code_cleaner = CleanUnpsarser(module_name)
     source = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
-
-    # Check for code that was marked to ksip, but was not found in the module
-    for var in code_cleaner.VARS_TRACKING_REMOVED:
-        tracker = getattr(code_cleaner, var)
-        unused_but_requested: set[str] = {k for k, v in tracker.items() if v == 0}
-        if unused_but_requested:
-            warnings.warn(
-                (
-                    f"{module_name}: {','.join(unused_but_requested)} requested to skip"
-                    f" in {var} but was not present"
-                )
-            )
 
     edit_imports: bool = module_name[:5] != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)
