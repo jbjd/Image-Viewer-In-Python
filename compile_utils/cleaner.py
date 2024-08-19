@@ -51,22 +51,37 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
     def __init__(self, module_name: str = "") -> None:
         super().__init__()
 
-        # dict to track if provided values are used
-        self.func_to_skip: dict[str, int] = {
-            k: 0 for k in functions_to_skip[module_name]
-        }
-        self.vars_to_skip: dict[str, int] = {k: 0 for k in vars_to_skip[module_name]}
-        self.classes_to_skip: dict[str, int] = {
-            k: 0 for k in classes_to_skip[module_name]
-        }
-        self.func_calls_to_skip: dict[str, int] = {
-            k: 0 for k in function_calls_to_skip[module_name]
-        }
-        self.dict_keys_to_skip: dict[str, int] = {
-            k: 0 for k in dict_keys_to_skip[module_name]
-        }
+        # Counts times item was skipped
+        self.func_to_skip: dict[str, int] = self._set_to_dict_of_counts(
+            functions_to_skip[module_name]
+        )
+        self.vars_to_skip: dict[str, int] = self._set_to_dict_of_counts(
+            vars_to_skip[module_name]
+        )
+        self.classes_to_skip: dict[str, int] = self._set_to_dict_of_counts(
+            classes_to_skip[module_name]
+        )
+        self.func_calls_to_skip: dict[str, int] = self._set_to_dict_of_counts(
+            function_calls_to_skip[module_name]
+        )
+        self.dict_keys_to_skip: dict[str, int] = self._set_to_dict_of_counts(
+            dict_keys_to_skip[module_name]
+        )
 
         self.write_annotations_without_value: bool = False
+
+    @staticmethod
+    def _set_to_dict_of_counts(input_set: set[str]) -> dict[str, int]:
+        return {key: 0 for key in input_set}
+
+    def visit_arguments(self, node: ast.arguments) -> None:
+        """Remove annotations from args/kwargs"""
+        if node.kwarg:
+            node.kwarg.annotation = None
+        if node.vararg:
+            node.vararg.annotation = None
+
+        super().visit_arguments(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Disable removing annotations within class vars for safety"""
