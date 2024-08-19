@@ -34,7 +34,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy._core.getlimits": {"__repr__"},
     "numpy._core.numeric": {"_frombuffer", "_full_dispatcher"},
     "numpy._core.numerictypes": {"maximum_sctype"},
-    "numpy._core.overrides": {"verify_matching_signatures"},
+    "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
     "numpy._core.records": {"__repr__", "__str__"},
     "numpy._core.strings": {
         "_join",
@@ -84,11 +84,11 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "alpha_composite",
         "blend",
         "composite",
+        "deprecate",
         "fromqimage",
         "fromqpixmap",
         "getexif",
         "getxmp",
-        "preinit",
         "effect_mandelbrot",
         "get_child_images",
         "linear_gradient",
@@ -120,6 +120,8 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "load_default",
         "load_path",
     },
+    "PIL.ImageMath": {"eval", "unsafe_eval"},
+    "PIL.ImageMode": {"deprecate"},
     "PIL.ImageOps": {
         "autocontrast",
         "colorize",
@@ -134,18 +136,8 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
-    "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
-    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
-    "PIL.ImageMath": {"eval", "unsafe_eval"},
-    "PIL.TiffTags": {"_populate"},
-}
-
-_skip_function_calls_kwargs: dict[str, set[str]] = {
-    "numpy._core.overrides": {"add_docstring"},
-    "PIL.Image": {"_apply_env_variables", "deprecate"},
-    "PIL.ImageMode": {"deprecate"},
-    "PIL.GifImagePlugin": {"register_mime"},
-    "PIL.JpegImagePlugin": {"register_mime"},
+    "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
+    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
     "PIL.PngImagePlugin": {"register_mime"},
     "PIL.WebPImagePlugin": {"register_mime"},
     "PIL.TiffTags": {"_populate"},
@@ -224,9 +216,6 @@ dict_keys_to_skip: defaultdict[str, set[str]] = defaultdict(
 )
 functions_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_functions_kwargs
-)
-function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_function_calls_kwargs
 )
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
@@ -435,6 +424,9 @@ except ImportError:
                 pattern=r"try:\n    #.*?from \. import _imaging as core.*?except.*?raise",  # noqa: E501
                 replacement="from . import _imaging as core",
                 flags=re.DOTALL,
+            ),
+            RegexReplacement(
+                pattern=r"def preinit\(\).*_initialized = 1", flags=re.DOTALL
             ),
         },
         "PIL.ImageDraw": {

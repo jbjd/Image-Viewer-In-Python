@@ -14,7 +14,6 @@ from personal_python_minifier.flake_wrapper import run_autoflake
 from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
-    function_calls_to_skip,
     functions_to_skip,
     regex_to_apply_py,
     regex_to_apply_tk,
@@ -34,12 +33,7 @@ else:
 class CleanUnpsarser(MinifyUnparser):  # type: ignore
     """Removes various bits of unneeded code like type hints"""
 
-    VARS_TRACKING_REMOVED = [
-        "func_to_skip",
-        "vars_to_skip",
-        "classes_to_skip",
-        "func_calls_to_skip",
-    ]
+    VARS_TRACKING_REMOVED = ["func_to_skip", "vars_to_skip", "classes_to_skip"]
 
     def __init__(self, module_name: str = "") -> None:
         super().__init__(target_python_version=MINIMUM_PYTHON_VERSION)
@@ -51,9 +45,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
         self.vars_to_skip: dict[str, int] = {k: 0 for k in vars_to_skip[module_name]}
         self.classes_to_skip: dict[str, int] = {
             k: 0 for k in classes_to_skip[module_name]
-        }
-        self.func_calls_to_skip: dict[str, int] = {
-            k: 0 for k in function_calls_to_skip[module_name]
         }
         self.dict_keys_to_skip: dict[str, int] = {
             k: 0 for k in dict_keys_to_skip[module_name]
@@ -86,11 +77,11 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             return
 
         function_name: str = self._get_node_id_or_attr(node.func)
-        if function_name not in self.func_calls_to_skip:
+        if function_name not in self.func_to_skip:
             super().visit_Call(node)
         else:
             self.visit_Pass()
-            self.func_calls_to_skip[function_name] += 1
+            self.func_to_skip[function_name] += 1
 
     @staticmethod
     def _node_is_logging(node: ast.Call) -> bool:
@@ -110,7 +101,7 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
         if (
             self._node_is_doc_string_assign(node)
             or getattr(getattr(node.value, "func", object), "id", "")
-            in self.func_calls_to_skip
+            in self.func_to_skip
         ):
             self.visit_Pass()
             return
