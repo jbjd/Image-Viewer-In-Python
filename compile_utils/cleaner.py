@@ -45,10 +45,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
     def visit_Pass(self, node: ast.Pass | None = None) -> None:
         super().visit_Pass(node if node else ast.Pass())
 
-    @staticmethod
-    def _set_to_dict_of_counts(input_set: set[str]) -> dict[str, int]:
-        return {key: 0 for key in input_set}
-
     def visit_arguments(self, node: ast.arguments) -> None:
         """Remove annotations from args/kwargs"""
         if node.kwarg:
