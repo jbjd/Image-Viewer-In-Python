@@ -45,22 +45,13 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
     def visit_Pass(self, node: ast.Pass | None = None) -> None:
         super().visit_Pass(node if node else ast.Pass())
 
-    def visit_arguments(self, node: ast.arguments) -> None:
-        """Remove annotations from args/kwargs"""
-        if node.kwarg:
-            node.kwarg.annotation = None
-        if node.vararg:
-            node.vararg.annotation = None
-
-        super().visit_arguments(node)
-
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         # Remove ABC since its basically a parent class no-op
         base_classes_to_ignore: list[str] = ["ABC"]
         super().visit_ClassDef(node, base_classes_to_ignore=base_classes_to_ignore)
 
     def visit_Call(self, node: ast.Call) -> None:
-        # Skips warnings.warn() calls
+        # Skips logging/warnings
         if self._node_is_logging(node):
             self.visit_Pass()
             return
