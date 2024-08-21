@@ -24,7 +24,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_void_scalar_to_string",
         "array_repr",
         "dtype_short_repr",
-        "set_string_function",
     },
     "numpy._core.function_base": {
         "_add_docstring",
@@ -38,8 +37,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy._core.records": {"__repr__", "__str__"},
     "numpy._core.strings": {
         "_join",
-        "_partition",
-        "_rpartition",
         "_rsplit",
         "_split",
         "_splitlines",
@@ -182,14 +179,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
-    "numpy._globals": {"_CopyMode"},
-    "numpy.exceptions": {
-        "ComplexWarning",
-        "ModuleDeprecationWarning",
-        "RankWarning",
-        "TooHardError",
-        "VisibleDeprecationWarning",
-    },
+    "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "_Tile",
@@ -258,7 +248,7 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
-            RegexReplacement(pattern=", einsum, einsum_path", count=1),
+            RegexReplacement(pattern="einsum, einsum_path, ", count=1),
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require)"
             ),
@@ -346,7 +336,14 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
         },
         "numpy._utils.__init__": {
-            RegexReplacement(pattern=r"from \._convertions import .*", count=1)
+            RegexReplacement(
+                pattern="^.*",
+                replacement="""
+def set_module(_):
+    def d(f):return f
+    return d""",
+                flags=re.DOTALL,
+            )
         },
         "numpy.lib.__init__": {
             remove_numpy_pytester_re,
