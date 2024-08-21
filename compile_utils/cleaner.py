@@ -68,20 +68,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             and "log" in getattr(node.func, "value", ast.Name("")).id
         )
 
-    def visit_Assign(self, node: ast.Assign) -> None:
-        """Skips over some variables"""
-        if getattr(getattr(node.value, "func", object), "attr", "") == "getLogger":
-            return
-
-        super().visit_Assign(node)
-
-    @staticmethod
-    def _node_is_doc_string_assign(node: ast.Assign) -> bool:
-        return (
-            isinstance(node.targets[0], ast.Attribute)
-            and node.targets[0].attr == "__doc__"
-        )
-
     def visit_If(self, node: ast.If) -> None:
         # Skip if __name__ = "__main__"
         try:
