@@ -347,7 +347,14 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             ),
         },
         "numpy._utils.__init__": {
-            RegexReplacement(pattern=r"from \._convertions import .*", count=1)
+            RegexReplacement(
+                pattern="^.*",
+                replacement="""
+def set_module(_):
+    def d(f):return f
+    return d""",
+                flags=re.DOTALL,
+            )
         },
         "numpy.lib.__init__": {
             remove_numpy_pytester_re,
