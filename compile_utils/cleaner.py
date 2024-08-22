@@ -54,21 +54,17 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
         super().visit_ClassDef(node, base_classes_to_ignore=base_classes_to_ignore)
 
     def visit_Call(self, node: ast.Call) -> None:
-        # Skips logging/warnings
-        if self._node_is_logging(node):
+        if self._node_is_warn(node):
             self.visit_Pass()
             return
 
         super().visit_Call(node)
 
     @staticmethod
-    def _node_is_logging(node: ast.Call) -> bool:
+    def _node_is_warn(node: ast.Call) -> bool:
         return (
-            getattr(node.func, "attr", "") in ("warn", "filterwarnings", "simplefilter")
+            getattr(node.func, "attr", "") == "warn"
             and getattr(node.func, "value", ast.Name("")).id == "warnings"
-        ) or (
-            getattr(node.func, "attr", "") == "debug"
-            and "log" in getattr(node.func, "value", ast.Name("")).id
         )
 
     def visit_If(self, node: ast.If) -> None:

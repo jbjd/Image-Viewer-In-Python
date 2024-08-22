@@ -10,7 +10,7 @@ from compile_utils.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
-    "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
+    "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
     "numpy._core._dtype": {
         "__repr__",
         "__str__",
@@ -80,6 +80,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "alpha_composite",
         "blend",
         "composite",
+        "debug",
         "deprecate",
         "fromqimage",
         "fromqpixmap",
@@ -135,7 +136,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
-    "PIL.PngImagePlugin": {"getLogger", "register_mime"},
+    "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
     "PIL.WebPImagePlugin": {"register_mime"},
     "PIL.TiffTags": {"_populate"},
 }
