@@ -45,9 +45,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             dict_keys_to_skip=dict_keys_to_skip[module_name],
         )
 
-        if module_name == "numpy.lib.array_utils":
-            pass
-
     def visit_Pass(self, node: ast.Pass | None = None) -> None:
         super().visit_Pass(node if node else ast.Pass())
 
