@@ -196,6 +196,11 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageTk": {"BitmapImage"},
 }
 
+_skip_from_imports: dict[str, set[str]] = {
+    "numpy.lib.array_utils": {"__doc__"},
+    "numpy.lib.stride_tricks": {"__doc__"},
+}
+
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
     "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
 }
@@ -209,6 +214,9 @@ functions_to_skip: defaultdict[str, set[str]] = defaultdict(
 )
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
+from_imports_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_from_imports
+)
 
 remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(

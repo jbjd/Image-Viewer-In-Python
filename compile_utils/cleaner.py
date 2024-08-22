@@ -14,6 +14,7 @@ from personal_python_minifier.flake_wrapper import run_autoflake
 from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
+    from_imports_to_skip,
     functions_to_skip,
     regex_to_apply_py,
     regex_to_apply_tk,
@@ -39,8 +40,12 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             functions_to_skip=functions_to_skip[module_name],
             vars_to_skip=vars_to_skip[module_name],
             classes_to_skip=classes_to_skip[module_name],
+            from_imports_to_skip=from_imports_to_skip[module_name],
             dict_keys_to_skip=dict_keys_to_skip[module_name],
         )
+
+        if module_name == "numpy.lib.array_utils":
+            pass
 
     def visit_Pass(self, node: ast.Pass | None = None) -> None:
         super().visit_Pass(node if node else ast.Pass())
@@ -83,14 +88,6 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
             return
 
         super().visit_If(node)
-
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Skip unnecessary futures imports"""
-        node.names = list(filter(lambda alias: alias.name != "__doc__", node.names))
-        if not node.names:
-            return
-
-        super().visit_ImportFrom(node)
 
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
