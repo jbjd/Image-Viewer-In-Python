@@ -8,7 +8,9 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
-from personal_python_minifier.parser import MinifyUnparser
+from personal_python_minifier.parser import parse_source_to_module_node
+from personal_python_minifier.parser.config import ExcludeConfig
+from personal_python_minifier.parser.excluder import ExcludeUnparser
 from personal_python_minifier.flake_wrapper import run_autoflake
 
 from compile_utils.code_to_skip import (
@@ -31,22 +33,21 @@ else:
     separators = r"[/]"
 
 
-class CleanUnpsarser(MinifyUnparser):  # type: ignore
+class CleanUnpsarser(ExcludeUnparser):  # type: ignore
     """Removes various bits of unneeded code like type hints"""
 
     def __init__(self, module_name: str = "") -> None:
+        config: ExcludeConfig = ExcludeConfig(skip_name_equals_main=True)
+
         super().__init__(
             target_python_version=MINIMUM_PYTHON_VERSION,
-            skip_name_equals_main=True,
+            config=config,
             functions_to_skip=functions_to_skip[module_name],
             vars_to_skip=vars_to_skip[module_name],
             classes_to_skip=classes_to_skip[module_name],
             from_imports_to_skip=from_imports_to_skip[module_name],
             dict_keys_to_skip=dict_keys_to_skip[module_name],
         )
-
-    def visit_Pass(self, node: ast.Pass | None = None) -> None:
-        super().visit_Pass(node if node else ast.Pass())
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         # Remove ABC since its basically a parent class no-op
@@ -55,7 +56,7 @@ class CleanUnpsarser(MinifyUnparser):  # type: ignore
 
     def visit_Call(self, node: ast.Call) -> None:
         if self._node_is_warn(node):
-            self.visit_Pass()
+            self.visit_Pass(ast.Pass())
             return
 
         super().visit_Call(node)
@@ -90,9 +91,8 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             if count_replaced == 0:
                 warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
 
-    parsed_source: ast.Module = ast.parse(source)
     code_cleaner = CleanUnpsarser(module_name)
-    source = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
+    source = code_cleaner.visit(parse_source_to_module_node(source))
 
     edit_imports: bool = module_name[:5] != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)
