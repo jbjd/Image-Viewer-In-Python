@@ -155,6 +155,9 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.arrayprint": {"_default_array_repr"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
+    "numpy.lib._function_base_impl": {"__doc__"},
+    "numpy.lib._shape_base_impl": {"__doc__"},
+    "numpy.linalg._linalg": {"__doc__"},
     "turbojpeg": {
         "__buffer_size_YUV2",
         "__compressFromYUV",
@@ -180,6 +183,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
+    "helpers.action_undoer": {"ABC"},
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
@@ -218,6 +222,7 @@ classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_k
 from_imports_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_from_imports
 )
+
 
 remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(

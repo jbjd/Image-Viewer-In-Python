@@ -9,9 +9,13 @@ from re import sub
 from shutil import copyfile
 
 from personal_python_minifier.parser import parse_source_to_module_node
-from personal_python_minifier.parser.config import ExcludeConfig
-from personal_python_minifier.parser.excluder import ExcludeUnparser
+from personal_python_minifier.parser.config import (
+    SectionsToSkipConfig,
+    TokensToSkipConfig,
+)
+from personal_python_minifier.parser.minifier import MinifyUnparser
 from personal_python_minifier.flake_wrapper import run_autoflake
+from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
@@ -33,26 +37,13 @@ else:
     separators = r"[/]"
 
 
-class CleanUnpsarser(ExcludeUnparser):  # type: ignore
-    """Removes various bits of unneeded code like type hints"""
+class ExclusionUnparser(MinifyUnparser):  # type: ignore
+    """Extends parent to exclude specific things only relevent to this codebase"""
 
     def __init__(self, module_name: str = "") -> None:
-        config: ExcludeConfig = ExcludeConfig(skip_name_equals_main=True)
-
         super().__init__(
-            target_python_version=MINIMUM_PYTHON_VERSION,
-            config=config,
-            functions_to_skip=functions_to_skip[module_name],
-            vars_to_skip=vars_to_skip[module_name],
-            classes_to_skip=classes_to_skip[module_name],
-            from_imports_to_skip=from_imports_to_skip[module_name],
-            dict_keys_to_skip=dict_keys_to_skip[module_name],
+            module_name=module_name, target_python_version=MINIMUM_PYTHON_VERSION
         )
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        # Remove ABC since its basically a parent class no-op
-        base_classes_to_ignore: list[str] = ["ABC"]
-        super().visit_ClassDef(node, base_classes_to_ignore=base_classes_to_ignore)
 
     def visit_Call(self, node: ast.Call) -> None:
         if self._node_is_warn(node):
@@ -91,7 +82,18 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             if count_replaced == 0:
                 warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
 
-    code_cleaner = CleanUnpsarser(module_name)
+    code_cleaner: ExclusionUnparser = ExclusionUnparser(module_name)
+    code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
+        code_cleaner,
+        SectionsToSkipConfig(skip_name_equals_main=True),
+        TokensToSkipConfig(
+            classes=classes_to_skip[module_name],
+            dict_keys=dict_keys_to_skip[module_name],
+            from_imports=from_imports_to_skip[module_name],
+            functions=functions_to_skip[module_name],
+            variables=vars_to_skip[module_name],
+        ),
+    )
     source = code_cleaner.visit(parse_source_to_module_node(source))
 
     edit_imports: bool = module_name[:5] != "numpy"
