@@ -6,7 +6,7 @@ import re
 import sys
 from collections import defaultdict
 
-from compile_utils.regex import RegexReplacement
+from personal_python_minifier.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
@@ -229,11 +229,11 @@ remove_numpy_pytester_re = RegexReplacement(
     pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",
     flags=re.DOTALL,
 )
-regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
-    set,
+regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
+    list,
     {
-        "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
-        "numpy.__init__": {
+        "util.PIL": [RegexReplacement(pattern=r"_Image._plugins = \[\]")],
+        "numpy.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
@@ -279,29 +279,28 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
             ),
-        }.union(
-            {
-                RegexReplacement(
-                    pattern="elif attr == .{0}.:.*?return {0}".format(module),
-                    flags=re.DOTALL,
-                )
-                for module in (
-                    "core",
-                    "ctypeslib",
-                    "fft",
-                    "f2py",
-                    "ma",
-                    "matlib",
-                    "polynomial",
-                    "random",
-                    "rec",
-                    "strings",
-                    "testing",
-                    "typing",
-                )
-            }
-        ),
-        "numpy._core.__init__": {
+        ]
+        + [
+            RegexReplacement(
+                pattern="elif attr == .{0}.:.*?return {0}".format(module),
+                flags=re.DOTALL,
+            )
+            for module in (
+                "core",
+                "ctypeslib",
+                "fft",
+                "f2py",
+                "ma",
+                "matlib",
+                "polynomial",
+                "random",
+                "rec",
+                "strings",
+                "testing",
+                "typing",
+            )
+        ],
+        "numpy._core.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
@@ -319,18 +318,18 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r".*?einsumfunc.*",
             ),
-        },
-        "numpy._core._methods": {
+        ],
+        "numpy._core._methods": [
             RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
-        },
-        "numpy._core.arrayprint": {RegexReplacement(pattern=", .array_repr.")},
-        "numpy._core.numeric": {
+        ],
+        "numpy._core.arrayprint": [RegexReplacement(pattern=", .array_repr.")],
+        "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),
-        },
-        "numpy._core.numerictypes": {
+        ],
+        "numpy._core.numerictypes": [
             RegexReplacement(pattern=r"from \._dtype import _kind_name", count=1),
-        },
-        "numpy._core.overrides": {
+        ],
+        "numpy._core.overrides": [
             RegexReplacement(
                 pattern="def set_array_function_like_doc.*?return public_api",
                 replacement="def set_array_function_like_doc(a): return a",
@@ -348,8 +347,8 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 replacement="def decorator(i): return i",
                 flags=re.DOTALL,
             ),
-        },
-        "numpy._utils.__init__": {
+        ],
+        "numpy._utils.__init__": [
             RegexReplacement(
                 pattern="^.*",
                 replacement="""
@@ -358,8 +357,8 @@ def set_module(_):
     return d""",
                 flags=re.DOTALL,
             )
-        },
-        "numpy.lib.__init__": {
+        ],
+        "numpy.lib.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"elif attr == .emath.*else:\s*",
@@ -386,17 +385,17 @@ def set_module(_):
                     )
                 )
             ),
-        },
-        "numpy.linalg.__init__": {
+        ],
+        "numpy.linalg.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
-        },
-        "numpy.linalg._linalg": {
+        ],
+        "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-        },
-        "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
-        "PIL.__init__": {
+        ],
+        "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
+        "PIL.__init__": [
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
                 replacement="_plugins = []",
@@ -405,8 +404,8 @@ def set_module(_):
             RegexReplacement(
                 pattern=r"from \. import _version.*del _version", flags=re.DOTALL
             ),
-        },
-        "PIL.Image": {
+        ],
+        "PIL.Image": [
             RegexReplacement(
                 pattern="""try:
     from defusedxml import ElementTree
@@ -439,8 +438,8 @@ except ImportError:
             RegexReplacement(
                 pattern=r"def preinit\(\).*_initialized = 1", flags=re.DOTALL
             ),
-        },
-        "PIL.ImageDraw": {
+        ],
+        "PIL.ImageDraw": [
             RegexReplacement(pattern="_Ink =.*"),
             RegexReplacement(
                 pattern=r"def Draw.*?return ImageDraw.*?\)",
@@ -452,9 +451,9 @@ except ImportError:
             ),
             RegexReplacement(pattern="(L|l)ist, "),
             RegexReplacement(pattern="List", replacement="list"),
-        },
-        "PIL.ImageFile": {RegexReplacement(pattern="use_mmap = use_mmap.*")},
-        "PIL.ImageMode": {
+        ],
+        "PIL.ImageFile": [RegexReplacement(pattern="use_mmap = use_mmap.*")],
+        "PIL.ImageMode": [
             RegexReplacement(
                 pattern="from typing import NamedTuple",
                 replacement="from collections import namedtuple",
@@ -464,17 +463,17 @@ except ImportError:
                 replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
             ),
             RegexReplacement(pattern="from ._deprecate import deprecate"),
-        },
-        "PIL.ImagePalette": {RegexReplacement(pattern="tostring = tobytes")},
-        "PIL.PngImagePlugin": {
+        ],
+        "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
+        "PIL.PngImagePlugin": [
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
             )
-        },
-        "send2trash.__init__": {remove_all_re},
-        "send2trash.win.__init__": {remove_all_re},
+        ],
+        "send2trash.__init__": [remove_all_re],
+        "send2trash.win.__init__": [remove_all_re],
         # Fix issue with autoflake
-        "send2trash.compat": {
+        "send2trash.compat": [
             RegexReplacement(
                 pattern="""
 try:
@@ -485,13 +484,13 @@ except ImportError:
 from collections.abc import Iterable
 iterable_type = Iterable""",
             )
-        },
+        ],
         # We don't use pathlib's Path, remove support for it
-        "send2trash.util": {RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")},
+        "send2trash.util": [RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")],
     },
 )
 if os.name == "nt":
-    regex_to_apply_py["turbojpeg"].add(
+    regex_to_apply_py["turbojpeg"].append(
         RegexReplacement(
             pattern=r"if platform.system\(\) == 'Linux'.*return lib_path",
             flags=re.DOTALL,
@@ -500,7 +499,7 @@ if os.name == "nt":
 
 # Use platform since that what these modules check
 if sys.platform != "linux":
-    regex_to_apply_py["numpy.__init__"].add(
+    regex_to_apply_py["numpy.__init__"].append(
         RegexReplacement(
             pattern=r"def hugepage_setup\(\):.*?del hugepage_setup",
             replacement="_core.multiarray._set_madvise_hugepage(1)",

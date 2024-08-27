@@ -16,6 +16,7 @@ from personal_python_minifier.parser.config import (
 from personal_python_minifier.parser.minifier import MinifyUnparser
 from personal_python_minifier.flake_wrapper import run_autoflake
 from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
+from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_file
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
@@ -26,8 +27,7 @@ from compile_utils.code_to_skip import (
     regex_to_apply_tk,
     vars_to_skip,
 )
-from compile_utils.file_operations import regex_replace
-from compile_utils.regex import RegexReplacement
+from personal_python_minifier.regex import RegexReplacement
 from compile_utils.validation import MINIMUM_PYTHON_VERSION
 
 
@@ -74,13 +74,8 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         source: str = fp.read()
 
     if module_name in regex_to_apply_py:
-        regex_and_replacement: set[RegexReplacement] = regex_to_apply_py[module_name]
-        for regex, replacement, flags, count in regex_and_replacement:
-            source, count_replaced = re.subn(
-                regex, replacement, source, flags=flags, count=count
-            )
-            if count_replaced == 0:
-                warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
+        regex_replacements: list[RegexReplacement] = regex_to_apply_py[module_name]
+        source = apply_regex(source, regex_replacements)
 
     code_cleaner: ExclusionUnparser = ExclusionUnparser(module_name)
     code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
@@ -163,7 +158,7 @@ def clean_tk_files(compile_dir: str) -> None:
         # globs are used since files may have versioning in name
         # They are intended to target a single file
         code_file: str = glob_result[0]
-        regex_replace(code_file, regexs)
+        apply_regex_to_file(code_file, regexs)
 
     # delete comments in tcl files
     strip_comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
@@ -180,7 +175,7 @@ def clean_tk_files(compile_dir: str) -> None:
     for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
         os.path.join(compile_dir, "**/*.tm"), recursive=True
     ):
-        regex_replace(
+        apply_regex_to_file(
             code_file,
             [
                 strip_comments,
@@ -192,4 +187,4 @@ def clean_tk_files(compile_dir: str) -> None:
             ],
         )
 
-    regex_replace(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)
+    apply_regex_to_file(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)
