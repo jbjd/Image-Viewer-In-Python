@@ -1,2 +1,2 @@
 nuitka==2.4.7
-autoflake==2.3.1
+Personal_Python_Minifier @ git+https://github.com/jbjd/Python-Minifier@v0.0.1

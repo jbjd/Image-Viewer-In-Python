@@ -4,33 +4,32 @@ import ast
 import os
 import re
 import warnings
-from _ast import Name
 from glob import glob
 from re import sub
 from shutil import copyfile
 
+from personal_python_minifier.parser import parse_source_to_module_node
+from personal_python_minifier.parser.config import (
+    SectionsToSkipConfig,
+    TokensToSkipConfig,
+)
+from personal_python_minifier.parser.minifier import MinifyUnparser
+from personal_python_minifier.flake_wrapper import run_autoflake
+from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
+from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_file
+
 from compile_utils.code_to_skip import (
     classes_to_skip,
     dict_keys_to_skip,
-    function_calls_to_skip,
+    from_imports_to_skip,
     functions_to_skip,
     regex_to_apply_py,
     regex_to_apply_tk,
     vars_to_skip,
 )
-from compile_utils.file_operations import regex_replace
-from compile_utils.regex import RegexReplacement
+from personal_python_minifier.regex import RegexReplacement
+from compile_utils.validation import MINIMUM_PYTHON_VERSION
 
-try:
-    import autoflake
-except ImportError:
-    warnings.warn(
-        (
-            "You do not have the autoflake package installed. "
-            "Installing it will allow for a slightly smaller output\n"
-        )
-    )
-    autoflake = None
 
 if os.name == "nt":
     separators = r"[\\/]"
@@ -38,189 +37,29 @@ else:
     separators = r"[/]"
 
 
-class CleanUnpsarser(ast._Unparser):  # type: ignore
-    """Functions copied from base class, mainly edited to remove type hints"""
-
-    VARS_TRACKING_REMOVED = [
-        "func_to_skip",
-        "vars_to_skip",
-        "classes_to_skip",
-        "func_calls_to_skip",
-    ]
+class ExclusionUnparser(MinifyUnparser):  # type: ignore
+    """Extends parent to exclude specific things only relevent to this codebase"""
 
     def __init__(self, module_name: str = "") -> None:
-        super().__init__()
-
-        # Counts times item was skipped
-        self.func_to_skip: dict[str, int] = self._set_to_dict_of_counts(
-            functions_to_skip[module_name]
+        super().__init__(
+            module_name=module_name, target_python_version=MINIMUM_PYTHON_VERSION
         )
-        self.vars_to_skip: dict[str, int] = self._set_to_dict_of_counts(
-            vars_to_skip[module_name]
-        )
-        self.classes_to_skip: dict[str, int] = self._set_to_dict_of_counts(
-            classes_to_skip[module_name]
-        )
-        self.func_calls_to_skip: dict[str, int] = self._set_to_dict_of_counts(
-            function_calls_to_skip[module_name]
-        )
-        self.dict_keys_to_skip: dict[str, int] = self._set_to_dict_of_counts(
-            dict_keys_to_skip[module_name]
-        )
-
-        self.write_annotations_without_value: bool = False
-
-    @staticmethod
-    def _set_to_dict_of_counts(input_set: set[str]) -> dict[str, int]:
-        return {key: 0 for key in input_set}
-
-    def visit_arguments(self, node: ast.arguments) -> None:
-        """Remove annotations from args/kwargs"""
-        if node.kwarg:
-            node.kwarg.annotation = None
-        if node.vararg:
-            node.vararg.annotation = None
-
-        super().visit_arguments(node)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Disable removing annotations within class vars for safety"""
-        if node.name in self.classes_to_skip:
-            self.classes_to_skip[node.name] += 1
-            return
-
-        node.bases = [
-            base
-            for base in node.bases
-            if getattr(base, "id", "") not in ("ABC", "object")
-        ]
-
-        # Remove class doc strings to speed up writing to file
-        if isinstance(node.body[0], ast.Expr) and isinstance(
-            node.body[0].value, ast.Constant
-        ):
-            node.body[0].value.value = ""
-
-        self.write_annotations_without_value = True
-        super().visit_ClassDef(node)
-        self.write_annotations_without_value = False
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Skips some functions and removes type hints from the rest"""
-        if node.name in self.func_to_skip:
-            self.func_to_skip[node.name] += 1
-            return
-
-        # Remove doc string to speed up parse/write
-        if isinstance(node.body[0], ast.Expr) and isinstance(
-            node.body[0].value, ast.Constant
-        ):
-            node.body = node.body[1:]
-            if not node.body:
-                super().visit_Pass(node)
-                return
-
-        argument: ast.arg
-        for argument in node.args.args:
-            argument.annotation = None
-        node.returns = None
-
-        # always ignore inside of function context
-        previous_ignore: bool = self.write_annotations_without_value
-
-        self.write_annotations_without_value = False
-        super().visit_FunctionDef(node)
-        self.write_annotations_without_value = previous_ignore
 
     def visit_Call(self, node: ast.Call) -> None:
-        # Skips warnings.warn() calls
-        if self._node_is_logging(node):
-            super().visit_Pass(node)
+        if self._node_is_warn(node):
+            self.visit_Pass(ast.Pass())
             return
 
-        function_name: str = self._get_node_id_or_attr(node.func)
-        if function_name not in self.func_calls_to_skip:
-            super().visit_Call(node)
-        else:
-            super().visit_Pass(node)
-            self.func_calls_to_skip[function_name] += 1
+        super().visit_Call(node)
 
     @staticmethod
-    def _node_is_logging(node: ast.Call) -> bool:
+    def _node_is_warn(node: ast.Call) -> bool:
         return (
-            getattr(node.func, "attr", "") in ("warn", "filterwarnings", "simplefilter")
+            getattr(node.func, "attr", "") == "warn"
             and getattr(node.func, "value", ast.Name("")).id == "warnings"
-        ) or (
-            getattr(node.func, "attr", "") == "debug"
-            and "log" in getattr(node.func, "value", ast.Name("")).id
         )
-
-    def visit_Assign(self, node: ast.Assign) -> None:
-        """Skips over some variables"""
-        if getattr(getattr(node.value, "func", object), "attr", "") == "getLogger":
-            return
-
-        if (
-            self._node_is_doc_string_assign(node)
-            or getattr(getattr(node.value, "func", object), "id", "")
-            in self.func_calls_to_skip
-        ):
-            super().visit_Pass(node)
-            return
-
-        var_name: str = self._get_node_id_or_attr(node.targets[0])
-        # TODO: Currently if a.b.c.d only "c" and "d" are checked
-        parent_var_name: str = getattr(
-            getattr(node.targets[0], "value", object), "attr", ""
-        )
-        if (
-            var_name not in self.vars_to_skip
-            and parent_var_name not in self.vars_to_skip
-        ):
-            super().visit_Assign(node)
-        elif var_name in self.vars_to_skip:
-            self.vars_to_skip[var_name] += 1
-        else:
-            self.vars_to_skip[parent_var_name] += 1
-
-    @staticmethod
-    def _node_is_doc_string_assign(node: ast.Assign) -> bool:
-        return (
-            isinstance(node.targets[0], ast.Attribute)
-            and node.targets[0].attr == "__doc__"
-        )
-
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        """Remove var annotations and declares like 'var: type' without an = after"""
-        if node.value or self.write_annotations_without_value:
-            var_name: str = getattr(node.target, "id", "")
-            if var_name in self.vars_to_skip:
-                self.vars_to_skip[var_name] += 1
-                return
-            self.fill()
-            with self.delimit_if(
-                "(", ")", not node.simple and isinstance(node.target, Name)
-            ):
-                self.traverse(node.target)
-            if node.value:
-                self.write(" = ")
-                self.traverse(node.value)
-            else:
-                # Can only reach here if annotation must be kept for formatting a class
-                self.write(": ")
-                # These might refer to removed things, so make them all something
-                placeholder_id: str = '"Any"'
-                new_node = ast.Name(id=placeholder_id, ctx=None)  # type: ignore
-                self.traverse(new_node)
 
     def visit_If(self, node: ast.If) -> None:
-        # Skip if __name__ = "__main__"
-        try:
-            if node.test.left.id == "__name__":  # type: ignore
-                return
-        except AttributeError:
-            pass
-
         # Skip PIL's blocks about typechecking
         if isinstance(node.test, ast.Name) and node.test.id == "TYPE_CHECKING":
             if node.orelse:
@@ -229,77 +68,31 @@ class CleanUnpsarser(ast._Unparser):  # type: ignore
 
         super().visit_If(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Skip unnecessary futures imports"""
-        if node.module == "__future__":
-            return
-
-        node.names = list(filter(lambda alias: alias.name != "__doc__", node.names))
-        if not node.names:
-            return
-
-        super().visit_ImportFrom(node)
-
-    def visit_Dict(self, node: ast.Dict) -> None:
-        """Replace some dict constants"""
-        if self.dict_keys_to_skip:
-            new_dict = {
-                k: v
-                for k, v in zip(node.keys, node.values)
-                if getattr(k, "value", "") not in self.dict_keys_to_skip
-            }
-            node.keys = list(new_dict.keys())
-            node.values = list(new_dict.values())
-        super().visit_Dict(node)
-
-    @staticmethod
-    def _get_node_id_or_attr(node: ast.expr) -> str:
-        """Gets id or attr which both can represent var/function names"""
-        return getattr(node, "attr", "") or getattr(node, "id", "")
-
 
 def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
-    # Remove module strings just so we have less to parse/write back to file
-    source = re.sub(r"^\s*\"\"\".*?\"\"\"", "", source, count=1, flags=re.DOTALL)
-
     if module_name in regex_to_apply_py:
-        regex_and_replacement: set[RegexReplacement] = regex_to_apply_py[module_name]
-        for regex, replacement, flags, count in regex_and_replacement:
-            source, count_replaced = re.subn(
-                regex, replacement, source, flags=flags, count=count
-            )
-            if count_replaced == 0:
-                warnings.warn(f"{module_name}: Unused regex\n{regex}\n")
+        regex_replacements: list[RegexReplacement] = regex_to_apply_py[module_name]
+        source = apply_regex(source, regex_replacements)
 
-    parsed_source: ast.Module = ast.parse(source)
-    code_cleaner = CleanUnpsarser(module_name)
-    source = code_cleaner.visit(ast.NodeTransformer().visit(parsed_source))
+    code_cleaner: ExclusionUnparser = ExclusionUnparser(module_name)
+    code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
+        code_cleaner,
+        SectionsToSkipConfig(skip_name_equals_main=True),
+        TokensToSkipConfig(
+            classes=classes_to_skip[module_name],
+            dict_keys=dict_keys_to_skip[module_name],
+            from_imports=from_imports_to_skip[module_name],
+            functions=functions_to_skip[module_name],
+            variables=vars_to_skip[module_name],
+        ),
+    )
+    source = code_cleaner.visit(parse_source_to_module_node(source))
 
-    # Check for code that was marked to ksip, but was not found in the module
-    for var in code_cleaner.VARS_TRACKING_REMOVED:
-        tracker = getattr(code_cleaner, var)
-        unused_but_requested: set[str] = {k for k, v in tracker.items() if v == 0}
-        if unused_but_requested:
-            warnings.warn(
-                (
-                    f"{module_name}: {','.join(unused_but_requested)} requested to skip"
-                    f" in {var} but was not present"
-                )
-            )
-
-    if autoflake is not None:
-        # Numpy often imports other imports which this would break
-        edit_imports: bool = module_name[:5] != "numpy"
-        source = autoflake.fix_code(
-            source,
-            remove_all_unused_imports=edit_imports,
-            remove_duplicate_keys=True,
-            remove_unused_variables=True,
-            remove_rhs_for_unused_variables=True,
-        )
+    edit_imports: bool = module_name[:5] != "numpy"
+    source = run_autoflake(source, remove_unused_imports=edit_imports)
 
     with open(new_path, "w", encoding="utf-8") as fp:
         fp.write(source)
@@ -365,7 +158,7 @@ def clean_tk_files(compile_dir: str) -> None:
         # globs are used since files may have versioning in name
         # They are intended to target a single file
         code_file: str = glob_result[0]
-        regex_replace(code_file, regexs)
+        apply_regex_to_file(code_file, regexs)
 
     # delete comments in tcl files
     strip_comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
@@ -382,7 +175,7 @@ def clean_tk_files(compile_dir: str) -> None:
     for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
         os.path.join(compile_dir, "**/*.tm"), recursive=True
     ):
-        regex_replace(
+        apply_regex_to_file(
             code_file,
             [
                 strip_comments,
@@ -394,4 +187,4 @@ def clean_tk_files(compile_dir: str) -> None:
             ],
         )
 
-    regex_replace(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)
+    apply_regex_to_file(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)

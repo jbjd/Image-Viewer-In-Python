@@ -5,9 +5,11 @@ from sys import version_info
 
 from nuitka import PythonVersions
 
+MINIMUM_PYTHON_VERSION: tuple[int, int] = (3, 11)
+
 
 def raise_if_unsupported_python_version() -> None:
-    if version_info[:2] < (3, 11):
+    if version_info[:2] < MINIMUM_PYTHON_VERSION:
         raise Exception("Python 3.11 or higher required")
 
     version: str = f"{version_info[0]}.{version_info[1]}"

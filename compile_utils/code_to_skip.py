@@ -6,12 +6,11 @@ import re
 import sys
 from collections import defaultdict
 
-from compile_utils.regex import RegexReplacement
+from personal_python_minifier.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
-    "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir"},
-    "numpy._utils.__init__": {"_rename_parameter"},
+    "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
     "numpy._core._dtype": {
         "__repr__",
         "__str__",
@@ -33,7 +32,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy._core.getlimits": {"__repr__"},
     "numpy._core.numeric": {"_frombuffer", "_full_dispatcher"},
     "numpy._core.numerictypes": {"maximum_sctype"},
-    "numpy._core.overrides": {"verify_matching_signatures"},
+    "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
     "numpy._core.records": {"__repr__", "__str__"},
     "numpy._core.strings": {
         "_join",
@@ -81,11 +80,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "alpha_composite",
         "blend",
         "composite",
+        "debug",
+        "deprecate",
         "fromqimage",
         "fromqpixmap",
         "getexif",
+        "getLogger",
         "getxmp",
-        "preinit",
         "effect_mandelbrot",
         "get_child_images",
         "linear_gradient",
@@ -117,6 +118,8 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "load_default",
         "load_path",
     },
+    "PIL.ImageMath": {"eval", "unsafe_eval"},
+    "PIL.ImageMode": {"deprecate"},
     "PIL.ImageOps": {
         "autocontrast",
         "colorize",
@@ -131,19 +134,9 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_pilbitmap_check", "_show"},
-    "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "getdata"},
-    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg"},
-    "PIL.ImageMath": {"eval", "unsafe_eval"},
-    "PIL.TiffTags": {"_populate"},
-}
-
-_skip_function_calls_kwargs: dict[str, set[str]] = {
-    "numpy._core.overrides": {"add_docstring"},
-    "PIL.Image": {"_apply_env_variables", "deprecate"},
-    "PIL.ImageMode": {"deprecate"},
-    "PIL.GifImagePlugin": {"register_mime"},
-    "PIL.JpegImagePlugin": {"register_mime"},
-    "PIL.PngImagePlugin": {"register_mime"},
+    "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
+    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
+    "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
     "PIL.WebPImagePlugin": {"register_mime"},
     "PIL.TiffTags": {"_populate"},
 }
@@ -162,6 +155,9 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.arrayprint": {"_default_array_repr"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
+    "numpy.lib._function_base_impl": {"__doc__"},
+    "numpy.lib._shape_base_impl": {"__doc__"},
+    "numpy.linalg._linalg": {"__doc__"},
     "turbojpeg": {
         "__buffer_size_YUV2",
         "__compressFromYUV",
@@ -187,6 +183,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
+    "helpers.action_undoer": {"ABC"},
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
@@ -204,6 +201,11 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageTk": {"BitmapImage"},
 }
 
+_skip_from_imports: dict[str, set[str]] = {
+    "numpy.lib.array_utils": {"__doc__"},
+    "numpy.lib.stride_tricks": {"__doc__"},
+}
+
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
     "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
 }
@@ -215,22 +217,23 @@ dict_keys_to_skip: defaultdict[str, set[str]] = defaultdict(
 functions_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_functions_kwargs
 )
-function_calls_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_function_calls_kwargs
-)
 vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
 classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
+from_imports_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_from_imports
+)
+
 
 remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(
     pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",
     flags=re.DOTALL,
 )
-regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
-    set,
+regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
+    list,
     {
-        "util.PIL": {RegexReplacement(pattern=r"_Image._plugins = \[\]")},
-        "numpy.__init__": {
+        "util.PIL": [RegexReplacement(pattern=r"_Image._plugins = \[\]")],
+        "numpy.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
@@ -276,29 +279,28 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
             ),
-        }.union(
-            {
-                RegexReplacement(
-                    pattern="elif attr == .{0}.:.*?return {0}".format(module),
-                    flags=re.DOTALL,
-                )
-                for module in (
-                    "core",
-                    "ctypeslib",
-                    "fft",
-                    "f2py",
-                    "ma",
-                    "matlib",
-                    "polynomial",
-                    "random",
-                    "rec",
-                    "strings",
-                    "testing",
-                    "typing",
-                )
-            }
-        ),
-        "numpy._core.__init__": {
+        ]
+        + [
+            RegexReplacement(
+                pattern="elif attr == .{0}.:.*?return {0}".format(module),
+                flags=re.DOTALL,
+            )
+            for module in (
+                "core",
+                "ctypeslib",
+                "fft",
+                "f2py",
+                "ma",
+                "matlib",
+                "polynomial",
+                "random",
+                "rec",
+                "strings",
+                "testing",
+                "typing",
+            )
+        ],
+        "numpy._core.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
@@ -316,18 +318,18 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r".*?einsumfunc.*",
             ),
-        },
-        "numpy._core._methods": {
+        ],
+        "numpy._core._methods": [
             RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
-        },
-        "numpy._core.arrayprint": {RegexReplacement(pattern=", .array_repr.")},
-        "numpy._core.numeric": {
+        ],
+        "numpy._core.arrayprint": [RegexReplacement(pattern=", .array_repr.")],
+        "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),
-        },
-        "numpy._core.numerictypes": {
+        ],
+        "numpy._core.numerictypes": [
             RegexReplacement(pattern=r"from \._dtype import _kind_name", count=1),
-        },
-        "numpy._core.overrides": {
+        ],
+        "numpy._core.overrides": [
             RegexReplacement(
                 pattern="def set_array_function_like_doc.*?return public_api",
                 replacement="def set_array_function_like_doc(a): return a",
@@ -345,8 +347,8 @@ regex_to_apply_py: defaultdict[str, set[RegexReplacement]] = defaultdict(
                 replacement="def decorator(i): return i",
                 flags=re.DOTALL,
             ),
-        },
-        "numpy._utils.__init__": {
+        ],
+        "numpy._utils.__init__": [
             RegexReplacement(
                 pattern="^.*",
                 replacement="""
@@ -355,8 +357,8 @@ def set_module(_):
     return d""",
                 flags=re.DOTALL,
             )
-        },
-        "numpy.lib.__init__": {
+        ],
+        "numpy.lib.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"elif attr == .emath.*else:\s*",
@@ -383,17 +385,17 @@ def set_module(_):
                     )
                 )
             ),
-        },
-        "numpy.linalg.__init__": {
+        ],
+        "numpy.linalg.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(pattern=r"from \. import linalg"),
-        },
-        "numpy.linalg._linalg": {
+        ],
+        "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-        },
-        "numpy.matrixlib.__init__": {remove_numpy_pytester_re},
-        "PIL.__init__": {
+        ],
+        "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
+        "PIL.__init__": [
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
                 replacement="_plugins = []",
@@ -402,8 +404,8 @@ def set_module(_):
             RegexReplacement(
                 pattern=r"from \. import _version.*del _version", flags=re.DOTALL
             ),
-        },
-        "PIL.Image": {
+        ],
+        "PIL.Image": [
             RegexReplacement(
                 pattern="""try:
     from defusedxml import ElementTree
@@ -433,8 +435,11 @@ except ImportError:
                 replacement="from . import _imaging as core",
                 flags=re.DOTALL,
             ),
-        },
-        "PIL.ImageDraw": {
+            RegexReplacement(
+                pattern=r"def preinit\(\).*_initialized = 1", flags=re.DOTALL
+            ),
+        ],
+        "PIL.ImageDraw": [
             RegexReplacement(pattern="_Ink =.*"),
             RegexReplacement(
                 pattern=r"def Draw.*?return ImageDraw.*?\)",
@@ -446,9 +451,9 @@ except ImportError:
             ),
             RegexReplacement(pattern="(L|l)ist, "),
             RegexReplacement(pattern="List", replacement="list"),
-        },
-        "PIL.ImageFile": {RegexReplacement(pattern="use_mmap = use_mmap.*")},
-        "PIL.ImageMode": {
+        ],
+        "PIL.ImageFile": [RegexReplacement(pattern="use_mmap = use_mmap.*")],
+        "PIL.ImageMode": [
             RegexReplacement(
                 pattern="from typing import NamedTuple",
                 replacement="from collections import namedtuple",
@@ -458,17 +463,17 @@ except ImportError:
                 replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
             ),
             RegexReplacement(pattern="from ._deprecate import deprecate"),
-        },
-        "PIL.ImagePalette": {RegexReplacement(pattern="tostring = tobytes")},
-        "PIL.PngImagePlugin": {
+        ],
+        "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
+        "PIL.PngImagePlugin": [
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
             )
-        },
-        "send2trash.__init__": {remove_all_re},
-        "send2trash.win.__init__": {remove_all_re},
+        ],
+        "send2trash.__init__": [remove_all_re],
+        "send2trash.win.__init__": [remove_all_re],
         # Fix issue with autoflake
-        "send2trash.compat": {
+        "send2trash.compat": [
             RegexReplacement(
                 pattern="""
 try:
@@ -479,13 +484,13 @@ except ImportError:
 from collections.abc import Iterable
 iterable_type = Iterable""",
             )
-        },
+        ],
         # We don't use pathlib's Path, remove support for it
-        "send2trash.util": {RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")},
+        "send2trash.util": [RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")],
     },
 )
 if os.name == "nt":
-    regex_to_apply_py["turbojpeg"].add(
+    regex_to_apply_py["turbojpeg"].append(
         RegexReplacement(
             pattern=r"if platform.system\(\) == 'Linux'.*return lib_path",
             flags=re.DOTALL,
@@ -494,7 +499,7 @@ if os.name == "nt":
 
 # Use platform since that what these modules check
 if sys.platform != "linux":
-    regex_to_apply_py["numpy.__init__"].add(
+    regex_to_apply_py["numpy.__init__"].append(
         RegexReplacement(
             pattern=r"def hugepage_setup\(\):.*?del hugepage_setup",
             replacement="_core.multiarray._set_madvise_hugepage(1)",
