@@ -210,7 +210,15 @@ _skip_dict_keys_kwargs: dict[str, set[str]] = {
     "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
 }
 
+_skip_decorators_kwargs: dict[str, set[str]] = {
+    "numpy._core.fromnumeric": {"array_function_dispatch", "set_module"},
+    "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
+}
 
+
+decorators_to_skip: defaultdict[str, set[str]] = defaultdict(
+    set, **_skip_decorators_kwargs
+)
 dict_keys_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_dict_keys_kwargs
 )

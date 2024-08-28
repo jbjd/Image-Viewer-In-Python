@@ -20,6 +20,7 @@ from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_fil
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
+    decorators_to_skip,
     dict_keys_to_skip,
     from_imports_to_skip,
     functions_to_skip,
@@ -83,6 +84,7 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
         SectionsToSkipConfig(skip_name_equals_main=True),
         TokensToSkipConfig(
             classes=classes_to_skip[module_name],
+            decorators=decorators_to_skip[module_name],
             dict_keys=dict_keys_to_skip[module_name],
             from_imports=from_imports_to_skip[module_name],
             functions=functions_to_skip[module_name],
