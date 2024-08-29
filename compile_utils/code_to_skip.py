@@ -196,9 +196,25 @@ _skip_classes_kwargs: dict[str, set[str]] = {
 }
 
 _skip_from_imports: dict[str, set[str]] = {
+    "numpy.__init__": {
+        "__version__",
+        "_distributor_init",
+        "array_repr",
+        "ediff1d",
+        "einsum",
+        "einsum_path",
+        "matrixlib",
+        "version",
+    },
+    "numpy._core.__init__": {"version"},
+    "numpy._core._methods": {"_exceptions"},
     "numpy._core.function_base": {"add_docstring"},
+    "numpy._core.numerictypes": {"_kind_name"},
+    "numpy._core.overrides": {"getargspec"},
     "numpy.lib.array_utils": {"__doc__"},
     "numpy.lib.stride_tricks": {"__doc__"},
+    "numpy.linalg.__init__": {"linalg"},
+    "PIL.ImageMode": {"deprecate"},
 }
 
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
@@ -279,14 +295,8 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
-            RegexReplacement(pattern="einsum, einsum_path, ", count=1),
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require)"
-            ),
-            RegexReplacement(pattern="(ediff1d|array_repr),"),
-            RegexReplacement(pattern=r"from \. import matrixlib.*", count=1),
-            RegexReplacement(
-                pattern=r"from .* import (_distributor_init|(__)?version(__)?)"
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
@@ -327,7 +337,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r"from \. import (_add_newdocs|_internal|_dtype).*"
             ),
             RegexReplacement(pattern=r"from \.memmap import \*", count=1),
-            RegexReplacement(pattern=r"from numpy\.version import .*"),
             RegexReplacement(
                 pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
                 flags=re.DOTALL,
@@ -336,15 +345,9 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         ],
-        "numpy._core._methods": [
-            RegexReplacement(pattern=r"from numpy\._core import _exceptions", count=1)
-        ],
         "numpy._core.arrayprint": [RegexReplacement(pattern=", .array_repr.")],
         "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),
-        ],
-        "numpy._core.numerictypes": [
-            RegexReplacement(pattern=r"from \._dtype import _kind_name", count=1),
         ],
         "numpy._core.overrides": [
             RegexReplacement(
@@ -355,9 +358,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=r"from numpy._core._multiarray_umath import .*?\)",
                 flags=re.DOTALL,
-            ),
-            RegexReplacement(
-                pattern=r"from \.\._utils\._inspect import getargspec", count=1
             ),
             RegexReplacement(
                 pattern="def decorator.*?return public_api",
@@ -403,10 +403,7 @@ def set_module(_):
                 )
             ),
         ],
-        "numpy.linalg.__init__": [
-            remove_numpy_pytester_re,
-            RegexReplacement(pattern=r"from \. import linalg"),
-        ],
+        "numpy.linalg.__init__": [remove_numpy_pytester_re],
         "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
@@ -479,7 +476,6 @@ except ImportError:
                 pattern=r"\(NamedTuple\):",
                 replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
             ),
-            RegexReplacement(pattern="from ._deprecate import deprecate"),
         ],
         "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
         "PIL.PngImagePlugin": [
