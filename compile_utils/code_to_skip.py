@@ -11,12 +11,6 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
-    "numpy._core._dtype": {
-        "__repr__",
-        "__str__",
-        "_name_get",
-        "_name_includes_bit_suffix",
-    },
     "numpy._core.arrayprint": {
         "_array_repr_dispatcher",
         "_array_repr_implementation",
@@ -202,6 +196,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
 }
 
 _skip_from_imports: dict[str, set[str]] = {
+    "numpy._core.function_base": {"add_docstring"},
     "numpy.lib.array_utils": {"__doc__"},
     "numpy.lib.stride_tricks": {"__doc__"},
 }
@@ -211,7 +206,21 @@ _skip_dict_keys_kwargs: dict[str, set[str]] = {
 }
 
 _skip_decorators_kwargs: dict[str, set[str]] = {
+    "numpy._core.arrayprint": {"array_function_dispatch"},
     "numpy._core.fromnumeric": {"array_function_dispatch", "set_module"},
+    "numpy._core.function_base": {"array_function_dispatch"},
+    "numpy._core.numeric": {"array_function_dispatch"},
+    "numpy._core.shape_base": {"array_function_dispatch"},
+    "numpy.lib._arraysetops_impl": {"array_function_dispatch"},
+    "numpy.lib._function_base_impl": {"array_function_dispatch"},
+    "numpy.lib._histograms_impl": {"array_function_dispatch"},
+    "numpy.lib._index_tricks_impl": {"array_function_dispatch"},
+    "numpy.lib._nanfunctions_impl": {"array_function_dispatch"},
+    "numpy.lib._shape_base_impl": {"array_function_dispatch"},
+    "numpy.lib._stride_tricks_impl": {"array_function_dispatch"},
+    "numpy.lib._twodim_base_impl": {"array_function_dispatch"},
+    "numpy.lib._type_check_impl": {"array_function_dispatch"},
+    "numpy.lib._ufunclike_impl": {"array_function_dispatch"},
     "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
 }
 
