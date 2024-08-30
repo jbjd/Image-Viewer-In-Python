@@ -8,14 +8,15 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
+from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
+from personal_python_minifier.flake_wrapper import run_autoflake
 from personal_python_minifier.parser import parse_source_to_module_node
 from personal_python_minifier.parser.config import (
     SectionsToSkipConfig,
     TokensToSkipConfig,
 )
 from personal_python_minifier.parser.minifier import MinifyUnparser
-from personal_python_minifier.flake_wrapper import run_autoflake
-from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
+from personal_python_minifier.regex import RegexReplacement
 from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_file
 
 from compile_utils.code_to_skip import (
@@ -28,9 +29,7 @@ from compile_utils.code_to_skip import (
     regex_to_apply_tk,
     vars_to_skip,
 )
-from personal_python_minifier.regex import RegexReplacement
 from compile_utils.validation import MINIMUM_PYTHON_VERSION
-
 
 if os.name == "nt":
     separators = r"[\\/]"
@@ -39,7 +38,7 @@ else:
 
 
 class ExclusionUnparser(MinifyUnparser):  # type: ignore
-    """Extends parent to exclude specific things only relevent to this codebase"""
+    """Extends parent to exclude specific things only relevant to this codebase"""
 
     def __init__(self, module_name: str = "") -> None:
         super().__init__(
@@ -150,7 +149,7 @@ def move_files_to_tmp_and_clean(
 
 def clean_tk_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
-    and cleans up comments/whitespace from necesary tcl files"""
+    and cleans up comments/whitespace from necessary tcl files"""
     for path_or_glob, regexs in regex_to_apply_tk.items():
         glob_result: list[str] = glob(os.path.join(compile_dir, path_or_glob))
         if not glob_result:

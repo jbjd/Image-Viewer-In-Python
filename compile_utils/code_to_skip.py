@@ -62,6 +62,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.Image": {
         "__getstate__",
+        "__repr__",
         "__setstate__",
         "_apply_env_variables",
         "_dump",
@@ -146,9 +147,12 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "_specific_msg",
         "_type_info",
     },
-    "numpy._core.arrayprint": {"_default_array_repr"},
+    "numpy._array_api_info": {"__module__"},
+    "numpy._core.arrayprint": {"__docformat__", "_default_array_repr"},
+    "numpy._core.multiarray": {"__module__"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
+    "numpy._core.records": {"__module__"},
     "numpy.lib._function_base_impl": {"__doc__"},
     "numpy.lib._shape_base_impl": {"__doc__"},
     "numpy.linalg._linalg": {"__doc__"},
@@ -225,6 +229,7 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.arrayprint": {"array_function_dispatch"},
     "numpy._core.fromnumeric": {"array_function_dispatch", "set_module"},
     "numpy._core.function_base": {"array_function_dispatch"},
+    "numpy._core.multiarray": {"array_function_from_c_func_and_dispatcher"},
     "numpy._core.numeric": {"array_function_dispatch"},
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._arraysetops_impl": {"array_function_dispatch"},
@@ -463,7 +468,7 @@ except ImportError:
             RegexReplacement(
                 pattern=r"try:\s*Outline.*Outline = None", flags=re.DOTALL
             ),
-            RegexReplacement(pattern="(L|l)ist, "),
+            RegexReplacement(pattern="(L|l)ist, "),  # codespell:ignore ist
             RegexReplacement(pattern="List", replacement="list"),
         ],
         "PIL.ImageFile": [RegexReplacement(pattern="use_mmap = use_mmap.*")],
