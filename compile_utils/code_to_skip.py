@@ -201,6 +201,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
 
 _skip_from_imports: dict[str, set[str]] = {
     "numpy.__init__": {
+        "__array_namespace_info__",
         "__version__",
         "_distributor_init",
         "array_repr",
@@ -226,23 +227,39 @@ _skip_dict_keys_kwargs: dict[str, set[str]] = {
 }
 
 _skip_decorators_kwargs: dict[str, set[str]] = {
-    "numpy._core.arrayprint": {"array_function_dispatch"},
+    "numpy._core._exceptions": {"_display_as_base"},
+    "numpy._core._ufunc_config": {"set_module", "wraps"},
+    "numpy._core.arrayprint": {"array_function_dispatch", "set_module", "wraps"},
     "numpy._core.fromnumeric": {"array_function_dispatch", "set_module"},
     "numpy._core.function_base": {"array_function_dispatch"},
+    "numpy._core.getlimits": {"set_module"},
     "numpy._core.multiarray": {"array_function_from_c_func_and_dispatcher"},
-    "numpy._core.numeric": {"array_function_dispatch"},
+    "numpy._core.numeric": {
+        "array_function_dispatch",
+        "set_array_function_like_doc",
+        "set_module",
+    },
+    "numpy._core.numerictypes": {"set_module"},
+    "numpy._core.records": {"set_module"},
     "numpy._core.shape_base": {"array_function_dispatch"},
+    "numpy.lib._array_utils_impl": {"set_module"},
     "numpy.lib._arraysetops_impl": {"array_function_dispatch"},
-    "numpy.lib._function_base_impl": {"array_function_dispatch"},
+    "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._histograms_impl": {"array_function_dispatch"},
-    "numpy.lib._index_tricks_impl": {"array_function_dispatch"},
+    "numpy.lib._index_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._nanfunctions_impl": {"array_function_dispatch"},
-    "numpy.lib._shape_base_impl": {"array_function_dispatch"},
-    "numpy.lib._stride_tricks_impl": {"array_function_dispatch"},
-    "numpy.lib._twodim_base_impl": {"array_function_dispatch"},
-    "numpy.lib._type_check_impl": {"array_function_dispatch"},
+    "numpy.lib._shape_base_impl": {"array_function_dispatch", "set_module"},
+    "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
+    "numpy.lib._twodim_base_impl": {
+        "array_function_dispatch",
+        "set_array_function_like_doc",
+        "set_module",
+    },
+    "numpy.lib._type_check_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._ufunclike_impl": {"array_function_dispatch"},
     "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
+    "numpy.matrixlib.defmatrix": {"set_module"},
+    "PIL.Image": {"abstractmethod"},
 }
 
 
@@ -270,6 +287,12 @@ remove_numpy_pytester_re = RegexReplacement(
 regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
     list,
     {
+        "__main__": [
+            RegexReplacement(
+                r"if not os.path.isdir\(path_to_exe_folder\):\s*",
+                count=1,
+            )
+        ],
         "util.PIL": [RegexReplacement(pattern=r"_Image._plugins = \[\]")],
         "numpy.__init__": [
             remove_numpy_pytester_re,
@@ -370,6 +393,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         ],
+        "numpy._globals": [RegexReplacement(".*?_set_module.*")],
         "numpy._utils.__init__": [
             RegexReplacement(
                 pattern="^.*",

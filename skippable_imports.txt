@@ -6,6 +6,7 @@ email.message
 email.parser
 hashlib
 numpy.__config__
+numpy._array_api_info
 numpy._configtool
 numpy._core._add_newdocs
 numpy._core._add_newdocs_scalars
