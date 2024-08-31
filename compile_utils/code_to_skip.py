@@ -11,6 +11,7 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
+    "numpy._core._exceptions": {"_display_as_base"},
     "numpy._core.arrayprint": {
         "_array_repr_dispatcher",
         "_array_repr_implementation",
@@ -27,7 +28,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy._core.numeric": {"_frombuffer", "_full_dispatcher"},
     "numpy._core.numerictypes": {"maximum_sctype"},
     "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
-    "numpy._core.records": {"__repr__", "__str__"},
+    "numpy._core.records": {"__repr__", "__str__", "pprint"},
     "numpy._core.strings": {
         "_join",
         "_rsplit",
@@ -41,10 +42,18 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "histogram_bin_edges",
     },
     "numpy.linalg._linalg": {
+        "_cond_dispatcher",
         "_convertarray",
         "_cholesky_dispatcher",
+        "_eigvalsh_dispatcher",
+        "_matrix_power_dispatcher",
+        "_outer_dispatcher",
         "_qr_dispatcher",
         "_raise_linalgerror_qr",
+        "_solve_dispatcher",
+        "_svd_dispatcher",
+        "_tensorinv_dispatcher",
+        "_tensorsolve_dispatcher",
         "cholesky",
         "qr",
     },
@@ -77,6 +86,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "composite",
         "debug",
         "deprecate",
+        "entropy",
         "fromqimage",
         "fromqpixmap",
         "getexif",
@@ -128,7 +138,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "solarize",
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
-    "PIL.ImageTk": {"_pilbitmap_check", "_show"},
+    "PIL.ImageTk": {"_get_image_from_kw", "_pilbitmap_check", "_show"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
     "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
@@ -152,10 +162,10 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.multiarray": {"__module__"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
-    "numpy._core.records": {"__module__"},
+    "numpy._core.records": {"__module__", "numfmt"},
     "numpy.lib._function_base_impl": {"__doc__"},
     "numpy.lib._shape_base_impl": {"__doc__"},
-    "numpy.linalg._linalg": {"__doc__"},
+    "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
         "__buffer_size_YUV2",
         "__compressFromYUV",
@@ -205,18 +215,28 @@ _skip_from_imports: dict[str, set[str]] = {
         "__version__",
         "_distributor_init",
         "array_repr",
+        "c_",
         "ediff1d",
         "einsum",
         "einsum_path",
         "matrixlib",
+        "r_",
+        "s_",
         "version",
     },
     "numpy._core.__init__": {"version"},
     "numpy._core._methods": {"_exceptions"},
     "numpy._core.function_base": {"add_docstring"},
-    "numpy._core.numerictypes": {"_kind_name"},
+    "numpy._core.numerictypes": {
+        "LOWER_TABLE",
+        "UPPER_TABLE",
+        "_kind_name",
+        "english_capitalize",
+        "english_lower",
+        "english_upper",
+        "object",
+    },
     "numpy._core.overrides": {"getargspec"},
-    "numpy.lib.array_utils": {"__doc__"},
     "numpy.lib.stride_tricks": {"__doc__"},
     "numpy.linalg.__init__": {"linalg"},
     "PIL.ImageMode": {"deprecate"},
@@ -242,7 +262,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.numerictypes": {"set_module"},
     "numpy._core.records": {"set_module"},
     "numpy._core.shape_base": {"array_function_dispatch"},
-    "numpy.lib._array_utils_impl": {"set_module"},
     "numpy.lib._arraysetops_impl": {"array_function_dispatch"},
     "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._histograms_impl": {"array_function_dispatch"},
@@ -373,6 +392,13 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         ],
+        "numpy._core._ufunc_config": [
+            RegexReplacement(
+                "def _no_nep50_warning.*",
+                "def _no_nep50_warning():yield",
+                flags=re.DOTALL,
+            )
+        ],
         "numpy._core.arrayprint": [RegexReplacement(pattern=", .array_repr.")],
         "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),
@@ -431,6 +457,15 @@ def set_module(_):
                     )
                 )
             ),
+        ],
+        "numpy.lib.array_utils": [
+            RegexReplacement(
+                "^.*",
+                """
+from numpy._core.numeric import normalize_axis_tuple,normalize_axis_index
+__all__=['normalize_axis_tuple','normalize_axis_index']""",
+                flags=re.DOTALL,
+            )
         ],
         "numpy.linalg.__init__": [remove_numpy_pytester_re],
         "numpy.linalg._linalg": [
