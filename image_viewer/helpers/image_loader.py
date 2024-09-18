@@ -22,6 +22,7 @@ class ImageLoader:
     __slots__ = (
         "animation_frames",
         "animation_callback",
+        "current_load_id",
         "frame_index",
         "image_cache",
         "image_resizer",
@@ -42,6 +43,7 @@ class ImageLoader:
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
         self.PIL_image = Image()
+        self.current_load_id: int = 0
 
         self.animation_frames: list[tuple[Image | None, int]] = []
         self.frame_index: int = 0
@@ -68,17 +70,19 @@ class ImageLoader:
         )
         return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
 
-    def begin_animation(self, current_image: Image, frame_count: int) -> None:
+    def begin_animation(
+        self, original_image: Image, resized_iamge: Image, frame_count: int
+    ) -> None:
         """Begins new thread to handle displaying frames of an aniamted image"""
         self.animation_frames = [(None, 0)] * frame_count
 
         ms_until_next_frame: int = self.get_ms_until_next_frame()
 
-        self.animation_frames[0] = current_image, ms_until_next_frame
+        self.animation_frames[0] = resized_iamge, ms_until_next_frame
         # begin loading frames in new thread and call animate
         Thread(
             target=self.load_remaining_frames,
-            args=(self.PIL_image, frame_count),
+            args=(original_image, frame_count, self.current_load_id),
             daemon=True,
         ).start()
 
@@ -98,42 +102,43 @@ class ImageLoader:
     def load_image(self, path_to_image: str) -> Image | None:
         """Loads an image and resizes it to fit on the screen
         Returns Image or None on failure"""
-        PIL_image: Image | None = self.get_PIL_image(path_to_image)
-        if PIL_image is None:
+        original_image: Image | None = self.get_PIL_image(path_to_image)
+        if original_image is None:
             return None
 
-        self.PIL_image = PIL_image
+        self.current_load_id += 1
+        self.PIL_image = original_image
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
-        current_image: Image
+        resized_image: Image
         cached_image_data = self.image_cache.get(path_to_image)
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
-            current_image = cached_image_data.image
+            resized_image = cached_image_data.image
         else:
-            original_mode: str = self.PIL_image.mode
-            current_image = self._load_image_from_disk()
+            original_mode: str = original_image.mode
+            resized_image: Image = self._load_image_from_disk()
             size_display: str = get_byte_display(byte_size)
 
             self.image_cache[path_to_image] = CachedImage(
-                current_image,
-                self.PIL_image.size,
+                resized_image,
+                original_image.size,
                 size_display,
                 byte_size,
                 original_mode,
             )
 
-        frame_count: int = getattr(self.PIL_image, "n_frames", 1)
+        frame_count: int = getattr(original_image, "n_frames", 1)
         if frame_count > 1:
             # file pointer will be closed when animation finished loading
-            self.begin_animation(current_image, frame_count)
+            self.begin_animation(original_image, resized_image, frame_count)
         else:
-            self.PIL_image.close()
+            original_image.close()
 
         # first zoom level is just the image as is
-        self.zoomed_image_cache = [current_image]
+        self.zoomed_image_cache = [resized_image]
 
-        return current_image
+        return resized_image
 
     def _load_image_from_disk(self) -> Image:
         """Resizes PIL image, which forces a load from disk.
@@ -179,23 +184,18 @@ class ImageLoader:
         return None
 
     def load_remaining_frames(
-        self,
-        original_image: Image,
-        last_frame: int,
+        self, original_image: Image, last_frame: int, load_id: int
     ) -> None:
         """Loads all frames starting from the second"""
-
-        PIL_image = self.PIL_image
         for i in range(1, last_frame):
-            # if user moved to new image, don't keep loading previous animated image
-            if PIL_image is not original_image:
-                return
+            if load_id != self.current_load_id:
+                break
             try:
-                PIL_image.seek(i)
+                original_image.seek(i)
                 ms_until_next_frame: int = self.get_ms_until_next_frame()
 
                 self.animation_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(PIL_image),
+                    self.image_resizer.get_image_fit_to_screen(original_image),
                     ms_until_next_frame,
                 )
             except Exception:
@@ -203,8 +203,7 @@ class ImageLoader:
                 # just break and close to kill thread
                 break
 
-        if PIL_image is original_image:
-            original_image.close()
+        original_image.close()
 
     def reset_and_setup(self) -> None:
         """Resets zoom, animation frames, and closes previous image

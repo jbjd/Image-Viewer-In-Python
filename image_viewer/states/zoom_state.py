@@ -3,7 +3,7 @@ from constants import ZoomDirection
 
 class ZoomState:
 
-    ZOOM_CAP: int = 512
+    ZOOM_CAP: int = 64
 
     __slots__ = "cap", "level"
 
