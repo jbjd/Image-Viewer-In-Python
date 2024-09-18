@@ -43,15 +43,12 @@ class ImageResizer:
         )
         dimensions = self._scale_dimensions(dimensions, zoom_factor)
 
-        max_zoom_hit: bool
-        if self._too_zoomed_in(dimensions, zoom_factor):
-            max_zoom_hit = True
-            if height < self.screen_height:
+        max_zoom_hit: bool = self._too_zoomed_in(dimensions, zoom_factor)
+        if max_zoom_hit:
+            if dimensions[1] < self.screen_height:
                 dimensions = self._fit_to_screen_height(width, height)
-            elif width < self.screen_width:
+            elif dimensions[0] < self.screen_width:
                 dimensions = self._fit_to_screen_width(width, height)
-        else:
-            max_zoom_hit = False
 
         return resize(image, dimensions, interpolation), max_zoom_hit
 
