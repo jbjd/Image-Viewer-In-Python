@@ -57,7 +57,7 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
     with patch("builtins.open", side_effect=FileNotFoundError):
         assert image_loader.load_image("") is None
 
-    with patch("builtins.open", mock_open(read_data="abcd")):
+    with patch("builtins.open", mock_open(read_data=b"abcd")):
         with patch(
             "image_viewer.helpers.image_loader.open_image",
             side_effect=UnidentifiedImageError(),
@@ -65,7 +65,7 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
             assert image_loader.load_image("") is None
 
 
-@patch("builtins.open", mock_open(read_data="abcd"))
+@patch("builtins.open", mock_open(read_data=b"abcd"))
 @patch("image_viewer.helpers.image_loader.open_image", lambda *_: Image())
 def test_load_image_in_cache(image_loader: ImageLoader):
     """When an image of the same name is in cache, don't load from disk"""

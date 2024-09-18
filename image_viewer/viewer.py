@@ -332,9 +332,7 @@ class ViewerApp:
 
     def load_zoomed_image(self, direction: ZoomDirection) -> None:
         """Loads zoomed image and updates display"""
-        zoomed_image: Image | None = self.image_loader.get_zoomed_image(
-            self.file_manager.path_to_image, direction
-        )
+        zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
         if zoomed_image is not None:
             self._update_existing_image_display(zoomed_image)
 

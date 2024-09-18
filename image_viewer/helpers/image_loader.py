@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from io import BytesIO
 from os import stat
 from threading import Thread
 
@@ -93,9 +94,10 @@ class ImageLoader:
         """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
-            fp = open(path_to_image, "rb")
-            type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
-            return open_image(fp, "r", type_to_try_loading)
+            with open(path_to_image, "rb") as fp:
+                type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
+                fp.seek(0)
+                return open_image(BytesIO(fp.read()), "r", type_to_try_loading)
         except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
@@ -132,8 +134,6 @@ class ImageLoader:
         if frame_count > 1:
             # file pointer will be closed when animation finished loading
             self.begin_animation(original_image, resized_image, frame_count)
-        else:
-            original_image.close()
 
         # first zoom level is just the image as is
         self.zoomed_image_cache = [resized_image]
@@ -155,9 +155,7 @@ class ImageLoader:
 
         return current_image
 
-    def get_zoomed_image(
-        self, path_to_image: str, direction: ZoomDirection
-    ) -> Image | None:
+    def get_zoomed_image(self, direction: ZoomDirection) -> Image | None:
         """Handles getting and caching zoomed versions of the current image"""
         if not self.zoom_state.try_update_zoom_level(direction):
             return None
@@ -168,10 +166,9 @@ class ImageLoader:
 
         # Not in cache, resize to new zoom
         try:
-            with open_image(path_to_image) as fp:
-                zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
-                    fp, zoom_level
-                )
+            zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
+                self.PIL_image, zoom_level
+            )
             if hit_zoom_cap:
                 self.zoom_state.hit_cap()
 
@@ -202,8 +199,6 @@ class ImageLoader:
                 # moving to new image during this function causes a variety of errors
                 # just break and close to kill thread
                 break
-
-        original_image.close()
 
     def reset_and_setup(self) -> None:
         """Resets zoom, animation frames, and closes previous image
