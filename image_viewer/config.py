@@ -1,20 +1,19 @@
-import configparser
 import os
 import sys
+from configparser import ConfigParser
 
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(sys.argv[0]), "config.ini"))
+from constants import DEFAULT_FONT, DEFAULT_MAX_ITEMS_IN_CACHE
 
-# TODO: There must be a cleaner way to do this
-try:
-    default_font: str = config["FONT"]["DEFAULT"]
-except KeyError:
-    default_font = ""
+_config: ConfigParser = ConfigParser()
+_config.read(os.path.join(os.path.dirname(sys.argv[0]), "config.ini"))
 
-if not default_font:
-    default_font = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+# can't set DEFAULT_FONT to fallback, if user leaves DEFAULT empty
+# get does not override it with fallback  value
+font: str = _config.get("FONT", "DEFAULT", fallback="") or DEFAULT_FONT
 
 try:
-    max_items_in_cache: int = int(config["CACHE"]["SIZE"])
-except (KeyError, ValueError):
-    max_items_in_cache = 20
+    max_items_in_cache: int = int(
+        _config.get("CACHE", "SIZE", fallback=DEFAULT_MAX_ITEMS_IN_CACHE)
+    )
+except ValueError:
+    max_items_in_cache = DEFAULT_MAX_ITEMS_IN_CACHE

@@ -2,7 +2,9 @@
 File with constants needed in multiple spots of the codebase
 """
 
+import os
 from enum import IntEnum, StrEnum
+from typing import Final
 
 
 class Key(IntEnum):
@@ -39,7 +41,8 @@ class TkTags(StrEnum):
     BACKGROUND = "back"
 
 
-DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
+DEFAULT_FONT = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+DEFAULT_MAX_ITEMS_IN_CACHE: Final[int] = 20
 
 # TODO: Below, these could be configurable
 TEXT_RGB: str = "#FEFEFE"

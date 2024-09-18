@@ -186,10 +186,10 @@ def init_PIL(font_size: int) -> None:
     """Sets up font and edit PIL's internal list of plugins to load"""
     from PIL.ImageFont import truetype
 
-    from config import default_font
+    from config import font
 
-    ImageDraw.font = truetype(default_font, font_size)
+    ImageDraw.font = truetype(font, font_size)
     del truetype
-    del default_font
+    del font
 
     _stop_unwanted_PIL_imports()

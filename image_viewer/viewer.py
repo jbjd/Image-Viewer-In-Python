@@ -7,7 +7,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from config import default_font, max_items_in_cache
+from config import font, max_items_in_cache
 from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
@@ -162,7 +162,7 @@ class ViewerApp:
 
         icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
-        font_family: str = default_font[:-4].lower()  # -4 chops extension .ttf/.otf
+        font_family: str = font[:-4].lower()  # -4 chops extension .ttf/.otf
         # negative size makes font absolute for consistency with different monitors
         FONT: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
 
