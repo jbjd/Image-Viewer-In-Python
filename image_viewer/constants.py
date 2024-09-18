@@ -41,7 +41,9 @@ class TkTags(StrEnum):
     BACKGROUND = "back"
 
 
-DEFAULT_FONT = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+DEFAULT_FONT: Final[str] = (
+    "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+)
 DEFAULT_MAX_ITEMS_IN_CACHE: Final[int] = 20
 
 # TODO: Below, these could be configurable

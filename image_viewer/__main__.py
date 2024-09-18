@@ -27,14 +27,10 @@ def exception_hook(
 
 
 if __name__ == "__main__" and len(sys.argv) > 1:  # pragma: no cover
-    path_to_exe_folder: str = os.path.abspath(sys.argv[0])
+    path_to_exe_folder: str = os.path.dirname(sys.argv[0])
 
-    # This will always be true when compiled
-    # But if called like 'python image_viewer path' it will pass dir not file
-    if not os.path.isdir(path_to_exe_folder):
-        path_to_exe_folder = os.path.dirname(path_to_exe_folder)
-
-    sys.excepthook = partial(exception_hook, destination_path=path_to_exe_folder)
+    if not __debug__:
+        sys.excepthook = partial(exception_hook, destination_path=path_to_exe_folder)
 
     from viewer import ViewerApp
 

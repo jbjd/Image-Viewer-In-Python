@@ -37,6 +37,8 @@ class CachedImage:
 class ImageCache(OrderedDict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
+    __slots__ = "max_items_in_cache"
+
     def __init__(self, max_items_in_cache: int = DEFAULT_MAX_ITEMS_IN_CACHE) -> None:
         super().__init__()
         self.max_items_in_cache: int = max_items_in_cache
