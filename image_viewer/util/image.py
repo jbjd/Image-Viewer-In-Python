@@ -8,7 +8,7 @@ from typing import Iterable
 
 from PIL.Image import Image
 
-from constants import MAX_ITEMS_IN_CACHE
+from constants import DEFAULT_MAX_ITEMS_IN_CACHE
 from util.os import OS_name_cmp
 
 
@@ -37,6 +37,10 @@ class CachedImage:
 class ImageCache(OrderedDict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
+    def __init__(self, max_items_in_cache: int = DEFAULT_MAX_ITEMS_IN_CACHE) -> None:
+        super().__init__()
+        self.max_items_in_cache: int = max_items_in_cache
+
     def pop_safe(self, image_path: str) -> CachedImage | None:
         return self.pop(image_path, None)
 
@@ -58,7 +62,10 @@ class ImageCache(OrderedDict[str, CachedImage]):
 
     def __setitem__(self, key: str, value: CachedImage) -> None:
         """Adds check for items in the cache and purges LRU if over limit"""
-        if self.__len__() >= MAX_ITEMS_IN_CACHE:
+        if self.max_items_in_cache == 0:
+            return
+
+        if self.__len__() >= self.max_items_in_cache:
             self.popitem(last=False)
         super().__setitem__(key, value)
 

@@ -7,7 +7,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from config import default_font
+from config import default_font, max_items_in_cache
 from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader
@@ -43,7 +43,7 @@ class ViewerApp:
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
         # make FileManager first since it will validate path
-        image_cache: ImageCache = ImageCache()
+        image_cache: ImageCache = ImageCache(max_items_in_cache)
         try:
             self.file_manager: ImageFileManager = ImageFileManager(
                 first_image_path, image_cache

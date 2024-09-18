@@ -39,7 +39,7 @@ class TkTags(StrEnum):
     BACKGROUND = "back"
 
 
+DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
+
 # TODO: Below, these could be configurable
 TEXT_RGB: str = "#FEFEFE"
-
-MAX_ITEMS_IN_CACHE: int = 20
