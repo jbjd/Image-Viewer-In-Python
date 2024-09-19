@@ -23,6 +23,7 @@ class CustomCanvas(Canvas):
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
+        self.image_display_id: int = -1
         self.screen_width: int = master.winfo_width()
         self.screen_height: int = master.winfo_height()
         self.drag_start_x: int
@@ -85,10 +86,8 @@ class CustomCanvas(Canvas):
 
     def update_image_display(self, new_image: PhotoImage) -> None:
         """Puts a new image on screen"""
-        try:
-            self.delete(self.image_display_id)
-        except AttributeError:
-            pass
+        self.delete(self.image_display_id)
+
         self.image_display_id: int = self.create_image(
             self.screen_width >> 1,
             self.screen_height >> 1,
@@ -96,7 +95,7 @@ class CustomCanvas(Canvas):
             tag=TkTags.BACKGROUND,
             image=new_image,
         )
-        self.tag_raise("topbar")
+        self.tag_raise(TkTags.TOPBAR)
         self.master.update_idletasks()
 
     def update_existing_image_display(self, new_image: PhotoImage) -> None:
