@@ -9,7 +9,7 @@ _config.read(os.path.join(os.path.dirname(sys.argv[0]), "config.ini"))
 
 # can't set DEFAULT_FONT to fallback, if user leaves DEFAULT empty
 # get does not override it with fallback  value
-font: str = _config.get("FONT", "DEFAULT", fallback="") or DEFAULT_FONT
+font: str = _config.get("FONT", "DEFAULT", fallback=DEFAULT_FONT) or DEFAULT_FONT
 
 try:
     max_items_in_cache: int = int(

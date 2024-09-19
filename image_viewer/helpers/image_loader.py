@@ -119,7 +119,7 @@ class ImageLoader:
             resized_image = cached_image_data.image
         else:
             original_mode: str = original_image.mode
-            resized_image: Image = self._load_image_from_disk()
+            resized_image = self._load_image_from_disk()
             size_display: str = get_byte_display(byte_size)
 
             self.image_cache[path_to_image] = CachedImage(
