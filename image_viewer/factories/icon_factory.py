@@ -29,22 +29,22 @@ class IconFactory:
         """Returns copy of image that is icon size"""
         return resize(image, self.icon_size)
 
-    def make_icon_image(self, image: Image) -> PhotoImage:
-        """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
-        return PhotoImage(self._resize_icon(image))
-
     def make_icon_from_draw(self, draw: ImageDraw) -> PhotoImage:
         """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
-        return self.make_icon_image(draw._image)
+        return PhotoImage(self._resize_icon(draw._image))
 
     def _new_rgb_image(self, rgb: tuple[int, int, int]) -> Image:
         """Returns new default sized RGB Image"""
         return new_image("RGB", self.DEFAULT_SIZE, rgb)
 
-    def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
+    def _make_icon_base(
+        self,
+        default_rgb: tuple[int, int, int] = ICON_RGB,
+        default_hovered_rgb: tuple[int, int, int] = ICON_HOVERED_RGB,
+    ) -> tuple[ImageDraw, ImageDraw]:
         """Returns tuple of icon and hovered icon base images"""
-        return ImageDraw(self._new_rgb_image(self.ICON_RGB)), ImageDraw(
-            self._new_rgb_image(self.ICON_HOVERED_RGB)
+        return ImageDraw(self._new_rgb_image(default_rgb)), ImageDraw(
+            self._new_rgb_image(default_hovered_rgb)
         )
 
     def make_topbar_image(self, screen_width: int) -> PhotoImage:
@@ -63,10 +63,10 @@ class IconFactory:
         """Makes red button with an X when hovered"""
         EXIT_RGB: tuple[int, int, int] = (190, 40, 40)
         EXIT_HOVER_RGB: tuple[int, int, int] = (180, 25, 20)
-        draw = ImageDraw(self._new_rgb_image(EXIT_HOVER_RGB))
+        draw, draw_hovered = self._make_icon_base(EXIT_RGB, EXIT_HOVER_RGB)
         return IconImages(
-            self.make_icon_image(self._new_rgb_image(EXIT_RGB)),
-            self._draw_x_symbol(draw),
+            self.make_icon_from_draw(draw),
+            self._draw_x_symbol(draw_hovered),
         )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
