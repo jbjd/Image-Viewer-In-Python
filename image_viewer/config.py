@@ -1,3 +1,7 @@
+"""
+Reads config.ini from root dir and stores vars with results or defaults
+"""
+
 import os
 import sys
 from configparser import ConfigParser

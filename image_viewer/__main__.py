@@ -20,7 +20,7 @@ def exception_hook(
     import traceback
 
     try:  # Try to write, but don't allow another exception since that may be confusing
-        with open(error_file, "w") as fp:
+        with open(error_file, "w", encoding="utf-8") as fp:
             traceback.print_exception(error_type, error, trace, file=fp)  # type: ignore
     except OSError:
         pass

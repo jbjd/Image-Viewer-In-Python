@@ -17,13 +17,15 @@ from constants import TEXT_RGB, Rotation
 def save_image(
     image: Image,
     fp: str | IO[bytes],
-    format: str | None = None,
+    extension: str | None = None,
     quality: int = 90,
     is_animated: bool | None = None,
 ) -> None:
     """Saves a PIL image to disk"""
     save_all: bool = image_is_animated(image) if is_animated is None else is_animated
-    image.save(fp, format, optimize=True, method=6, quality=quality, save_all=save_all)
+    image.save(
+        fp, extension, optimize=True, method=6, quality=quality, save_all=save_all
+    )
 
 
 def rotate_image(image: Image, angle: Rotation) -> Image:
@@ -76,9 +78,9 @@ def resize(
     return resized_image
 
 
-def _get_longest_line_dimensions(input: str) -> tuple[int, int]:
+def _get_longest_line_dimensions(text: str) -> tuple[int, int]:
     """Returns width and height of longest string in a string with multiple lines"""
-    longest_line: str = max(input.split("\n"), key=len)
+    longest_line: str = max(text.split("\n"), key=len)
 
     width_offset, height_offset, width, height = ImageDraw.font.getbbox(  # type: ignore
         longest_line

@@ -15,7 +15,7 @@ from util.os import OS_name_cmp
 class CachedImage:
     """Information stored to skip resizing/system calls on repeated opening"""
 
-    __slots__ = "height", "image", "mode", "size_display", "byte_size", "width"
+    __slots__ = ("height", "image", "mode", "size_display", "byte_size", "width")
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class CachedImage:
 class ImageCache(OrderedDict[str, CachedImage]):
     """Dictionary for caching image data using paths as keys"""
 
-    __slots__ = "max_items_in_cache"
+    __slots__ = ("max_items_in_cache",)
 
     def __init__(self, max_items_in_cache: int = DEFAULT_MAX_ITEMS_IN_CACHE) -> None:
         super().__init__()
@@ -75,7 +75,7 @@ class ImageCache(OrderedDict[str, CachedImage]):
 class ImageName:
     """Full name and suffix of loaded image files"""
 
-    __slots__ = "name", "suffix"
+    __slots__ = ("name", "suffix")
 
     def __init__(self, name: str) -> None:
         index: int = name.rfind(".") + 1
@@ -88,7 +88,7 @@ class ImageName:
 
 class ImageNameList(list[ImageName]):
 
-    __slots__ = "display_index"
+    __slots__ = ("display_index",)
 
     def __init__(self, iterable: Iterable[ImageName]) -> None:
         super().__init__(iterable)

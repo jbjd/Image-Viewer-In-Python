@@ -2,10 +2,11 @@ from constants import ZoomDirection
 
 
 class ZoomState:
+    """Represents level of zoom and regulates maximum zoom"""
 
     ZOOM_CAP: int = 32
 
-    __slots__ = "cap", "level"
+    __slots__ = ("cap", "level")
 
     def __init__(self) -> None:
         self.cap: int = self.ZOOM_CAP

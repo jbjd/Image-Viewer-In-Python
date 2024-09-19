@@ -239,7 +239,7 @@ class ImageFileManager:
         )
         new_dir: str = get_dir_name(new_name_or_path)
 
-        if new_name == "." or new_name == "..":
+        if new_name in (".", ".."):
             # name is actually path specifier
             new_dir = os.path.normpath(os.path.join(new_dir, new_name))
             new_name = self.current_image.name
@@ -317,10 +317,10 @@ class ImageFileManager:
             self._files.move_index(1)
         self._update_after_move_or_edit()
 
-    def undo_rename_or_convert(self) -> bool:
+    def undo_most_recent_action(self) -> bool:
         """Undoes most recent rename/convert
         returns if screen needs a refresh"""
-        if not self._ask_undo_last_action():
+        if not self._ask_to_confirm_undo():
             return False
 
         image_to_add_path: str
@@ -348,7 +348,7 @@ class ImageFileManager:
 
         return True
 
-    def _ask_undo_last_action(self) -> bool:
+    def _ask_to_confirm_undo(self) -> bool:
         """Returns if user wants to + can undo last action"""
         try:
             undo_message: str = self.action_undoer.get_undo_message()

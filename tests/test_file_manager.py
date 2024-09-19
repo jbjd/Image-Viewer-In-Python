@@ -115,19 +115,19 @@ def test_undo(manager: ImageFileManager):
     """Test correct behavior adding/removing with undo"""
     with patch.object(
         ImageFileManager,
-        "_ask_undo_last_action",
+        "_ask_to_confirm_undo",
         return_value=False,
     ):
-        assert not manager.undo_rename_or_convert()
+        assert not manager.undo_most_recent_action()
 
     # Mock that undo should add b.png and remove a.png
     manager.action_undoer = MockActionUndoer()
     with patch.object(
         ImageFileManager,
-        "_ask_undo_last_action",
+        "_ask_to_confirm_undo",
         return_value=True,
     ):
-        assert manager.undo_rename_or_convert()
+        assert manager.undo_most_recent_action()
         assert len(manager._files) == 1
         assert manager._files[0].name == "b.png"
         assert manager._files.display_index == 0

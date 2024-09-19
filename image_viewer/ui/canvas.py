@@ -23,6 +23,7 @@ class CustomCanvas(Canvas):
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
+        self.file_name_text_id: int = -1
         self.image_display_id: int = -1
         self.screen_width: int = master.winfo_width()
         self.screen_height: int = master.winfo_height()
@@ -75,7 +76,7 @@ class CustomCanvas(Canvas):
 
     def create_name_text(self, x: int, y: int, font: str) -> None:
         """Creates text object used to display file name"""
-        self.file_name_text_id: int = self.create_text(
+        self.file_name_text_id = self.create_text(
             x,
             y,
             fill=TEXT_RGB,
@@ -88,7 +89,7 @@ class CustomCanvas(Canvas):
         """Puts a new image on screen"""
         self.delete(self.image_display_id)
 
-        self.image_display_id: int = self.create_image(
+        self.image_display_id = self.create_image(
             self.screen_width >> 1,
             self.screen_height >> 1,
             anchor="center",

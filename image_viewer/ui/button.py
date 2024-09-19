@@ -17,7 +17,7 @@ class IconImages(namedtuple("IconImages", ["default", "hovered"])):
 class HoverableButton:
     """Button with different icons when its hovered"""
 
-    __slots__ = "canvas", "function_to_bind", "icon", "icon_hovered", "id"
+    __slots__ = ("canvas", "function_to_bind", "icon", "icon_hovered", "id")
 
     def __init__(
         self,
@@ -29,10 +29,11 @@ class HoverableButton:
         self.icon: PhotoImage = icon.default
         self.icon_hovered: PhotoImage = icon.hovered
         self.function_to_bind: Callable[[Event], None] = function_to_bind
+        self.id: int = -1
 
     def add_to_canvas(self, x_offset: int = 0, y_offset: int = 0) -> None:
         """Adds self to canvas"""
-        self.id: int = self.canvas.create_image(
+        self.id = self.canvas.create_image(
             x_offset,
             y_offset,
             image=self.icon,
@@ -64,7 +65,7 @@ class HoverableButton:
 class ToggleButton(HoverableButton):
     """Extends HoverableButton by allowing an active/inactive state"""
 
-    __slots__ = "active_icon", "active_icon_hovered", "hovered_button", "is_active"
+    __slots__ = ("active_icon", "active_icon_hovered", "hovered_button", "is_active")
 
     def __init__(
         self,

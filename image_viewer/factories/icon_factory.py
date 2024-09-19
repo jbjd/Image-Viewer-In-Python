@@ -20,12 +20,13 @@ class IconFactory:
     # Make all icons 32x32 and resize to screen after drawing
     DEFAULT_SIZE: tuple[int, int] = (32, 32)
 
-    __slots__ = "icon_size", "ratio"
+    __slots__ = ("icon_size", "ratio")
 
     def __init__(self, icon_size: int) -> None:
         self.icon_size: Final[tuple[int, int]] = (icon_size, icon_size)
 
     def _resize_icon(self, image: Image) -> Image:
+        """Returns copy of image that is icon size"""
         return resize(image, self.icon_size)
 
     def make_icon_from_draw(self, draw: ImageDraw) -> PhotoImage:

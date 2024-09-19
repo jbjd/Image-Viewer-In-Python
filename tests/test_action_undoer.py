@@ -74,7 +74,7 @@ def test_undo_rename(action_undoer: ActionUndoer):
 
 
 def test_undo_rotate(action_undoer: ActionUndoer):
-    action_undoer.append(Rotate("old", b"orgiginal bytes"))
+    action_undoer.append(Rotate("old", b"original bytes"))
 
     with patch("builtins.open", mock_open()) as mock_fp:
         assert action_undoer.get_undo_message()

@@ -136,7 +136,7 @@ class ViewerApp:
             ),
         )
         app.bind("<Control-m>", self.move_to_new_file)
-        app.bind("<Control-z>", self.undo_rename_or_convert)
+        app.bind("<Control-z>", self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.hide_topbar)
@@ -385,8 +385,9 @@ class ViewerApp:
             self.exit()
         self.load_image_unblocking()
 
-    def undo_rename_or_convert(self, _: Event) -> None:
-        if self.file_manager.undo_rename_or_convert():
+    def undo_most_recent_action(self, _: Event) -> None:
+        """Tries to undo most recent action and loads new image if needed"""
+        if self.file_manager.undo_most_recent_action():
             self.load_image_unblocking()
 
     def move(self, amount: int) -> None:
@@ -414,19 +415,24 @@ class ViewerApp:
         self.load_image_unblocking()
 
     def hide_rename_window(self) -> None:
+        """Hides rename window and returns focus to main window"""
         self.canvas.itemconfigure(self.rename_entry.id, state="hidden")
         self.app.focus()
 
-    def toggle_show_rename_window(self, _: Event) -> None:
-        if self.canvas.is_widget_visible(self.rename_entry.id):
-            self.hide_rename_window()
-            return
-
+    def show_rename_window(self) -> None:
+        """Shows rename window and moves focus to it"""
         if not self.canvas.is_widget_visible(TkTags.TOPBAR):
             self.show_topbar()
 
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
+
+    def toggle_show_rename_window(self, _: Event) -> None:
+        """Either shows or hides rename window and shifts focus accordingly"""
+        if self.canvas.is_widget_visible(self.rename_entry.id):
+            self.hide_rename_window()
+        else:
+            self.show_rename_window()
 
     def rename_or_convert(self, _: Event) -> None:
         """Handles user input into rename window.

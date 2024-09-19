@@ -9,10 +9,10 @@ class RenameEntry(Entry):
 
     ERROR_COLOR: str = "#E6505F"
 
-    __slots__ = "being_resized", "cursor", "id", "min_width", "text"
+    __slots__ = ("being_resized", "canvas_id", "cursor", "min_width", "text")
 
     def __init__(
-        self, master: Tk, canvas: Canvas, id: int, min_width: int, font: str
+        self, master: Tk, canvas: Canvas, canvas_id: int, min_width: int, font: str
     ) -> None:
         super().__init__(
             master,
@@ -24,11 +24,11 @@ class RenameEntry(Entry):
             borderwidth=0,
             width=min_width,
         )
-        canvas.itemconfigure(id, state="hidden", window=self)
+        canvas.itemconfigure(canvas_id, state="hidden", window=self)
 
         self.being_resized: bool = False
         self.cursor: str = ""
-        self.id: int = id
+        self.id: int = canvas_id
         self.min_width: int = min_width
 
         # ensure ctrl+c is processed outside of this program
@@ -58,7 +58,7 @@ class RenameEntry(Entry):
         if self.being_resized:
             self.config(state="disabled")
             max_width: int = self.min_width << 1
-            if new_width >= self.min_width and new_width <= max_width:
+            if self.min_width <= new_width <= max_width:
                 self.config(width=new_width)
                 canvas.itemconfig(self.id, width=new_width)
         else:
