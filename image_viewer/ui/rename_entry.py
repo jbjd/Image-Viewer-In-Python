@@ -4,7 +4,7 @@ from typing import Literal
 from constants import TEXT_RGB
 
 
-class RenameEntry(Entry):
+class RenameEntry(Entry):  # pylint: disable=too-many-ancestors
     """Entry for use in a rename window"""
 
     ERROR_COLOR: str = "#E6505F"

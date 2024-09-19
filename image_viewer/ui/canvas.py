@@ -5,7 +5,7 @@ from PIL.ImageTk import PhotoImage
 from constants import TEXT_RGB, TkTags
 
 
-class CustomCanvas(Canvas):
+class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (

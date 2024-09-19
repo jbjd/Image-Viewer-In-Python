@@ -1,3 +1,7 @@
+"""
+Logic for interacting with native file dialogs
+"""
+
 from tkinter.filedialog import askopenfilename
 from typing import Iterable
 

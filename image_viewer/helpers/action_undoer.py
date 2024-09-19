@@ -1,3 +1,7 @@
+"""
+Classes representing actions and a class that handles undoing them
+"""
+
 import os
 from abc import ABC
 from collections import deque

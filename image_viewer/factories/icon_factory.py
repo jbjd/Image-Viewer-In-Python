@@ -29,11 +29,16 @@ class IconFactory:
         """Returns copy of image that is icon size"""
         return resize(image, self.icon_size)
 
+    def make_icon_image(self, image: Image) -> PhotoImage:
+        """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
+        return PhotoImage(self._resize_icon(image))
+
     def make_icon_from_draw(self, draw: ImageDraw) -> PhotoImage:
         """Resizes an ImageDraw to icon size and converts to a PhotoImage"""
-        return PhotoImage(self._resize_icon(draw._image))
+        return self.make_icon_image(draw._image)
 
     def _new_rgb_image(self, rgb: tuple[int, int, int]) -> Image:
+        """Returns new default sized RGB Image"""
         return new_image("RGB", self.DEFAULT_SIZE, rgb)
 
     def _make_icon_base(self) -> tuple[ImageDraw, ImageDraw]:
@@ -43,22 +48,29 @@ class IconFactory:
         )
 
     def make_topbar_image(self, screen_width: int) -> PhotoImage:
+        """Makes partially transparient bar used on the screen"""
         TOPBAR_RGBA: tuple[int, int, int, int] = (60, 60, 60, 170)
         size: tuple[int, int] = (screen_width, self.icon_size[0])
         return PhotoImage(new_image("RGBA", size, TOPBAR_RGBA))
 
+    def _draw_x_symbol(self, draw: ImageDraw) -> PhotoImage:
+        """Draws X on provided image"""
+        draw.line((6, 6, 26, 26), self.LINE_RGB, 2)
+        draw.line((6, 26, 26, 6), self.LINE_RGB, 2)
+        return self.make_icon_from_draw(draw)
+
     def make_exit_icons(self) -> IconImages:
+        """Makes red button with an X when hovered"""
         EXIT_RGB: tuple[int, int, int] = (190, 40, 40)
         EXIT_HOVER_RGB: tuple[int, int, int] = (180, 25, 20)
         draw = ImageDraw(self._new_rgb_image(EXIT_HOVER_RGB))
-        draw.line((6, 6, 26, 26), self.LINE_RGB, 2)
-        draw.line((6, 26, 26, 6), self.LINE_RGB, 2)
         return IconImages(
-            PhotoImage(self._resize_icon(self._new_rgb_image(EXIT_RGB))),
-            self.make_icon_from_draw(draw),
+            self.make_icon_image(self._new_rgb_image(EXIT_RGB)),
+            self._draw_x_symbol(draw),
         )
 
     def _draw_minify_symbol(self, draw: ImageDraw) -> PhotoImage:
+        """Draws common minify symbol on provided image"""
         draw.line((6, 24, 24, 24), self.LINE_RGB, 2)
         return self.make_icon_from_draw(draw)
 
@@ -69,6 +81,7 @@ class IconFactory:
         )
 
     def _draw_trash_symbol(self, draw: ImageDraw) -> PhotoImage:
+        """Draws a trash can on provided image"""
         draw.line((9, 9, 9, 22), self.LINE_RGB, 2)
         draw.line((21, 9, 21, 22), self.LINE_RGB, 2)
         draw.line((9, 22, 21, 22), self.LINE_RGB, 2)
@@ -83,13 +96,15 @@ class IconFactory:
         )
 
     def _draw_down_and_up_arrow(self, draw: ImageDraw) -> tuple[PhotoImage, PhotoImage]:
+        """Draws an arrow on provided image
+        Returns tuple of down arrow version and up arrow version"""
         draw.line((6, 11, 16, 21), self.LINE_RGB, 2)
         draw.line((16, 21, 26, 11), self.LINE_RGB, 2)
         resised_img: Image = self._resize_icon(draw._image)
         return PhotoImage(resised_img), PhotoImage(ImageOps.flip(resised_img))
 
     def make_dropdown_icons(self) -> tuple[IconImages, IconImages]:
-        """Return down arrow icon and up arrow icon as a tuple"""
+        """Return down arrow icons and up arrow icons as a tuple"""
         draw, draw_hovered = self._make_icon_base()
         down, up = self._draw_down_and_up_arrow(draw)
         down_hovered, up_hovered = self._draw_down_and_up_arrow(draw_hovered)
