@@ -333,7 +333,12 @@ class ViewerApp:
 
     def load_zoomed_image(self, direction: ZoomDirection) -> None:
         """Loads zoomed image and updates display"""
-        zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
+        cull_bbox = self.canvas.get_bbox_to_cull_offscreen_image_parts(
+            self.image_loader.PIL_image.size
+        )
+        zoomed_image: Image | None = self.image_loader.get_zoomed_image(
+            direction, cull_bbox
+        )
         if zoomed_image is not None:
             self._update_existing_image_display(zoomed_image)
 

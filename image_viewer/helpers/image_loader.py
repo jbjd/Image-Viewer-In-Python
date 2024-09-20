@@ -155,7 +155,7 @@ class ImageLoader:
 
         return current_image
 
-    def get_zoomed_image(self, direction: ZoomDirection) -> Image | None:
+    def get_zoomed_image(self, direction: ZoomDirection, cull_bbox) -> Image | None:
         """Handles getting and caching zoomed versions of the current image"""
         if not self.zoom_state.try_update_zoom_level(direction):
             return None
@@ -167,7 +167,7 @@ class ImageLoader:
         # Not in cache, resize to new zoom
         try:
             zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
-                self.PIL_image, zoom_level
+                self.PIL_image, cull_bbox, zoom_level
             )
             if hit_zoom_cap:
                 self.zoom_state.hit_cap()

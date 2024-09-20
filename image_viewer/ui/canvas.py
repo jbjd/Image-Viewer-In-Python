@@ -123,3 +123,38 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     def is_widget_visible(self, tag_or_id: str | int) -> bool:
         """Returns bool of if provided tag/id is visible"""
         return self.itemcget(tag_or_id, "state") != "hidden"
+
+    def get_bbox_to_cull_offscreen_image_parts(
+        self, true_dimensions: tuple[int, int]
+    ) -> tuple[float, float, float, float]:
+        """Returns bbox of image display only including visible parts"""
+        canvas_x1, canvas_y1, canvas_x2, canvas_y2 = self.bbox(self.image_display_id)
+        true_width, true_height = true_dimensions
+        width_on_canvas, height_on_canvas = canvas_x2 - canvas_x1, canvas_y2 - canvas_y1
+
+        image_center_x = canvas_x1 + (width_on_canvas / 2)
+        image_center_y = canvas_y1 + (height_on_canvas / 2)
+
+        # Chop off invisisble parts
+        canvas_x1 = max(canvas_x1, 0)
+        canvas_y1 = max(canvas_y1, 0)
+
+        # canvas canvas coords on 0,0
+        canvas_x1 -= image_center_x
+        canvas_y1 -= image_center_y
+        canvas_x2 -= image_center_x
+        canvas_y2 -= image_center_y
+
+        canvas_width_ratio = true_width / width_on_canvas
+        canvas_height_ratio = true_height / height_on_canvas
+
+        canvas_x1 *= canvas_width_ratio
+        canvas_y1 *= canvas_height_ratio
+        canvas_x2 *= canvas_width_ratio
+        canvas_y2 *= canvas_height_ratio
+        canvas_x1 += true_width / 2
+        canvas_y1 += true_height / 2
+        canvas_x2 += true_width / 2
+        canvas_y2 += true_height / 2
+
+        return (canvas_x1, canvas_y1, canvas_x2, canvas_y2)
