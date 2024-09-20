@@ -139,7 +139,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         canvas_x1 = max(canvas_x1, 0)
         canvas_y1 = max(canvas_y1, 0)
 
-        # canvas canvas coords on 0,0
+        # center canvas coords on 0,0
         canvas_x1 -= image_center_x
         canvas_y1 -= image_center_y
         canvas_x2 -= image_center_x
@@ -155,6 +155,9 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
         # TODO: Centering is incorrect, chopping left/top without chopping right/bottom
         # When image is centered. Should be chopping all sides equally
+        # Update: This is due to bbox'ing an already chopped image
+        # Need to generate coords based on center of bbox results rather
+        # than using them directly
         canvas_x1 += true_width / 2
         canvas_y1 += true_height / 2
         canvas_x2 += true_width / 2
