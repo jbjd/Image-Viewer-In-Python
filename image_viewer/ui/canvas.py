@@ -152,6 +152,9 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         canvas_y1 *= canvas_height_ratio
         canvas_x2 *= canvas_width_ratio
         canvas_y2 *= canvas_height_ratio
+
+        # TODO: Centering is incorrect, chopping left/top without chopping right/bottom
+        # When image is centered. Should be chopping all sides equally
         canvas_x1 += true_width / 2
         canvas_y1 += true_height / 2
         canvas_x2 += true_width / 2

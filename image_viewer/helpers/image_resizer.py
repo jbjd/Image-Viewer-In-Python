@@ -33,28 +33,23 @@ class ImageResizer:
 
         self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
-    def get_zoomed_image(
-        self, image: Image, cull_bbox, zoom_level: int
-    ) -> tuple[Image, bool]:
+    def get_zoomed_image(self, image: Image, cull_bbox, zoom_level: int) -> Image:
         """Resizes image using the provided zoom_level and bool if max zoom reached"""
         width, height = image.size
         zoom_factor: float = self._calc_zoom_factor(width, height, zoom_level)
 
+        visible_width, visible_height = (
+            cull_bbox[2] - cull_bbox[0],
+            cull_bbox[3] - cull_bbox[1],
+        )
         dimensions, interpolation = self.dimension_finder(
-            *self._scale_dimensions(image.size, zoom_factor)
+            *self._scale_dimensions((visible_width, visible_height), zoom_factor)
         )
         dimensions = self._scale_dimensions(dimensions, zoom_factor)
 
-        max_zoom_hit: bool = self._too_zoomed_in(dimensions, zoom_factor)
-        if max_zoom_hit:
-            if dimensions[1] < self.screen_height:
-                dimensions = self._fit_to_screen_height(width, height)
-            elif dimensions[0] < self.screen_width:
-                dimensions = self._fit_to_screen_width(width, height)
-
         # TODO: resize fits to dimensions, but image is now being cropped so original
         # ratio is not perserved!
-        return resize(image.crop(cull_bbox), dimensions, interpolation), max_zoom_hit
+        return resize(image.crop(cull_bbox), dimensions, interpolation)
 
     def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
         """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""

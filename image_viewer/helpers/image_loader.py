@@ -166,11 +166,9 @@ class ImageLoader:
 
         # Not in cache, resize to new zoom
         try:
-            zoomed_image, hit_zoom_cap = self.image_resizer.get_zoomed_image(
+            zoomed_image = self.image_resizer.get_zoomed_image(
                 self.PIL_image, cull_bbox, zoom_level
             )
-            if hit_zoom_cap:
-                self.zoom_state.hit_cap()
 
             self.zoomed_image_cache.append(zoomed_image)
 
