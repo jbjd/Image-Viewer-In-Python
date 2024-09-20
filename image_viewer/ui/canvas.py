@@ -1,4 +1,5 @@
 from tkinter import Canvas, Event, Tk
+from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
@@ -29,6 +30,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.screen_height: int = master.winfo_height()
         self.drag_start_x: int
         self.drag_start_y: int
+        self.topbar: PhotoImage
 
         self.create_rectangle(
             0,
@@ -69,7 +71,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
-        self.topbar: PhotoImage = topbar_img  # save from garbage collector
+        self.topbar = topbar_img  # save from garbage collector
         self.create_image(
             0, 0, image=topbar_img, anchor="nw", tag=TkTags.TOPBAR, state="hidden"
         )
@@ -113,7 +115,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     def _clean_long_name(image_name: str) -> str:
         """Takes a name and returns a shortened version if its too long"""
         end_index: int = image_name.rfind(".")
-        MAX: int = 40
+        MAX: Final[int] = 40
         if end_index < MAX:
             return image_name
         return f"{image_name[:MAX-2]}(…){image_name[end_index:]}"

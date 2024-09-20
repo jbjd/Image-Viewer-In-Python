@@ -55,6 +55,7 @@ class ViewerApp:
         self.move_id: str = ""
         self.image_load_id: str = ""
         self.animation_id: str = ""
+        self._display_image: PhotoImage
 
         self.app: Tk = self._setup_tk_app(path_to_exe)
         self.canvas: CustomCanvas = CustomCanvas(self.app)

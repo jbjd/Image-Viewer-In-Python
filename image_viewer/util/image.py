@@ -87,6 +87,7 @@ class ImageName:
 
 
 class ImageNameList(list[ImageName]):
+    """Represents list of ImageName objects with extension methods"""
 
     __slots__ = ("display_index",)
 

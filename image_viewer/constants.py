@@ -46,5 +46,4 @@ DEFAULT_FONT: Final[str] = (
 )
 DEFAULT_MAX_ITEMS_IN_CACHE: Final[int] = 20
 
-# TODO: Below, these could be configurable
 TEXT_RGB: str = "#FEFEFE"
