@@ -75,7 +75,7 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 
     if module_name in regex_to_apply_py:
         regex_replacements: list[RegexReplacement] = regex_to_apply_py[module_name]
-        source = apply_regex(source, regex_replacements)
+        source = apply_regex(source, regex_replacements, module_name)
 
     code_cleaner: ExclusionUnparser = ExclusionUnparser(module_name)
     code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
