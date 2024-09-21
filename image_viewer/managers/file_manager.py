@@ -26,6 +26,7 @@ class ImageFileManager:
         "jif",
         "png",
         "webp",
+        "dds",
     }
 
     __slots__ = (

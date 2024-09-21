@@ -29,7 +29,7 @@ def try_convert_file_and_save_new(
                 raise ValueError
 
             match target_ext:
-                case "webp" | "png":
+                case "webp" | "png" | "dds":
                     pass  # don't hit default case of return False
                 case "jpg" | "jpeg" | "jif" | "jfif" | "jpe":
                     target_ext = "JPEG"
