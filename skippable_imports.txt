@@ -78,7 +78,6 @@ PIL.BufrStubImagePlugin
 PIL.ContainerIO
 PIL.CurImagePlugin
 PIL.DcxImagePlugin
-PIL.DdsImagePlugin
 PIL.EpsImagePlugin
 PIL.FitsImagePlugin
 PIL.FliImagePlugin

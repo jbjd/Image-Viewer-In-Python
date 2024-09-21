@@ -156,6 +156,7 @@ def _preinit() -> None:  # pragma: no cover
     __import__("PIL.GifImagePlugin", globals(), locals(), ())
     __import__("PIL.PngImagePlugin", globals(), locals(), ())
     __import__("PIL.WebPImagePlugin", globals(), locals(), ())
+    __import__("PIL.DdsImagePlugin", globals(), locals(), ())
 
     def new_jpeg_factory(fp=None, filename=None) -> JpegImageFile:
         return JpegImageFile(fp, filename)

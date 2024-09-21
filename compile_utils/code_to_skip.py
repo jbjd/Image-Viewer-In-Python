@@ -139,6 +139,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_get_image_from_kw", "_pilbitmap_check", "_show"},
+    "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
     "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
@@ -193,9 +194,9 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 _skip_classes_kwargs: dict[str, set[str]] = {
     "helpers.action_undoer": {"ABC"},
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
+    "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
-        "_Tile",
         "Parser",
         "PyCodec",
         "PyCodecState",
@@ -306,12 +307,6 @@ remove_numpy_pytester_re = RegexReplacement(
 regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
     list,
     {
-        "__main__": [
-            RegexReplacement(
-                r"if not os.path.isdir\(path_to_exe_folder\):\s*",
-                count=1,
-            )
-        ],
         "util.PIL": [RegexReplacement(pattern=r"_Image._plugins = \[\]")],
         "numpy.__init__": [
             remove_numpy_pytester_re,
@@ -530,7 +525,19 @@ except ImportError:
             RegexReplacement(pattern="(L|l)ist, "),  # codespell:ignore ist
             RegexReplacement(pattern="List", replacement="list"),
         ],
-        "PIL.ImageFile": [RegexReplacement(pattern="use_mmap = use_mmap.*")],
+        "PIL.ImageFile": [
+            RegexReplacement(pattern="use_mmap = use_mmap.*"),
+            RegexReplacement(
+                pattern="from typing import .*",
+                replacement="from collections import namedtuple",
+                count=1,
+            ),
+            RegexReplacement(
+                pattern=r"_Tile\(NamedTuple\):",
+                replacement="_Tile(namedtuple('_Tile', ['codec_name', 'extents', 'offset', 'args'])):",  # noqa E501
+                count=1,
+            ),
+        ],
         "PIL.ImageMode": [
             RegexReplacement(
                 pattern="from typing import NamedTuple",

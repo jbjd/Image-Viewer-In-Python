@@ -149,5 +149,7 @@ def magic_number_guess(magic: bytes) -> tuple[str]:
             return ("WEBP",)
         case b"GIF8":
             return ("GIF",)
+        case b"DDS ":
+            return ("DDS",)
         case _:
             return ("JPEG",)
