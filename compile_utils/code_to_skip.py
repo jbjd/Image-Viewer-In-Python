@@ -139,6 +139,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
     "PIL.ImageTk": {"_get_image_from_kw", "_pilbitmap_check", "_show"},
+    "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
     "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
@@ -193,10 +194,13 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 _skip_classes_kwargs: dict[str, set[str]] = {
     "helpers.action_undoer": {"ABC"},
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
+    "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "Parser",
+        "PyCodec",
         "PyCodecState",
+        "PyDecoder",
         "PyEncoder",
         "StubHandler",
         "StubImageFile",
