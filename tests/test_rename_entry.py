@@ -52,14 +52,17 @@ def test_resize(rename_entry: RenameEntry, canvas: CustomCanvas):
 
         rename_entry._resize(canvas, 251)
 
-        config: dict = rename_entry.config()  # type: ignore
+        config: dict | None = rename_entry.config()
+        assert config is not None
         assert config["state"][4] == "disabled"
         assert config["width"][4] == 251
 
         rename_entry._stop_resize(None)  # type: ignore
         assert not rename_entry.being_resized
 
-        assert rename_entry.config()["state"][4] == "normal"  # type: ignore
+        config = rename_entry.config()
+        assert config is not None
+        assert config["state"][4] == "normal"
 
 
 def test_resize_hover(rename_entry: RenameEntry, canvas: CustomCanvas):

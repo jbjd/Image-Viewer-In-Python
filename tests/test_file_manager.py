@@ -143,12 +143,16 @@ def test_get_and_show_details(manager: ImageFileManager):
         manager.show_image_detail_popup(PIL_image)
         mock_show_info.assert_not_called()
 
-    manager.image_cache[manager.path_to_image] = CachedImage(
-        None, (100, 100), "100kb", 9999, "P"  # type: ignore
-    )
-    # not gonna check the exact string returned, but Palette should be in it
-    # since P was passed as the mode and it should get mapped to a more readable name
-    assert "Palette" in manager.get_cached_details()
+    for mode in ("P", "L", "1", "ANYTHING_ELSE"):
+        manager.image_cache[manager.path_to_image] = CachedImage(
+            PIL_image, (100, 100), "100kb", 9999, mode
+        )
+        readable_mode = {"P": "Palette", "L": "Grayscale", "1": "Black And White"}.get(
+            mode, mode
+        )
+        details: str = manager.get_cached_details()
+        assert isinstance(details, str)
+        assert " bpp " + readable_mode in details
 
     with patch.object(os, "stat", return_value=MockStatResult(0)):
         with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:

@@ -37,7 +37,7 @@ else:
     separators = r"[/]"
 
 
-class ExclusionUnparser(MinifyUnparser):  # type: ignore
+class ExclusionUnparser(MinifyUnparser):
     """Extends parent to exclude specific things only relevant to this codebase"""
 
     def __init__(self, module_name: str = "") -> None:
