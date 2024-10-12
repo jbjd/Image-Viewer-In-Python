@@ -75,7 +75,7 @@ class ImageFileManager:
 
         if new_dir != self.image_directory:
             self.image_directory = new_dir
-            self.find_all_images()
+            self.refresh_image_list()
 
         index: int
         found: bool
@@ -102,8 +102,7 @@ class ImageFileManager:
         self.path_to_image = self.get_path_to_image()
 
     def find_all_images(self) -> None:
-        """Clears images and finds all images in current directory"""
-        self.image_cache.clear()
+        """Finds all supported image in directory"""
         image_to_start_at: str = self._files.get_current_image_name()
 
         VALID_FILE_TYPES = self.VALID_FILE_TYPES
@@ -117,6 +116,11 @@ class ImageFileManager:
 
         self._files.sort_and_preserve_index(image_to_start_at)
         self._update_after_move_or_edit()
+
+    def refresh_image_list(self) -> None:
+        """Clears cache and re-loads current images in direcrory"""
+        self.image_cache.clear()
+        self.find_all_images()
 
     def get_cached_details(self) -> str:
         """Returns tuple of current image's dimensions, size, and mode.

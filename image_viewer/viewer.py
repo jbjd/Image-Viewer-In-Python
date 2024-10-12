@@ -381,7 +381,7 @@ class ViewerApp:
         """Gets images in current directory and update internal list with them"""
         self.clear_image()
         try:
-            self.file_manager.find_all_images()
+            self.file_manager.refresh_image_list()
         except IndexError:
             self.exit()
         self.load_image_unblocking()
