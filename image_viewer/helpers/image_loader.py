@@ -7,6 +7,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
+from animation.frame import Frame
 from constants import ZoomDirection
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
@@ -46,40 +47,32 @@ class ImageLoader:
         self.PIL_image = Image()
         self.current_load_id: int = 0
 
-        self.animation_frames: list[tuple[Image | None, int]] = []
+        self.animation_frames: list[Frame] = []
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
         self.zoomed_image_cache: list[Image] = []
 
-    def get_next_frame(self) -> tuple[Image | None, int]:
-        """Gets next frame of animated image or None while its being loaded"""
+    def get_next_frame(self) -> Frame:
+        """Gets next frame of animated image or empty frame while its being loaded"""
         try:
             self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
             current_frame = self.animation_frames[self.frame_index]
         except (ZeroDivisionError, IndexError):
-            return (None, 0)
+            return Frame()
 
         if current_frame is None:
             self.frame_index -= 1
 
         return current_frame
 
-    def get_ms_until_next_frame(self) -> int:
-        """Returns milliseconds until next frame for animated images"""
-        ms: int = round(
-            self.PIL_image.info.get("duration", self.DEFAULT_ANIMATION_SPEED)
-        )
-        return ms if ms > 1 else self.DEFAULT_ANIMATION_SPEED
-
     def begin_animation(
         self, original_image: Image, resized_image: Image, frame_count: int
     ) -> None:
         """Begins new thread to load frames of an animated image"""
-        self.animation_frames = [(None, 0)] * frame_count
+        self.animation_frames = [Frame()] * frame_count
 
-        ms_until_next_frame: int = self.get_ms_until_next_frame()
-
-        self.animation_frames[0] = resized_image, ms_until_next_frame
+        first_frame: Frame = Frame(resized_image)
+        self.animation_frames[0] = first_frame
 
         Thread(
             target=self.load_remaining_frames,
@@ -87,8 +80,9 @@ class ImageLoader:
             daemon=True,
         ).start()
 
-        # Params: time until next frame, backoff time to help loading
-        self.animation_callback(ms_until_next_frame + 20, self.DEFAULT_ANIMATION_SPEED)
+        ms_until_next_frame: int = first_frame.ms_until_next_frame
+        backoff: int = ms_until_next_frame + 50
+        self.animation_callback(ms_until_next_frame, backoff)
 
     def get_PIL_image(self, path_to_image: str) -> Image | None:
         """Tries to open file on disk as PIL Image
@@ -187,12 +181,11 @@ class ImageLoader:
                 break
             try:
                 original_image.seek(i)
-                ms_until_next_frame: int = self.get_ms_until_next_frame()
-
-                self.animation_frames[i] = (
-                    self.image_resizer.get_image_fit_to_screen(original_image),
-                    ms_until_next_frame,
+                frame_image: Image = self.image_resizer.get_image_fit_to_screen(
+                    original_image
                 )
+
+                self.animation_frames[i] = Frame(frame_image)
             except Exception:
                 # moving to new image during this function causes a variety of errors
                 # just break to kill thread

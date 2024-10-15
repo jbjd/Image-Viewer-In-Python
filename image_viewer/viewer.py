@@ -7,6 +7,7 @@ from typing import NoReturn
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
+from animation.frame import Frame
 from config import font, max_items_in_cache
 from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
@@ -545,16 +546,16 @@ class ViewerApp:
     def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
         start: float = perf_counter()
-        frame: Image | None
-        ms_until_next_frame: int
-        frame, ms_until_next_frame = self.image_loader.get_next_frame()
+        frame: Frame = self.image_loader.get_next_frame()
 
-        if frame is None:  # trying to display frame before it is loaded
-            ms_until_next_frame = ms_backoff = int(ms_backoff * 1.4)
+        ms_until_next_frame: int
+        if frame.image is None:  # trying to display frame before it is loaded
+            ms_until_next_frame = ms_backoff
+            ms_backoff = int(ms_backoff * 1.4)
         else:
-            self._update_existing_image_display(frame)
+            self._update_existing_image_display(frame.image)
             elapsed: int = round((perf_counter() - start) * 1000)
-            ms_until_next_frame = max(ms_until_next_frame - elapsed, 1)
+            ms_until_next_frame = max(frame.ms_until_next_frame - elapsed, 1)
 
         self.animation_loop(ms_until_next_frame, ms_backoff)
 
