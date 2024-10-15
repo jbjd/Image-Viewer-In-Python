@@ -42,12 +42,12 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
-        # make FileManager first since it will validate path
         image_cache: ImageCache = ImageCache(max_items_in_cache)
+        self.file_manager: ImageFileManager = ImageFileManager(
+            first_image_path, image_cache
+        )
         try:
-            self.file_manager: ImageFileManager = ImageFileManager(
-                first_image_path, image_cache
-            )
+            self.file_manager.validate_current_path()
         except ValueError:
             self.exit()
 
@@ -123,7 +123,7 @@ class ViewerApp:
             self.load_image()
 
     def _add_keybinds_to_tk(self) -> None:
-        """Assigns keybinds to app"""
+        """Assigns keybinds to Tk instance"""
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
@@ -230,14 +230,14 @@ class ViewerApp:
         return int(original_pixels * self.height_ratio)
 
     def _scale_pixels_to_width(self, original_pixels: int) -> int:
-        """Normalize all pixels relative to a 1080 pixel tall screen"""
+        """Normalize all pixels relative to a 1920 pixel wide screen"""
         return int(original_pixels * self.width_ratio)
 
     # Functions handling specific user input
 
     def handle_mouse_wheel(self, event: Event) -> None:
-        """On mouse wheel, either moves between images
-        or zooms when right mouse also held"""
+        """On mouse wheel: either moves between images
+        or zooms when right mouse held"""
         right_mouse_held: bool = event.state & 1024  # type: ignore
 
         if right_mouse_held:
@@ -350,8 +350,7 @@ class ViewerApp:
 
     def move_to_new_file(self, _: Event) -> None:
         """Moves to a new image from file dialog"""
-        moved: bool = self.file_manager.move_to_new_directory()
-        if moved:
+        if self.file_manager.move_to_new_file():
             self.load_image()
 
     def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
@@ -378,7 +377,8 @@ class ViewerApp:
             self.app.after_cancel(self.move_id)
 
     def refresh(self, _: Event) -> None:
-        """Gets images in current directory and update internal list with them"""
+        """Updates list of all images in direcrory.
+        Display may change if image was removed outside of program"""
         self.clear_image()
         try:
             self.file_manager.refresh_image_list()
@@ -392,14 +392,13 @@ class ViewerApp:
             self.load_image_unblocking()
 
     def move(self, amount: int) -> None:
-        """Moves to different image
-        amount: any non-zero value indicating movement to next or previous"""
+        """Moves some amount of images forward/backward"""
         self.hide_rename_window()
         self.file_manager.move_index(amount)
         self.load_image_unblocking()
 
     def redraw(self, event: Event) -> None:
-        """Redraws screen if current image has a different size than when it was loaded,
+        """Redraws screen if current image has a different size then when it was loaded,
         implying it was edited outside of the program"""
         if event.widget is not self.app or not self.need_to_redraw:
             return
@@ -436,8 +435,8 @@ class ViewerApp:
             self.show_rename_window()
 
     def rename_or_convert(self, _: Event) -> None:
-        """Handles user input into rename window.
-        Tries to convert or rename based on input"""
+        """Tries to rename or convert current image based on input.
+        Makes window flash red if operation failed"""
         user_input: str = self.rename_entry.get()
         if user_input == "":
             return
@@ -455,13 +454,14 @@ class ViewerApp:
 
     def _update_existing_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
-        Call this when the new image is the same or a variant of the displaying image"""
+        Use when the displayed image hasn't changed, but moved or went to a new frame"""
         self._display_image = PhotoImage(image)
         self.canvas.update_existing_image_display(self._display_image)
 
     def _update_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
-        This will re-center the image and create a new display"""
+        Use when a new image is replacing the previous and should be
+        re-centered"""
         self._display_image = PhotoImage(image)
         self.canvas.update_image_display(self._display_image)
 
@@ -500,7 +500,7 @@ class ViewerApp:
         self.update_topbar()
 
     def hide_topbar(self, _: Event | None = None) -> None:
-        """Hides/removes focus from all topbar elements"""
+        """Hides and removes focus from all topbar elements"""
         self.canvas.itemconfigure(TkTags.TOPBAR, state="hidden")
         self.hide_rename_window()
 

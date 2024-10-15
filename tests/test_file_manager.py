@@ -6,7 +6,7 @@ import pytest
 
 from conftest import IMG_DIR
 from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.image import CachedImage, ImageCache
+from image_viewer.util.image import ImageCacheEntry, ImageCache
 from test_util.exception import safe_wrapper
 from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
@@ -144,7 +144,7 @@ def test_get_and_show_details(manager: ImageFileManager):
         mock_show_info.assert_not_called()
 
     for mode in ("P", "L", "1", "ANYTHING_ELSE"):
-        manager.image_cache[manager.path_to_image] = CachedImage(
+        manager.image_cache[manager.path_to_image] = ImageCacheEntry(
             PIL_image, (100, 100), "100kb", 9999, mode
         )
         readable_mode = {"P": "Palette", "L": "Grayscale", "1": "Black And White"}.get(

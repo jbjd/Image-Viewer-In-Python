@@ -9,7 +9,7 @@ from constants import Rotation
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename, Rotate
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
-from util.image import CachedImage, ImageCache, ImageName, ImageNameList
+from util.image import ImageCacheEntry, ImageCache, ImageName, ImageNameList
 from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
 from util.PIL import rotate_image, save_image
 
@@ -41,31 +41,31 @@ class ImageFileManager:
 
     def __init__(self, first_image_path: str, image_cache: ImageCache) -> None:
         """Load single file for display before we load the rest"""
-
-        first_image_name: ImageName = self._make_name_with_validation(first_image_path)
         self.image_directory: str = get_dir_name(first_image_path)
-
         self.image_cache: ImageCache = image_cache
 
         self.action_undoer: ActionUndoer = ActionUndoer()
         self.file_dialog_asker: FileDialogAsker = FileDialogAsker(self.VALID_FILE_TYPES)
+
+        first_image_name: ImageName = ImageName(os.path.basename(first_image_path))
         self._files: ImageNameList = ImageNameList([first_image_name])
 
         self.current_image: ImageName
         self.path_to_image: str
         self._update_after_move_or_edit()
 
-    def _make_name_with_validation(self, path: str) -> ImageName:
-        """Makes ImageName out of path. Raises ValueError if path is invalid"""
-        image_name = ImageName(os.path.basename(path))
-        if not os.path.isfile(path) or image_name.suffix not in self.VALID_FILE_TYPES:
+    def validate_current_path(self) -> None:
+        """Raises ValueError if current image path is invalid"""
+        path = self.get_path_to_image()
+        if (
+            not os.path.isfile(path)
+            or self.current_image.suffix not in self.VALID_FILE_TYPES
+        ):
             raise ValueError
 
-        return image_name
-
-    def move_to_new_directory(self) -> bool:
-        """Asks user new image to go to and move to that image's directory
-        Returns True if moving to new directory succeeded"""
+    def move_to_new_file(self) -> bool:
+        """Opens native file open file dialog and updates selected image
+        Returns True if user selected a file, False if dialog was exited"""
         new_file_path: str = self.file_dialog_asker.ask_open_image(self.image_directory)
         if new_file_path == "":
             return False
@@ -118,14 +118,14 @@ class ImageFileManager:
         self._update_after_move_or_edit()
 
     def refresh_image_list(self) -> None:
-        """Clears cache and re-loads current images in direcrory"""
+        """Clears cache and finds all images in direcrory"""
         self.image_cache.clear()
         self.find_all_images()
 
     def get_cached_details(self) -> str:
         """Returns tuple of current image's dimensions, size, and mode.
         Can raise KeyError on failure to get data"""
-        image_info: CachedImage = self.image_cache[self.path_to_image]
+        image_info: ImageCacheEntry = self.image_cache[self.path_to_image]
 
         mode: str = image_info.mode
         bpp: int = len(mode) * 8 if mode != "1" else 1

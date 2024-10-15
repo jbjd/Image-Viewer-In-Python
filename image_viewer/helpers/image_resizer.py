@@ -77,7 +77,7 @@ class ImageResizer:
     def _get_jpeg_scale_factor(
         self, image_width: int, image_height: int
     ) -> tuple[int, int] | None:
-        """Gets scaling factor for images larger than screen"""
+        """Gets Turbo JPEG scaling factor for images larger than screen"""
         ratio_to_screen: float = max(
             image_width / self.screen_width, image_height / self.screen_height
         )
@@ -89,7 +89,7 @@ class ImageResizer:
         return None
 
     def _get_jpeg_fit_to_screen(self, image: Image) -> Image:
-        """Resizes a JPEG utilizing libjpegturbo to shrink very large images"""
+        """Resizes a JPEG utilizing libjpeg-turbo to shrink very large images"""
         image_width, image_height = image.size
         scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
             image_width, image_height
@@ -108,11 +108,11 @@ class ImageResizer:
         return self._fit_to_screen(fromarray(image_as_array))
 
     def _fit_to_screen(self, image: Image) -> Image:
-        """Resizes image to screen and returns it as a PhotoImage"""
+        """Resizes image to screen with PIL"""
         return resize(image, *self.dimension_finder(*image.size))
 
     def get_image_fit_to_screen(self, image: Image) -> Image:
-        """Returns resized image as a PhotoImage"""
+        """Resizes image to screen using either libjpeg-turbo or PIL"""
         if image.format == "JPEG":
             return self._get_jpeg_fit_to_screen(image)
 
@@ -123,7 +123,7 @@ class ImageResizer:
     ) -> tuple[tuple[int, int], Resampling]:
         """Fits dimensions to height if width within screen,
         else fit to width and let height go off screen.
-        Returns new width, new height, and interpolation to use"""
+        Returns new width/height, and interpolation to use"""
         interpolation: Resampling = self._determine_interpolation(
             image_width, image_height
         )
