@@ -9,7 +9,7 @@ from constants import Rotation
 from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename, Rotate
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
-from util.image import ImageCacheEntry, ImageCache, ImageName, ImageNameList
+from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
 from util.PIL import rotate_image, save_image
 

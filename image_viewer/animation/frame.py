@@ -8,15 +8,13 @@ class Frame:
 
     __slots__ = ("image", "ms_until_next_frame")
 
-    def __init__(self, image: Image | None = None) -> None:
-        self.image: Image | None = image
+    def __init__(self, image: Image) -> None:
+        self.image: Image = image
         self.ms_until_next_frame: int = self.get_ms_until_next_frame(image)
 
     @staticmethod
-    def get_ms_until_next_frame(image: Image | None) -> int:
+    def get_ms_until_next_frame(image: Image) -> int:
         """Returns milliseconds until next frame for animated images"""
-        if image is None:
-            return 0
 
         ms: int = round(image.info.get("duration", DEFAULT_ANIMATION_SPEED_MS))
         return ms if ms > 1 else DEFAULT_ANIMATION_SPEED_MS

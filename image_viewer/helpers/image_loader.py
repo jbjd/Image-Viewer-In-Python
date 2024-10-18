@@ -11,7 +11,7 @@ from animation.frame import Frame
 from constants import ZoomDirection
 from helpers.image_resizer import ImageResizer
 from states.zoom_state import ZoomState
-from util.image import ImageCacheEntry, ImageCache, magic_number_guess
+from util.image import ImageCache, ImageCacheEntry, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image
 
@@ -47,18 +47,18 @@ class ImageLoader:
         self.PIL_image = Image()
         self.current_load_id: int = 0
 
-        self.animation_frames: list[Frame] = []
+        self.animation_frames: list[Frame | None] = []
         self.frame_index: int = 0
         self.zoom_state = ZoomState()
         self.zoomed_image_cache: list[Image] = []
 
-    def get_next_frame(self) -> Frame:
+    def get_next_frame(self) -> Frame | None:
         """Gets next frame of animated image or empty frame while its being loaded"""
         try:
             self.frame_index = (self.frame_index + 1) % len(self.animation_frames)
             current_frame = self.animation_frames[self.frame_index]
         except (ZeroDivisionError, IndexError):
-            return Frame()
+            return None
 
         if current_frame is None:
             self.frame_index -= 1
@@ -69,7 +69,7 @@ class ImageLoader:
         self, original_image: Image, resized_image: Image, frame_count: int
     ) -> None:
         """Begins new thread to load frames of an animated image"""
-        self.animation_frames = [Frame()] * frame_count
+        self.animation_frames = [None] * frame_count
 
         first_frame: Frame = Frame(resized_image)
         self.animation_frames[0] = first_frame
