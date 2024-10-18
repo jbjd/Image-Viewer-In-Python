@@ -42,3 +42,11 @@ jobs:
           chmod +x ./run_tests.sh
           ./run_tests.sh
         shell: bash
+
+      - name: Install Compile Dependencies
+        run: |
+          pip install -r requirements_compile.txt
+
+      - name: Compile
+        run: |
+          python compile.py --standalone
