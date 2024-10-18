@@ -69,6 +69,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "encode_from_yuv",
         "scale_with_quality",
     },
+    "PIL.features": {"pilinfo"},
     "PIL.Image": {
         "__getstate__",
         "__repr__",
@@ -123,7 +124,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "load_default",
         "load_path",
     },
-    "PIL.ImageMath": {"eval", "unsafe_eval"},
+    "PIL.ImageMath": {"deprecate", "eval", "unsafe_eval"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.ImageOps": {
         "autocontrast",
@@ -138,10 +139,16 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "solarize",
     },
     "PIL.ImagePalette": {"random", "sepia", "wedge"},
-    "PIL.ImageTk": {"_get_image_from_kw", "_pilbitmap_check", "_show"},
+    "PIL.ImageTk": {"_get_image_from_kw", "_show"},
     "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
-    "PIL.JpegImagePlugin": {"_getexif", "_save_cjpeg", "load_djpeg", "register_mime"},
+    "PIL.JpegImagePlugin": {
+        "_getexif",
+        "_save_cjpeg",
+        "deprecate",
+        "load_djpeg",
+        "register_mime",
+    },
     "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
     "PIL.WebPImagePlugin": {"register_mime"},
     "PIL.TiffTags": {"_populate"},
@@ -183,8 +190,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJFLAG_LIMITSCANS",
         "TJFLAG_STOPONWARNING",
     },
-    "PIL.Image": {"USE_CFFI_ACCESS", "MIME"},
-    "PIL.ImageTk": {"_pilbitmap_ok"},
+    "PIL.Image": {"MIME"},
     "PIL.GifImagePlugin": {"format_description", "_Palette"},
     "PIL.JpegImagePlugin": {"format_description"},
     "PIL.PngImagePlugin": {"format_description"},
@@ -240,7 +246,10 @@ _skip_from_imports: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec"},
     "numpy.lib.stride_tricks": {"__doc__"},
     "numpy.linalg.__init__": {"linalg"},
+    "PIL.features": {"deprecate"},
+    "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
+    "PIL.JpegImagePlugin": {"deprecate"},
 }
 
 _skip_dict_keys_kwargs: dict[str, set[str]] = {
@@ -485,24 +494,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
 except ImportError:
     ElementTree = None""",
             ),
-            RegexReplacement(
-                pattern="""try:
-    import cffi
-except ImportError:
-    cffi = None""",
-            ),
             RegexReplacement(pattern="from ._deprecate import deprecate"),
-            RegexReplacement(
-                pattern=r" +if cffi.*?PyAccess.*?return self.pyaccess", flags=re.DOTALL
-            ),
-            RegexReplacement(
-                pattern=r"def __array_interface__\(self\):.*?return[^\n]*",
-                replacement="""def __array_interface__(self):
-        new = {}
-        new['shape'], new['typestr'] = _conv_type_shape(self)
-        return new""",
-                flags=re.DOTALL,
-            ),
             RegexReplacement(
                 pattern=r"try:\n    #.*?from \. import _imaging as core.*?except.*?raise",  # noqa: E501
                 replacement="from . import _imaging as core",
@@ -529,7 +521,9 @@ except ImportError:
             RegexReplacement(pattern="use_mmap = use_mmap.*"),
             RegexReplacement(
                 pattern="from typing import .*",
-                replacement="from collections import namedtuple",
+                replacement="""
+from typing import IO, cast
+from collections import namedtuple""",
                 count=1,
             ),
             RegexReplacement(

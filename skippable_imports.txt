@@ -128,9 +128,7 @@ PIL.ImageMorph
 PIL.ImageQt
 PIL.ImageShow
 PIL.ImageWin
-PIL.PyAccess
 PIL.TarIO
-PIL.features
 PIL.report
 py_compile
 pydoc
