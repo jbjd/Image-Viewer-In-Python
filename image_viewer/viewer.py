@@ -546,10 +546,10 @@ class ViewerApp:
     def show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
         start: float = perf_counter()
-        frame: Frame = self.image_loader.get_next_frame()
+        frame: Frame | None = self.image_loader.get_next_frame()
 
         ms_until_next_frame: int
-        if frame.image is None:  # trying to display frame before it is loaded
+        if frame is None:  # trying to display frame before it is loaded
             ms_until_next_frame = ms_backoff
             ms_backoff = int(ms_backoff * 1.4)
         else:

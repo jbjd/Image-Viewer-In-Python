@@ -6,7 +6,7 @@ import pytest
 
 from conftest import IMG_DIR
 from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.image import ImageCacheEntry, ImageCache
+from image_viewer.util.image import ImageCache, ImageCacheEntry
 from test_util.exception import safe_wrapper
 from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
@@ -59,10 +59,14 @@ def test_image_file_manager(manager: ImageFileManager):
 def test_bad_path(image_cache: ImageCache):
     # doesn't exist
     with pytest.raises(ValueError):
-        ImageFileManager("bad/path", image_cache)
+        file_manager = ImageFileManager("bad/path", image_cache)
+        file_manager.validate_current_path()
     # wrong file type
     with pytest.raises(ValueError):
-        ImageFileManager(os.path.join(IMG_DIR, "not_an_image.txt"), image_cache)
+        file_manager = ImageFileManager(
+            os.path.join(IMG_DIR, "not_an_image.txt"), image_cache
+        )
+        file_manager.validate_current_path()
 
 
 @patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
