@@ -49,4 +49,4 @@ jobs:
 
       - name: Compile
         run: |
-          python compile.py --standalone
+          python compile.py --standalone --debug
