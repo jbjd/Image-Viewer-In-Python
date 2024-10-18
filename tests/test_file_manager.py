@@ -59,10 +59,14 @@ def test_image_file_manager(manager: ImageFileManager):
 def test_bad_path(image_cache: ImageCache):
     # doesn't exist
     with pytest.raises(ValueError):
-        ImageFileManager("bad/path", image_cache)
+        file_manager = ImageFileManager("bad/path", image_cache)
+        file_manager.validate_current_path()
     # wrong file type
     with pytest.raises(ValueError):
-        ImageFileManager(os.path.join(IMG_DIR, "not_an_image.txt"), image_cache)
+        file_manager = ImageFileManager(
+            os.path.join(IMG_DIR, "not_an_image.txt"), image_cache
+        )
+        file_manager.validate_current_path()
 
 
 @patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
