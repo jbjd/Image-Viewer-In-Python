@@ -161,17 +161,14 @@ def clean_tk_files(compile_dir: str) -> None:
         code_file: str = glob_result[0]
         apply_regex_to_file(code_file, regexs)
 
-    # delete comments in tcl files
-    strip_comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
-    strip_whitespace = RegexReplacement(
-        pattern=r"\n\s+", replacement="\n", flags=re.MULTILINE
-    )
-    strip_consecutive_whitespace = RegexReplacement(
-        pattern="[ \t][ \t]+", replacement=" "
-    )
-    remove_prints = RegexReplacement(pattern="^(puts|parray) .*", flags=re.MULTILINE)
-    clean_up_new_lines = RegexReplacement(pattern="\n\n+", replacement="\n")
-    clean_up_starting_new_line = RegexReplacement(pattern="^\n", count=1)
+    # strip various things in tcl files
+    comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
+    whitespace_around_newlines = RegexReplacement(pattern=r"\n\s+", replacement="\n")
+    consecutive_whitespace = RegexReplacement(pattern="[ \t][ \t]+", replacement=" ")
+    prints = RegexReplacement(pattern="^(puts|parray) .*", flags=re.MULTILINE)
+    extra_new_lines = RegexReplacement(pattern="\n\n+", replacement="\n")
+    starting_new_line = RegexReplacement(pattern="^\n", count=1)
+    whitespace_between_brackets = RegexReplacement(pattern="}\n}", replacement="}}")
 
     for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
         os.path.join(compile_dir, "**/*.tm"), recursive=True
@@ -179,13 +176,16 @@ def clean_tk_files(compile_dir: str) -> None:
         apply_regex_to_file(
             code_file,
             [
-                strip_comments,
-                strip_whitespace,
-                strip_consecutive_whitespace,
-                remove_prints,
-                clean_up_new_lines,
-                clean_up_starting_new_line,
+                comments,
+                whitespace_around_newlines,
+                consecutive_whitespace,
+                prints,
+                extra_new_lines,
+                starting_new_line,
+                whitespace_between_brackets,
             ],
         )
 
-    apply_regex_to_file(os.path.join(compile_dir, "tcl/tclIndex"), strip_whitespace)
+    apply_regex_to_file(
+        os.path.join(compile_dir, "tcl/tclIndex"), whitespace_around_newlines
+    )
