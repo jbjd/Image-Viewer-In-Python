@@ -487,6 +487,16 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
                 pattern=r"from \. import _version.*del _version", flags=re.DOTALL
             ),
         ],
+        "PIL.GifImagePlugin": [
+            RegexReplacement(
+                pattern="from typing import .*",
+                replacement="from collections import namedtuple",
+            ),
+            RegexReplacement(
+                pattern=r"_Frame\(NamedTuple\)",
+                replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
+            ),
+        ],
         "PIL.Image": [
             RegexReplacement(
                 pattern="""try:
@@ -546,7 +556,19 @@ from collections import namedtuple""",
         "PIL.PngImagePlugin": [
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
-            )
+            ),
+            RegexReplacement(
+                pattern="from typing import .*",
+                replacement="from typing import IO, cast\nfrom collections import namedtuple",  # noqa E501
+            ),
+            RegexReplacement(
+                pattern=r"_RewindState\(NamedTuple\)",
+                replacement="_RewindState(namedtuple('_RewindState', ['info', 'tile', 'seq_num']))",  # noqa E501
+            ),
+            RegexReplacement(
+                pattern=r"_Frame\(NamedTuple\)",
+                replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
+            ),
         ],
         "send2trash.__init__": [remove_all_re],
         "send2trash.win.__init__": [remove_all_re],
