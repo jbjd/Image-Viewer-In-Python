@@ -82,6 +82,14 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_broadcast_to_dispatcher",
         "_sliding_window_view_dispatcher",
     },
+    "numpy.lib._type_check_impl": {
+        "_common_type_dispatcher",
+        "_imag_dispatcher",
+        "_is_type_dispatcher",
+        "_nan_to_num_dispatcher",
+        "_real_dispatcher",
+        "_real_if_close_dispatcher",
+    },
     "numpy.linalg._linalg": {
         "_cond_dispatcher",
         "_convertarray",
@@ -600,6 +608,14 @@ from collections import namedtuple""",
                 replacement="_Tile(namedtuple('_Tile', ['codec_name', 'extents', 'offset', 'args'])):",  # noqa E501
                 count=1,
             ),
+        ],
+        "PIL.ImageFont": [
+            RegexReplacement(
+                pattern=r"try:.*DeferredError\.new\(ex\)",
+                replacement="from . import _imagingft as core",
+                flags=re.DOTALL,
+            ),
+            RegexReplacement(pattern=r"MAX_STRING_LENGTH is not None and"),
         ],
         "PIL.ImageMode": [
             RegexReplacement(
