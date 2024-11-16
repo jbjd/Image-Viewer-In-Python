@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from conftest import IMG_DIR
+from image_viewer.constants import ImageFormats
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import ImageCache, ImageCacheEntry
 from test_util.exception import safe_wrapper
@@ -149,14 +150,19 @@ def test_get_and_show_details(manager: ImageFileManager):
 
     for mode in ("P", "L", "1", "ANYTHING_ELSE"):
         manager.image_cache[manager.path_to_image] = ImageCacheEntry(
-            PIL_image, (100, 100), "100kb", 9999, mode
+            PIL_image, (100, 100), "100kb", 9999, mode, ImageFormats.PNG
         )
         readable_mode = {"P": "Palette", "L": "Grayscale", "1": "Black And White"}.get(
             mode, mode
         )
-        details: str = manager.get_cached_details()
-        assert isinstance(details, str)
+        details: str = manager.get_cached_metadata()
         assert " bpp " + readable_mode in details
+        assert ImageFormats.PNG in details
+
+        details = manager.get_cached_metadata(get_all_details=False)
+        assert details.count("\n") == 1
+        assert " bpp " + readable_mode not in details
+        assert ImageFormats.PNG not in details
 
     with patch.object(os, "stat", return_value=MockStatResult(0)):
         with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:

@@ -7,6 +7,14 @@ from enum import IntEnum, StrEnum
 from typing import Final
 
 
+class ImageFormats(StrEnum):
+    DDS = "DDS"
+    GIF = "GIF"
+    JPEG = "JPEG"
+    PNG = "PNG"
+    WEBP = "WebP"
+
+
 class Key(IntEnum):
     """Keycodes for various keys"""
 

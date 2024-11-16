@@ -5,6 +5,7 @@ from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
 from turbojpeg import TurboJPEG
 
+from image_viewer.constants import ImageFormats
 from image_viewer.helpers.image_resizer import ImageResizer
 from test_util.mocks import MockImage
 
@@ -43,12 +44,12 @@ def test_get_fit_to_screen(image_resizer: ImageResizer):
 
     # JPEG is special case
     with patch.object(ImageResizer, "_get_jpeg_fit_to_screen") as mock_jpeg_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format="JPEG"))
+        image_resizer.get_image_fit_to_screen(MockImage(format=ImageFormats.JPEG))
         mock_jpeg_fit.assert_called_once()
 
     # Any other type should use generic resize functions
     with patch.object(ImageResizer, "_fit_to_screen") as mock_generic_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format="PNG"))
+        image_resizer.get_image_fit_to_screen(MockImage(format=ImageFormats.PNG))
         mock_generic_fit.assert_called_once()
 
 

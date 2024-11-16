@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from collections import namedtuple
 from io import BytesIO
 from os import stat
 from threading import Thread
@@ -14,6 +15,13 @@ from states.zoom_state import ZoomState
 from util.image import ImageCache, ImageCacheEntry, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image
+
+
+class ReadImageResponse(namedtuple("_ReadImageResponse", ["image", "format"])):
+    """Response when reading an image from disk"""
+
+    image: Image
+    format: str
 
 
 class ImageLoader:
@@ -84,24 +92,29 @@ class ImageLoader:
         backoff: int = ms_until_next_frame + 50
         self.animation_callback(ms_until_next_frame, backoff)
 
-    def get_PIL_image(self, path_to_image: str) -> Image | None:
+    def read_image(self, path_to_image: str) -> ReadImageResponse | None:
         """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
             with open(path_to_image, "rb") as fp:
-                type_to_try_loading: tuple[str] = magic_number_guess(fp.read(4))
+                expected_format: str = magic_number_guess(fp.read(4))
+
                 fp.seek(0)
-                return open_image(BytesIO(fp.read()), "r", type_to_try_loading)
+                image_bytes: BytesIO = BytesIO(fp.read())
+                image: Image = open_image(image_bytes, "r", (expected_format,))
+
+                return ReadImageResponse(image, expected_format)
         except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
     def load_image(self, path_to_image: str) -> Image | None:
         """Loads an image, resizes it to screen, and caches it.
         Returns Image or None on failure"""
-        original_image: Image | None = self.get_PIL_image(path_to_image)
-        if original_image is None:
+        read_image_response: ReadImageResponse | None = self.read_image(path_to_image)
+        if read_image_response is None:
             return None
 
+        original_image: Image = read_image_response.image
         self.current_load_id += 1
         self.PIL_image = original_image
         byte_size: int = stat(path_to_image).st_size
@@ -122,6 +135,7 @@ class ImageLoader:
                 size_display,
                 byte_size,
                 original_mode,
+                read_image_response.format,
             )
 
         frame_count: int = getattr(original_image, "n_frames", 1)

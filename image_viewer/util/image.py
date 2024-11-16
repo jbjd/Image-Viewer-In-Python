@@ -8,14 +8,22 @@ from typing import Iterable
 
 from PIL.Image import Image
 
-from constants import DEFAULT_MAX_ITEMS_IN_CACHE
+from constants import DEFAULT_MAX_ITEMS_IN_CACHE, ImageFormats
 from util.os import OS_name_cmp
 
 
 class ImageCacheEntry:
     """Information stored to skip resizing/system calls on repeated opening"""
 
-    __slots__ = ("height", "image", "mode", "size_display", "byte_size", "width")
+    __slots__ = (
+        "format",
+        "height",
+        "image",
+        "mode",
+        "size_display",
+        "byte_size",
+        "width",
+    )
 
     def __init__(
         self,
@@ -24,6 +32,7 @@ class ImageCacheEntry:
         size_display: str,
         byte_size: int,
         mode: str,
+        format: str,
     ) -> None:
         self.width: int
         self.height: int
@@ -31,7 +40,9 @@ class ImageCacheEntry:
         self.image: Image = image
         self.size_display: str = size_display
         self.byte_size: int = byte_size
+        # Store original mode since resizing some images converts to RGB
         self.mode: str = mode
+        self.format: str = format
 
 
 class ImageCache(OrderedDict[str, ImageCacheEntry]):
@@ -140,16 +151,16 @@ class ImageNameList(list[ImageName]):
         return low, False
 
 
-def magic_number_guess(magic: bytes) -> tuple[str]:
+def magic_number_guess(magic: bytes) -> str:
     """Given bytes, make best guess at file type of image"""
     match magic:
         case b"\x89PNG":
-            return ("PNG",)
+            return ImageFormats.PNG
         case b"RIFF":
-            return ("WEBP",)
+            return ImageFormats.WEBP
         case b"GIF8":
-            return ("GIF",)
+            return ImageFormats.GIF
         case b"DDS ":
-            return ("DDS",)
+            return ImageFormats.DDS
         case _:
-            return ("JPEG",)
+            return ImageFormats.JPEG

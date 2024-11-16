@@ -16,7 +16,7 @@ def try_convert_file_and_save_new(
     Returns True if conversion performed, False when converting to the same type
     """
     with open(old_path, "rb") as fp:
-        original_ext: str = magic_number_guess(fp.read(4))[0]
+        original_ext: str = magic_number_guess(fp.read(4))
 
         # Only first letter checked since jpeg is the only supported file extension
         # that has multiple variations and all start with 'j'

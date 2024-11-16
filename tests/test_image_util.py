@@ -3,6 +3,7 @@ from tkinter import Tk
 from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
+from image_viewer.constants import ImageFormats
 from image_viewer.util.image import ImageName, magic_number_guess
 from image_viewer.util.PIL import (
     create_dropdown_image,
@@ -43,14 +44,16 @@ def test_PIL_functions(tk_app: Tk):
 
 def test_magic_number_guess():
     """Ensure correct image type guessed"""
-    assert magic_number_guess(b"\x89PNG")[0] == "PNG"
+    assert magic_number_guess(b"\x89PNG") == ImageFormats.PNG
 
-    assert magic_number_guess(b"RIFF")[0] == "WEBP"
+    assert magic_number_guess(b"RIFF") == ImageFormats.WEBP
 
-    assert magic_number_guess(b"GIF8")[0] == "GIF"
+    assert magic_number_guess(b"GIF8") == ImageFormats.GIF
+
+    assert magic_number_guess(b"DDS ") == ImageFormats.DDS
 
     # When nothing else matches, guess jpeg
-    assert magic_number_guess(b"ABCD")[0] == "JPEG"
+    assert magic_number_guess(b"ABCD") == ImageFormats.JPEG
 
 
 def test_resize():

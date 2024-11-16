@@ -11,7 +11,7 @@ from animation.frame import Frame
 from config import font, max_items_in_cache
 from constants import Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
-from helpers.image_loader import ImageLoader
+from helpers.image_loader import ImageLoader, ReadImageResponse
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
 from ui.button import HoverableButton, ToggleButton
@@ -264,10 +264,13 @@ class ViewerApp:
         self.image_loader.reset_and_setup()
 
         path: str = self.file_manager.path_to_image
-        image: Image | None = self.image_loader.get_PIL_image(path)
-        if image is None:
+        read_image_response: ReadImageResponse | None = self.image_loader.read_image(
+            path
+        )
+        if read_image_response is None:
             return
 
+        image: Image = read_image_response.image
         with image:
             if image_is_animated(image):
                 return
@@ -572,12 +575,12 @@ class ViewerApp:
         if dropdown.showing:
             if dropdown.need_refresh:
                 try:
-                    details: str = self.file_manager.get_cached_details()
+                    details: str = self.file_manager.get_cached_metadata(
+                        get_all_details=False
+                    )
                 except KeyError:
                     return  # data not present in cache
 
-                # remove last line since I don't want to show mode in this dropdown
-                details = details[: details.rfind("\n", 0, -9) - 1]
                 dropdown.image = create_dropdown_image(details)
 
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")

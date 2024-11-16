@@ -2,6 +2,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
+from image_viewer.constants import ImageFormats
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.convert import try_convert_file_and_save_new
 from test_util.mocks import MockImage
@@ -17,7 +18,7 @@ def mock_open_animated_image(_: str) -> MockImage:
 
 
 @patch("image_viewer.util.convert.open_image", mock_open_animated_image)
-@patch("image_viewer.util.convert.magic_number_guess", lambda _: ("gif",))
+@patch("image_viewer.util.convert.magic_number_guess", lambda _: "GIF")
 def test_animated_to_not_animated():
     with patch("builtins.open", mock_open()), pytest.raises(ValueError):
         try_convert_file_and_save_new("asdf.gif", "hjkl.jpg", "jpg")
@@ -27,10 +28,14 @@ def test_animated_to_not_animated():
 def test_convert_jpeg():
     with patch("builtins.open", mock_open()):
         # will not convert if jpeg variant
-        with patch("image_viewer.util.convert.magic_number_guess", lambda _: ("jpg",)):
+        with patch(
+            "image_viewer.util.convert.magic_number_guess", lambda _: ImageFormats.JPEG
+        ):
             assert not try_convert_file_and_save_new("old.jpg", "new.jpe", "jpe")
         # otherwise will succeed
-        with patch("image_viewer.util.convert.magic_number_guess", lambda _: ("png",)):
+        with patch(
+            "image_viewer.util.convert.magic_number_guess", lambda _: ImageFormats.PNG
+        ):
             assert try_convert_file_and_save_new("old.png", "new.jpg", "jpg")
 
 
@@ -46,7 +51,11 @@ def test_all_valid_types():
             # technically a conversion
             with patch(
                 "image_viewer.util.convert.magic_number_guess",
-                lambda _: ("png" if img_type != "png" else "webp",),
+                lambda _: (
+                    ImageFormats.PNG
+                    if img_type.upper() != ImageFormats.PNG.upper()
+                    else ImageFormats.WEBP
+                ),
             ):
                 assert try_convert_file_and_save_new(
                     "old.png", f"new.{img_type}", img_type
@@ -54,7 +63,7 @@ def test_all_valid_types():
 
 
 @patch("image_viewer.util.convert.open_image", mock_open_image)
-@patch("image_viewer.util.convert.magic_number_guess", lambda _: ("jpg",))
+@patch("image_viewer.util.convert.magic_number_guess", lambda _: "JPEG")
 def test_convert_to_bad_type():
     """Should return False if an invalid image extension is passed"""
     with patch("builtins.open", mock_open()):

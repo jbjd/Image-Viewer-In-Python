@@ -122,10 +122,17 @@ class ImageFileManager:
         self.image_cache.clear()
         self.find_all_images()
 
-    def get_cached_details(self) -> str:
-        """Returns tuple of current image's dimensions, size, and mode.
+    def get_cached_metadata(self, get_all_details: bool = True) -> str:
+        """Returns formatted string of various metadata on current image
         Can raise KeyError on failure to get data"""
         image_info: ImageCacheEntry = self.image_cache[self.path_to_image]
+        short_details: str = (
+            f"Pixels: {image_info.width}x{image_info.height}\n"
+            f"Size: {image_info.size_display}"
+        )
+
+        if not get_all_details:
+            return short_details
 
         mode: str = image_info.mode
         bpp: int = len(mode) * 8 if mode != "1" else 1
@@ -140,16 +147,16 @@ class ImageFileManager:
             case _:
                 readable_mode = mode
 
-        text: str = (
-            f"Pixels: {image_info.width}x{image_info.height}\n"
-            f"Size: {image_info.size_display}\n"
+        details: str = (
+            f"{short_details}\n"
+            f"Image Format: {image_info.format}\n"
             f"Pixel Format: {bpp} bpp {readable_mode}\n"
         )
-        return text
+        return details
 
     def show_image_detail_popup(self, PIL_Image: Image) -> None:
         try:
-            details: str = self.get_cached_details()
+            details: str = self.get_cached_metadata()
         except KeyError:
             return  # don't fail trying to read, if not in cache just exit
 
