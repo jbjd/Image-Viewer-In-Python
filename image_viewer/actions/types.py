@@ -13,14 +13,11 @@ class FileAction(ABC):
 class Rename(FileAction):
     """Represents a file path changing"""
 
-    __slots__ = ("new_path", "original_file_deleted")
+    __slots__ = ("new_path",)
 
-    def __init__(
-        self, original_path: str, new_path: str, original_file_deleted: bool = False
-    ) -> None:
+    def __init__(self, original_path: str, new_path: str) -> None:
         super().__init__(original_path)
         self.new_path: str = new_path
-        self.original_file_deleted: bool = original_file_deleted
 
 
 class Convert(Rename):
@@ -28,7 +25,13 @@ class Convert(Rename):
     but it is related to the old path. Such as converting an image where both
     the old and converted image now exist"""
 
-    __slots__ = ()
+    __slots__ = ("original_file_deleted",)
+
+    def __init__(
+        self, original_path: str, new_path: str, original_file_deleted: bool = False
+    ) -> None:
+        super().__init__(original_path, new_path)
+        self.original_file_deleted: bool = original_file_deleted
 
 
 class Delete(FileAction):

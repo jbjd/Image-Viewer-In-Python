@@ -3,10 +3,18 @@ Classes representing actions and a class that handles undoing them
 """
 
 import os
-from collections import deque
+from collections import deque, namedtuple
 
 from actions.types import Convert, Delete, Edit, FileAction, Rename
 from util.os import restore_from_bin, trash_file
+
+
+class UndoResponse(namedtuple("UndoResponse", ["path_restored", "path_removed"])):
+    """Response when a file action in undone, contains what paths have been edited
+    so caller can deal with determining if display needs updating"""
+
+    path_restored: str
+    path_removed: str
 
 
 class ActionUndoer(deque[FileAction]):
@@ -17,36 +25,36 @@ class ActionUndoer(deque[FileAction]):
     def __init__(self, maxlen: int = 4) -> None:
         super().__init__(maxlen=maxlen)
 
-    def undo(self) -> tuple[str, str]:
+    def undo(self) -> UndoResponse:
         """Returns tuple of image to add, image to remove, if any"""
         action: FileAction = self.pop()
 
         if type(action) is Rename:
 
             os.rename(action.new_path, action.original_path)
-            return (action.original_path, action.new_path)
+            return UndoResponse(action.original_path, action.new_path)
 
         elif type(action) is Convert and action.original_file_deleted:
 
             restore_from_bin(action.original_path)
             trash_file(action.new_path)
-            return (action.original_path, action.new_path)
+            return UndoResponse(action.original_path, action.new_path)
 
         elif type(action) is Convert:
 
             trash_file(action.new_path)
-            return ("", action.new_path)
+            return UndoResponse("", action.new_path)
 
         elif type(action) is Delete:
 
             restore_from_bin(action.original_path)
-            return (action.original_path, "")
+            return UndoResponse(action.original_path, "")
 
         elif type(action) is Edit:
 
             with open(action.original_path, "wb") as fp:
                 fp.write(action.original_bytes)
-            return ("", "")
+            return UndoResponse("", "")
 
         else:
             assert False  # Unreachable

@@ -2,13 +2,24 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from image_viewer.actions.types import Convert, Delete, Edit, FileAction, Rename
-from image_viewer.actions.undoer import ActionUndoer
+# Hack: Importing the Undo types from their original file
+# Breaks type()/isinstance() since python sees different import paths
+# One starting with image_viewer.action..., the other just action...
+# But importing the imported types in the undoer file works
+from image_viewer.actions.undoer import (
+    ActionUndoer,
+    Convert,
+    Delete,
+    Edit,
+    FileAction,
+    Rename,
+    UndoResponse,
+)
 
 MODULE_PATH = "image_viewer.actions"
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def action_undoer() -> ActionUndoer:
     return ActionUndoer()
 
@@ -26,56 +37,62 @@ def test_cap():
     assert len(action_undoer) == 4
 
 
-def test_undo_delete(action_undoer: ActionUndoer):
-    action_undoer.append(Delete("test"))
-
-    with patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete:
-        assert action_undoer.get_undo_message()
-        assert action_undoer.undo() == ("test", "")
-        mock_undelete.assert_called_once()
-
-
-def test_undo_convert_with_deletion(action_undoer: ActionUndoer):
-    action_undoer.append(Convert("old", "new", True))
-
-    with (
-        patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
-        patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
-    ):
-        # Undo delete + convert, old3 should be added back and new3 removed
-        assert action_undoer.get_undo_message()
-        assert action_undoer.undo() == ("old", "new")
-        mock_trash.assert_called_once()
-        mock_undelete.assert_called_once()
-
-
-def test_undo_convert_without_deletion(action_undoer: ActionUndoer):
-    action_undoer.append(Convert("old", "new", False))
+@pytest.mark.parametrize(
+    "action",
+    [
+        (Delete("original_path")),
+        (Convert("original_path", "new_path", original_file_deleted=True)),
+        (Convert("original_path", "new_path", original_file_deleted=False)),
+        (Rename("original_path", "new_path")),
+        (Edit("original_path", "rotation", b"bytes before edit")),
+    ],
+)
+def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
+    action_undoer.append(action)
+    assert action_undoer.get_undo_message()
 
     with (
         patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
         patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
+        patch(f"{MODULE_PATH}.undoer.os.rename") as mock_rename,
+        patch("builtins.open", mock_open()) as mock_builtins_open,
     ):
-        assert action_undoer.get_undo_message()
-        assert action_undoer.undo() == ("", "new")
-        mock_trash.assert_called_once()
-        mock_undelete.assert_not_called()
+        undo_response: UndoResponse = action_undoer.undo()
+        _assert_correct_undo_response(action, undo_response)
+
+        if type(action) is Delete or (
+            type(action) is Convert and action.original_file_deleted
+        ):
+            mock_undelete.assert_called_once()
+        else:
+            mock_undelete.assert_not_called()
+
+        if type(action) is Convert:
+            mock_trash.assert_called_once()
+        else:
+            mock_trash.assert_not_called()
+
+        if type(action) is Rename:
+            mock_rename.assert_called_once()
+        else:
+            mock_rename.assert_not_called()
+
+        if type(action) is Edit:
+            mock_builtins_open.assert_called_once()
+            assert any(call[0] == "().write" for call in mock_builtins_open.mock_calls)
+        else:
+            mock_builtins_open.assert_not_called()
 
 
-def test_undo_rename(action_undoer: ActionUndoer):
-    action_undoer.append(Rename("old", "new"))
+def _assert_correct_undo_response(action: FileAction, undo_response: UndoResponse):
+    if type(action) is Delete or type(action) is Edit:
+        assert not undo_response.path_removed
+    else:
+        assert undo_response.path_removed
 
-    with patch(f"{MODULE_PATH}.undoer.os.rename") as mock_rename:
-        assert action_undoer.get_undo_message()
-        assert action_undoer.undo() == ("old", "new")
-        mock_rename.assert_called_once()
-
-
-def test_undo_rotate(action_undoer: ActionUndoer):
-    action_undoer.append(Edit("old", "rotation", b"original bytes"))
-
-    with patch("builtins.open", mock_open()) as mock_fp:
-        assert action_undoer.get_undo_message()
-        assert action_undoer.undo() == ("", "")
-        mock_fp.assert_called_once()
-        assert any(call[0] == "().write" for call in mock_fp.mock_calls)
+    if type(action) is Edit or (
+        type(action) is Convert and not action.original_file_deleted
+    ):
+        assert not undo_response.path_restored
+    else:
+        assert undo_response.path_restored
