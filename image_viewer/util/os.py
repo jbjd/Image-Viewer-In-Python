@@ -29,6 +29,7 @@ if os.name == "nt":
 
 else:  # assume linux for now
     from send2trash import send2trash
+    from tkinter.messagebox import showinfo
 
     illegal_char = re_compile("")
     kb_size = 1000
@@ -38,6 +39,13 @@ else:  # assume linux for now
 
     def restore_from_bin(original_path: str) -> None:
         raise NotImplementedError  # TODO: add option for linux
+
+
+def show_info_popup(title: str, body: str) -> None:
+    if os.name == "nt":
+        windll.user32.MessageBoxW(0, body, title, 0)
+    else:
+        showinfo(title, body)
 
 
 def clean_str_for_OS_path(path: str) -> str:

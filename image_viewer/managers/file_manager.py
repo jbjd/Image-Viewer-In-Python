@@ -1,7 +1,7 @@
 import os
 from os import stat_result
 from time import ctime
-from tkinter.messagebox import askyesno, showinfo
+from tkinter.messagebox import askyesno
 
 from PIL.Image import Image
 
@@ -10,7 +10,13 @@ from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename, Rotate
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
-from util.os import clean_str_for_OS_path, get_dir_name, trash_file, walk_dir
+from util.os import (
+    clean_str_for_OS_path,
+    get_dir_name,
+    show_info_popup,
+    trash_file,
+    walk_dir,
+)
 from util.PIL import rotate_image, save_image
 
 
@@ -174,7 +180,7 @@ class ImageFileManager:
         if comment:
             details += f"Comment: {comment.decode('utf-8')}\n"
 
-        showinfo("Image Details", details)
+        show_info_popup("Image Details", details)
 
     def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
