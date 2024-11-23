@@ -1,5 +1,5 @@
-from collections.abc import Callable
 from collections import namedtuple
+from collections.abc import Callable
 from io import BytesIO
 from os import stat
 from threading import Thread

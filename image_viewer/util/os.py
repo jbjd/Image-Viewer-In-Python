@@ -28,8 +28,9 @@ if os.name == "nt":
             raise OSError from e  # change error type so catching is not OS specific
 
 else:  # assume linux for now
-    from send2trash import send2trash
     from tkinter.messagebox import showinfo
+
+    from send2trash import send2trash
 
     illegal_char = re_compile("")
     kb_size = 1000

@@ -140,11 +140,12 @@ def test_undo(manager: ImageFileManager):
 
 def test_get_and_show_details(manager: ImageFileManager):
     """Should return a string containing details on current cached image and show it"""
+    SHOW_INFO_PATH = "image_viewer.managers.file_manager.show_info_popup"
 
     # Will exit if no details in cache
     PIL_image = MockImage()
     PIL_image.info["comment"] = b"test"
-    with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
+    with patch(SHOW_INFO_PATH) as mock_show_info:
         manager.show_image_detail_popup(PIL_image)
         mock_show_info.assert_not_called()
 
@@ -164,16 +165,20 @@ def test_get_and_show_details(manager: ImageFileManager):
         assert " bpp " + readable_mode not in details
         assert ImageFormats.PNG not in details
 
-    with patch.object(os, "stat", return_value=MockStatResult(0)):
-        with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
-            manager.show_image_detail_popup(PIL_image)
-            mock_show_info.assert_called_once()
+    with (
+        patch.object(os, "stat", return_value=MockStatResult(0)),
+        patch(SHOW_INFO_PATH) as mock_show_info,
+    ):
+        manager.show_image_detail_popup(PIL_image)
+        mock_show_info.assert_called_once()
 
     # Will not fail on OSError
-    with patch.object(os, "stat", side_effect=OSError):
-        with patch("image_viewer.managers.file_manager.showinfo") as mock_show_info:
-            manager.show_image_detail_popup(PIL_image)
-            mock_show_info.assert_called_once()
+    with (
+        patch.object(os, "stat", side_effect=OSError),
+        patch(SHOW_INFO_PATH) as mock_show_info,
+    ):
+        manager.show_image_detail_popup(PIL_image)
+        mock_show_info.assert_called_once()
 
 
 def test_split_with_weird_names(manager: ImageFileManager):

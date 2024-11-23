@@ -1,7 +1,7 @@
 """Viewer is hard to test due to being all UI code, testing what I can here"""
 
 from tkinter import Tk
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -158,19 +158,32 @@ def test_handle_rotate_animated_image(viewer: ViewerApp):
     """Should exit if animating. Should close the image if not currently animating,
     but the underlying image itself is an animation"""
     mock_event = MockEvent()
+    viewer.file_manager = MockImageFileManager()
 
     with (
         patch.object(ViewerApp, "_currently_animating", lambda _: True),
-        patch.object(ImageLoader, "get_PIL_image") as mock_get_PIL_image,
+        patch.object(ImageLoader, "read_image") as mock_read_image,
     ):
         viewer.handle_rotate_image(mock_event)
-        mock_get_PIL_image.assert_not_called()
+        mock_read_image.assert_not_called()
+
+    with (
+        patch.object(ImageLoader, "read_image", return_value=None) as mock_read_image,
+        patch.object(
+            MockImageFileManager, "rotate_image_and_save"
+        ) as mock_rotate_image_and_save,
+    ):
+        viewer.handle_rotate_image(mock_event)
+        mock_read_image.assert_called_once()
+        mock_rotate_image_and_save.assert_not_called()
 
     mock_image = MockImage(n_frames=3)
-    viewer.file_manager = MockImageFileManager()
+    mock_image_response = MagicMock()
+    mock_image_response.image = mock_image
+
     with patch.object(
-        ImageLoader, "get_PIL_image", return_value=mock_image
-    ) as mock_get_PIL_image:
+        ImageLoader, "read_image", return_value=mock_image_response
+    ) as mock_read_image:
         viewer.handle_rotate_image(mock_event)
-        mock_get_PIL_image.assert_called_once()
+        mock_read_image.assert_called_once()
         assert mock_image.closed
