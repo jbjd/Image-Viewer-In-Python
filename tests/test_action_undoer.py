@@ -2,7 +2,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from image_viewer.actions.types import Convert, Delete, Edit, Rename
+from image_viewer.actions.types import Convert, Delete, Edit, FileAction, Rename
 from image_viewer.actions.undoer import ActionUndoer
 
 MODULE_PATH = "image_viewer.actions"
@@ -13,8 +13,9 @@ def action_undoer() -> ActionUndoer:
     return ActionUndoer()
 
 
-def test_cap(action_undoer: ActionUndoer):
-    """Test all 3 undoable actions"""
+def test_cap():
+    """Test that last X actions are perserved"""
+    action_undoer = ActionUndoer(maxlen=4)
 
     action_undoer.append(Rename("This will get", "thrown out"))
     action_undoer.append(Rename("", ""))
@@ -22,7 +23,7 @@ def test_cap(action_undoer: ActionUndoer):
     action_undoer.append(Convert("", "", True))
     action_undoer.append(Delete(""))
 
-    assert len(action_undoer) == 4  # maxlen is 4, 1st append is removed
+    assert len(action_undoer) == 4
 
 
 def test_undo_delete(action_undoer: ActionUndoer):

@@ -5,11 +5,11 @@ Classes representing actions and a class that handles undoing them
 import os
 from collections import deque
 
-from actions.types import Convert, Delete, Edit, FileEvent, Rename
+from actions.types import Convert, Delete, Edit, FileAction, Rename
 from util.os import restore_from_bin, trash_file
 
 
-class ActionUndoer(deque[FileEvent]):
+class ActionUndoer(deque[FileAction]):
     """Keeps information on recent file actions and can undo them"""
 
     __slots__ = ()
@@ -19,7 +19,7 @@ class ActionUndoer(deque[FileEvent]):
 
     def undo(self) -> tuple[str, str]:
         """Returns tuple of image to add, image to remove, if any"""
-        action: FileEvent = self.pop()
+        action: FileAction = self.pop()
 
         if type(action) is Rename:
 
@@ -54,7 +54,7 @@ class ActionUndoer(deque[FileEvent]):
     def get_undo_message(self) -> str:
         """Looks at top of deque and formats the information in a string.
         Throws IndexError when empty"""
-        action: FileEvent = self[-1]
+        action: FileAction = self[-1]
 
         if type(action) is Rename:
             return f"Rename {action.new_path} back to {action.original_path}?"
