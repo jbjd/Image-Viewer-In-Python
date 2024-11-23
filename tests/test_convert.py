@@ -39,7 +39,7 @@ def test_convert_jpeg():
 
 
 @pytest.mark.parametrize(
-    "true_file_extension,target_extension",
+    "true_file_extension,target_format",
     [
         (ImageFormats.WEBP, ImageFormats.PNG),
         (ImageFormats.PNG, ImageFormats.JPEG),
@@ -47,22 +47,21 @@ def test_convert_jpeg():
         (ImageFormats.PNG, ImageFormats.GIF),
         (ImageFormats.PNG, ImageFormats.DDS),
         (ImageFormats.PNG, ImageFormats.PNG),
+        (ImageFormats.JPEG, ImageFormats.JPEG),
     ],
 )
 @patch("image_viewer.util.convert.open_image", mock_open_image)
 @patch("builtins.open", mock_open())
-def test_convert_png_to_other_types(true_file_extension: str, target_extension: str):
-    """Tries to get to Image.save() for all valid types"""
+def test_convert_between_types(true_file_extension: str, target_format: str):
+    """Should attempt conversion unless image is already target format, ignoring
+    the file format in the path and using the format in the files magic bytes"""
     with patch(
         "image_viewer.util.convert.magic_number_guess", return_value=true_file_extension
     ):
         converted: bool = try_convert_file_and_save_new(
-            "old.png", f"new.{target_extension}", target_extension
+            "old.png", f"new.{target_format}", target_format
         )
-        if (
-            true_file_extension == ImageFormats.PNG
-            and target_extension == ImageFormats.PNG
-        ):
+        if true_file_extension == target_format:
             assert not converted
         else:
             assert converted

@@ -25,7 +25,7 @@ def action_undoer() -> ActionUndoer:
 
 
 def test_cap():
-    """Test that last X actions are perserved"""
+    """Test that last X actions are preserved"""
     action_undoer = ActionUndoer(maxlen=4)
 
     action_undoer.append(Rename("This will get", "thrown out"))
