@@ -26,6 +26,16 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "printoptions",
         "set_printoptions",
     },
+    "numpy._core.fromnumeric": {
+        "_all_dispatcher",
+        "_argpartition_dispatcher",
+        "_clip_dispatcher",
+        "_cumprod_dispatcher",
+        "_cumulative_sum_dispatcher",
+        "_ndim_dispatcher",
+        "_prod_dispatcher",
+        "_sum_dispatcher",
+    },
     "numpy._core.function_base": {
         "_add_docstring",
         "_geomspace_dispatcher",
@@ -33,6 +43,8 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_logspace_dispatcher",
         "_needs_add_docstring",
         "add_newdoc",
+        "geomspace",
+        "logspace",
     },
     "numpy._core.getlimits": {"__repr__"},
     "numpy._core.numeric": {"_frombuffer", "_full_dispatcher"},
@@ -172,6 +184,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "duplicate",
         "invert",
         "lighter",
+        "logical_and",
+        "logical_or",
+        "logical_xor",
+        "multiply",
         "overlay",
         "soft_light",
         "hard_light",
@@ -199,7 +215,13 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "posterize",
         "solarize",
     },
-    "PIL.ImagePalette": {"random", "sepia", "wedge"},
+    "PIL.ImagePalette": {
+        "make_gamma_lut",
+        "make_linear_lut",
+        "random",
+        "sepia",
+        "wedge",
+    },
     "PIL.ImageTk": {"_get_image_from_kw", "_show"},
     "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
@@ -260,7 +282,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
-    "helpers.action_undoer": {"ABC"},
+    "actions.types": {"ABC"},
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
@@ -410,7 +432,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r"try:\s*?from numpy\.__config__.* from e", flags=re.DOTALL
             ),
             RegexReplacement(
-                pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require)"
+                pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require|geomspace|logspace)"  # noqa E501
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
@@ -470,6 +492,9 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         "numpy._core.arrayprint": [
             RegexReplacement(pattern=", .array_repr."),
             RegexReplacement(pattern=r"['\"](get)?(set)?_?printoptions['\"],", count=3),
+        ],
+        "numpy._core.function_base": [
+            RegexReplacement(pattern="(.logspace.,)|(, .geomspace.)")
         ],
         "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),

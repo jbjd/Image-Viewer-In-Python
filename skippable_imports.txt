@@ -127,6 +127,7 @@ PIL.ImageFilter
 PIL.ImageMorph
 PIL.ImageQt
 PIL.ImageShow
+PIL.ImageStat
 PIL.ImageWin
 PIL.TarIO
 PIL.report
