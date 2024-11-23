@@ -2,13 +2,10 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from image_viewer.helpers.action_undoer import (
-    ActionUndoer,
-    Convert,
-    Delete,
-    Rename,
-    Rotate,
-)
+from image_viewer.actions.types import Convert, Delete, Edit, Rename
+from image_viewer.actions.undoer import ActionUndoer
+
+MODULE_PATH = "image_viewer.actions"
 
 
 @pytest.fixture
@@ -31,7 +28,7 @@ def test_cap(action_undoer: ActionUndoer):
 def test_undo_delete(action_undoer: ActionUndoer):
     action_undoer.append(Delete("test"))
 
-    with patch("image_viewer.helpers.action_undoer.restore_from_bin") as mock_undelete:
+    with patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete:
         assert action_undoer.get_undo_message()
         assert action_undoer.undo() == ("test", "")
         mock_undelete.assert_called_once()
@@ -41,8 +38,8 @@ def test_undo_convert_with_deletion(action_undoer: ActionUndoer):
     action_undoer.append(Convert("old", "new", True))
 
     with (
-        patch("image_viewer.helpers.action_undoer.trash_file") as mock_trash,
-        patch("image_viewer.helpers.action_undoer.restore_from_bin") as mock_undelete,
+        patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
+        patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
     ):
         # Undo delete + convert, old3 should be added back and new3 removed
         assert action_undoer.get_undo_message()
@@ -55,8 +52,8 @@ def test_undo_convert_without_deletion(action_undoer: ActionUndoer):
     action_undoer.append(Convert("old", "new", False))
 
     with (
-        patch("image_viewer.helpers.action_undoer.trash_file") as mock_trash,
-        patch("image_viewer.helpers.action_undoer.restore_from_bin") as mock_undelete,
+        patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
+        patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
     ):
         assert action_undoer.get_undo_message()
         assert action_undoer.undo() == ("", "new")
@@ -67,14 +64,14 @@ def test_undo_convert_without_deletion(action_undoer: ActionUndoer):
 def test_undo_rename(action_undoer: ActionUndoer):
     action_undoer.append(Rename("old", "new"))
 
-    with patch("image_viewer.helpers.action_undoer.os.rename") as mock_rename:
+    with patch(f"{MODULE_PATH}.undoer.os.rename") as mock_rename:
         assert action_undoer.get_undo_message()
         assert action_undoer.undo() == ("old", "new")
         mock_rename.assert_called_once()
 
 
 def test_undo_rotate(action_undoer: ActionUndoer):
-    action_undoer.append(Rotate("old", b"original bytes"))
+    action_undoer.append(Edit("old", "rotation", b"original bytes"))
 
     with patch("builtins.open", mock_open()) as mock_fp:
         assert action_undoer.get_undo_message()

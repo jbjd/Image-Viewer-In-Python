@@ -5,8 +5,9 @@ from tkinter.messagebox import askyesno
 
 from PIL.Image import Image
 
+from actions.types import Convert, Delete, Edit, Rename
+from actions.undoer import ActionUndoer
 from constants import VALID_FILE_TYPES, Rotation
-from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename, Rotate
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
@@ -370,7 +371,7 @@ class ImageFileManager:
         with open(path, "rb") as fp:
             original_bytes: bytes = fp.read()
 
-        self.action_undoer.append(Rotate(path, original_bytes))
+        self.action_undoer.append(Edit(path, "rotation", original_bytes))
 
         with open(path, "wb") as fp:
             save_image(rotated_image, fp)

@@ -3,57 +3,13 @@ Classes representing actions and a class that handles undoing them
 """
 
 import os
-from abc import ABC
 from collections import deque
 
+from actions.types import Convert, Delete, Edit, FileEvent, Rename
 from util.os import restore_from_bin, trash_file
 
 
-class FileAction(ABC):
-    """Class used to track actions done to a file"""
-
-    __slots__ = ("original_path",)
-
-    def __init__(self, original_path: str) -> None:
-        self.original_path: str = original_path
-
-
-class Rename(FileAction):
-    """File path changed action"""
-
-    __slots__ = ("new_path", "original_file_deleted")
-
-    def __init__(
-        self, original_path: str, new_path: str, original_file_deleted: bool = False
-    ) -> None:
-        super().__init__(original_path)
-        self.new_path: str = new_path
-        self.original_file_deleted: bool = original_file_deleted
-
-
-class Convert(Rename):
-    """File extension converted action"""
-
-    __slots__ = ()
-
-
-class Delete(FileAction):
-    """File deleted action"""
-
-    __slots__ = ()
-
-
-class Rotate(FileAction):
-    """Image display rotated action"""
-
-    __slots__ = ("original_bytes",)
-
-    def __init__(self, original_path: str, original_bytes: bytes) -> None:
-        super().__init__(original_path)
-        self.original_bytes: bytes = original_bytes
-
-
-class ActionUndoer(deque[FileAction]):
+class ActionUndoer(deque[FileEvent]):
     """Keeps information on recent file actions and can undo them"""
 
     __slots__ = ()
@@ -63,7 +19,7 @@ class ActionUndoer(deque[FileAction]):
 
     def undo(self) -> tuple[str, str]:
         """Returns tuple of image to add, image to remove, if any"""
-        action: FileAction = self.pop()
+        action: FileEvent = self.pop()
 
         if type(action) is Rename:
 
@@ -86,7 +42,7 @@ class ActionUndoer(deque[FileAction]):
             restore_from_bin(action.original_path)
             return (action.original_path, "")
 
-        elif type(action) is Rotate:
+        elif type(action) is Edit:
 
             with open(action.original_path, "wb") as fp:
                 fp.write(action.original_bytes)
@@ -98,7 +54,7 @@ class ActionUndoer(deque[FileAction]):
     def get_undo_message(self) -> str:
         """Looks at top of deque and formats the information in a string.
         Throws IndexError when empty"""
-        action: FileAction = self[-1]
+        action: FileEvent = self[-1]
 
         if type(action) is Rename:
             return f"Rename {action.new_path} back to {action.original_path}?"
@@ -111,7 +67,7 @@ class ActionUndoer(deque[FileAction]):
             return f"Delete {action.new_path}?"
         elif type(action) is Delete:
             return f"Restore {action.original_path} from trash?"
-        elif type(action) is Rotate:
-            return f"Undo rotation on {action.original_path}?"
+        elif type(action) is Edit:
+            return f"Undo {action.edit_performed} on {action.original_path}?"
         else:
             assert False  # Unreachable
