@@ -5,8 +5,9 @@ from tkinter.messagebox import askyesno
 
 from PIL.Image import Image
 
-from constants import Rotation
-from helpers.action_undoer import ActionUndoer, Convert, Delete, Rename, Rotate
+from actions.types import Convert, Delete, Edit, Rename
+from actions.undoer import ActionUndoer
+from constants import VALID_FILE_TYPES, Rotation
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
@@ -22,18 +23,6 @@ from util.PIL import rotate_image, save_image
 
 class ImageFileManager:
     """Manages internal list of images"""
-
-    VALID_FILE_TYPES: set[str] = {
-        "gif",
-        "jpg",
-        "jpeg",
-        "jpe",
-        "jfif",
-        "jif",
-        "png",
-        "webp",
-        "dds",
-    }
 
     __slots__ = (
         "_files",
@@ -51,7 +40,7 @@ class ImageFileManager:
         self.image_cache: ImageCache = image_cache
 
         self.action_undoer: ActionUndoer = ActionUndoer()
-        self.file_dialog_asker: FileDialogAsker = FileDialogAsker(self.VALID_FILE_TYPES)
+        self.file_dialog_asker: FileDialogAsker = FileDialogAsker(VALID_FILE_TYPES)
 
         first_image_name: ImageName = ImageName(os.path.basename(first_image_path))
         self._files: ImageNameList = ImageNameList([first_image_name])
@@ -65,7 +54,7 @@ class ImageFileManager:
         path = self.get_path_to_image()
         if (
             not os.path.isfile(path)
-            or self.current_image.suffix not in self.VALID_FILE_TYPES
+            or self.current_image.suffix not in VALID_FILE_TYPES
         ):
             raise ValueError
 
@@ -111,7 +100,6 @@ class ImageFileManager:
         """Finds all supported image in directory"""
         image_to_start_at: str = self._files.get_current_image_name()
 
-        VALID_FILE_TYPES = self.VALID_FILE_TYPES
         self._files = ImageNameList(
             [
                 image_path
@@ -214,7 +202,7 @@ class ImageFileManager:
         new_dir, new_name = self._split_dir_and_name(new_name_or_path)
 
         new_image_name: ImageName = ImageName(new_name)
-        if new_image_name.suffix not in self.VALID_FILE_TYPES:
+        if new_image_name.suffix not in VALID_FILE_TYPES:
             new_name += f".{self.current_image.suffix}"
             new_image_name = ImageName(new_name)
 
@@ -383,7 +371,7 @@ class ImageFileManager:
         with open(path, "rb") as fp:
             original_bytes: bytes = fp.read()
 
-        self.action_undoer.append(Rotate(path, original_bytes))
+        self.action_undoer.append(Edit(path, "rotation", original_bytes))
 
         with open(path, "wb") as fp:
             save_image(rotated_image, fp)

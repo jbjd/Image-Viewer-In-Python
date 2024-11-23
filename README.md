@@ -2,9 +2,17 @@
 
 A lightweight "Personal Image Viewer" written in Python 3.11
 
+## Supported File Types
+
+PNG, JPEG, WebP, GIF, DDS
+
+Animation support for PNG/WebP/GIF
+
+## Description
+
 An image viewer with the intent of being clean and simple; Images are fit to your screen in the best quality without
 the clutter that other image viewers have. Currently includes a button for deletion, renaming a file,
-and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click. I support png, jpeg, webp, and gif files including animated versions.
+and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click.
 
 Please see the "todo" file for future plans. However, I don't always update it and will work on unlisted tasks as I feel the need. I made that file just as a place to put my ideas down.
 

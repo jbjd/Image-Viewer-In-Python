@@ -49,6 +49,19 @@ class TkTags(StrEnum):
     BACKGROUND = "back"
 
 
+VALID_FILE_TYPES: set[str] = {
+    "gif",
+    "jpg",
+    "jpeg",
+    "jpe",
+    "jfif",
+    "jif",
+    "png",
+    "webp",
+    "dds",
+}
+
+
 DEFAULT_FONT: Final[str] = (
     "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
 )

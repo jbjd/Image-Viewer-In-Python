@@ -6,7 +6,7 @@ import pytest
 from image_viewer.constants import TEXT_RGB
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.rename_entry import RenameEntry
-from test_util.mocks import MockEvent
+from tests.test_util.mocks import MockEvent
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ import pytest
 
 from image_viewer.constants import Key
 from image_viewer.ui.canvas import CustomCanvas
-from test_util.mocks import MockEvent
+from tests.test_util.mocks import MockEvent
 
 
 @pytest.fixture(scope="module")

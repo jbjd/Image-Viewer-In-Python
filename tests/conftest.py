@@ -7,7 +7,7 @@ from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.util.image import ImageCache
-from test_util.mocks import MockImage
+from tests.test_util.mocks import MockImage
 
 WORKING_DIR: str = os.path.dirname(__file__)
 IMG_DIR: str = os.path.join(WORKING_DIR, "example_images")

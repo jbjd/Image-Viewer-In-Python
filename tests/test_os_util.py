@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 import pytest
 
-from conftest import IMG_DIR
 from image_viewer.util.os import (
     clean_str_for_OS_path,
     get_byte_display,
     kb_size,
     walk_dir,
 )
+from tests.conftest import IMG_DIR
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Only relevant to Windows")

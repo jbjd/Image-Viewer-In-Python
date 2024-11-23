@@ -7,7 +7,7 @@ from turbojpeg import TurboJPEG
 
 from image_viewer.constants import ImageFormats
 from image_viewer.helpers.image_resizer import ImageResizer
-from test_util.mocks import MockImage
+from tests.test_util.mocks import MockImage
 
 
 def test_jpeg_scale_factor(image_resizer: ImageResizer):
