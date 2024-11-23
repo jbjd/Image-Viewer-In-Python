@@ -8,6 +8,7 @@ from util.image import magic_number_guess
 from util.PIL import image_is_animated, save_image
 
 
+# TODO: This needs a lot of refactoring. Validing target for instance
 def try_convert_file_and_save_new(
     old_path: str, new_path: str, target_ext: str
 ) -> bool:
@@ -15,6 +16,8 @@ def try_convert_file_and_save_new(
     Raises ValueError if converting animated file to non-animated format
     Returns True if conversion performed, False when converting to the same type
     """
+    target_ext = target_ext.lower()
+
     with open(old_path, "rb") as fp:
         original_ext: str = magic_number_guess(fp.read(4))
 

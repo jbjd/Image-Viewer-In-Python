@@ -3,7 +3,6 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from image_viewer.constants import ImageFormats
-from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.convert import try_convert_file_and_save_new
 from test_util.mocks import MockImage
 
@@ -39,27 +38,34 @@ def test_convert_jpeg():
             assert try_convert_file_and_save_new("old.png", "new.jpg", "jpg")
 
 
+@pytest.mark.parametrize(
+    "true_file_extension,target_extension",
+    [
+        (ImageFormats.WEBP, ImageFormats.PNG),
+        (ImageFormats.PNG, ImageFormats.JPEG),
+        (ImageFormats.PNG, ImageFormats.WEBP),
+        (ImageFormats.PNG, ImageFormats.GIF),
+        (ImageFormats.PNG, ImageFormats.DDS),
+        (ImageFormats.PNG, ImageFormats.PNG),
+    ],
+)
 @patch("image_viewer.util.convert.open_image", mock_open_image)
-def test_all_valid_types():
+@patch("builtins.open", mock_open())
+def test_convert_png_to_other_types(true_file_extension: str, target_extension: str):
     """Tries to get to Image.save() for all valid types"""
-    valid_types: set[str] = ImageFileManager.VALID_FILE_TYPES
-
-    with patch("builtins.open", mock_open()):
-        for img_type in valid_types:
-            # when img_type == png, try assuming old.png is a webp with incorrect name
-            # So function should still return true since old.png -> new.png was
-            # technically a conversion
-            with patch(
-                "image_viewer.util.convert.magic_number_guess",
-                lambda _: (
-                    ImageFormats.PNG
-                    if img_type.upper() != ImageFormats.PNG.upper()
-                    else ImageFormats.WEBP
-                ),
-            ):
-                assert try_convert_file_and_save_new(
-                    "old.png", f"new.{img_type}", img_type
-                )
+    with patch(
+        "image_viewer.util.convert.magic_number_guess", return_value=true_file_extension
+    ):
+        converted: bool = try_convert_file_and_save_new(
+            "old.png", f"new.{target_extension}", target_extension
+        )
+        if (
+            true_file_extension == ImageFormats.PNG
+            and target_extension == ImageFormats.PNG
+        ):
+            assert not converted
+        else:
+            assert converted
 
 
 @patch("image_viewer.util.convert.open_image", mock_open_image)
