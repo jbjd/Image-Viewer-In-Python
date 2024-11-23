@@ -7,7 +7,7 @@ from image_viewer.animation.frame import Frame
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
 from image_viewer.util.image import ImageCacheEntry
-from test_util.mocks import MockStatResult
+from tests.test_util.mocks import MockStatResult
 
 
 def test_next_frame(image_loader: ImageLoader):

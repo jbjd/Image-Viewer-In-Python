@@ -9,7 +9,7 @@ from image_viewer.constants import Key
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.viewer import ViewerApp
-from test_util.mocks import MockEvent, MockImage, MockImageFileManager
+from tests.test_util.mocks import MockEvent, MockImage, MockImageFileManager
 
 
 @pytest.fixture

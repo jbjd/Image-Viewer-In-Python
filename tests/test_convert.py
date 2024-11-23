@@ -4,7 +4,7 @@ import pytest
 
 from image_viewer.constants import ImageFormats
 from image_viewer.util.convert import try_convert_file_and_save_new
-from test_util.mocks import MockImage
+from tests.test_util.mocks import MockImage
 
 
 def mock_open_image(_: str) -> MockImage:

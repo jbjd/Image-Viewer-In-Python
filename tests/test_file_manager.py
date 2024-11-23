@@ -8,8 +8,8 @@ from conftest import IMG_DIR
 from image_viewer.constants import ImageFormats
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import ImageCache, ImageCacheEntry
-from test_util.exception import safe_wrapper
-from test_util.mocks import MockActionUndoer, MockImage, MockStatResult
+from tests.test_util.exception import safe_wrapper
+from tests.test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
 
 @pytest.fixture
