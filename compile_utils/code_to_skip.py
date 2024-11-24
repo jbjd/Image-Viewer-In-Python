@@ -630,6 +630,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 "def _no_nep50_warning.*",
                 "def _no_nep50_warning():yield",
+                count=1,
                 flags=re.DOTALL,
             )
         ],
@@ -657,6 +658,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern="def decorator.*?return public_api",
                 replacement="def decorator(i): return i",
+                count=1,
                 flags=re.DOTALL,
             ),
         ],
@@ -712,7 +714,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
         "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-            RegexReplacement(pattern=r".cross.,"),
+            RegexReplacement(pattern=r".cross.,", count=1),
         ],
         "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
         "PIL.__init__": [
@@ -729,10 +731,12 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
             RegexReplacement(
                 pattern="from typing import .*",
                 replacement="from collections import namedtuple",
+                count=1,
             ),
             RegexReplacement(
                 pattern=r"_Frame\(NamedTuple\)",
                 replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
+                count=1,
             ),
         ],
         "PIL.Image": [
@@ -757,6 +761,7 @@ except ImportError:
             RegexReplacement(
                 pattern=r"def Draw.*?return ImageDraw.*?\)",
                 replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
+                count=1,
                 flags=re.DOTALL,
             ),
             RegexReplacement(
@@ -792,10 +797,12 @@ from collections import namedtuple""",
             RegexReplacement(
                 pattern="from typing import NamedTuple",
                 replacement="from collections import namedtuple",
+                count=1,
             ),
             RegexReplacement(
                 pattern=r"\(NamedTuple\):",
                 replacement=r"(namedtuple('ModeDescriptor', ['mode', 'bands', 'basemode', 'basetype', 'typestr'])):",  # noqa E501
+                count=1,
             ),
         ],
         "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
@@ -829,6 +836,7 @@ except ImportError:
                 replacement="""
 from collections.abc import Iterable
 iterable_type = Iterable""",
+                count=1,
             )
         ],
         # We don't use pathlib's Path, remove support for it
