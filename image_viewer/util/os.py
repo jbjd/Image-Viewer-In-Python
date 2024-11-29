@@ -28,9 +28,11 @@ if os.name == "nt":
             raise OSError from e  # change error type so catching is not OS specific
 
 else:  # assume linux for now
+    import subprocess
     from tkinter.messagebox import showinfo
 
     from send2trash import send2trash
+    from send2trash.plat_other import HOMETRASH
 
     illegal_char = re_compile("")
     kb_size = 1000
@@ -39,7 +41,42 @@ else:  # assume linux for now
         return a < b
 
     def restore_from_bin(original_path: str) -> None:
-        raise NotImplementedError  # TODO: add option for linux
+        name_start: int = original_path.rfind("/")
+        file_name_and_suffix: str = (
+            original_path if name_start == -1 else original_path[name_start + 1 :]
+        )
+        suffix_start: int = file_name_and_suffix.rfind(".")
+        if suffix_start == -1:
+            file_name = file_name_and_suffix
+            suffix = ""
+        else:
+            file_name = file_name_and_suffix[:suffix_start]
+            suffix = file_name_and_suffix[suffix_start:]
+
+        # mv f"{HOMETRASH}/files/{name}" original_path
+        find_result = subprocess.run(
+            f"find {HOMETRASH}/info/{file_name}*{suffix}.trashinfo",
+            stdout=subprocess.PIPE,
+            shell=True,
+        )
+        if find_result.returncode != 0:
+            return
+
+        output: str = find_result.stdout.decode("utf-8")
+        info_paths = output.strip().split("\n")
+        for info_path in info_paths:
+            with open(info_path, "r", encoding="utf-8") as fp:
+                _ = fp.readline()
+                deleted_files_original_path: str = (
+                    fp.readline().strip().replace("Path=", "", 1)
+                )
+                if deleted_files_original_path == original_path:
+                    deleted_file_name = info_path[info_path.rfind("/info/") + 6 : -10]
+                    path_to_trashed_file: str = f"{HOMETRASH}/files/{deleted_file_name}"
+                    # to_restore_path: str = info_path.replace(
+                    #     f"/info/{file_name}", f"/files/{file_name}"
+                    # )
+                    break
 
 
 def show_info_popup(title: str, body: str) -> None:
@@ -89,3 +126,6 @@ def walk_dir(directory_path: str) -> Iterator[str]:
 
             if not is_dir:
                 yield entry.name
+
+
+restore_from_bin("/home/jbjd/Pictures/test2.png")

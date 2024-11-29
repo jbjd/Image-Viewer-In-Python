@@ -7,6 +7,7 @@ from image_viewer.util.os import (
     clean_str_for_OS_path,
     get_byte_display,
     kb_size,
+    restore_from_bin,
     walk_dir,
 )
 from tests.conftest import IMG_DIR
@@ -43,3 +44,8 @@ def test_walk_dir():
     with patch.object(os.DirEntry, "is_dir", side_effect=OSError):
         files = [p for p in walk_dir(IMG_DIR)]
         assert len(files) == 5
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Fuction uses external package on windows")
+def test_restore_from_bin_linux():
+    assert False
