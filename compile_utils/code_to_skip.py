@@ -259,6 +259,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "cholesky",
         "cross",
         "qr",
+        "tensorsolve",
     },
     "turbojpeg": {
         "__define_cropping_regions",
@@ -449,7 +450,6 @@ _skip_from_imports: dict[str, set[str]] = {
         "_distributor_init",
         "array_repr",
         "c_",
-        "ediff1d",
         "einsum",
         "einsum_path",
         "matrixlib",
@@ -580,7 +580,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
@@ -714,7 +714,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
         "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-            RegexReplacement(pattern=r".cross.,", count=1),
+            RegexReplacement(pattern=r".(cross|tensorsolve).,", count=2),
         ],
         "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
         "PIL.__init__": [
