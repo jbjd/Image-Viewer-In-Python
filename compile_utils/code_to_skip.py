@@ -273,6 +273,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "encode_from_yuv",
         "scale_with_quality",
     },
+    "PIL._binary": {"i8", "si16be", "si16le", "si32be", "si32le"},
     "PIL.features": {
         "check",
         "check_codec",
@@ -401,10 +402,12 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy.lib._shape_base_impl": {"__doc__"},
     "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
+        "__author__",
         "__buffer_size_YUV2",
         "__compressFromYUV",
         "__decompressToYUVPlanes",
         "__decompressToYUV2",
+        "__version__",
         "TJERR_FATAL",
         "TJCS_CMYK",
         "TJPF_ABGR",
@@ -441,6 +444,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageFont": {"TransposedFont"},
     "PIL.ImageOps": {"SupportsGetMesh"},
     "PIL.ImageTk": {"BitmapImage"},
+    "PIL.PngImagePlugin": {"PngInfo"},
 }
 
 _skip_from_imports: dict[str, set[str]] = {

@@ -89,6 +89,7 @@ PIL.GribStubImagePlugin
 PIL.Hdf5StubImagePlugin
 PIL.IcnsImagePlugin
 PIL.IcoImagePlugin
+PIL.ImageGrab
 PIL.ImImagePlugin
 PIL.ImtImagePlugin
 PIL.IptcImagePlugin
