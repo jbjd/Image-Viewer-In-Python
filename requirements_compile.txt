@@ -1,2 +1,2 @@
-nuitka==2.5.6
+nuitka==2.5.7
 personal-python-minifier @ git+https://github.com/jbjd/Python-Minifier@v0.0.3

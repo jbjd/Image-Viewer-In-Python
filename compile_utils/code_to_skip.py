@@ -475,6 +475,7 @@ _skip_from_imports: dict[str, set[str]] = {
     },
     "numpy._core.overrides": {"getargspec"},
     "numpy._core.records": {"_get_legacy_print_mode"},
+    "numpy._core.umath": {"_add_newdoc_ufunc"},
     "numpy.lib._shape_base_impl": {"_arrays_for_stack_dispatcher"},
     "numpy.lib.stride_tricks": {"__doc__"},
     "numpy.linalg.__init__": {"linalg"},
@@ -499,7 +500,7 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.multiarray": {"array_function_from_c_func_and_dispatcher"},
     "numpy._core.numeric": {
         "array_function_dispatch",
-        "set_array_function_like_doc",
+        "finalize_array_function_like",
         "set_module",
     },
     "numpy._core.numerictypes": {"set_module"},
@@ -514,7 +515,7 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._twodim_base_impl": {
         "array_function_dispatch",
-        "set_array_function_like_doc",
+        "finalize_array_function_like",
         "set_module",
     },
     "numpy.lib._type_check_impl": {"array_function_dispatch", "set_module"},
@@ -630,14 +631,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         ],
-        "numpy._core._ufunc_config": [
-            RegexReplacement(
-                "def _no_nep50_warning.*",
-                "def _no_nep50_warning():yield",
-                count=1,
-                flags=re.DOTALL,
-            )
-        ],
         "numpy._core.arrayprint": [
             RegexReplacement(pattern=", .array_repr."),
             RegexReplacement(pattern=r"['\"](get)?(set)?_?printoptions['\"],", count=3),
@@ -651,8 +644,8 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         ],
         "numpy._core.overrides": [
             RegexReplacement(
-                pattern="def set_array_function_like_doc.*?return public_api",
-                replacement="def set_array_function_like_doc(a): return a",
+                pattern="def get_array_function_like_doc.*?return public_api",
+                replacement="def finalize_array_function_like(a): return a",
                 flags=re.DOTALL,
             ),
             RegexReplacement(
@@ -684,6 +677,7 @@ def set_module(_):
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"from \. import _.*"),
+            RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
             RegexReplacement(pattern=r"from numpy\._core.* import .*"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
             RegexReplacement(
