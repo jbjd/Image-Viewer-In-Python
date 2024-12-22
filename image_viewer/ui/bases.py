@@ -1,4 +1,4 @@
-"""Base classes for UI elements"""
+"""Base classes for UI elements on a tkinter canvas"""
 
 from abc import ABC, abstractmethod
 from tkinter import Event
@@ -11,6 +11,11 @@ class UIElementBase(ABC):
 
     def __init__(self, id: int = -1) -> None:
         self.id: int = id
+
+    def update(self, **kwargs) -> None:
+        """Updates properties specified in kwargs to new values"""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class ButtonUIElementBase(UIElementBase):

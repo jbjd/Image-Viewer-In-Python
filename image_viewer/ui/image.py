@@ -16,13 +16,6 @@ class ImageUIElement(UIElementBase):
         super().__init__(id)
         self.image: PhotoImage | None = image
 
-    def update(self, image: PhotoImage | None = None, id: int | None = None):
-        """Updates image, id, or both when passed"""
-        if image is not None:
-            self.image = image
-        if id is not None:
-            self.id = id
-
 
 class DropdownImageUIElement(ImageUIElement):
     """Represents a lazy loaded drop down image displayed on a tkinter canvas"""
