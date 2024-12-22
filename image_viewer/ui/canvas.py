@@ -3,13 +3,14 @@ from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TEXT_RGB, TkTags
+from constants import TEXT_RGB, ButtonName, TkTags
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
+        "button_name_to_id",
         "drag_start_x",
         "drag_start_y",
         "file_name_text_id",
@@ -24,6 +25,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
+        self.button_name_to_id: dict[ButtonName, int] = {}
         self.file_name_text_id: int = -1
         self.image_display_id: int = -1
         self.screen_width: int = master.winfo_width()
@@ -68,6 +70,22 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
             drag_y = self.screen_height - bbox[1]
 
         self.move(self.image_display_id, drag_x, drag_y)
+
+    def create_button(
+        self, name: ButtonName, x_offset: int, y_offset: int, image: PhotoImage
+    ) -> int:
+        id: int = self.create_image(
+            x_offset,
+            y_offset,
+            image=image,
+            anchor="nw",
+            tag=TkTags.TOPBAR,
+            state="hidden",
+        )
+
+        self.button_name_to_id[name] = id
+
+        return id
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
@@ -123,3 +141,6 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     def is_widget_visible(self, tag_or_id: str | int) -> bool:
         """Returns bool of if provided tag/id is visible"""
         return self.itemcget(tag_or_id, "state") != "hidden"
+
+    def get_button_id(self, name: ButtonName) -> int:
+        return self.button_name_to_id[name]

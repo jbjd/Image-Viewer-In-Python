@@ -1,10 +1,11 @@
 from collections import namedtuple
-from tkinter import Canvas, Event
+from tkinter import Event
 from typing import Callable
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TkTags
+from constants import ButtonName
+from ui.canvas import CustomCanvas
 
 
 class IconImages(namedtuple("IconImages", ["default", "hovered"])):
@@ -21,25 +22,25 @@ class HoverableButton:
 
     def __init__(
         self,
-        canvas: Canvas,
+        canvas: CustomCanvas,
         icon: IconImages,
         function_to_bind: Callable[[Event], None],
     ) -> None:
-        self.canvas: Canvas = canvas
+        self.canvas: CustomCanvas = canvas
         self.icon: PhotoImage = icon.default
         self.icon_hovered: PhotoImage = icon.hovered
         self.function_to_bind: Callable[[Event], None] = function_to_bind
         self.id: int = -1
 
-    def add_to_canvas(self, x_offset: int = 0, y_offset: int = 0) -> None:
+    def add_to_canvas(
+        self, name: ButtonName, x_offset: int = 0, y_offset: int = 0
+    ) -> None:
         """Adds self to canvas"""
-        self.id = self.canvas.create_image(
+        self.id = self.canvas.create_button(
+            name,
             x_offset,
             y_offset,
             image=self.icon,
-            anchor="nw",
-            tag=TkTags.TOPBAR,
-            state="hidden",
         )
 
         self.canvas.tag_bind(self.id, "<Enter>", self._on_enter)
@@ -69,7 +70,7 @@ class ToggleButton(HoverableButton):
 
     def __init__(
         self,
-        canvas: Canvas,
+        canvas: CustomCanvas,
         icon: IconImages,
         active_icon: IconImages,
         function_to_bind: Callable[[Event], None],

@@ -9,7 +9,7 @@ from PIL.ImageTk import PhotoImage
 
 from animation.frame import Frame
 from config import font, max_items_in_cache
-from constants import Key, Rotation, TkTags, ZoomDirection
+from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from factories.icon_factory import IconFactory
 from helpers.image_loader import ImageLoader, ReadImageResponse
 from helpers.image_resizer import ImageResizer
@@ -37,7 +37,6 @@ class ViewerApp:
         "image_load_id",
         "move_id",
         "need_to_redraw",
-        "rename_button_id",
         "rename_entry",
         "width_ratio",
     )
@@ -183,30 +182,29 @@ class ViewerApp:
             icon_factory.make_exit_icons(),
             self.exit,
         )
-        exit_button.add_to_canvas(button_x_offset)
+        exit_button.add_to_canvas(ButtonName.EXIT, button_x_offset)
 
         button_x_offset -= icon_size
         minify_button: HoverableButton = HoverableButton(
             canvas, icon_factory.make_minify_icons(), self.minimize
         )
-        minify_button.add_to_canvas(button_x_offset)
+        minify_button.add_to_canvas(ButtonName.MINIFY, button_x_offset)
 
         button_x_offset -= icon_size
         dropdown_button: ToggleButton = ToggleButton(
             canvas, *icon_factory.make_dropdown_icons(), self.handle_dropdown
         )
-        dropdown_button.add_to_canvas(button_x_offset)
+        dropdown_button.add_to_canvas(ButtonName.DROPDOWN, button_x_offset)
 
         trash_button: HoverableButton = HoverableButton(
             canvas, icon_factory.make_trash_icons(), self.trash_image
         )
-        trash_button.add_to_canvas()
+        trash_button.add_to_canvas(ButtonName.TRASH)
 
         rename_button: HoverableButton = HoverableButton(
             canvas, icon_factory.make_rename_icons(), self.toggle_show_rename_window
         )
-        rename_button.add_to_canvas()
-        self.rename_button_id: int = rename_button.id
+        rename_button.add_to_canvas(ButtonName.RENAME)
 
         dropdown_id: int = canvas.create_image(
             screen_width, icon_size, anchor="ne", tag=TkTags.TOPBAR, state="hidden"
@@ -527,7 +525,9 @@ class ViewerApp:
         rename_window_x_offset = self.canvas.update_file_name(
             self.file_manager.current_image.name
         )
-        self.canvas.coords(self.rename_button_id, rename_window_x_offset, 0)
+        self.canvas.coords(
+            self.canvas.get_button_id(ButtonName.RENAME), rename_window_x_offset, 0
+        )
         self.canvas.coords(
             self.rename_entry.id,
             rename_window_x_offset + self._scale_pixels_to_height(40),
