@@ -159,7 +159,7 @@ def clean_tk_files(compile_dir: str) -> None:
         # globs are used since files may have versioning in name
         # They are intended to target a single file
         code_file: str = glob_result[0]
-        apply_regex_to_file(code_file, regexs)
+        apply_regex_to_file(code_file, regexs, warning_id=path_or_glob)
 
     # strip various things in tcl files
     comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
@@ -187,5 +187,7 @@ def clean_tk_files(compile_dir: str) -> None:
         )
 
     apply_regex_to_file(
-        os.path.join(compile_dir, "tcl/tclIndex"), whitespace_around_newlines
+        os.path.join(compile_dir, "tcl/tclIndex"),
+        whitespace_around_newlines,
+        warning_id="tclIndex",
     )

@@ -880,7 +880,26 @@ regex_to_apply_tk: defaultdict[str, set[RegexReplacement]] = defaultdict(
 
 if sys.platform != "darwin":
     regex_to_apply_tk["tcl8/*/platform-*.tm"].add(
-        RegexReplacement(pattern="set plat macosx", count=1)
+        RegexReplacement(
+            pattern=r"darwin \{.*?aix", replacement="aix", flags=re.DOTALL, count=1
+        )
+    )
+
+    regex_to_apply_tk["tcl/auto.tcl"].add(
+        RegexReplacement(
+            pattern=r'if \{\$tcl_platform\(platform\) eq "unix".*?\}.*?\}',
+            flags=re.DOTALL,
+            count=1,
+        )
+    )
+
+    regex_to_apply_tk["tcl/init.tcl"].add(
+        RegexReplacement(
+            pattern=r'if \{\$tcl_platform\(os\) eq "Darwin".*?else.*?\}\s*?\}',
+            replacement="package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}",
+            flags=re.DOTALL,
+            count=1,
+        )
     )
 
 data_files_to_exclude: list[str] = [
@@ -889,6 +908,7 @@ data_files_to_exclude: list[str] = [
     "tcl*/**/http-*.tm",
     "tcl*/**/shell-*.tm",
     "tcl*/**/tcltest-*.tm",
+    "tcl/parray.tcl",
     "tk/ttk/*Theme.tcl",
     "tk/images",
     "tk/msgs",
