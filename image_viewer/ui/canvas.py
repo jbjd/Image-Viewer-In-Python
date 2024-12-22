@@ -5,6 +5,7 @@ from PIL.ImageTk import PhotoImage
 
 from constants import TEXT_RGB, ButtonName, TkTags
 from ui.bases import ButtonUIElementBase
+from ui.image import ImageUIElement
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
@@ -15,7 +16,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         "drag_start_x",
         "drag_start_y",
         "file_name_text_id",
-        "image_display_id",
+        "image_display",
         "screen_width",
         "screen_height",
         "topbar",
@@ -28,7 +29,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         master.update()  # updates winfo width and height to the current size
         self.button_name_to_object: dict[ButtonName, ButtonUIElementBase] = {}
         self.file_name_text_id: int = -1
-        self.image_display_id: int = -1
+        self.image_display = ImageUIElement(None, -1)
         self.screen_width: int = master.winfo_width()
         self.screen_height: int = master.winfo_height()
         self.drag_start_x: int
@@ -57,7 +58,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.drag_start_x += drag_x
         self.drag_start_y += drag_y
 
-        bbox: tuple[int, int, int, int] = self.bbox(self.image_display_id)
+        bbox: tuple[int, int, int, int] = self.bbox(self.image_display.id)
         # Keep in bounds horizontally
         if drag_x < 0 and bbox[2] + drag_x <= 0:
             drag_x = -bbox[2]
@@ -70,7 +71,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         elif drag_y > 0 and bbox[1] + drag_y >= self.screen_height:
             drag_y = self.screen_height - bbox[1]
 
-        self.move(self.image_display_id, drag_x, drag_y)
+        self.move(self.image_display.id, drag_x, drag_y)
 
     def create_button(
         self,
@@ -113,21 +114,23 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
     def update_image_display(self, new_image: PhotoImage) -> None:
         """Puts a new image on screen"""
-        self.delete(self.image_display_id)
+        self.delete(self.image_display.id)
 
-        self.image_display_id = self.create_image(
+        new_id: int = self.create_image(
             self.screen_width >> 1,
             self.screen_height >> 1,
             anchor="center",
             tag=TkTags.BACKGROUND,
             image=new_image,
         )
+        self.image_display.update(new_image, new_id)
         self.tag_raise(TkTags.TOPBAR)
         self.master.update_idletasks()
 
     def update_existing_image_display(self, new_image: PhotoImage) -> None:
         """Updates existing image on screen with a new PhotoImage"""
-        self.itemconfig(self.image_display_id, image=new_image)
+        self.itemconfig(self.image_display.id, image=new_image)
+        self.image_display.update(new_image)
         self.master.update_idletasks()
 
     def update_file_name(self, new_name: str) -> int:

@@ -26,7 +26,6 @@ class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
 
     __slots__ = (
-        "_display_image",
         "animation_id",
         "app",
         "canvas",
@@ -55,7 +54,6 @@ class ViewerApp:
         self.move_id: str = ""
         self.image_load_id: str = ""
         self.animation_id: str = ""
-        self._display_image: PhotoImage
 
         self.app: Tk = self._setup_tk_app(path_to_exe)
         self.canvas: CustomCanvas = CustomCanvas(self.app)
@@ -468,15 +466,13 @@ class ViewerApp:
     def _update_existing_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
         Use when the displayed image hasn't changed, but moved or went to a new frame"""
-        self._display_image = PhotoImage(image)
-        self.canvas.update_existing_image_display(self._display_image)
+        self.canvas.update_existing_image_display(PhotoImage(image))
 
     def _update_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
         Use when a new image is replacing the previous and should be
         re-centered"""
-        self._display_image = PhotoImage(image)
-        self.canvas.update_image_display(self._display_image)
+        self.canvas.update_image_display(PhotoImage(image))
 
     def update_after_image_load(self, image: Image) -> None:
         """Updates app title and displayed image"""
