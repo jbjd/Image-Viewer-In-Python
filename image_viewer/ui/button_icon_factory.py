@@ -10,7 +10,7 @@ from ui.button import IconImages
 from util.PIL import resize
 
 
-class IconFactory:
+class ButtonIconFactory:
     """Creates UI icons scaled to screen size"""
 
     LINE_RGB: tuple[int, int, int] = (170, 170, 170)

@@ -4,7 +4,7 @@ from typing import Final
 from PIL.ImageTk import PhotoImage
 
 from constants import TEXT_RGB, ButtonName, TkTags
-from ui.bases import ButtonBase
+from ui.bases import ButtonUIElementBase
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
@@ -26,7 +26,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
-        self.button_name_to_object: dict[ButtonName, ButtonBase] = {}
+        self.button_name_to_object: dict[ButtonName, ButtonUIElementBase] = {}
         self.file_name_text_id: int = -1
         self.image_display_id: int = -1
         self.screen_width: int = master.winfo_width()
@@ -74,7 +74,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
     def create_button(
         self,
-        button_object: ButtonBase,
+        button_object: ButtonUIElementBase,
         name: ButtonName,
         x_offset: int,
         y_offset: int,
@@ -154,6 +154,6 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     def mock_button_click(self, name: ButtonName) -> None:
         """Triggers on click event of button programatically
         passing None as event"""
-        button: ButtonBase = self.button_name_to_object[name]
+        button: ButtonUIElementBase = self.button_name_to_object[name]
         button.on_click(None)
         button.on_leave(None)  # Don't make button look hovered by mouse

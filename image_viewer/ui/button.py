@@ -5,7 +5,7 @@ from typing import Callable
 from PIL.ImageTk import PhotoImage
 
 from constants import ButtonName
-from ui.bases import ButtonBase
+from ui.bases import ButtonUIElementBase
 from ui.canvas import CustomCanvas
 
 
@@ -16,7 +16,7 @@ class IconImages(namedtuple("IconImages", ["default", "hovered"])):
     hovered: PhotoImage
 
 
-class HoverableButton(ButtonBase):
+class HoverableButtonUIElement(ButtonUIElementBase):
     """Button with different icons when its hovered"""
 
     __slots__ = ("canvas", "function_to_bind", "icon", "icon_hovered", "id")
@@ -65,8 +65,8 @@ class HoverableButton(ButtonBase):
         return self.icon
 
 
-class ToggleButton(HoverableButton):
-    """Extends HoverableButton by allowing an active/inactive state"""
+class ToggleableButtonUIElement(HoverableButtonUIElement):
+    """Extends HoverableButtonUIElement by allowing an active/inactive state"""
 
     __slots__ = ("active_icon", "active_icon_hovered", "hovered_button", "is_active")
 

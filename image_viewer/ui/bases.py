@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from tkinter import Event
 
 
-class ButtonBase(ABC):
+class ButtonUIElementBase(ABC):
     """Base class for buttons to be used in a Tkinter UI"""
 
     def __init__(self) -> None:
