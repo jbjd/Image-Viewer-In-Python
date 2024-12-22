@@ -4,13 +4,14 @@ from typing import Final
 from PIL.ImageTk import PhotoImage
 
 from constants import TEXT_RGB, ButtonName, TkTags
+from ui.bases import ButtonBase
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
-        "button_name_to_id",
+        "button_name_to_object",
         "drag_start_x",
         "drag_start_y",
         "file_name_text_id",
@@ -25,7 +26,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
-        self.button_name_to_id: dict[ButtonName, int] = {}
+        self.button_name_to_object: dict[ButtonName, ButtonBase] = {}
         self.file_name_text_id: int = -1
         self.image_display_id: int = -1
         self.screen_width: int = master.winfo_width()
@@ -72,7 +73,12 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.move(self.image_display_id, drag_x, drag_y)
 
     def create_button(
-        self, name: ButtonName, x_offset: int, y_offset: int, image: PhotoImage
+        self,
+        button_object: ButtonBase,
+        name: ButtonName,
+        x_offset: int,
+        y_offset: int,
+        image: PhotoImage,
     ) -> int:
         id: int = self.create_image(
             x_offset,
@@ -83,7 +89,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
             state="hidden",
         )
 
-        self.button_name_to_id[name] = id
+        self.button_name_to_object[name] = button_object
 
         return id
 
@@ -143,4 +149,11 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         return self.itemcget(tag_or_id, "state") != "hidden"
 
     def get_button_id(self, name: ButtonName) -> int:
-        return self.button_name_to_id[name]
+        return self.button_name_to_object[name].id
+
+    def mock_button_click(self, name: ButtonName) -> None:
+        """Triggers on click event of button programatically
+        passing None as event"""
+        button: ButtonBase = self.button_name_to_object[name]
+        button.on_click(None)
+        button.on_leave(None)  # Don't make button look hovered by mouse

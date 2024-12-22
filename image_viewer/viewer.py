@@ -140,8 +140,8 @@ class ViewerApp:
         app.bind("<Control-z>", self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
-        app.bind("<Up>", self.hide_topbar)
-        app.bind("<Down>", self.show_topbar)
+        app.bind("<Up>", self.handle_up_arrow)
+        app.bind("<Down>", self.handle_down_arrow)
         app.bind("<Alt-Left>", self.handle_rotate_image)
         app.bind("<Alt-Right>", self.handle_rotate_image)
         app.bind("<Alt-Up>", self.handle_rotate_image)
@@ -328,7 +328,20 @@ class ViewerApp:
             return
         self.exit()
 
-    def handle_dropdown(self, _: Event) -> None:
+    def handle_up_arrow(self, _: Event):
+        if self.canvas.is_widget_visible(self.dropdown.id):
+            self.canvas.mock_button_click(ButtonName.DROPDOWN)
+        else:
+            self.hide_topbar()
+
+    def handle_down_arrow(self, _: Event):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
+            if not self.canvas.is_widget_visible(self.dropdown.id):
+                self.canvas.mock_button_click(ButtonName.DROPDOWN)
+        else:
+            self.show_topbar()
+
+    def handle_dropdown(self, _: Event | None = None) -> None:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
         self.update_details_dropdown()
@@ -367,7 +380,7 @@ class ViewerApp:
 
         raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
 
-    def minimize(self, _: Event) -> None:
+    def minimize(self, _: Event | None = None) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
         self.need_to_redraw = True
         self.app.iconify()
@@ -425,7 +438,7 @@ class ViewerApp:
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
 
-    def toggle_show_rename_window(self, _: Event) -> None:
+    def toggle_show_rename_window(self, _: Event | None = None) -> None:
         """Either shows or hides rename window and shifts focus accordingly"""
         if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
@@ -568,7 +581,7 @@ class ViewerApp:
     def update_details_dropdown(self) -> None:
         """Updates the information and state of dropdown image"""
         dropdown = self.dropdown
-        if dropdown.showing:
+        if dropdown.show:
             if dropdown.need_refresh:
                 try:
                     details: str = self.file_manager.get_cached_metadata(
