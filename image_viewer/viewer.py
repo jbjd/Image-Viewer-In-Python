@@ -357,10 +357,6 @@ class ViewerApp:
 
     def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
-        # This prevents an ignored exception since Tk may clean up
-        # before PIL does. Lets leave the work to Tk when exiting
-        del PhotoImage.__del__
-
         try:
             self.canvas.delete(self.canvas.file_name_text_id)
             self.app.quit()
