@@ -19,7 +19,7 @@ class IconImages(namedtuple("IconImages", ["default", "hovered"])):
 class HoverableButtonUIElement(ButtonUIElementBase):
     """Button with different icons when its hovered"""
 
-    __slots__ = ("canvas", "function_to_bind", "icon", "icon_hovered", "id")
+    __slots__ = ("canvas", "function_to_bind", "icon", "icon_hovered")
 
     def __init__(
         self,
@@ -68,7 +68,7 @@ class HoverableButtonUIElement(ButtonUIElementBase):
 class ToggleableButtonUIElement(HoverableButtonUIElement):
     """Extends HoverableButtonUIElement by allowing an active/inactive state"""
 
-    __slots__ = ("active_icon", "active_icon_hovered", "hovered_button", "is_active")
+    __slots__ = ("active_icon", "active_icon_hovered", "is_active")
 
     def __init__(
         self,

@@ -590,7 +590,7 @@ class ViewerApp:
 
                 dropdown.image = create_dropdown_image(details)
 
-            self.canvas.itemconfigure(dropdown.id, image=None, state="normal")
+            self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
             self.canvas.itemconfigure(dropdown.id, state="hidden")
 

@@ -4,11 +4,22 @@ from abc import ABC, abstractmethod
 from tkinter import Event
 
 
-class ButtonUIElementBase(ABC):
-    """Base class for buttons to be used in a Tkinter UI"""
+class UIElementBase(ABC):
+    """Base class for any element on a tkinter canvas"""
+
+    __slots__ = ("id",)
+
+    def __init__(self, id: int = -1) -> None:
+        self.id: int = id
+
+
+class ButtonUIElementBase(UIElementBase):
+    """Base class for buttons on a tkinter canvas"""
+
+    __slots__ = ()
 
     def __init__(self) -> None:
-        self.id: int = -1
+        super().__init__()
 
     @abstractmethod
     def on_click(self, event: Event | None = None) -> None:
