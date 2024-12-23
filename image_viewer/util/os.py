@@ -10,7 +10,7 @@ from re import compile as re_compile
 illegal_char: Pattern[str]
 kb_size: int
 if os.name == "nt":
-    import subprocess
+    import ctypes
     from ctypes import windll  # type: ignore
 
     from send2trash.win.legacy import send2trash
@@ -18,6 +18,13 @@ if os.name == "nt":
 
     illegal_char = re_compile(r'[<>:"|?*]')
     kb_size = 1024
+
+    class OPENASINFO(ctypes.Structure):
+        _fields_ = [
+            ("pcszFile", ctypes.c_wchar_p),
+            ("pcszClass", ctypes.c_wchar_p),
+            ("oaifInFlags", ctypes.c_int32),
+        ]
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
@@ -47,17 +54,11 @@ def open_with(hwnd: int, file: str) -> None:
     if os.name != "nt":
         raise NotImplementedError
 
-    if not os.path.isfile(file):
-        return
+    a = OPENASINFO(pcszFile=file, pcszClass=None, oaifInFlags=0x00000004)
 
-    try:
-        subprocess.run(
-            ("Rundll32", "Shell32.dll,OpenAs_RunDLL", os.path.normpath(file)),
-            shell=False,
-            timeout=8,
-        )
-    except subprocess.TimeoutExpired:
-        pass
+    # This is getting -2147024809 invalid arg. I think oaifInFlags data type is wrong
+    # Tried ulong and i32
+    print(windll.shell32.SHOpenWithDialog(hwnd, a))
 
 
 def show_info_popup(title: str, body: str) -> None:
