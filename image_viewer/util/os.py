@@ -10,6 +10,7 @@ from re import compile as re_compile
 illegal_char: Pattern[str]
 kb_size: int
 if os.name == "nt":
+    import subprocess
     from ctypes import windll  # type: ignore
 
     from send2trash.win.legacy import send2trash
@@ -40,6 +41,23 @@ else:  # assume linux for now
 
     def restore_from_bin(original_path: str) -> None:
         raise NotImplementedError  # TODO: add option for linux
+
+
+def open_with(hwnd: int, file: str) -> None:
+    if os.name != "nt":
+        raise NotImplementedError
+
+    if not os.path.isfile(file):
+        return
+
+    try:
+        subprocess.run(
+            ("Rundll32", "Shell32.dll,OpenAs_RunDLL", os.path.normpath(file)),
+            shell=False,
+            timeout=8,
+        )
+    except subprocess.TimeoutExpired:
+        pass
 
 
 def show_info_popup(title: str, body: str) -> None:

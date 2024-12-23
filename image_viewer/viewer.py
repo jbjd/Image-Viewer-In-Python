@@ -19,6 +19,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
+from util.os import open_with
 from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
 
@@ -146,6 +147,12 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
+            app.bind(
+                "<Control-b>",
+                lambda _: open_with(
+                    self.app.winfo_id(), self.file_manager.path_to_image
+                ),
+            )
             app.bind(
                 "<MouseWheel>",
                 lambda event: self.handle_mouse_wheel(event),
