@@ -6,6 +6,7 @@ import os
 from collections.abc import Iterator
 from re import Pattern
 from re import compile as re_compile
+from typing import Final
 
 illegal_char: Pattern[str]
 kb_size: int
@@ -54,11 +55,15 @@ def open_with(hwnd: int, file: str) -> None:
     if os.name != "nt":
         raise NotImplementedError
 
-    a = OPENASINFO(pcszFile=file, pcszClass=None, oaifInFlags=0x00000004)
+    OAIF_EXEC: Final[int] = 0x04
+    OAIF_HIDE_REGISTRATION: Final[int] = 0x20
+    open_as_info = OPENASINFO(
+        pcszFile=os.path.normpath(file),
+        pcszClass=None,
+        oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
+    )
 
-    # This is getting -2147024809 invalid arg. I think oaifInFlags data type is wrong
-    # Tried ulong and i32
-    print(windll.shell32.SHOpenWithDialog(hwnd, a))
+    ctypes.windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
 
 
 def show_info_popup(title: str, body: str) -> None:
