@@ -37,17 +37,18 @@ class HoverableButtonUIElement(ButtonUIElementBase):
         self, name: ButtonName, x_offset: int = 0, y_offset: int = 0
     ) -> None:
         """Adds self to canvas"""
-        self.id = self.canvas.create_button(
+        id = self.canvas.create_button(
             self,
             name,
             x_offset,
             y_offset,
             image=self.icon,
         )
+        self.update(id=id)
 
-        self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
-        self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
-        self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.on_click)
+        self.canvas.tag_bind(id, "<Enter>", self.on_enter)
+        self.canvas.tag_bind(id, "<Leave>", self.on_leave)
+        self.canvas.tag_bind(id, "<ButtonRelease-1>", self.on_click)
 
     def on_click(self, event: Event | None = None) -> None:
         self.function_to_bind(event)

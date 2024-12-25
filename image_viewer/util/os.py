@@ -63,7 +63,7 @@ def open_with(hwnd: int, file: str) -> None:
         oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
     )
 
-    ctypes.windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
+    windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
 
 
 def show_info_popup(title: str, body: str) -> None:
