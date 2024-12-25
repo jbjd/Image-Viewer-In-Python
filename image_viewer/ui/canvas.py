@@ -155,7 +155,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         return self.button_name_to_object[name].id
 
     def mock_button_click(self, name: ButtonName) -> None:
-        """Triggers on click event of button programatically
+        """Triggers on click event of button programmatically
         passing None as event"""
         button: ButtonUIElementBase = self.button_name_to_object[name]
         button.on_click(None)
