@@ -32,7 +32,7 @@ if os.name == "nt":
 
     def restore_from_bin(original_path: str) -> None:
         try:
-            undelete(os.path.normpath(original_path))
+            undelete(original_path)
         except x_winshell as e:
             raise OSError from e  # change error type so catching is not OS specific
 
@@ -58,7 +58,7 @@ def open_with(hwnd: int, file: str) -> None:
     OAIF_EXEC: Final[int] = 0x04
     OAIF_HIDE_REGISTRATION: Final[int] = 0x20
     open_as_info = OPENASINFO(
-        pcszFile=os.path.normpath(file),
+        pcszFile=file,
         pcszClass=None,
         oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
     )
@@ -86,13 +86,14 @@ def get_byte_display(size_in_bytes: int) -> str:
 
 def trash_file(path: str) -> None:
     """OS generic way to send files to trash"""
-    send2trash(os.path.normpath(path))
+    send2trash(path)
 
 
-def get_dir_name(path: str) -> str:
-    """Gets dir name of a file path and normalizes it"""
-    path_dir: str = os.path.dirname(path)
-    return os.path.normpath(path_dir) if path_dir != "" else ""
+def get_normalized_dir_name(path: str) -> str:
+    """Gets directory name of a file path and normalizes it"""
+    dir_name: str = os.path.dirname(path)
+    # normpath of empty string returns "."
+    return os.path.normpath(dir_name) if dir_name != "" else ""
 
 
 def walk_dir(directory_path: str) -> Iterator[str]:
