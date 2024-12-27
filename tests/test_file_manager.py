@@ -8,7 +8,6 @@ from image_viewer.constants import ImageFormats
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import ImageCache, ImageCacheEntry
 from tests.conftest import IMG_DIR
-from tests.test_util.exception import safe_wrapper
 from tests.test_util.mocks import MockActionUndoer, MockImage, MockStatResult
 
 
@@ -94,7 +93,7 @@ def test_delete_file(manager: ImageFileManager):
     # add one extra image so it doesn't error after removing the only file
     manager.add_new_image("Some_image.png", False)
 
-    # TODO: This was done for GA to not fail. See if theres a better way
+    # TODO: This was done for GA to not fail. See if there's a better way
     # tempfile._TemporaryFileWrapper.close = safe_wrapper(  # type: ignore
     #     tempfile._TemporaryFileWrapper.close
     # )
