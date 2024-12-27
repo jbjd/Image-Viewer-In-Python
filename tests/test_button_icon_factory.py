@@ -7,7 +7,7 @@ from image_viewer.ui.button import IconImages
 from image_viewer.ui.button_icon_factory import ButtonIconFactory
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def button_icon_factory() -> ButtonIconFactory:
     return ButtonIconFactory(32)
 

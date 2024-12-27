@@ -5,7 +5,6 @@ from typing import Self
 
 from PIL.Image import Image
 
-from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import ImageName
 
@@ -59,13 +58,6 @@ class MockImage(Image):
 
     def __exit__(self, *_) -> None:
         self.close()
-
-
-class MockActionUndoer(ActionUndoer):
-    """Mocks this module's ActionUndoer"""
-
-    def undo(*_):
-        return UndoResponse("b.png", "a.png")
 
 
 class MockImageFileManager(ImageFileManager):

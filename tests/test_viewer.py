@@ -25,12 +25,12 @@ def viewer(tk_app: Tk, image_loader: ImageLoader) -> ViewerApp:
         return ViewerApp("", "")
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def focused_event(tk_app: Tk) -> MockEvent:
     return MockEvent(tk_app)
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def unfocused_event() -> MockEvent:
     return MockEvent()
 
@@ -62,7 +62,7 @@ def test_redraw(
         mock_check_cache.assert_not_called()
 
     with patch.object(ViewerApp, "load_image_unblocking") as mock_refresh:
-        # Will not refresh is cache is still fresh
+        # Will not refresh if cache is still fresh
         viewer.redraw(focused_event)
         mock_refresh.assert_not_called()
 
