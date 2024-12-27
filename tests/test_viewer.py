@@ -7,17 +7,25 @@ import pytest
 
 from image_viewer.constants import Key
 from image_viewer.helpers.image_loader import ImageLoader
+from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.ui.canvas import CustomCanvas
+from image_viewer.util.image import ImageCache
 from image_viewer.viewer import ViewerApp
-from tests.test_util.mocks import MockEvent, MockImage, MockImageFileManager
+from tests.test_util.mocks import MockEvent, MockImage
 
 
 @pytest.fixture
-def viewer(tk_app: Tk, image_loader: ImageLoader) -> ViewerApp:
+def file_manager(empty_image_cache: ImageCache) -> ImageFileManager:
+    return ImageFileManager("C:/photos/some_photo.jpg", empty_image_cache)
+
+
+@pytest.fixture
+def viewer(tk_app: Tk, image_loader: ImageLoader, file_manager) -> ViewerApp:
     def mock_viewer_init(self, *_):
         self.app = tk_app
         self.height_ratio = 1
         self.width_ratio = 1
+        self.file_manager = file_manager
         self.image_loader = image_loader
         self.animation_id = ""
 
@@ -52,27 +60,29 @@ def test_redraw(
     """Should only redraw when necessary"""
 
     viewer.need_to_redraw = True
-    viewer.file_manager = MockImageFileManager()
 
     # Will immediately exit if widget is not tk app
     with patch.object(
-        MockImageFileManager, "current_image_cache_still_fresh"
+        ImageFileManager, "current_image_cache_still_fresh"
     ) as mock_check_cache:
         viewer.redraw(unfocused_event)
         mock_check_cache.assert_not_called()
 
     with patch.object(ViewerApp, "load_image_unblocking") as mock_refresh:
-        # Will not refresh if cache is still fresh
-        viewer.redraw(focused_event)
-        mock_refresh.assert_not_called()
+        with patch.object(
+            ImageFileManager,
+            "current_image_cache_still_fresh",
+            side_effect=lambda: True,
+        ):
+            viewer.redraw(focused_event)
+            mock_refresh.assert_not_called()
 
-        # Will refresh when cache is stale
         viewer.need_to_redraw = True
         with patch.object(
-            MockImageFileManager,
+            ImageFileManager,
             "current_image_cache_still_fresh",
             side_effect=lambda: False,
-        ) as mock_refresh:
+        ):
             viewer.redraw(focused_event)
             mock_refresh.assert_called_once()
 
@@ -134,11 +144,9 @@ def test_exit(viewer: ViewerApp, canvas: CustomCanvas):
 def test_remove_image(viewer: ViewerApp):
     """Should remove image and exit when none left"""
 
-    viewer.file_manager = MockImageFileManager()
-
     # When remove successful, does not call exit
     with (
-        patch.object(MockImageFileManager, "remove_current_image") as mock_remove,
+        patch.object(ImageFileManager, "remove_current_image") as mock_remove,
         patch.object(ViewerApp, "exit") as mock_exit,
     ):
         viewer.remove_current_image()
@@ -146,9 +154,7 @@ def test_remove_image(viewer: ViewerApp):
         mock_exit.assert_not_called()
 
     # Removed last image, calls exit
-    with patch.object(
-        MockImageFileManager, "remove_current_image", side_effect=IndexError
-    ):
+    with patch.object(ImageFileManager, "remove_current_image", side_effect=IndexError):
         with patch.object(ViewerApp, "exit") as mock_exit:
             viewer.remove_current_image()
             mock_exit.assert_called_once()
@@ -158,7 +164,6 @@ def test_handle_rotate_animated_image(viewer: ViewerApp):
     """Should exit if animating. Should close the image if not currently animating,
     but the underlying image itself is an animation"""
     mock_event = MockEvent()
-    viewer.file_manager = MockImageFileManager()
 
     with (
         patch.object(ViewerApp, "_currently_animating", lambda _: True),
@@ -170,7 +175,7 @@ def test_handle_rotate_animated_image(viewer: ViewerApp):
     with (
         patch.object(ImageLoader, "read_image", return_value=None) as mock_read_image,
         patch.object(
-            MockImageFileManager, "rotate_image_and_save"
+            ImageFileManager, "rotate_image_and_save"
         ) as mock_rotate_image_and_save,
     ):
         viewer.handle_rotate_image(mock_event)

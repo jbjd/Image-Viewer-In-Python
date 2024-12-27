@@ -5,9 +5,6 @@ from typing import Self
 
 from PIL.Image import Image
 
-from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.image import ImageName
-
 
 class MockStatResult:
     """Mocks OS's stat_result"""
@@ -58,20 +55,3 @@ class MockImage(Image):
 
     def __exit__(self, *_) -> None:
         self.close()
-
-
-class MockImageFileManager(ImageFileManager):
-    """Mocks this module's ImageFileManager"""
-
-    cache: dict = {}
-    current_image = ImageName("test.png")
-    path_to_image: str = ""
-
-    def __init__(self) -> None:
-        pass
-
-    def remove_current_image(self) -> None:
-        pass
-
-    def current_image_cache_still_fresh(self) -> bool:
-        return True

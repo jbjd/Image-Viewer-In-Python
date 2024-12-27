@@ -25,6 +25,11 @@ def image_cache() -> ImageCache:
     return ImageCache()
 
 
+@pytest.fixture(scope="session")
+def empty_image_cache() -> ImageCache:
+    return ImageCache(0)
+
+
 @pytest.fixture
 def image_loader(image_resizer: ImageResizer, image_cache: ImageCache) -> ImageLoader:
     image_loader = ImageLoader(image_resizer, image_cache, lambda *_: None)
