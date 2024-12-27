@@ -95,9 +95,9 @@ def test_delete_file(manager: ImageFileManager):
     manager.add_new_image("Some_image.png", False)
 
     # TODO: This was done for GA to not fail. See if theres a better way
-    tempfile._TemporaryFileWrapper.close = safe_wrapper(  # type: ignore
-        tempfile._TemporaryFileWrapper.close
-    )
+    # tempfile._TemporaryFileWrapper.close = safe_wrapper(  # type: ignore
+    #     tempfile._TemporaryFileWrapper.close
+    # )
 
     with tempfile.NamedTemporaryFile() as tmp:
         manager.path_to_image = tmp.name
