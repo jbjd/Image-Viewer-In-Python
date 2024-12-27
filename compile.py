@@ -24,7 +24,7 @@ from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
 
-WORKING_DIR: Final[str] = os.path.abspath(os.path.dirname(__file__))
+WORKING_DIR: Final[str] = os.path.normpath(os.path.dirname(__file__))
 FILE: Final[str] = "__main__"
 TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
