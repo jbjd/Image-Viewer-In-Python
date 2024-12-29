@@ -100,6 +100,6 @@ def test_image_cache_fresh(image_cache: ImageCache):
         image_cache[path] = entry
         assert image_cache.image_cache_still_fresh(path)
 
-    for error in [ValueError(), FileNotFoundError(), OSError()]:
+    for error in [FileNotFoundError(), OSError()]:
         with patch("image_viewer.util.image.stat", side_effect=error):
             assert not image_cache.image_cache_still_fresh(path)

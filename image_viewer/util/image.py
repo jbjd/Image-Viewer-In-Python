@@ -63,7 +63,7 @@ class ImageCache(OrderedDict[str, ImageCacheEntry]):
         cached_bytes: int = self[image_path].byte_size if image_path in self else -1
         try:
             return stat(image_path).st_size == cached_bytes
-        except (FileNotFoundError, OSError, ValueError):
+        except (FileNotFoundError, OSError):
             return False
 
     def update_key(self, old_key: str, new_key: str) -> None:
