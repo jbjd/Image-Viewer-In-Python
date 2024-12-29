@@ -873,7 +873,10 @@ regex_to_apply_tk: defaultdict[str, set[RegexReplacement]] = defaultdict(
         },
         "tcl8/*/platform-*.tm": {
             # Discontinued OS
-            RegexReplacement(pattern=r"osf1 \{.*?\}", count=1, flags=re.DOTALL)
+            RegexReplacement(pattern=r"osf1 \{.*?\}", count=1, flags=re.DOTALL),
+            RegexReplacement(
+                pattern=r"solaris(\*-\*)? \{(.*?\{.*?\}.*?)*?\}", flags=re.DOTALL
+            ),
         },
     },
 )

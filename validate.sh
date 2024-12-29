@@ -1,29 +1,42 @@
 #!/bin/sh
 
-echo "Running isort"
-isort . -m 3 --tc --check
-isort_status=$?
-echo
+status=0
 
-echo "Running black formatter"
-black . --check
-black_status=$?
-echo
+#######################################
+# Runs a command that validates code and updates status
+# Globals:
+#   status
+# Arguments:
+#   Description of the step to be echo'ed
+#   Command to run
+#######################################
+validate_step () {
+    echo "$1"
+    $2
+    status=$(($status + $?))
+    echo
+}
+
+validate_step \
+"Running isort" \
+"isort . -m 3 --tc --check"
+
+validate_step \
+"Running black formatter" \
+"black . --check"
 
 echo "Formatting check complete" && echo
 
-echo "Running mypy type checker"
-mypy . --check-untyped-defs
-mypy_status=$?
-echo
+validate_step \
+"Running mypy type checker" \
+"mypy . --check-untyped-defs"
 
-echo "Running spell checker"
 # using *.py did not work even though codespell docs show it?
-codespell image_viewer tests compile_utils compile.py README.md
-codespell_status=$?
-echo
+validate_step \
+"Running spell checker" \
+"codespell image_viewer tests compile_utils compile.py README.md"
 
-if [ $mypy_status -ne 0 ] || [ $codespell_status -ne 0 ] || [ $isort_status -ne 0 ] || [ $black_status -ne 0 ]
+if [ $status -ne 0 ]
 then
     printf "Some checks failed"
     exit 1

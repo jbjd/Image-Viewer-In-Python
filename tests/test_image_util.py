@@ -1,16 +1,23 @@
 from tkinter import Tk
+from unittest.mock import patch
 
 from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
 from image_viewer.constants import ImageFormats
-from image_viewer.util.image import ImageName, magic_number_guess
+from image_viewer.util.image import (
+    ImageCache,
+    ImageCacheEntry,
+    ImageName,
+    magic_number_guess,
+)
 from image_viewer.util.PIL import (
     create_dropdown_image,
     get_placeholder_for_errored_image,
     init_PIL,
     resize,
 )
+from tests.test_util.mocks import MockStatResult
 
 
 def test_image_path():
@@ -74,3 +81,25 @@ def test_resize():
     new_image = resize(new_image.convert("RGBA"), (15, 15))
 
     assert new_image.size == (15, 15)
+
+
+def test_image_cache_fresh(image_cache: ImageCache):
+    """Should say image cache is fresh if cached byte size
+    is the same as size on disk"""
+
+    image = Image()
+    byte_size = 99
+    entry = ImageCacheEntry(image, (10, 10), "", byte_size, "", "")
+
+    path = "some/path"
+
+    with patch("image_viewer.util.image.stat", return_value=MockStatResult(byte_size)):
+        # Empty
+        assert not image_cache.image_cache_still_fresh(path)
+
+        image_cache[path] = entry
+        assert image_cache.image_cache_still_fresh(path)
+
+    for error in [ValueError(), FileNotFoundError(), OSError()]:
+        with patch("image_viewer.util.image.stat", side_effect=error):
+            assert not image_cache.image_cache_still_fresh(path)
