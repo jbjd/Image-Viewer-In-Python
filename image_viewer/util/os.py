@@ -66,9 +66,9 @@ def open_with(hwnd: int, file: str) -> None:
     windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
 
 
-def show_info_popup(title: str, body: str) -> None:
+def show_info_popup(hwnd: int, title: str, body: str) -> None:
     if os.name == "nt":
-        windll.user32.MessageBoxW(0, body, title, 0)
+        windll.user32.MessageBoxW(hwnd, body, title, 0)
     else:
         showinfo(title, body)
 

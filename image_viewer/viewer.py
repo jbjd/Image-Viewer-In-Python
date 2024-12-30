@@ -19,7 +19,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
-from util.os import open_with
+from util.os import open_with, show_info_popup
 from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
 
@@ -39,6 +39,7 @@ class ViewerApp:
         "need_to_redraw",
         "rename_entry",
         "width_ratio",
+        "window_id",
     )
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
@@ -57,6 +58,7 @@ class ViewerApp:
         self.animation_id: str = ""
 
         self.app: Tk = self._setup_tk_app(path_to_exe)
+        self.window_id: int = self.app.winfo_id()
         self.canvas: CustomCanvas = CustomCanvas(self.app)
         screen_height: int = self.canvas.screen_height
         screen_width: int = self.canvas.screen_width
@@ -129,12 +131,7 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind(
-            "<Control-d>",
-            lambda _: self.file_manager.show_image_detail_popup(
-                self.image_loader.PIL_image
-            ),
-        )
+        app.bind("<Control-d>", self.show_details_popup)
         app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
@@ -352,6 +349,15 @@ class ViewerApp:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
         self.update_details_dropdown()
+
+    def show_details_popup(self, _: Event | None = None) -> None:
+        """Gets details on image and shows it in a UI popup"""
+        details: str | None = self.file_manager.get_image_details(
+            self.image_loader.PIL_image
+        )
+
+        if details is not None:
+            show_info_popup(self.window_id, "Image Details", details)
 
     def load_zoomed_image(self, direction: ZoomDirection) -> None:
         """Loads zoomed image and updates display"""

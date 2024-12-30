@@ -14,7 +14,6 @@ from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import (
     clean_str_for_OS_path,
     get_normalized_dir_name,
-    show_info_popup,
     trash_file,
     walk_dir,
 )
@@ -148,16 +147,16 @@ class ImageFileManager:
         )
         return details
 
-    def show_image_detail_popup(self, PIL_Image: Image) -> None:
+    def get_image_details(self, PIL_Image: Image) -> str | None:
         try:
             details: str = self.get_cached_metadata()
         except KeyError:
-            return  # don't fail trying to read, if not in cache just exit
+            return None  # don't fail trying to read, if not in cache just exit
 
         try:
             image_metadata: stat_result = os.stat(self.path_to_image)
             # [4:] chops of 3 character day like Mon/Tue/etc.
-            created_time: str = ctime(image_metadata.st_ctime)[4:]
+            created_time: str = ctime(image_metadata.st_birthtime)[4:]
             last_modifed_time: str = ctime(image_metadata.st_mtime)[4:]
             details += f"Created: {created_time}\nLast Modified: {last_modifed_time}\n"
         except (OSError, ValueError):
@@ -168,7 +167,7 @@ class ImageFileManager:
         if comment:
             details += f"Comment: {comment.decode('utf-8')}\n"
 
-        show_info_popup("Image Details", details)
+        return details
 
     def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
