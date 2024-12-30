@@ -86,7 +86,7 @@ class ToggleableButtonUIElement(HoverableButtonUIElement):
     def on_click(self, event: Event | None = None) -> None:
         self.is_active = not self.is_active
         self.on_enter()  # fake mouse hover
-        self.function_to_bind(event)
+        super().on_click(event)
 
     def _get_hovered_icon(self) -> PhotoImage:
         return self.active_icon_hovered if self.is_active else self.icon_hovered

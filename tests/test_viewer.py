@@ -28,6 +28,8 @@ def viewer(tk_app: Tk, image_loader: ImageLoader, file_manager) -> ViewerApp:
         self.file_manager = file_manager
         self.image_loader = image_loader
         self.animation_id = ""
+        self.move_id = ""
+        self.need_to_redraw = False
 
     with patch.object(ViewerApp, "__init__", mock_viewer_init):
         return ViewerApp("", "")
@@ -131,6 +133,12 @@ def test_handle_key(
 
 def test_exit(viewer: ViewerApp, canvas: CustomCanvas):
     """Should clean up and exit"""
+
+    # Cleans up properly when not fully initialized
+    with pytest.raises(SystemExit) as exception_cm:
+        viewer.exit(exit_code=1)
+    assert exception_cm.value.code == 1
+
     viewer.canvas = canvas
     canvas.file_name_text_id = 0
 
@@ -192,3 +200,24 @@ def test_handle_rotate_animated_image(viewer: ViewerApp):
         viewer.handle_rotate_image(mock_event)
         mock_read_image.assert_called_once()
         assert mock_image.closed
+
+
+def test_minimize(viewer: ViewerApp):
+    """Should mark that app needs to be redrawn and
+    cancel scheduled moved functions"""
+
+    with (
+        patch.object(Tk, "after_cancel") as mock_after_cancel,
+        patch.object(Tk, "iconify") as mock_iconify,
+    ):
+        viewer.minimize()
+        assert viewer.need_to_redraw
+        assert mock_iconify.call_count == 1
+        assert mock_after_cancel.call_count == 0
+
+        viewer.need_to_redraw = False
+        viewer.move_id = "12"
+        viewer.minimize()
+        assert viewer.need_to_redraw
+        assert mock_iconify.call_count == 2
+        assert mock_after_cancel.call_count == 1
