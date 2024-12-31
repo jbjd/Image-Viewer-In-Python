@@ -10,6 +10,7 @@ class MockStatResult:
     """Mocks OS's stat_result"""
 
     st_birthtime: int = 1649709119
+    st_ctime: int = 1649709119
     st_mtime: int = 1649709119
 
     def __init__(self, st_size: int) -> None:
@@ -19,9 +20,11 @@ class MockStatResult:
 class MockEvent(Event):
     """Mocks Tk Event"""
 
-    def __init__(self, widget: Tk | None = None, keycode: int = 0, x: int = 0) -> None:
+    def __init__(
+        self, widget: Tk | None = None, keysym_num: int = 0, x: int = 0
+    ) -> None:
         self.widget: Tk | None = widget
-        self.keycode: int = keycode
+        self.keysym_num: int = keysym_num
         self.x: int = x
 
 

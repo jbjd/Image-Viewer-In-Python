@@ -109,7 +109,7 @@ def test_handle_key(
     """Should only accept input when user focused on main app"""
 
     with patch.object(ViewerApp, "toggle_show_rename_window") as mock_rename_window:
-        focused_event.keycode = Key.R
+        focused_event.keysym_num = Key.R
         viewer.handle_key(unfocused_event)
         mock_rename_window.assert_not_called()
 
@@ -117,16 +117,16 @@ def test_handle_key(
         mock_rename_window.assert_called_once()
 
     with patch.object(ViewerApp, "handle_lr_arrow") as mock_lr_arrow:
-        focused_event.keycode = Key.LEFT
+        focused_event.keysym_num = Key.LEFT
         viewer.handle_key(focused_event)
         mock_lr_arrow.assert_called_once()
 
     with patch.object(ViewerApp, "load_zoomed_image_unblocking") as mock_zoom:
-        focused_event.keycode = Key.MINUS
+        focused_event.keysym_num = Key.MINUS
         viewer.handle_key(focused_event)
         mock_zoom.assert_called_once()
 
-        focused_event.keycode = Key.EQUALS
+        focused_event.keysym_num = Key.EQUALS
         viewer.handle_key(focused_event)
         assert mock_zoom.call_count == 2
 

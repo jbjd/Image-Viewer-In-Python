@@ -255,7 +255,7 @@ class ViewerApp:
         if self._currently_animating():
             return
 
-        match event.keycode:
+        match event.keysym_num:
             case Key.LEFT:
                 angle = Rotation.LEFT
             case Key.RIGHT:
@@ -292,7 +292,7 @@ class ViewerApp:
     def handle_key(self, event: Event) -> None:
         """Key binds that happen only on main app focus"""
         if event.widget is self.app:
-            match event.keycode:
+            match event.keysym_num:
                 case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
                 case Key.EQUALS:
@@ -304,7 +304,7 @@ class ViewerApp:
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
-        if self.move_id != "" and event.keycode in (Key.LEFT, Key.RIGHT):
+        if self.move_id != "" and event.keysym_num in (Key.LEFT, Key.RIGHT):
             self.app.after_cancel(self.move_id)
             self.move_id = ""
 
@@ -314,7 +314,7 @@ class ViewerApp:
         if self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (event.state & 5)  # type: ignore
-            if event.keycode == Key.LEFT:
+            if event.keysym_num == Key.LEFT:
                 move_amount = -move_amount
             self.move(move_amount)
             self._repeat_move(move_amount, 500)

@@ -16,15 +16,13 @@ class ImageFormats(StrEnum):
 
 
 class Key(IntEnum):
-    """Keycodes for various keys"""
+    """Keysym numbers for various keys"""
 
-    LEFT = 37
-    UP = 38
-    RIGHT = 39
-    DOWN = 40
-    EQUALS = 187
-    MINUS = 189
-    R = 82
+    LEFT = 65361
+    RIGHT = 65363
+    EQUALS = 61
+    MINUS = 45
+    R = 114
 
 
 class Rotation(IntEnum):

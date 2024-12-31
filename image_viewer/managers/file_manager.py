@@ -11,12 +11,7 @@ from constants import VALID_FILE_TYPES, Rotation
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
-from util.os import (
-    clean_str_for_OS_path,
-    get_normalized_dir_name,
-    trash_file,
-    walk_dir,
-)
+from util.os import clean_str_for_OS_path, get_normalized_dir_name, trash_file, walk_dir
 from util.PIL import rotate_image, save_image
 
 
@@ -155,10 +150,15 @@ class ImageFileManager:
 
         try:
             image_metadata: stat_result = os.stat(self.path_to_image)
+            created_time_epoch: float = getattr(
+                image_metadata, "st_birthtime", image_metadata.st_ctime
+            )
+            modified_time_epoch: float = image_metadata.st_mtime
+
             # [4:] chops of 3 character day like Mon/Tue/etc.
-            created_time: str = ctime(image_metadata.st_birthtime)[4:]
-            last_modifed_time: str = ctime(image_metadata.st_mtime)[4:]
-            details += f"Created: {created_time}\nLast Modified: {last_modifed_time}\n"
+            created_time: str = ctime(created_time_epoch)[4:]
+            modifed_time: str = ctime(modified_time_epoch)[4:]
+            details += f"Created: {created_time}\nLast Modified: {modifed_time}\n"
         except (OSError, ValueError):
             pass  # don't include if can't get
 
