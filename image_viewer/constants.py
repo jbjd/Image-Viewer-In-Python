@@ -16,7 +16,7 @@ class ImageFormats(StrEnum):
 
 
 class Key(StrEnum):
-    """Keycodes for various keys"""
+    """Keysyms for various keys"""
 
     LEFT = "Left"
     RIGHT = "Right"

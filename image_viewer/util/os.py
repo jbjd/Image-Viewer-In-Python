@@ -50,6 +50,7 @@ else:  # assume linux for now
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
 
+    # TODO: break this function into smaller bits
     def restore_from_bin(original_path: str) -> None:
         name_start: int = original_path.rfind("/")
         file_name_and_suffix: str = (
