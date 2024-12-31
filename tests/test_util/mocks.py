@@ -19,9 +19,11 @@ class MockStatResult:
 class MockEvent(Event):
     """Mocks Tk Event"""
 
-    def __init__(self, widget: Tk | None = None, keysym: str = "", x: int = 0) -> None:
+    def __init__(
+        self, widget: Tk | None = None, keysym_num: int = 0, x: int = 0
+    ) -> None:
         self.widget: Tk | None = widget
-        self.keysym: str = keysym
+        self.keysym_num: int = keysym_num
         self.x: int = x
 
 

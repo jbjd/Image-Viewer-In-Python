@@ -15,14 +15,14 @@ class ImageFormats(StrEnum):
     WEBP = "WebP"
 
 
-class Key(StrEnum):
-    """Keysyms for various keys"""
+class Key(IntEnum):
+    """Keysym numbers for various keys"""
 
-    LEFT = "Left"
-    RIGHT = "Right"
-    EQUALS = "equal"
-    MINUS = "minus"
-    R = "r"
+    LEFT = 65361
+    RIGHT = 65363
+    EQUALS = 61
+    MINUS = 45
+    R = 114
 
 
 class Rotation(IntEnum):

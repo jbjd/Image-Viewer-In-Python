@@ -7,12 +7,12 @@ from tests.test_util.mocks import MockEvent
 
 @pytest.fixture(scope="module")
 def left_key_event(tk_app):
-    return MockEvent(widget=tk_app, keysym=Key.LEFT)
+    return MockEvent(widget=tk_app, keysym_num=Key.LEFT)
 
 
 @pytest.fixture(scope="module")
 def right_key_event(tk_app):
-    return MockEvent(widget=tk_app, keysym=Key.RIGHT)
+    return MockEvent(widget=tk_app, keysym_num=Key.RIGHT)
 
 
 def test_create_assets(canvas: CustomCanvas):
