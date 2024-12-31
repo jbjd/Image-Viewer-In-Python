@@ -15,16 +15,14 @@ class ImageFormats(StrEnum):
     WEBP = "WebP"
 
 
-class Key(IntEnum):
+class Key(StrEnum):
     """Keycodes for various keys"""
 
-    LEFT = 37
-    UP = 38
-    RIGHT = 39
-    DOWN = 40
-    EQUALS = 187
-    MINUS = 189
-    R = 82
+    LEFT = "Left"
+    RIGHT = "Right"
+    EQUALS = "equal"
+    MINUS = "minus"
+    R = "r"
 
 
 class Rotation(IntEnum):
