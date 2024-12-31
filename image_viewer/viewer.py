@@ -255,7 +255,7 @@ class ViewerApp:
         if self._currently_animating():
             return
 
-        match event.keycode:
+        match event.keysym:
             case Key.LEFT:
                 angle = Rotation.LEFT
             case Key.RIGHT:
