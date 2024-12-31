@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
-from PIL.ImageTk import PhotoImage
-from PIL.Image import new as new_image
+
 import pytest
+from PIL.Image import new as new_image
+from PIL.ImageTk import PhotoImage
 
 from image_viewer.constants import ButtonName
 from image_viewer.ui.button import (

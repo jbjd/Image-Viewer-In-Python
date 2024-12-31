@@ -11,12 +11,7 @@ from constants import VALID_FILE_TYPES, Rotation
 from helpers.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
-from util.os import (
-    clean_str_for_OS_path,
-    get_normalized_dir_name,
-    trash_file,
-    walk_dir,
-)
+from util.os import clean_str_for_OS_path, get_normalized_dir_name, trash_file, walk_dir
 from util.PIL import rotate_image, save_image
 
 
