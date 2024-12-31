@@ -10,6 +10,7 @@ class MockStatResult:
     """Mocks OS's stat_result"""
 
     st_birthtime: int = 1649709119
+    st_ctime: int = 1649709119
     st_mtime: int = 1649709119
 
     def __init__(self, st_size: int) -> None:
