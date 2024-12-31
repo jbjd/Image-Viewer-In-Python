@@ -38,6 +38,7 @@ if os.name == "nt":
 
 else:  # assume linux for now
     import subprocess
+    from glob import glob
     from tkinter.messagebox import showinfo
 
     from send2trash import send2trash
@@ -62,30 +63,26 @@ else:  # assume linux for now
             file_name = file_name_and_suffix[:suffix_start]
             suffix = file_name_and_suffix[suffix_start:]
 
-        # mv f"{HOMETRASH}/files/{name}" original_path
-        find_result = subprocess.run(
-            f"find {HOMETRASH}/info/{file_name}*{suffix}.trashinfo",
-            stdout=subprocess.PIPE,
-            shell=True,
-        )
-        if find_result.returncode != 0:
-            return
-
-        output: str = find_result.stdout.decode("utf-8")
-        info_paths = output.strip().split("\n")
+        # Files with same name will be test.png.trashinfo, test.2.png.trashinfo
+        info_paths: list[str] = glob(f"{HOMETRASH}/info/{file_name}*{suffix}.trashinfo")
         for info_path in info_paths:
             with open(info_path, "r", encoding="utf-8") as fp:
-                _ = fp.readline()
-                deleted_files_original_path: str = (
-                    fp.readline().strip().replace("Path=", "", 1)
-                )
-                if deleted_files_original_path == original_path:
+                line: str
+                while line := fp.readline().strip():
+                    if line.startswith("Path="):
+                        break
+                else:
+                    return  # no line with Path= was found
+                deleted_file_original_path: str = line.strip().replace("Path=", "", 1)
+                if deleted_file_original_path == original_path:
                     deleted_file_name = info_path[info_path.rfind("/info/") + 6 : -10]
                     path_to_trashed_file: str = f"{HOMETRASH}/files/{deleted_file_name}"
-                    # to_restore_path: str = info_path.replace(
-                    #     f"/info/{file_name}", f"/files/{file_name}"
-                    # )
-                    break
+
+                    # trashinfo file may exist, but actual file does not
+                    if os.path.exists(path_to_trashed_file):
+                        os.rename(path_to_trashed_file, original_path)
+                        os.remove(info_path)
+                        break
 
 
 def open_with(hwnd: int, file: str) -> None:
@@ -151,6 +148,3 @@ def walk_dir(directory_path: str) -> Iterator[str]:
 
             if not is_dir:
                 yield entry.name
-
-
-restore_from_bin("/home/jbjd/Pictures/test2.png")
