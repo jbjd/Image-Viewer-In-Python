@@ -4,12 +4,13 @@ from unittest.mock import patch
 
 import pytest
 
+from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
 from image_viewer.managers.file_manager import ImageFileManager
 from image_viewer.util.image import ImageCache, ImageCacheEntry
 from tests.conftest import IMG_DIR
 from tests.test_util.exception import safe_wrapper
-from tests.test_util.mocks import MockActionUndoer, MockImage, MockStatResult
+from tests.test_util.mocks import MockImage, MockStatResult
 
 
 @pytest.fixture
@@ -125,29 +126,33 @@ def test_undo(manager: ImageFileManager):
     ):
         assert not manager.undo_most_recent_action()
 
-    # Mock that undo should add b.png and remove a.png
-    manager.action_undoer = MockActionUndoer()
-    with patch.object(
-        ImageFileManager,
-        "_ask_to_confirm_undo",
-        return_value=True,
+    file_to_restore = "b.png"
+    file_to_remove = manager._files[0].name
+    mock_undo_response = UndoResponse(file_to_restore, file_to_remove)
+    with (
+        patch.object(ImageFileManager, "_ask_to_confirm_undo", return_value=True),
+        patch.object(
+            ActionUndoer, "undo", return_value=mock_undo_response
+        ) as mock_undo,
     ):
+        manager.action_undoer = ActionUndoer()
         assert manager.undo_most_recent_action()
         assert len(manager._files) == 1
-        assert manager._files[0].name == "b.png"
+        assert manager._files[0].name == file_to_restore
         assert manager._files.display_index == 0
+
+        mock_undo.assert_called_once()
 
 
 def test_get_and_show_details(manager: ImageFileManager):
     """Should return a string containing details on current cached image and show it"""
-    SHOW_INFO_PATH = "image_viewer.managers.file_manager.show_info_popup"
 
     # Will exit if no details in cache
     PIL_image = MockImage()
     PIL_image.info["comment"] = b"test"
-    with patch(SHOW_INFO_PATH) as mock_show_info:
-        manager.show_image_detail_popup(PIL_image)
-        mock_show_info.assert_not_called()
+
+    details = manager.get_image_details(PIL_image)
+    assert details is None
 
     for mode in ("P", "L", "1", "ANYTHING_ELSE"):
         manager.image_cache[manager.path_to_image] = ImageCacheEntry(
@@ -156,29 +161,26 @@ def test_get_and_show_details(manager: ImageFileManager):
         readable_mode = {"P": "Palette", "L": "Grayscale", "1": "Black And White"}.get(
             mode, mode
         )
-        details: str = manager.get_cached_metadata()
-        assert " bpp " + readable_mode in details
-        assert ImageFormats.PNG in details
+        metadata: str = manager.get_cached_metadata()
+        assert " bpp " + readable_mode in metadata
+        assert ImageFormats.PNG in metadata
 
-        details = manager.get_cached_metadata(get_all_details=False)
-        assert details.count("\n") == 1
-        assert " bpp " + readable_mode not in details
-        assert ImageFormats.PNG not in details
+        metadata = manager.get_cached_metadata(get_all_details=False)
+        assert metadata.count("\n") == 1
+        assert " bpp " + readable_mode not in metadata
+        assert ImageFormats.PNG not in metadata
 
-    with (
-        patch.object(os, "stat", return_value=MockStatResult(0)),
-        patch(SHOW_INFO_PATH) as mock_show_info,
-    ):
-        manager.show_image_detail_popup(PIL_image)
-        mock_show_info.assert_called_once()
+    with patch.object(os, "stat", return_value=MockStatResult(0)):
+        details = manager.get_image_details(PIL_image)
+        assert details is not None
+        assert "Created" in details
+        assert "Comment" in details
 
-    # Will not fail on OSError
-    with (
-        patch.object(os, "stat", side_effect=OSError),
-        patch(SHOW_INFO_PATH) as mock_show_info,
-    ):
-        manager.show_image_detail_popup(PIL_image)
-        mock_show_info.assert_called_once()
+    # Will not fail getting file metadata
+    with patch.object(os, "stat", side_effect=OSError):
+        details = manager.get_image_details(PIL_image)
+        assert details is not None
+        assert "Created" not in details
 
 
 def test_split_with_weird_names(manager: ImageFileManager):

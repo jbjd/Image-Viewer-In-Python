@@ -49,6 +49,16 @@ class TkTags(StrEnum):
     BACKGROUND = "back"
 
 
+class ButtonName(StrEnum):
+    """Names of buttons on the UI"""
+
+    EXIT = "exit"
+    MINIFY = "minify"
+    TRASH = "trash"
+    RENAME = "rename"
+    DROPDOWN = "dropdown"
+
+
 VALID_FILE_TYPES: set[str] = {
     "gif",
     "jpg",

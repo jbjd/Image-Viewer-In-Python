@@ -2,19 +2,22 @@ from tkinter import Canvas, Entry, Event, Tk
 from typing import Literal
 
 from constants import TEXT_RGB
+from ui.bases import UIElementBase
 
 
-class RenameEntry(Entry):  # pylint: disable=too-many-ancestors
+class RenameEntry(Entry, UIElementBase):  # pylint: disable=too-many-ancestors
     """Entry for use in a rename window"""
 
     ERROR_COLOR: str = "#E6505F"
 
-    __slots__ = ("being_resized", "canvas_id", "cursor", "min_width", "text")
+    __slots__ = ("being_resized", "cursor", "min_width", "text")
 
     def __init__(
-        self, master: Tk, canvas: Canvas, canvas_id: int, min_width: int, font: str
+        self, master: Tk, canvas: Canvas, id: int, min_width: int, font: str
     ) -> None:
-        super().__init__(
+        UIElementBase.__init__(self, id)
+        Entry.__init__(
+            self,
             master,
             font=font,
             bg=TEXT_RGB,
@@ -24,11 +27,10 @@ class RenameEntry(Entry):  # pylint: disable=too-many-ancestors
             borderwidth=0,
             width=min_width,
         )
-        canvas.itemconfigure(canvas_id, state="hidden", window=self)
+        canvas.itemconfigure(self.id, state="hidden", window=self)
 
         self.being_resized: bool = False
         self.cursor: str = ""
-        self.id: int = canvas_id
         self.min_width: int = min_width
 
         # ensure ctrl+c is processed outside of this program

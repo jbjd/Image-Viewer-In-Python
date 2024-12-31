@@ -9,16 +9,17 @@ from PIL.ImageTk import PhotoImage
 
 from animation.frame import Frame
 from config import font, max_items_in_cache
-from constants import Key, Rotation, TkTags, ZoomDirection
-from factories.icon_factory import IconFactory
+from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from helpers.image_loader import ImageLoader, ReadImageResponse
 from helpers.image_resizer import ImageResizer
 from managers.file_manager import ImageFileManager
-from ui.button import HoverableButton, ToggleButton
+from ui.button import HoverableButtonUIElement, ToggleableButtonUIElement
+from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
-from ui.image import DropdownImage
+from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
+from util.os import open_with, show_info_popup
 from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
 
@@ -26,7 +27,6 @@ class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
 
     __slots__ = (
-        "_display_image",
         "animation_id",
         "app",
         "canvas",
@@ -37,9 +37,9 @@ class ViewerApp:
         "image_load_id",
         "move_id",
         "need_to_redraw",
-        "rename_button_id",
         "rename_entry",
         "width_ratio",
+        "window_id",
     )
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
@@ -56,9 +56,9 @@ class ViewerApp:
         self.move_id: str = ""
         self.image_load_id: str = ""
         self.animation_id: str = ""
-        self._display_image: PhotoImage
 
         self.app: Tk = self._setup_tk_app(path_to_exe)
+        self.window_id: int = self.app.winfo_id()
         self.canvas: CustomCanvas = CustomCanvas(self.app)
         screen_height: int = self.canvas.screen_height
         screen_width: int = self.canvas.screen_width
@@ -131,24 +131,25 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind(
-            "<Control-d>",
-            lambda _: self.file_manager.show_image_detail_popup(
-                self.image_loader.PIL_image
-            ),
-        )
+        app.bind("<Control-d>", self.show_details_popup)
         app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind("<F5>", lambda _: self.load_image_unblocking())
-        app.bind("<Up>", self.hide_topbar)
-        app.bind("<Down>", self.show_topbar)
+        app.bind("<Up>", self.handle_up_arrow)
+        app.bind("<Down>", self.handle_down_arrow)
         app.bind("<Alt-Left>", self.handle_rotate_image)
         app.bind("<Alt-Right>", self.handle_rotate_image)
         app.bind("<Alt-Up>", self.handle_rotate_image)
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
+            app.bind(
+                "<Control-b>",
+                lambda _: open_with(
+                    self.app.winfo_id(), self.file_manager.path_to_image
+                ),
+            )
             app.bind(
                 "<MouseWheel>",
                 lambda event: self.handle_mouse_wheel(event),
@@ -168,9 +169,9 @@ class ViewerApp:
         # negative size makes font absolute for consistency with different monitors
         FONT: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
 
-        icon_factory: IconFactory = IconFactory(icon_size)
+        button_icon_factory = ButtonIconFactory(icon_size)
 
-        canvas.create_topbar(icon_factory.make_topbar_image(screen_width))
+        canvas.create_topbar(button_icon_factory.make_topbar_image(screen_width))
         # weird case, scale x offset by height, not width, since icon to its left
         # is scaled by height, small screen could overlap otherwise
         canvas.create_name_text(
@@ -178,40 +179,41 @@ class ViewerApp:
         )
 
         button_x_offset: int = screen_width - icon_size
-        exit_button: HoverableButton = HoverableButton(
+        exit_button = HoverableButtonUIElement(
             canvas,
-            icon_factory.make_exit_icons(),
+            button_icon_factory.make_exit_icons(),
             self.exit,
         )
-        exit_button.add_to_canvas(button_x_offset)
+        exit_button.add_to_canvas(ButtonName.EXIT, button_x_offset)
 
         button_x_offset -= icon_size
-        minify_button: HoverableButton = HoverableButton(
-            canvas, icon_factory.make_minify_icons(), self.minimize
+        minify_button = HoverableButtonUIElement(
+            canvas, button_icon_factory.make_minify_icons(), self.minimize
         )
-        minify_button.add_to_canvas(button_x_offset)
+        minify_button.add_to_canvas(ButtonName.MINIFY, button_x_offset)
 
         button_x_offset -= icon_size
-        dropdown_button: ToggleButton = ToggleButton(
-            canvas, *icon_factory.make_dropdown_icons(), self.handle_dropdown
+        dropdown_button = ToggleableButtonUIElement(
+            canvas, *button_icon_factory.make_dropdown_icons(), self.handle_dropdown
         )
-        dropdown_button.add_to_canvas(button_x_offset)
+        dropdown_button.add_to_canvas(ButtonName.DROPDOWN, button_x_offset)
 
-        trash_button: HoverableButton = HoverableButton(
-            canvas, icon_factory.make_trash_icons(), self.trash_image
+        trash_button = HoverableButtonUIElement(
+            canvas, button_icon_factory.make_trash_icons(), self.trash_image
         )
-        trash_button.add_to_canvas()
+        trash_button.add_to_canvas(ButtonName.TRASH)
 
-        rename_button: HoverableButton = HoverableButton(
-            canvas, icon_factory.make_rename_icons(), self.toggle_show_rename_window
+        rename_button = HoverableButtonUIElement(
+            canvas,
+            button_icon_factory.make_rename_icons(),
+            self.toggle_show_rename_window,
         )
-        rename_button.add_to_canvas()
-        self.rename_button_id: int = rename_button.id
+        rename_button.add_to_canvas(ButtonName.RENAME)
 
         dropdown_id: int = canvas.create_image(
             screen_width, icon_size, anchor="ne", tag=TkTags.TOPBAR, state="hidden"
         )
-        self.dropdown: DropdownImage = DropdownImage(dropdown_id)
+        self.dropdown = DropdownImageUIElement(dropdown_id)
 
         rename_window_width: int = self._scale_pixels_to_width(250)
         rename_id: int = canvas.create_window(
@@ -330,10 +332,32 @@ class ViewerApp:
             return
         self.exit()
 
-    def handle_dropdown(self, _: Event) -> None:
+    def handle_up_arrow(self, _: Event):
+        if self.canvas.is_widget_visible(self.dropdown.id):
+            self.canvas.mock_button_click(ButtonName.DROPDOWN)
+        else:
+            self.hide_topbar()
+
+    def handle_down_arrow(self, _: Event):
+        if self.canvas.is_widget_visible(TkTags.TOPBAR):
+            if not self.canvas.is_widget_visible(self.dropdown.id):
+                self.canvas.mock_button_click(ButtonName.DROPDOWN)
+        else:
+            self.show_topbar()
+
+    def handle_dropdown(self, _: Event | None = None) -> None:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
         self.update_details_dropdown()
+
+    def show_details_popup(self, _: Event | None = None) -> None:
+        """Gets details on image and shows it in a UI popup"""
+        details: str | None = self.file_manager.get_image_details(
+            self.image_loader.PIL_image
+        )
+
+        if details is not None:
+            show_info_popup(self.window_id, "Image Details", details)
 
     def load_zoomed_image(self, direction: ZoomDirection) -> None:
         """Loads zoomed image and updates display"""
@@ -359,10 +383,6 @@ class ViewerApp:
 
     def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
-        # This prevents an ignored exception since Tk may clean up
-        # before PIL does. Lets leave the work to Tk when exiting
-        del PhotoImage.__del__
-
         try:
             self.canvas.delete(self.canvas.file_name_text_id)
             self.app.quit()
@@ -373,7 +393,7 @@ class ViewerApp:
 
         raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
 
-    def minimize(self, _: Event) -> None:
+    def minimize(self, _: Event | None = None) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
         self.need_to_redraw = True
         self.app.iconify()
@@ -431,7 +451,7 @@ class ViewerApp:
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
 
-    def toggle_show_rename_window(self, _: Event) -> None:
+    def toggle_show_rename_window(self, _: Event | None = None) -> None:
         """Either shows or hides rename window and shifts focus accordingly"""
         if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
@@ -459,15 +479,13 @@ class ViewerApp:
     def _update_existing_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
         Use when the displayed image hasn't changed, but moved or went to a new frame"""
-        self._display_image = PhotoImage(image)
-        self.canvas.update_existing_image_display(self._display_image)
+        self.canvas.update_existing_image_display(PhotoImage(image))
 
     def _update_image_display(self, image: Image) -> None:
         """Updates display with PhotoImage version of provided Image.
         Use when a new image is replacing the previous and should be
         re-centered"""
-        self._display_image = PhotoImage(image)
-        self.canvas.update_image_display(self._display_image)
+        self.canvas.update_image_display(PhotoImage(image))
 
     def update_after_image_load(self, image: Image) -> None:
         """Updates app title and displayed image"""
@@ -527,7 +545,9 @@ class ViewerApp:
         rename_window_x_offset = self.canvas.update_file_name(
             self.file_manager.current_image.name
         )
-        self.canvas.coords(self.rename_button_id, rename_window_x_offset, 0)
+        self.canvas.coords(
+            self.canvas.get_button_id(ButtonName.RENAME), rename_window_x_offset, 0
+        )
         self.canvas.coords(
             self.rename_entry.id,
             rename_window_x_offset + self._scale_pixels_to_height(40),
@@ -572,7 +592,7 @@ class ViewerApp:
     def update_details_dropdown(self) -> None:
         """Updates the information and state of dropdown image"""
         dropdown = self.dropdown
-        if dropdown.showing:
+        if dropdown.show:
             if dropdown.need_refresh:
                 try:
                     details: str = self.file_manager.get_cached_metadata(

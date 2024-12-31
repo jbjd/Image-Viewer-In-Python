@@ -259,6 +259,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "cholesky",
         "cross",
         "qr",
+        "tensorsolve",
     },
     "turbojpeg": {
         "__define_cropping_regions",
@@ -272,6 +273,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "encode_from_yuv",
         "scale_with_quality",
     },
+    "PIL._binary": {"i8", "si16be", "si16le", "si32be", "si32le"},
     "PIL.features": {
         "check",
         "check_codec",
@@ -400,10 +402,12 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy.lib._shape_base_impl": {"__doc__"},
     "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
+        "__author__",
         "__buffer_size_YUV2",
         "__compressFromYUV",
         "__decompressToYUVPlanes",
         "__decompressToYUV2",
+        "__version__",
         "TJERR_FATAL",
         "TJCS_CMYK",
         "TJPF_ABGR",
@@ -440,6 +444,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.ImageFont": {"TransposedFont"},
     "PIL.ImageOps": {"SupportsGetMesh"},
     "PIL.ImageTk": {"BitmapImage"},
+    "PIL.PngImagePlugin": {"PngInfo"},
 }
 
 _skip_from_imports: dict[str, set[str]] = {
@@ -449,7 +454,6 @@ _skip_from_imports: dict[str, set[str]] = {
         "_distributor_init",
         "array_repr",
         "c_",
-        "ediff1d",
         "einsum",
         "einsum_path",
         "matrixlib",
@@ -471,6 +475,7 @@ _skip_from_imports: dict[str, set[str]] = {
     },
     "numpy._core.overrides": {"getargspec"},
     "numpy._core.records": {"_get_legacy_print_mode"},
+    "numpy._core.umath": {"_add_newdoc_ufunc"},
     "numpy.lib._shape_base_impl": {"_arrays_for_stack_dispatcher"},
     "numpy.lib.stride_tricks": {"__doc__"},
     "numpy.linalg.__init__": {"linalg"},
@@ -495,7 +500,7 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.multiarray": {"array_function_from_c_func_and_dispatcher"},
     "numpy._core.numeric": {
         "array_function_dispatch",
-        "set_array_function_like_doc",
+        "finalize_array_function_like",
         "set_module",
     },
     "numpy._core.numerictypes": {"set_module"},
@@ -510,7 +515,7 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._twodim_base_impl": {
         "array_function_dispatch",
-        "set_array_function_like_doc",
+        "finalize_array_function_like",
         "set_module",
     },
     "numpy.lib._type_check_impl": {"array_function_dispatch", "set_module"},
@@ -580,7 +585,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
@@ -626,14 +631,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r".*?einsumfunc.*",
             ),
         ],
-        "numpy._core._ufunc_config": [
-            RegexReplacement(
-                "def _no_nep50_warning.*",
-                "def _no_nep50_warning():yield",
-                count=1,
-                flags=re.DOTALL,
-            )
-        ],
         "numpy._core.arrayprint": [
             RegexReplacement(pattern=", .array_repr."),
             RegexReplacement(pattern=r"['\"](get)?(set)?_?printoptions['\"],", count=3),
@@ -647,8 +644,8 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         ],
         "numpy._core.overrides": [
             RegexReplacement(
-                pattern="def set_array_function_like_doc.*?return public_api",
-                replacement="def set_array_function_like_doc(a): return a",
+                pattern="def get_array_function_like_doc.*?return public_api",
+                replacement="def finalize_array_function_like(a): return a",
                 flags=re.DOTALL,
             ),
             RegexReplacement(
@@ -680,6 +677,7 @@ def set_module(_):
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"from \. import _.*"),
+            RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
             RegexReplacement(pattern=r"from numpy\._core.* import .*"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
             RegexReplacement(
@@ -714,7 +712,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
         "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
             RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-            RegexReplacement(pattern=r".cross.,", count=1),
+            RegexReplacement(pattern=r".(cross|tensorsolve).,", count=2),
         ],
         "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
         "PIL.__init__": [
@@ -875,14 +873,36 @@ regex_to_apply_tk: defaultdict[str, set[RegexReplacement]] = defaultdict(
         },
         "tcl8/*/platform-*.tm": {
             # Discontinued OS
-            RegexReplacement(pattern=r"osf1 \{.*?\}", count=1, flags=re.DOTALL)
+            RegexReplacement(pattern=r"osf1 \{.*?\}", count=1, flags=re.DOTALL),
+            RegexReplacement(
+                pattern=r"solaris(\*-\*)? \{(.*?\{.*?\}.*?)*?\}", flags=re.DOTALL
+            ),
         },
     },
 )
 
 if sys.platform != "darwin":
     regex_to_apply_tk["tcl8/*/platform-*.tm"].add(
-        RegexReplacement(pattern="set plat macosx", count=1)
+        RegexReplacement(
+            pattern=r"darwin \{.*?aix", replacement="aix", flags=re.DOTALL, count=1
+        )
+    )
+
+    regex_to_apply_tk["tcl/auto.tcl"].add(
+        RegexReplacement(
+            pattern=r'if \{\$tcl_platform\(platform\) eq "unix".*?\}.*?\}',
+            flags=re.DOTALL,
+            count=1,
+        )
+    )
+
+    regex_to_apply_tk["tcl/init.tcl"].add(
+        RegexReplacement(
+            pattern=r'if \{\$tcl_platform\(os\) eq "Darwin".*?else.*?\}\s*?\}',
+            replacement="package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}",
+            flags=re.DOTALL,
+            count=1,
+        )
     )
 
 data_files_to_exclude: list[str] = [
@@ -891,6 +911,7 @@ data_files_to_exclude: list[str] = [
     "tcl*/**/http-*.tm",
     "tcl*/**/shell-*.tm",
     "tcl*/**/tcltest-*.tm",
+    "tcl/parray.tcl",
     "tk/ttk/*Theme.tcl",
     "tk/images",
     "tk/msgs",

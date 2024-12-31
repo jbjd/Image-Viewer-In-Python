@@ -4,7 +4,6 @@
 MODULES: list[str] = [
     "actions",
     "animation",
-    "factories",
     "helpers",
     "managers",
     "states",

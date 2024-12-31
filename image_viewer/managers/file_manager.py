@@ -13,8 +13,7 @@ from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import (
     clean_str_for_OS_path,
-    get_dir_name,
-    show_info_popup,
+    get_normalized_dir_name,
     trash_file,
     walk_dir,
 )
@@ -36,7 +35,7 @@ class ImageFileManager:
 
     def __init__(self, first_image_path: str, image_cache: ImageCache) -> None:
         """Load single file for display before we load the rest"""
-        self.image_directory: str = get_dir_name(first_image_path)
+        self.image_directory: str = get_normalized_dir_name(first_image_path)
         self.image_cache: ImageCache = image_cache
 
         self.action_undoer: ActionUndoer = ActionUndoer()
@@ -66,7 +65,7 @@ class ImageFileManager:
             return False
 
         choosen_file: str = os.path.basename(new_file_path)
-        new_dir: str = get_dir_name(new_file_path)
+        new_dir: str = get_normalized_dir_name(new_file_path)
 
         if new_dir != self.image_directory:
             self.image_directory = new_dir
@@ -88,7 +87,7 @@ class ImageFileManager:
         if image_name is None:
             image_name = self.current_image.name
 
-        return f"{self.image_directory}/{image_name}"
+        return os.path.normpath(f"{self.image_directory}/{image_name}")
 
     def _update_after_move_or_edit(self) -> None:
         """Sets variables about current image.
@@ -148,16 +147,16 @@ class ImageFileManager:
         )
         return details
 
-    def show_image_detail_popup(self, PIL_Image: Image) -> None:
+    def get_image_details(self, PIL_Image: Image) -> str | None:
         try:
             details: str = self.get_cached_metadata()
         except KeyError:
-            return  # don't fail trying to read, if not in cache just exit
+            return None  # don't fail trying to read, if not in cache just exit
 
         try:
             image_metadata: stat_result = os.stat(self.path_to_image)
             # [4:] chops of 3 character day like Mon/Tue/etc.
-            created_time: str = ctime(image_metadata.st_ctime)[4:]
+            created_time: str = ctime(image_metadata.st_birthtime)[4:]
             last_modifed_time: str = ctime(image_metadata.st_mtime)[4:]
             details += f"Created: {created_time}\nLast Modified: {last_modifed_time}\n"
         except (OSError, ValueError):
@@ -168,7 +167,7 @@ class ImageFileManager:
         if comment:
             details += f"Comment: {comment.decode('utf-8')}\n"
 
-        show_info_popup("Image Details", details)
+        return details
 
     def move_index(self, amount: int) -> None:
         """Moves internal index with safe wrap around"""
@@ -227,7 +226,7 @@ class ImageFileManager:
         self.action_undoer.append(result)
 
         # Only add image if its still in the directory we are currently in
-        if get_dir_name(new_path) == get_dir_name(original_path):
+        if get_normalized_dir_name(new_path) == get_normalized_dir_name(original_path):
             preserve_index: bool = self._should_perserve_index(result)
             self.add_new_image(new_name, preserve_index)
         else:
@@ -239,7 +238,7 @@ class ImageFileManager:
             clean_str_for_OS_path(os.path.basename(new_name_or_path))
             or self.current_image.name
         )
-        new_dir: str = get_dir_name(new_name_or_path)
+        new_dir: str = get_normalized_dir_name(new_name_or_path)
 
         if new_name in (".", ".."):
             # name is actually path specifier

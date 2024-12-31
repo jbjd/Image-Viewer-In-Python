@@ -6,10 +6,12 @@ import os
 from collections.abc import Iterator
 from re import Pattern
 from re import compile as re_compile
+from typing import Final
 
 illegal_char: Pattern[str]
 kb_size: int
 if os.name == "nt":
+    import ctypes
     from ctypes import windll  # type: ignore
 
     from send2trash.win.legacy import send2trash
@@ -18,12 +20,19 @@ if os.name == "nt":
     illegal_char = re_compile(r'[<>:"|?*]')
     kb_size = 1024
 
+    class OPENASINFO(ctypes.Structure):
+        _fields_ = [
+            ("pcszFile", ctypes.c_wchar_p),
+            ("pcszClass", ctypes.c_wchar_p),
+            ("oaifInFlags", ctypes.c_int32),
+        ]
+
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
     def restore_from_bin(original_path: str) -> None:
         try:
-            undelete(os.path.normpath(original_path))
+            undelete(original_path)
         except x_winshell as e:
             raise OSError from e  # change error type so catching is not OS specific
 
@@ -79,9 +88,24 @@ else:  # assume linux for now
                     break
 
 
-def show_info_popup(title: str, body: str) -> None:
+def open_with(hwnd: int, file: str) -> None:
+    if os.name != "nt":
+        raise NotImplementedError
+
+    OAIF_EXEC: Final[int] = 0x04
+    OAIF_HIDE_REGISTRATION: Final[int] = 0x20
+    open_as_info = OPENASINFO(
+        pcszFile=file,
+        pcszClass=None,
+        oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
+    )
+
+    windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
+
+
+def show_info_popup(hwnd: int, title: str, body: str) -> None:
     if os.name == "nt":
-        windll.user32.MessageBoxW(0, body, title, 0)
+        windll.user32.MessageBoxW(hwnd, body, title, 0)
     else:
         showinfo(title, body)
 
@@ -99,13 +123,14 @@ def get_byte_display(size_in_bytes: int) -> str:
 
 def trash_file(path: str) -> None:
     """OS generic way to send files to trash"""
-    send2trash(os.path.normpath(path))
+    send2trash(path)
 
 
-def get_dir_name(path: str) -> str:
-    """Gets dir name of a file path and normalizes it"""
-    path_dir: str = os.path.dirname(path)
-    return os.path.normpath(path_dir) if path_dir != "" else ""
+def get_normalized_dir_name(path: str) -> str:
+    """Gets directory name of a file path and normalizes it"""
+    dir_name: str = os.path.dirname(path)
+    # normpath of empty string returns "."
+    return os.path.normpath(dir_name) if dir_name != "" else ""
 
 
 def walk_dir(directory_path: str) -> Iterator[str]:

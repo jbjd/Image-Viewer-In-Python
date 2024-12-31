@@ -19,7 +19,7 @@ from image_viewer.actions.undoer import (
 MODULE_PATH = "image_viewer.actions"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def action_undoer() -> ActionUndoer:
     return ActionUndoer()
 

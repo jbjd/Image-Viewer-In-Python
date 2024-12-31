@@ -5,15 +5,11 @@ from typing import Self
 
 from PIL.Image import Image
 
-from image_viewer.actions.undoer import ActionUndoer, UndoResponse
-from image_viewer.managers.file_manager import ImageFileManager
-from image_viewer.util.image import ImageName
-
 
 class MockStatResult:
     """Mocks OS's stat_result"""
 
-    st_ctime: int = 1649709119
+    st_birthtime: int = 1649709119
     st_mtime: int = 1649709119
 
     def __init__(self, st_size: int) -> None:
@@ -59,27 +55,3 @@ class MockImage(Image):
 
     def __exit__(self, *_) -> None:
         self.close()
-
-
-class MockActionUndoer(ActionUndoer):
-    """Mocks this module's ActionUndoer"""
-
-    def undo(*_):
-        return UndoResponse("b.png", "a.png")
-
-
-class MockImageFileManager(ImageFileManager):
-    """Mocks this module's ImageFileManager"""
-
-    cache: dict = {}
-    current_image = ImageName("test.png")
-    path_to_image: str = ""
-
-    def __init__(self) -> None:
-        pass
-
-    def remove_current_image(self) -> None:
-        pass
-
-    def current_image_cache_still_fresh(self) -> bool:
-        return True
