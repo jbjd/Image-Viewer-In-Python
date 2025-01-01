@@ -4,21 +4,18 @@ Code for OS specific stuff
 
 import os
 from collections.abc import Iterator
-from re import Pattern
 from re import compile as re_compile
 from typing import Final
 
-illegal_char: Pattern[str]
-kb_size: int
 if os.name == "nt":
     import ctypes
     from ctypes import windll  # type: ignore
+    from re import Pattern
 
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell
 
-    illegal_char = re_compile(r'[<>:"|?*]')
-    kb_size = 1024
+    illegal_char: Pattern[str] = re_compile(r'[<>:"|?*]')
 
     class OPENASINFO(ctypes.Structure):
         _fields_ = [
@@ -42,9 +39,6 @@ else:  # assume linux for now
 
     from send2trash import send2trash
     from send2trash.plat_other import HOMETRASH
-
-    illegal_char = re_compile("")
-    kb_size = 1000
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
@@ -106,11 +100,15 @@ def show_info_popup(hwnd: int, title: str, body: str) -> None:
 
 def clean_str_for_OS_path(path: str) -> str:
     """Removes characters that paths on this OS can't have"""
-    return illegal_char.sub("", path)
+    if os.name == "nt":
+        return illegal_char.sub("", path)
+    else:
+        return path
 
 
 def get_byte_display(size_in_bytes: int) -> str:
     """Given bytes, formats it into a string using kb or mb"""
+    kb_size: int = 1024 if os.name == "nt" else 1000
     size_in_kb: int = size_in_bytes // kb_size
     return f"{size_in_kb/kb_size:.2f}mb" if size_in_kb > 999 else f"{size_in_kb}kb"
 

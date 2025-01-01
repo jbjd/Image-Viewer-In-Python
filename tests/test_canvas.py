@@ -19,7 +19,7 @@ def right_key_event(tk_app):
     return MockEvent(widget=tk_app, keysym_num=Key.RIGHT)
 
 
-def test_create_assets(canvas: CustomCanvas):
+def test_create_assets(canvas: CustomCanvas, example_image: Image):
     """Ensure creation of buttons, text, and topbar goes well"""
 
     # Should store id after creation
@@ -28,9 +28,33 @@ def test_create_assets(canvas: CustomCanvas):
 
     assert canvas.update_file_name("new.png")
 
-    # Should store image after creation, normally a PhotoImage but a None for testing
-    canvas.create_topbar(None)  # type: ignore
-    assert canvas.topbar is None
+    # Should store image after creation or garbage collector kills topbar
+    display_image = PhotoImage(example_image)
+    canvas.create_topbar(display_image)
+    assert canvas.topbar is display_image
+
+
+def test_update_image_display(canvas: CustomCanvas, example_image: Image):
+    """Should center images on update_image_display and
+    preserve coords on update_existing_image_display"""
+    display_image = PhotoImage(example_image)
+    canvas.update_image_display(display_image)
+    image_id: int = canvas.image_display.id
+
+    assert image_id != -1
+
+    # Move, update existing, and assert image was not moved
+    canvas.moveto(image_id, -1, -1)
+    original_coords: list[float] = canvas.coords(image_id)
+
+    canvas.update_existing_image_display(display_image)
+    assert image_id == canvas.image_display.id
+    assert original_coords == canvas.coords(image_id)
+
+    # When updating a new image, should re-center
+    canvas.update_image_display(display_image)
+    assert image_id != canvas.image_display.id
+    assert original_coords != canvas.coords(image_id)
 
 
 def test_widget_visible(canvas: CustomCanvas):
@@ -43,7 +67,7 @@ def test_widget_visible(canvas: CustomCanvas):
 
 
 @pytest.mark.parametrize(
-    "start_coords, end_coords, expected_move_amount",
+    "start_coords,end_coords,expected_move_amount",
     [
         ((0, 0), (10, 10), (10, 10)),
         ((0, 0), (9999, 9999), (1920, 1080)),

@@ -53,7 +53,7 @@ class ImageFileManager:
             raise ValueError
 
     def move_to_new_file(self) -> bool:
-        """Opens native file open file dialog and updates selected image
+        """Opens native open file dialog and points to new image if selected.
         Returns True if user selected a file, False if dialog was exited"""
         new_file_path: str = self.file_dialog_asker.ask_open_image(self.image_directory)
         if new_file_path == "":

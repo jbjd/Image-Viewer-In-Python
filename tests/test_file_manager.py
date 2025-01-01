@@ -193,3 +193,12 @@ def test_split_with_weird_names(manager: ImageFileManager):
     # use join over static var so test works on all OS
     expected_split = (os.path.normpath("C:/example"), "...")
     assert manager._split_dir_and_name("C:/example/...") == expected_split
+
+
+def test_move_to_new_file_cancelled(manager: ImageFileManager):
+    """When user closes file dialog, function exits immediately"""
+    with patch(
+        "image_viewer.managers.file_manager.FileDialogAsker.ask_open_image",
+        return_value="",
+    ):
+        assert not manager.move_to_new_file()

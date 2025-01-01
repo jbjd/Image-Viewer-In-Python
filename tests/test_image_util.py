@@ -1,6 +1,7 @@
 from tkinter import Tk
 from unittest.mock import patch
 
+import pytest
 from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
@@ -49,18 +50,19 @@ def test_PIL_functions(tk_app: Tk):
     assert type(placeholder) is Image
 
 
-def test_magic_number_guess():
+@pytest.mark.parametrize(
+    "magic_bytes,expected_format",
+    [
+        (b"\x89PNG", ImageFormats.PNG),
+        (b"RIFF", ImageFormats.WEBP),
+        (b"GIF8", ImageFormats.GIF),
+        (b"DDS ", ImageFormats.DDS),
+        (b"ABCD", ImageFormats.JPEG),  # default to JPEG
+    ],
+)
+def test_magic_number_guess(magic_bytes: bytes, expected_format: ImageFormats):
     """Ensure correct image type guessed"""
-    assert magic_number_guess(b"\x89PNG") == ImageFormats.PNG
-
-    assert magic_number_guess(b"RIFF") == ImageFormats.WEBP
-
-    assert magic_number_guess(b"GIF8") == ImageFormats.GIF
-
-    assert magic_number_guess(b"DDS ") == ImageFormats.DDS
-
-    # When nothing else matches, guess jpeg
-    assert magic_number_guess(b"ABCD") == ImageFormats.JPEG
+    assert magic_number_guess(magic_bytes) == expected_format
 
 
 def test_resize():
