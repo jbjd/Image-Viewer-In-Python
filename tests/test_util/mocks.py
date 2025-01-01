@@ -21,11 +21,12 @@ class MockEvent(Event):
     """Mocks Tk Event"""
 
     def __init__(
-        self, widget: Tk | None = None, keysym_num: int = 0, x: int = 0
+        self, widget: Tk | None = None, keysym_num: int = 0, x: int = 0, y: int = 0
     ) -> None:
         self.widget: Tk | None = widget
         self.keysym_num: int = keysym_num
         self.x: int = x
+        self.y: int = y
 
 
 class MockImage(Image):

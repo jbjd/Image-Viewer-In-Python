@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from PIL.Image import new as new_image
+from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
 from image_viewer.constants import ButtonName
@@ -15,9 +15,9 @@ from image_viewer.ui.image import DropdownImageUIElement
 
 
 @pytest.fixture(scope="module")
-def button_icons() -> IconImages:
-    default_icon = PhotoImage(new_image("RGB", (0, 0)))
-    hovered_icon = PhotoImage(new_image("RGB", (0, 0)))
+def button_icons(example_image: Image) -> IconImages:
+    default_icon = PhotoImage(example_image)
+    hovered_icon = PhotoImage(example_image)
     return IconImages(default_icon, hovered_icon)
 
 

@@ -2,6 +2,8 @@ import os
 from tkinter import Tk
 
 import pytest
+from PIL.Image import Image
+from PIL.Image import new as new_image
 
 from image_viewer.helpers.image_loader import ImageLoader
 from image_viewer.helpers.image_resizer import ImageResizer
@@ -50,3 +52,8 @@ def canvas(tk_app) -> CustomCanvas:
     custom_canvas.screen_height = 1080
     custom_canvas.screen_width = 1080
     return custom_canvas
+
+
+@pytest.fixture(scope="session")
+def example_image() -> Image:
+    return new_image("RGB", (10, 10))

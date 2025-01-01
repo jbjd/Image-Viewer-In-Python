@@ -7,6 +7,8 @@ from image_viewer.util.os import (
     clean_str_for_OS_path,
     get_byte_display,
     kb_size,
+    maybe_truncate_long_name,
+    split_name_and_suffix,
     walk_dir,
 )
 from tests.conftest import IMG_DIR
@@ -32,6 +34,34 @@ def test_get_byte_display_linux():
     """Should take bytes and return correct string representing kb/mb"""
     assert get_byte_display(999 * kb_size) == "999kb"
     assert get_byte_display(1000 * kb_size) == "1.00mb"
+
+
+@pytest.mark.parametrize(
+    "name,expected_name",
+    [
+        ("short.png", "short.png"),
+        ("0123456789" * 10 + ".png", "0123456789" * 4 + "(…).png"),
+    ],
+)
+def test_truncate_long_name(name: str, expected_name: str):
+    """Should truncate names longer than 40 characters"""
+    assert maybe_truncate_long_name(name) == expected_name
+
+
+@pytest.mark.parametrize(
+    "name_and_suffix,expected_name,expected_suffix",
+    [
+        ("test.png", "test", ".png"),
+        ("test", "test", ""),
+    ],
+)
+def test_split_name_and_suffix(
+    name_and_suffix: str, expected_name: str, expected_suffix: str
+):
+    name, suffix = split_name_and_suffix(name_and_suffix)
+
+    assert name == expected_name
+    assert suffix == expected_suffix
 
 
 def test_walk_dir():

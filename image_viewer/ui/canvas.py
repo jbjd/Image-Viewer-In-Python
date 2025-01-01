@@ -1,11 +1,11 @@
 from tkinter import Canvas, Event, Tk
-from typing import Final
 
 from PIL.ImageTk import PhotoImage
 
 from constants import TEXT_RGB, ButtonName, TkTags
 from ui.bases import ButtonUIElementBase
 from ui.image import ImageUIElement
+from util.os import maybe_truncate_long_name
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
@@ -135,17 +135,9 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
     def update_file_name(self, new_name: str) -> int:
         """Updates file name. Returns width of new name"""
-        self.itemconfigure(self.file_name_text_id, text=self._clean_long_name(new_name))
+        new_name = maybe_truncate_long_name(new_name)
+        self.itemconfigure(self.file_name_text_id, text=new_name)
         return self.bbox(self.file_name_text_id)[2]
-
-    @staticmethod
-    def _clean_long_name(image_name: str) -> str:
-        """Takes a name and returns a shortened version if its too long"""
-        end_index: int = image_name.rfind(".")
-        MAX: Final[int] = 40
-        if end_index < MAX:
-            return image_name
-        return f"{image_name[:MAX-2]}(…){image_name[end_index:]}"
 
     def is_widget_visible(self, tag_or_id: str | int) -> bool:
         """Returns bool of if provided tag/id is visible"""
