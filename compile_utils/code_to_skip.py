@@ -258,7 +258,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_vector_norm_dispatcher",
         "cholesky",
         "cross",
+        "eigvals",
+        "matrix_rank",
         "qr",
+        "svdvals",
         "tensorsolve",
     },
     "turbojpeg": {
@@ -711,8 +714,10 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
         "numpy.linalg.__init__": [remove_numpy_pytester_re],
         "numpy.linalg._linalg": [
             RegexReplacement(pattern="from numpy._typing.*"),
-            RegexReplacement(pattern=r",\s*.(qr|cholesky)."),
-            RegexReplacement(pattern=r".(cross|tensorsolve).,", count=2),
+            RegexReplacement(pattern=r",\s*.(cholesky|qr)."),
+            RegexReplacement(
+                pattern=r".(cross|eigvals|matrix_rank|svdvals|tensorsolve).,", count=5
+            ),
         ],
         "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
         "PIL.__init__": [
