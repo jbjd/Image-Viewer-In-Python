@@ -5,7 +5,7 @@ import pytest
 from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
-from image_viewer.constants import ImageFormats
+from image_viewer.constants import DEFAULT_FONT, ImageFormats
 from image_viewer.util.image import (
     ImageCache,
     ImageCacheEntry,
@@ -33,11 +33,12 @@ def test_image_path():
     assert example_image_path.suffix == ""
 
 
+# TODO: break this into two seperate tests
 def test_PIL_functions(tk_app: Tk):
     """Ensure no error with font and that PIL.Image gets modified"""
     from PIL import Image as _Image
 
-    init_PIL(20)
+    init_PIL(DEFAULT_FONT, 20)
     assert len(_Image._plugins) == 0
     del _Image
 

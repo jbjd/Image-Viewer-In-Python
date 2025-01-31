@@ -8,7 +8,7 @@ from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
 from animation.frame import Frame
-from config import font, max_items_in_cache
+from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from helpers.image_loader import ImageLoader, ReadImageResponse
 from helpers.image_resizer import ImageResizer
@@ -43,7 +43,8 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_path: str, path_to_exe: str) -> None:
-        image_cache: ImageCache = ImageCache(max_items_in_cache)
+        config = Config()
+        image_cache: ImageCache = ImageCache(config.max_items_in_cache)
         self.file_manager: ImageFileManager = ImageFileManager(
             first_image_path, image_cache
         )
@@ -67,8 +68,8 @@ class ViewerApp:
         self.width_ratio: float = screen_width / 1920
 
         self._load_assests(
-            self.app,
             self.canvas,
+            config.font_file,
             self.canvas.screen_width,
             self._scale_pixels_to_height(32),
         )
@@ -80,7 +81,7 @@ class ViewerApp:
             image_resizer, image_cache, self.animation_loop
         )
 
-        init_PIL(self._scale_pixels_to_height(23))
+        init_PIL(config.font_file, self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
@@ -158,14 +159,18 @@ class ViewerApp:
             app.bind("<Button-4>", lambda event: self.handle_mouse_wheel(event))
             app.bind("<Button-5>", lambda event: self.handle_mouse_wheel(event))
 
-    def _load_assests(  # TODO: port this into canvas.py?
-        self, app: Tk, canvas: CustomCanvas, screen_width: int, topbar_height: int
+    def _load_assests(
+        self,
+        canvas: CustomCanvas,
+        font_file: str,
+        screen_width: int,
+        topbar_height: int,
     ) -> None:
         """Load all assets on topbar and create canvas items"""
 
         icon_size: int = topbar_height + (topbar_height % 2)  # ensure even number
 
-        font_family: str = font[:-4].lower()  # -4 chops extension .ttf/.otf
+        font_family: str = font_file[:-4].lower()  # -4 chops extension .ttf/.otf
         # negative size makes font absolute for consistency with different monitors
         FONT: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
 
@@ -224,7 +229,7 @@ class ViewerApp:
             anchor="nw",
         )
         self.rename_entry: RenameEntry = RenameEntry(
-            app, canvas, rename_id, rename_window_width, font=FONT
+            self.app, canvas, rename_id, rename_window_width, font=FONT
         )
         self.rename_entry.bind("<Return>", self.rename_or_convert)
 
