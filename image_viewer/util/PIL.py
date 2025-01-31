@@ -164,7 +164,7 @@ def _preinit() -> None:  # pragma: no cover
     register_open(
         "JPEG",
         new_jpeg_factory,
-        lambda prefix: prefix[:3] == b"\xFF\xD8\xFF",
+        lambda prefix: prefix[:3] == b"\xff\xd8\xff",
     )
 
     _Image._initialized = 2
