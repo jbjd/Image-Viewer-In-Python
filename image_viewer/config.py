@@ -5,11 +5,12 @@ Reads config.ini from root dir and stores vars with results or defaults
 import os
 import sys
 from configparser import ConfigParser
+
 from constants import DEFAULT_FONT, DEFAULT_MAX_ITEMS_IN_CACHE
 
 
 class Config:
-    """Singleton that lazy loads configs from config.ini"""
+    """Loads configs from config.ini"""
 
     __slots__ = ("font_file", "max_items_in_cache")
 

@@ -33,7 +33,7 @@ def test_image_path():
     assert example_image_path.suffix == ""
 
 
-# TODO: break this into two seperate tests
+# TODO: break this into two separate tests
 def test_PIL_functions(tk_app: Tk):
     """Ensure no error with font and that PIL.Image gets modified"""
     from PIL import Image as _Image
