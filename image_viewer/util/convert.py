@@ -36,14 +36,13 @@ def try_convert_file_and_save_new(
             if is_animated and target_format not in ("webp", "gif", "png"):
                 raise ValueError
 
-            match target_format:
-                case "jpg" | "jpeg" | "jif" | "jfif" | "jpe":
-                    target_format = "jpeg"
-                    if temp_img.mode != "RGB":
-                        temp_img = temp_img.convert("RGB")  # must be RGB to save as jpg
-                case "gif":
-                    # This pop fixes missing bitmap error during webp -> gif conversion
-                    temp_img.info.pop("background", None)
+            if target_format in ("jpg", "jpeg", "jif", "jfif", "jpe"):
+                target_format = "jpeg"
+                if temp_img.mode != "RGB":
+                    temp_img = temp_img.convert("RGB")  # must be RGB to save as jpg
+            elif target_format == "gif":
+                # This pop fixes missing bitmap error during webp -> gif conversion
+                temp_img.info.pop("background", None)
 
             save_image(
                 temp_img,

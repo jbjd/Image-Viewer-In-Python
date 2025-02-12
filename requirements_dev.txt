@@ -2,6 +2,6 @@ pytest==8.3.4
 pytest-cov==6.0.0
 isort==6.0.0
 black==25.1.0
-mypy==1.14.1
+mypy==1.15.0
 flake8==7.1.1
 codespell==2.4.1
