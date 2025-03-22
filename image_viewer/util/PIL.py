@@ -45,7 +45,7 @@ def _resize_new(
     box: tuple[int, int, int, int],
 ) -> Image:
     """Performs image resize and returns the new image"""
-    return image._new(image.im.resize(size, resample, box))  # type: ignore
+    return image._new(image.im.resize(size, resample, box))
 
 
 def resize(

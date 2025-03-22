@@ -14,7 +14,7 @@ def test_next_frame(image_loader: ImageLoader):
     """Test expected behavior from getting next frame and resetting"""
 
     frame1, frame2, frame3 = Frame(Image()), Frame(Image()), Frame(Image())
-    image_loader.animation_frames = [frame1, frame2, frame3]  # type: ignore
+    image_loader.animation_frames = [frame1, frame2, frame3]
 
     example_frame: Frame | None = image_loader.get_next_frame()
     assert example_frame is frame2
@@ -25,7 +25,7 @@ def test_next_frame(image_loader: ImageLoader):
     example_frame = image_loader.get_next_frame()
 
     # if next is None, should return None but not increment internal frame index
-    image_loader.animation_frames[2] = None  # type: ignore
+    image_loader.animation_frames[2] = None
     example_frame = image_loader.get_next_frame()
     assert example_frame is None
     assert image_loader.frame_index == 1
