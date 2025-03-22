@@ -1,5 +1,6 @@
-from schema import Schema
 from configparser import ConfigParser
+
+from schema import Schema
 
 schema = Schema(
     {
