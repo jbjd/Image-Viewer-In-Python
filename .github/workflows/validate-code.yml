@@ -14,10 +14,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
+      - name: Get Minimum Python Version
+        id: python-version
+        run: |
+          min_version=$(grep requires-python pyproject.toml | grep -Eo [0-9]+.[0-9]+)
+          if [ -z $min_version ]; then
+            echo "Failed to parse version from pyproject.toml"
+            exit 1
+          fi
+          echo "minimum=$min_version" >> $GITHUB_OUTPUT
+
+      - name: Set up Python ${{ steps.python-version.outputs.minimum }}
         uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: ${{ steps.python-version.outputs.minimum }}
 
       - name: Install Validate Dependencies
         run: pip install -r requirements_dev.txt
