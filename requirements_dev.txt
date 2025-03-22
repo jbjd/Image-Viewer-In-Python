@@ -5,3 +5,4 @@ black==25.1.0
 mypy==1.15.0
 flake8==7.1.2
 codespell==2.4.1
+schema==0.7.7

@@ -20,14 +20,15 @@ jobs:
           python-version: 3.11
 
       - name: Install Validate Dependencies
-        run: |
-          pip install -r requirements_dev.txt
+        run: pip install -r requirements_dev.txt
+
+      - name: Validate Config.ini Schema
+        run: python ./config_schema_validator.py
 
       - name: Validate
         run: |
           chmod +x ./validate.sh
           ./validate.sh
-        shell: bash
 
       - name: Install Dependencies
         run: |
@@ -41,4 +42,3 @@ jobs:
           Xvfb :99 &
           chmod +x ./run_tests.sh
           ./run_tests.sh
-        shell: bash
