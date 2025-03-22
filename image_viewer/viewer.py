@@ -42,8 +42,8 @@ class ViewerApp:
         "window_id",
     )
 
-    def __init__(self, first_image_path: str, path_to_exe: str) -> None:
-        config = Config()
+    def __init__(self, first_image_path: str, path_to_exe_folder: str) -> None:
+        config = Config(path_to_exe_folder)
         image_cache: ImageCache = ImageCache(config.max_items_in_cache)
         self.file_manager: ImageFileManager = ImageFileManager(
             first_image_path, image_cache
@@ -58,7 +58,7 @@ class ViewerApp:
         self.image_load_id: str = ""
         self.animation_id: str = ""
 
-        self.app: Tk = self._setup_tk_app(path_to_exe)
+        self.app: Tk = self._setup_tk_app(path_to_exe_folder)
         self.window_id: int = self.app.winfo_id()
         self.canvas: CustomCanvas = CustomCanvas(self.app)
         screen_height: int = self.canvas.screen_height
@@ -75,7 +75,7 @@ class ViewerApp:
         )
 
         image_resizer: ImageResizer = ImageResizer(
-            screen_width, screen_height, path_to_exe
+            screen_width, screen_height, path_to_exe_folder
         )
         self.image_loader: ImageLoader = ImageLoader(
             image_resizer, image_cache, self.animation_loop
@@ -91,19 +91,20 @@ class ViewerApp:
         self.app.mainloop()
 
     @staticmethod
-    def _setup_tk_app(path_to_exe: str) -> Tk:
+    def _setup_tk_app(path_to_exe_folder: str) -> Tk:
         """Creates and setups Tk class"""
         app: Tk = Tk()
         app.attributes("-fullscreen", True)
 
         if os.name == "nt":
             app.state("zoomed")
-            app.wm_iconbitmap(default=os.path.join(path_to_exe, "icon/icon.ico"))
+            app.wm_iconbitmap(default=os.path.join(path_to_exe_folder, "icon/icon.ico"))
         else:
             from tkinter import PhotoImage as tkPhotoImage
 
             app.wm_iconphoto(
-                True, tkPhotoImage(file=os.path.join(path_to_exe, "icon/icon.png"))
+                True,
+                tkPhotoImage(file=os.path.join(path_to_exe_folder, "icon/icon.png")),
             )
             del tkPhotoImage
 
