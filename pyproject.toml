@@ -4,4 +4,3 @@ authors = [
 ]
 name = "Personal_Image_Viewer"
 readme = "README.md"
-requires-python = ">=3.11"
