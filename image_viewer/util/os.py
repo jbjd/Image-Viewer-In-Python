@@ -4,18 +4,14 @@ Code for OS specific stuff
 
 import os
 from collections.abc import Iterator
-from re import compile as re_compile
 from typing import Final
 
 if os.name == "nt":
     import ctypes
     from ctypes import windll  # type: ignore
-    from re import Pattern
 
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell
-
-    illegal_char: Pattern[str] = re_compile(r'[<>:"|?*]')
 
     class OPENASINFO(ctypes.Structure):
         _fields_ = [
@@ -96,14 +92,6 @@ def show_info_popup(hwnd: int, title: str, body: str) -> None:
         windll.user32.MessageBoxW(hwnd, body, title, 0)
     else:
         showinfo(title, body)
-
-
-def clean_str_for_OS_path(path: str) -> str:
-    """Removes characters that paths on this OS can't have"""
-    if os.name == "nt":
-        return illegal_char.sub("", path)
-    else:
-        return path
 
 
 def get_byte_display(size_in_bytes: int) -> str:

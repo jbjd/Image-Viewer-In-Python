@@ -4,30 +4,12 @@ from unittest.mock import patch
 import pytest
 
 from image_viewer.util.os import (
-    clean_str_for_OS_path,
     get_byte_display,
     maybe_truncate_long_name,
     split_name_and_suffix,
     walk_dir,
 )
 from tests.conftest import IMG_DIR
-
-
-@pytest.mark.parametrize(
-    "os_name,expected_path",
-    [
-        # Any OS other than Windows no-ops
-        ("nt", "StringWithIllegalCharacters.png"),
-        ("linux", 'String:"|*With?Illegal<Characters>.png'),
-    ],
-)
-def test_clean_str_for_OS_path(os_name: str, expected_path: str):
-    """Test that illegal characters for given OS are removed from string"""
-    problematic_path: str = 'String:"|*With?Illegal<Characters>.png'
-
-    with patch.object(os, "name", os_name):
-        cleaned_path: str = clean_str_for_OS_path(problematic_path)
-        assert cleaned_path == expected_path
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
