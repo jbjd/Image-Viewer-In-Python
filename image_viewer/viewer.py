@@ -246,7 +246,7 @@ class ViewerApp:
     def handle_mouse_wheel(self, event: Event) -> None:
         """On mouse wheel: either moves between images
         or zooms when right mouse held"""
-        right_mouse_held: bool = event.state & 1024  # type: ignore
+        right_mouse_held: bool = getattr(event, "state", 0) & 1024 == 1024
 
         if right_mouse_held:
             self.load_zoomed_image_unblocking(
@@ -318,7 +318,7 @@ class ViewerApp:
         Doesn't move when main window unfocused"""
         if self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
-            move_amount: int = 1 + (event.state & 5)  # type: ignore
+            move_amount: int = 1 + (getattr(event, "state", 0) & 5)
             if event.keysym_num == Key.LEFT:
                 move_amount = -move_amount
             self.move(move_amount)
