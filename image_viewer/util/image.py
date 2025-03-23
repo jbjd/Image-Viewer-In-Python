@@ -76,7 +76,7 @@ class ImageCache(OrderedDict[str, ImageCacheEntry]):
 
     def __setitem__(self, key: str, value: ImageCacheEntry) -> None:
         """Adds check for items in the cache and purges LRU if over limit"""
-        if self.max_items_in_cache == 0:
+        if self.max_items_in_cache <= 0:
             return
 
         if self.__len__() >= self.max_items_in_cache:

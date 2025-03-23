@@ -22,7 +22,6 @@ class Key(IntEnum):
     RIGHT = 65363
     EQUALS = 61
     MINUS = 45
-    R = 114
 
 
 class Rotation(IntEnum):
@@ -55,6 +54,12 @@ class ButtonName(StrEnum):
     TRASH = "trash"
     RENAME = "rename"
     DROPDOWN = "dropdown"
+
+
+class DefaultKeybinds(StrEnum):
+    """Defaults for keybinds that config.ini can override"""
+
+    SHOW_DETAILS = "<Control-d>"
 
 
 VALID_FILE_TYPES: set[str] = {

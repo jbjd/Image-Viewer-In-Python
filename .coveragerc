@@ -1,2 +1,2 @@
 [run]
-omit = main.py
+omit = main.py,__init__.py
