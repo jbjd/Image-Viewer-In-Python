@@ -45,8 +45,8 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_path: str, path_to_exe_folder: str) -> None:
-        config_reader = Config(path_to_exe_folder)
-        image_cache: ImageCache = ImageCache(config_reader.max_items_in_cache)
+        config = Config(path_to_exe_folder)
+        image_cache: ImageCache = ImageCache(config.max_items_in_cache)
         self.file_manager: ImageFileManager = ImageFileManager(
             first_image_path, image_cache
         )
@@ -71,7 +71,7 @@ class ViewerApp:
 
         self._load_assests(
             self.canvas,
-            config_reader.font_file,
+            config.font_file,
             self.canvas.screen_width,
             self._scale_pixels_to_height(32),
         )
@@ -83,12 +83,12 @@ class ViewerApp:
             image_resizer, image_cache, self.animation_loop
         )
 
-        init_PIL(config_reader.font_file, self._scale_pixels_to_height(23))
+        init_PIL(config.font_file, self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
         self.canvas.tag_bind(TkTags.BACKGROUND, "<Button-1>", self.handle_canvas_click)
-        self._add_binds_to_tk(config_reader)
+        self._add_binds_to_tk(config)
 
         self.app.mainloop()
 
@@ -127,7 +127,7 @@ class ViewerApp:
         if image is None:
             self.load_image()
 
-    def _add_binds_to_tk(self, config_reader: Config) -> None:
+    def _add_binds_to_tk(self, config: Config) -> None:
         """Assigns binds to Tk instance"""
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
@@ -135,7 +135,7 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind(config_reader.keybinds.show_details, self.show_details_popup)
+        app.bind(config.keybinds.show_details, self.show_details_popup)
         app.bind("<Control-m>", self.move_to_new_file)
         app.bind("<Control-z>", self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
