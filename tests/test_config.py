@@ -1,6 +1,6 @@
 import pytest
 
-from image_viewer.config.validate import validate_or_default
+from image_viewer.config import validate_or_default
 
 DEFAULT = "default"
 
