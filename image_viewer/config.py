@@ -3,8 +3,8 @@ Reads config.ini from root directory and stores results or defaults
 """
 
 import os
-from configparser import ConfigParser
 import re
+from configparser import ConfigParser
 
 from constants import DEFAULT_FONT, DEFAULT_MAX_ITEMS_IN_CACHE, DefaultKeybinds
 
