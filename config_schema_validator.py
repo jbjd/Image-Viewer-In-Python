@@ -6,6 +6,7 @@ schema = Schema(
     {
         "FONT": {"default": str},
         "CACHE": {"size": lambda size: size == "" or int(size) >= 0},
+        "KEYBINDS": {"show_details": str},
     }
 )
 
