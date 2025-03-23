@@ -1,5 +1,5 @@
 """
-Validation of user inputed config values
+Validation of user inputted config values
 """
 
 import re
