@@ -4,12 +4,12 @@ Reads config.ini from root directory and stores results or defaults
 
 import os
 from configparser import ConfigParser
+import re
 
-from config.validate import validate_or_default
 from constants import DEFAULT_FONT, DEFAULT_MAX_ITEMS_IN_CACHE, DefaultKeybinds
 
 
-class ConfigReader:
+class Config:
     """Reads configs from config.ini"""
 
     __slots__ = ("font_file", "keybinds", "max_items_in_cache")
@@ -43,3 +43,14 @@ class KeybindConfig:
         self.show_details = validate_or_default(
             show_details, DefaultKeybinds.SHOW_DETAILS
         )
+
+
+def validate_or_default(keybind: str, default: str) -> str:
+    """Given a tkinter keybind, validate if its allowed
+    and return keybind if its valid or the default if its not"""
+    f_key_re = r"F([1-9]|10|11|12)"
+    control_key_re = r"Control-[a-zA-Z0-9]"
+
+    match = re.match(f"^<(({f_key_re})|({control_key_re}))>$", keybind)
+
+    return default if match is None else keybind

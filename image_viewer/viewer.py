@@ -8,7 +8,7 @@ from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
 from animation.frame import Frame
-from config.reader import ConfigReader
+from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from helpers.image_loader import ImageLoader, ReadImageResponse
 from helpers.image_resizer import ImageResizer
@@ -21,6 +21,8 @@ from ui.rename_entry import RenameEntry
 from util.image import ImageCache
 from util.os import open_with, show_info_popup
 from util.PIL import create_dropdown_image, image_is_animated, init_PIL
+
+print("afasdfasdfdasdf")
 
 
 class ViewerApp:
@@ -43,7 +45,7 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_path: str, path_to_exe_folder: str) -> None:
-        config_reader = ConfigReader(path_to_exe_folder)
+        config_reader = Config(path_to_exe_folder)
         image_cache: ImageCache = ImageCache(config_reader.max_items_in_cache)
         self.file_manager: ImageFileManager = ImageFileManager(
             first_image_path, image_cache
@@ -125,7 +127,7 @@ class ViewerApp:
         if image is None:
             self.load_image()
 
-    def _add_binds_to_tk(self, config_reader: ConfigReader) -> None:
+    def _add_binds_to_tk(self, config_reader: Config) -> None:
         """Assigns binds to Tk instance"""
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
