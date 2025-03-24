@@ -10,9 +10,25 @@ DEFAULT = "default"
 
 
 def test_config_reader():
-    config = Config(os.path.join(WORKING_DIR, "data/empty_config.ini"))
+    """Should return all default values"""
+    config = Config(os.path.join(WORKING_DIR, "data"), "config.ini")
+
+    assert config.font_file == "test"
+    assert config.max_items_in_cache == 999
+
+
+def test_config_reader_defaults():
+    """Should return all default values"""
+    config = Config(os.path.join(WORKING_DIR, "data"), "config_empty.ini")
 
     assert config.font_file == DEFAULT_FONT
+    assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
+
+
+def test_config_reader_int_fallback():
+    """Should return default when"""
+    config = Config(os.path.join(WORKING_DIR, "data"), "config_bad_values.ini")
+
     assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
 
 

@@ -14,9 +14,11 @@ class Config:
 
     __slots__ = ("font_file", "keybinds", "max_items_in_cache")
 
-    def __init__(self, path_to_exe_folder: str) -> None:
+    def __init__(
+        self, working_directory: str, config_file_name: str = "config.ini"
+    ) -> None:
         config_parser: ConfigParser = ConfigParser()
-        config_parser.read(os.path.join(path_to_exe_folder, "config.ini"))
+        config_parser.read(os.path.join(working_directory, config_file_name))
 
         self.font_file: str = (
             config_parser.get("FONT", "DEFAULT", fallback=DEFAULT_FONT) or DEFAULT_FONT
