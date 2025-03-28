@@ -22,6 +22,10 @@ validate_step \
 "isort . -m 3 --tc --check"
 
 validate_step \
+"Running flake8" \
+"flake8 ."
+
+validate_step \
 "Running black formatter" \
 "black . --check"
 
