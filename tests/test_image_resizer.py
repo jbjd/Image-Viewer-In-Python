@@ -88,7 +88,7 @@ def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
         with patch.object(
             ImageResizer,
             "_calc_zoom_factor",
-            return_value=image_resizer.ZOOM_MIN + 0.25,
+            return_value=2.25,
         ):
             _, hit_cap = image_resizer.get_zoomed_image(image, 2)
             assert hit_cap

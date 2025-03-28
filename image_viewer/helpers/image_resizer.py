@@ -10,8 +10,6 @@ from util.PIL import resize
 class ImageResizer:
     """Handles resizing images to fit to the screen"""
 
-    ZOOM_MIN: float = 2.0
-
     __slots__ = ("jpeg_helper", "screen_height", "screen_width")
 
     def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
@@ -34,7 +32,10 @@ class ImageResizer:
         self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
     def get_zoomed_image(self, image: Image, zoom_level: int) -> tuple[Image, bool]:
-        """Resizes image using the provided zoom_level and bool if max zoom reached"""
+        """Resizes image using the provided zoom_level and bool if max zoom reached.
+
+        Raises ValueError if image exceeds JPEG limit of 65,535 pixels in any dimension
+        """
         width, height = image.size
         zoom_factor: float = self._calc_zoom_factor(width, height, zoom_level)
 
@@ -42,6 +43,10 @@ class ImageResizer:
             *self._scale_dimensions(image.size, zoom_factor)
         )
         dimensions = self._scale_dimensions(dimensions, zoom_factor)
+
+        # TODO: Refactor handling of hitting JPEG limit of 65,535
+        if dimensions[0] > 65_535 or dimensions[1] > 65_535:
+            raise ValueError
 
         max_zoom_hit: bool = self._too_zoomed_in(dimensions, zoom_factor)
         if max_zoom_hit:
@@ -64,9 +69,8 @@ class ImageResizer:
     def _too_zoomed_in(self, dimensions: tuple[int, int], zoom_factor) -> bool:
         """Returns bool if new image dimensions would zoom in too much"""
         return (
-            dimensions[0] >= self.screen_width
-            and dimensions[1] >= self.screen_height
-            and zoom_factor > self.ZOOM_MIN
+            dimensions[0] / 2 >= self.screen_width
+            and dimensions[1] / 2 >= self.screen_height
         )
 
     @staticmethod

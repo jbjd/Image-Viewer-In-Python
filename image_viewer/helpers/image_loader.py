@@ -181,6 +181,11 @@ class ImageLoader:
             self.zoomed_image_cache.append(zoomed_image)
 
             return zoomed_image
+        except ValueError:
+            # TODO: Refactor ValueError case (image exceeds JPEG dimension max)
+            self.zoom_state.level -= 1
+            self.zoom_state.hit_cap()
+            return None
         except (FileNotFoundError, UnidentifiedImageError):
             pass
 
