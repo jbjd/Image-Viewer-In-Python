@@ -7,8 +7,8 @@ from image_viewer.util.os import (
     get_byte_display,
     maybe_truncate_long_name,
     open_with,
-    split_name_and_suffix,
     show_info_popup,
+    split_name_and_suffix,
     walk_dir,
 )
 from tests.conftest import IMG_DIR
