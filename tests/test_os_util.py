@@ -38,7 +38,7 @@ def test_open_with(os_name: str):
         else:
             EXECUTE_JUST_ONCE_FLAGS = 0x24
             with patch(
-                "image_viewer.util.os.windll.shell32.SHOpenWithDialog"
+                "image_viewer.util.os.windll.shell32.SHOpenWithDialog", create=True
             ) as mock_open_with_dialog:
                 open_with(hwnd, path)
 
