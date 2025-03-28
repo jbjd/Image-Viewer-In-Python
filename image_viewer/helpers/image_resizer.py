@@ -53,14 +53,14 @@ class ImageResizer:
         return resize(image, dimensions, interpolation), max_zoom_hit
 
     def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
-        """Calcs zoom factor based on image size vs screen, zoom level, and w/h ratio"""
-        zoom_scale: int = 1 + int(
-            max(width / self.screen_width, height / self.screen_height) / 4
-        )
-        # w/h ratio divide by magic 7 since seemed best after testing
-        wh_ratio: int = 1 + max(width // height, height // width) // 7
-        return 1 + (0.25 * zoom_scale * zoom_level * wh_ratio)
+        """Calcs zoom factor based on zoom level and w/h ratio"""
+        # w/h ratio divide by magic 6 since seemed best after testing
+        wh_ratio: int = 1 + max(width // height, height // width) // 6
+        return (1.4**zoom_level) * wh_ratio
 
+    # TODO: ZOOM_MIN could be inherent within the dimension check
+    # Check for if dimensions are both 2x larger than screen
+    # This will also allow for all images to be zoomed at least 2x
     def _too_zoomed_in(self, dimensions: tuple[int, int], zoom_factor) -> bool:
         """Returns bool if new image dimensions would zoom in too much"""
         return (
