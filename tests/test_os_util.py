@@ -1,5 +1,5 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -8,9 +8,11 @@ from image_viewer.util.os import (
     maybe_truncate_long_name,
     open_with,
     split_name_and_suffix,
+    show_info_popup,
     walk_dir,
 )
 from tests.conftest import IMG_DIR
+from tests.test_util.mocks import MockWindll
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
@@ -37,11 +39,9 @@ def test_open_with(os_name: str):
                 open_with(hwnd, path)
         else:
             EXECUTE_JUST_ONCE_FLAGS = 0x24
-            mock_windll = MagicMock()
-            mock_windll.shell32 = MagicMock()
-            mock_windll.shell32.SHOpenWithDialog = MagicMock()
+            mock_windll = MockWindll()
 
-            with patch("image_viewer.util.os.windll", new=mock_windll, create=True):
+            with patch("image_viewer.util.os.windll", create=True, new=mock_windll):
                 open_with(hwnd, path)
 
             mock_windll.shell32.SHOpenWithDialog.assert_called_once()
@@ -50,6 +50,31 @@ def test_open_with(os_name: str):
             assert call_args[0] == hwnd
             assert getattr(call_args[1], "pcszFile", None) == path
             assert getattr(call_args[1], "oaifInFlags", None) == EXECUTE_JUST_ONCE_FLAGS
+
+
+@pytest.mark.parametrize("os_name", ["nt", "linux"])
+def test_show_info_popup(os_name: str):
+    """Should call different popups depending on OS"""
+    hwnd = 123
+    title = "title"
+    body = "body"
+
+    with patch.object(os, "name", os_name):
+        if os_name == "nt":
+            mock_windll = MockWindll()
+            expected_flags = 0
+
+            with patch("image_viewer.util.os.windll", create=True, new=mock_windll):
+                show_info_popup(hwnd, title, body)
+
+            mock_windll.user32.MessageBoxW.assert_called_once_with(
+                hwnd, body, title, expected_flags
+            )
+        else:
+            with patch("image_viewer.util.os.showinfo", create=True) as mock_showinfo:
+                show_info_popup(hwnd, title, body)
+
+                mock_showinfo.assert_called_once_with(title, body)
 
 
 @pytest.mark.parametrize(

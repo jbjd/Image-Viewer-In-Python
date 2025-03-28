@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tkinter import Event, Tk
 from typing import Self
+from unittest.mock import MagicMock
 
 from PIL.Image import Image
 
@@ -59,3 +60,26 @@ class MockImage(Image):
 
     def __exit__(self, *_) -> None:
         self.close()
+
+
+class MockWindll:
+
+    __slots__ = ("shell32", "user32")
+
+    def __init__(self) -> None:
+        self.shell32 = _MockShell32()
+        self.user32 = _MockUser32()
+
+
+class _MockShell32:
+    __slots__ = ("SHOpenWithDialog",)
+
+    def __init__(self) -> None:
+        self.SHOpenWithDialog = MagicMock()
+
+
+class _MockUser32:
+    __slots__ = ("MessageBoxW",)
+
+    def __init__(self) -> None:
+        self.MessageBoxW = MagicMock()
