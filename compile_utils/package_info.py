@@ -4,12 +4,12 @@
 MODULES: list[str] = [
     "actions",
     "animation",
-    "helpers",
-    "managers",
-    "states",
-    "ui",
-    "util",
     "config",
     "constants",
+    "files",
+    "image",
+    "state",
+    "ui",
+    "util",
     "viewer",
 ]

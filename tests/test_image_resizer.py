@@ -6,7 +6,7 @@ from PIL.Image import new as new_image
 from turbojpeg import TurboJPEG
 
 from image_viewer.constants import ImageFormats
-from image_viewer.helpers.image_resizer import ImageResizer
+from image_viewer.image.resizer import ImageResizer
 from tests.test_util.mocks import MockImage
 
 
@@ -67,9 +67,7 @@ def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
     """Should resize and return PIL image"""
     image: Image = new_image("RGB", (10, 10))
 
-    with patch(
-        "image_viewer.helpers.image_resizer.resize", return_value=image
-    ) as mock_resize:
+    with patch("image_viewer.image.resizer.resize", return_value=image) as mock_resize:
         assert type(image_resizer._fit_to_screen(image)) is Image
         mock_resize.assert_called_once()
 
@@ -84,7 +82,7 @@ def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
     image: Image = new_image("RGB", (1920, 1080))
 
     # Mock zoom factor above min zoom when image is already the size of the screen
-    with patch("image_viewer.helpers.image_resizer.resize", return_value=image):
+    with patch("image_viewer.image.resizer.resize", return_value=image):
         with patch.object(
             ImageResizer,
             "_calc_zoom_factor",

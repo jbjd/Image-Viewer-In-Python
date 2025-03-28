@@ -10,8 +10,8 @@ from PIL.Image import open as open_image
 
 from animation.frame import Frame
 from constants import ZoomDirection
-from helpers.image_resizer import ImageResizer
-from states.zoom_state import ZoomState
+from image.resizer import ImageResizer
+from state.zoom_state import ZoomState
 from util.image import ImageCache, ImageCacheEntry, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image

@@ -1,7 +1,7 @@
 import pytest
 
 from image_viewer.constants import ZoomDirection
-from image_viewer.states.zoom_state import ZoomState
+from image_viewer.state.zoom_state import ZoomState
 
 
 @pytest.fixture

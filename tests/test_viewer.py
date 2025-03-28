@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from image_viewer.constants import Key
-from image_viewer.helpers.image_loader import ImageLoader
-from image_viewer.managers.file_manager import ImageFileManager
+from image_viewer.image.loader import ImageLoader
+from image_viewer.files.file_manager import ImageFileManager
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.util.image import ImageCache
 from image_viewer.viewer import ViewerApp

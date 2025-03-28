@@ -10,9 +10,9 @@ from PIL.ImageTk import PhotoImage
 from animation.frame import Frame
 from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
-from helpers.image_loader import ImageLoader, ReadImageResponse
-from helpers.image_resizer import ImageResizer
-from managers.file_manager import ImageFileManager
+from image.loader import ImageLoader, ReadImageResponse
+from image.resizer import ImageResizer
+from files.file_manager import ImageFileManager
 from ui.button import HoverableButtonUIElement, ToggleableButtonUIElement
 from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas

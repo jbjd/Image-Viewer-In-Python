@@ -6,7 +6,7 @@ import pytest
 
 from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
-from image_viewer.managers.file_manager import ImageFileManager
+from image_viewer.files.file_manager import ImageFileManager
 from image_viewer.util.image import ImageCache, ImageCacheEntry
 from tests.conftest import IMG_DIR
 from tests.test_util.exception import safe_wrapper
@@ -42,7 +42,7 @@ def test_image_file_manager(manager: ImageFileManager):
                 lambda *_: None,
             ),
             patch(
-                "image_viewer.managers.file_manager.askyesno",
+                "image_viewer.files.file_manager.askyesno",
                 lambda *_: True,
             ),
         ):
@@ -71,7 +71,7 @@ def test_bad_path(image_cache: ImageCache):
         file_manager.validate_current_path()
 
 
-@patch("image_viewer.managers.file_manager.askyesno", lambda *_: False)
+@patch("image_viewer.files.file_manager.askyesno", lambda *_: False)
 def test_bad_path_for_rename(manager: ImageFileManager):
     """When calling rename, certain conditions should raise errors"""
     with pytest.raises(OSError):
@@ -198,7 +198,7 @@ def test_split_with_weird_names(manager: ImageFileManager):
 def test_move_to_new_file_cancelled(manager: ImageFileManager):
     """When user closes file dialog, function exits immediately"""
     with patch(
-        "image_viewer.managers.file_manager.FileDialogAsker.ask_open_image",
+        "image_viewer.files.file_manager.FileDialogAsker.ask_open_image",
         return_value="",
     ):
         assert not manager.move_to_new_file()

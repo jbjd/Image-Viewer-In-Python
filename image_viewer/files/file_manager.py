@@ -8,7 +8,7 @@ from PIL.Image import Image
 from actions.types import Convert, Delete, Edit, Rename
 from actions.undoer import ActionUndoer
 from constants import VALID_FILE_TYPES, Rotation
-from helpers.file_dialog_asker import FileDialogAsker
+from files.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import get_normalized_dir_name, trash_file, walk_dir
