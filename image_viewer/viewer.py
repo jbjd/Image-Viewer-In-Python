@@ -22,8 +22,6 @@ from util.image import ImageCache
 from util.os import open_with, show_info_popup
 from util.PIL import create_dropdown_image, image_is_animated, init_PIL
 
-print("afasdfasdfdasdf")
-
 
 class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
