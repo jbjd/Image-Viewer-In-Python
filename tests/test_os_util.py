@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -13,6 +13,15 @@ from image_viewer.util.os import (
 )
 from tests.conftest import IMG_DIR
 from tests.test_util.mocks import MockWindll
+
+
+def _mock_new_OPENASINFO(pcszFile, pcszClass, oaifInFlags) -> MagicMock:
+    self = MagicMock()
+    self.pcszFile = pcszFile
+    self.pcszClass = pcszClass
+    self.oaifInFlags = oaifInFlags
+
+    return self
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
@@ -41,7 +50,12 @@ def test_open_with(os_name: str):
             EXECUTE_JUST_ONCE_FLAGS = 0x24
             mock_windll = MockWindll()
 
-            with patch("image_viewer.util.os.windll", create=True, new=mock_windll):
+            with (
+                patch("image_viewer.util.os.windll", mock_windll, create=True),
+                patch(
+                    "image_viewer.util.os.OPENASINFO", _mock_new_OPENASINFO, create=True
+                ),
+            ):
                 open_with(hwnd, path)
 
             mock_windll.shell32.SHOpenWithDialog.assert_called_once()
