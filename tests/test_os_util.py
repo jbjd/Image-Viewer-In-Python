@@ -1,5 +1,5 @@
 import os
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -37,20 +37,19 @@ def test_open_with(os_name: str):
                 open_with(hwnd, path)
         else:
             EXECUTE_JUST_ONCE_FLAGS = 0x24
-            with patch(
-                "image_viewer.util.os.windll.shell32.SHOpenWithDialog", create=True
-            ) as mock_open_with_dialog:
+            mock_windll = MagicMock()
+            mock_windll.shell32 = MagicMock()
+            mock_windll.shell32.SHOpenWithDialog = MagicMock()
+
+            with patch("image_viewer.util.os.windll", new=mock_windll, create=True):
                 open_with(hwnd, path)
 
-                mock_open_with_dialog.assert_called_once()
+            mock_windll.shell32.SHOpenWithDialog.assert_called_once()
 
-                call_args = mock_open_with_dialog.call_args[0]
-                assert call_args[0] == hwnd
-                assert getattr(call_args[1], "pcszFile", None) == path
-                assert (
-                    getattr(call_args[1], "oaifInFlags", None)
-                    == EXECUTE_JUST_ONCE_FLAGS
-                )
+            call_args = mock_windll.shell32.SHOpenWithDialog.call_args[0]
+            assert call_args[0] == hwnd
+            assert getattr(call_args[1], "pcszFile", None) == path
+            assert getattr(call_args[1], "oaifInFlags", None) == EXECUTE_JUST_ONCE_FLAGS
 
 
 @pytest.mark.parametrize(
