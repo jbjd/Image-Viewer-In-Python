@@ -6,6 +6,7 @@ import pytest
 from image_viewer.util.os import (
     get_byte_display,
     maybe_truncate_long_name,
+    open_with,
     split_name_and_suffix,
     walk_dir,
 )
@@ -22,6 +23,34 @@ def test_get_byte_display(os_name: str):
     with patch.object(os, "name", os_name):
         assert get_byte_display(999 * kb_size) == expected_display_999kb
         assert get_byte_display(1000 * kb_size) == expected_display_1000kb
+
+
+@pytest.mark.parametrize("os_name", ["nt", "linux"])
+def test_open_with(os_name: str):
+    """Should call windows API with correct params"""
+    hwnd = 1
+    path = "test"
+
+    with patch.object(os, "name", os_name):
+        if os_name != "nt":
+            with pytest.raises(NotImplementedError):
+                open_with(hwnd, path)
+        else:
+            EXECUTE_JUST_ONCE_FLAGS = 0x24
+            with patch(
+                "image_viewer.util.os.windll.shell32.SHOpenWithDialog"
+            ) as mock_open_with_dialog:
+                open_with(hwnd, path)
+
+                mock_open_with_dialog.assert_called_once()
+
+                call_args = mock_open_with_dialog.call_args[0]
+                assert call_args[0] == hwnd
+                assert getattr(call_args[1], "pcszFile", None) == path
+                assert (
+                    getattr(call_args[1], "oaifInFlags", None)
+                    == EXECUTE_JUST_ONCE_FLAGS
+                )
 
 
 @pytest.mark.parametrize(
