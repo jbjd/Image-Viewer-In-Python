@@ -55,7 +55,7 @@ else:  # assume linux for now
         for info_path in info_paths:
             with open(info_path, "r", encoding="utf-8") as fp:
                 line: str
-                while line := fp.readline().strip():
+                while line := fp.readline().strip():  # TODO: use configparser instead
                     if line.startswith("Path="):
                         break
                 else:
@@ -73,6 +73,8 @@ else:  # assume linux for now
 
 
 def open_with(hwnd: int, file: str) -> None:
+    """Windows Only
+    Opens "Open With" dialog on current image"""
     if os.name != "nt":
         raise NotImplementedError
 
@@ -88,6 +90,8 @@ def open_with(hwnd: int, file: str) -> None:
 
 
 def show_info_popup(hwnd: int, title: str, body: str) -> None:
+    """If on Windows, shows info popup as child of parent
+    Otherwise shows parent-less info popup"""
     if os.name == "nt":
         windll.user32.MessageBoxW(hwnd, body, title, 0)
     else:

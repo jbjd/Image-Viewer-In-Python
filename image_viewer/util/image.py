@@ -114,6 +114,7 @@ class ImageNameList(list[ImageName]):
         return self[self.display_index].name
 
     def move_index(self, amount: int) -> None:
+        """Moves display_index by the provided amount with wraparound"""
         image_count: int = len(self)
         if image_count > 0:
             self.display_index = (self.display_index + amount) % len(self)

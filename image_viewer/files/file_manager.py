@@ -184,12 +184,13 @@ class ImageFileManager:
         self.remove_current_image()
 
     def remove_current_image(self) -> None:
-        """Deletes image from files array and cache"""
+        """Removes image from files array and cache"""
         self._files.remove_current_image()
         self.image_cache.pop_safe(self.path_to_image)
         self._update_after_move_or_edit()
 
     def remove_image(self, index: int) -> None:
+        """Removes image at index from files array and cache"""
         deleted_name: str = self._files.pop(index).name
         key: str = self.get_path_to_image(deleted_name)
         self.image_cache.pop_safe(key)

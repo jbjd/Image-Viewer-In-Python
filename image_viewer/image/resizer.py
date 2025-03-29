@@ -48,7 +48,7 @@ class ImageResizer:
         if dimensions[0] > 65_535 or dimensions[1] > 65_535:
             raise ValueError
 
-        max_zoom_hit: bool = self._too_zoomed_in(dimensions, zoom_factor)
+        max_zoom_hit: bool = self._too_zoomed_in(dimensions)
         if max_zoom_hit:
             if dimensions[1] < self.screen_height:
                 dimensions = self._fit_to_screen_height(width, height)
@@ -66,7 +66,7 @@ class ImageResizer:
     # TODO: ZOOM_MIN could be inherent within the dimension check
     # Check for if dimensions are both 2x larger than screen
     # This will also allow for all images to be zoomed at least 2x
-    def _too_zoomed_in(self, dimensions: tuple[int, int], zoom_factor) -> bool:
+    def _too_zoomed_in(self, dimensions: tuple[int, int]) -> bool:
         """Returns bool if new image dimensions would zoom in too much"""
         return (
             dimensions[0] / 2 >= self.screen_width
@@ -149,10 +149,10 @@ class ImageResizer:
 
         if height_is_big and width_is_big:
             return Resampling.HAMMING
-        elif height_is_big or width_is_big:
+        if height_is_big or width_is_big:
             return Resampling.BICUBIC
-        else:
-            return Resampling.LANCZOS
+
+        return Resampling.LANCZOS
 
     def _fit_to_screen_height(
         self, image_width: int, image_height: int

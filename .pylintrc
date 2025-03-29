@@ -4,4 +4,7 @@ disable=import-error,
         import-self,
         no-name-in-module,
         too-few-public-methods,
-        protected-access,
+        protected-access
+
+ignore=__main__.build,
+       tmp
