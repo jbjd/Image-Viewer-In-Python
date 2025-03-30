@@ -1,4 +1,5 @@
 import os
+from collections import namedtuple
 from typing import Final
 
 from PIL.Image import Image, Resampling, fromarray
@@ -8,6 +9,11 @@ from util.PIL import resize
 
 JPEG_MAX_DIMENSION: Final[int] = 65_535
 MIN_ZOOM_RATIO_TO_SCREEN: int = 2
+
+
+class ZoomedImageResponse(namedtuple("ZoomedImageResponse", ["image", "status"])):
+    image: Image
+    hit_max_zoom: bool
 
 
 class ImageResizer:
@@ -36,13 +42,13 @@ class ImageResizer:
 
         self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
-    def get_zoomed_image(self, image: Image, zoom_level: int) -> tuple[Image, bool]:
-        """Resizes image using the provided zoom_level and bool if max zoom reached.
+    def get_zoomed_image(self, image: Image, zoom_level: int) -> ZoomedImageResponse:
+        """Resizes image using the provided zoom_level. Returns response with
+        resized image and bool if the image is currently at the max zoom
 
-        Raises ValueError if image exceeds JPEG limit of 65,535 pixels in any dimension
-        """
+        Raises ValueError if resized image would exceed JPEG size max"""
         image_width, image_height = image.size
-        zoom_factor: float = self._calc_zoom_factor(
+        zoom_factor: float = self._calculate_zoom_factor(
             image_width, image_height, zoom_level
         )
 
@@ -55,12 +61,12 @@ class ImageResizer:
             self.fit_dimensions_to_screen(image_width, image_height), zoom_factor
         )
 
-        # TODO: Refactor handling of hitting JPEG limit of 65,535
         if dimensions[0] > JPEG_MAX_DIMENSION or dimensions[1] > JPEG_MAX_DIMENSION:
             raise ValueError
 
-        max_zoom_hit: bool = self._too_zoomed_in(dimensions)
-        if max_zoom_hit:
+        hit_max_zoom: bool = self._too_zoomed_in(dimensions)
+
+        if hit_max_zoom:
             if dimensions[1] < self.screen_height:
                 dimensions = self._fit_dimensions_to_screen_height(
                     image_width, image_height
@@ -70,10 +76,12 @@ class ImageResizer:
                     image_width, image_height
                 )
 
-        return resize(image, dimensions, interpolation), max_zoom_hit
+        return ZoomedImageResponse(
+            resize(image, dimensions, interpolation), hit_max_zoom
+        )
 
-    def _calc_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
-        """Calcs zoom factor based on zoom level and w/h ratio"""
+    def _calculate_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
+        """Calculates zoom factor based on zoom level and w/h ratio"""
         # w/h ratio divide by magic 6 since seemed best after testing
         wh_ratio: int = 1 + max(width // height, height // width) // 6
         return (1.4**zoom_level) * wh_ratio

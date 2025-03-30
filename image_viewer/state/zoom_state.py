@@ -3,20 +3,20 @@ from state.base import StateBase
 
 
 class ZoomState(StateBase):
-    """Represents level of zoom and regulates maximum zoom"""
+    """Represents level of zoom and stores max zoom level"""
 
-    ZOOM_CAP: int = 32
+    ZOOM_CAP: int = 64
 
-    __slots__ = ("cap", "level")
+    __slots__ = ("_max_level", "level")
 
     def __init__(self) -> None:
-        self.cap: int = self.ZOOM_CAP
         self.level: int = 0
+        self._max_level: int = self.ZOOM_CAP
 
     def reset(self) -> None:
         """Resets zoom level"""
-        self.cap = self.ZOOM_CAP
         self.level = 0
+        self._max_level: int = self.ZOOM_CAP
 
     def try_update_zoom_level(self, direction: ZoomDirection | None) -> bool:
         """Tries to zoom in or out. Returns True when zoom level changed"""
@@ -25,13 +25,13 @@ class ZoomState(StateBase):
 
         previous_zoom: int = self.level
 
-        if direction == ZoomDirection.IN and previous_zoom < self.cap:
+        if direction == ZoomDirection.IN and previous_zoom < self._max_level:
             self.level += 1
         elif direction == ZoomDirection.OUT and previous_zoom > 0:
             self.level -= 1
 
         return previous_zoom != self.level
 
-    def hit_cap(self) -> None:
+    def set_current_zoom_level_as_max(self) -> None:
         """Sets cap to the current zoom level"""
-        self.cap = self.level
+        self._max_level = self.level
