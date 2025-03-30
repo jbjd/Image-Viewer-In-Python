@@ -13,13 +13,12 @@ from tests.test_util.mocks import MockImage
 
 WORKING_DIR: str = os.path.dirname(__file__)
 IMG_DIR: str = os.path.join(WORKING_DIR, "example_images")
+CODE_DIR: str = os.path.join(os.path.dirname(WORKING_DIR), "image_viewer")
 
 
 @pytest.fixture
 def image_resizer() -> ImageResizer:
-    return ImageResizer(
-        1920, 1080, os.path.join(os.path.dirname(WORKING_DIR), "image_viewer")
-    )
+    return ImageResizer(CODE_DIR, 1920, 1080)
 
 
 @pytest.fixture
@@ -33,8 +32,8 @@ def empty_image_cache() -> ImageCache:
 
 
 @pytest.fixture
-def image_loader(image_resizer: ImageResizer, image_cache: ImageCache) -> ImageLoader:
-    image_loader = ImageLoader(image_resizer, image_cache, lambda *_: None)
+def image_loader(image_cache: ImageCache) -> ImageLoader:
+    image_loader = ImageLoader(CODE_DIR, 1920, 1080, image_cache, lambda *_: None)
     image_loader.PIL_image = MockImage()
     return image_loader
 

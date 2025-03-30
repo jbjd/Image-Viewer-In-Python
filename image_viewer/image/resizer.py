@@ -12,7 +12,9 @@ class ImageResizer:
 
     __slots__ = ("jpeg_helper", "screen_height", "screen_width")
 
-    def __init__(self, screen_width: int, screen_height: int, path_to_exe: str) -> None:
+    def __init__(
+        self, path_to_exe_folder: str, screen_width: int, screen_height: int
+    ) -> None:
         self.screen_width: Final[int] = screen_width
         self.screen_height: Final[int] = screen_height
 
@@ -23,7 +25,7 @@ class ImageResizer:
 
             suffix: str = "_x86" if platform.architecture()[0] == "32bit" else ""
             turbo_jpeg_lib_path = os.path.join(
-                path_to_exe,
+                path_to_exe_folder,
                 f"dll/libturbojpeg{suffix}.dll",
             )
 

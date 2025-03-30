@@ -12,7 +12,6 @@ from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from files.file_manager import ImageFileManager
 from image.loader import ImageLoader
-from image.resizer import ImageResizer
 from ui.button import HoverableButtonUIElement, ToggleableButtonUIElement
 from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
@@ -74,11 +73,12 @@ class ViewerApp:
             self._scale_pixels_to_height(32),
         )
 
-        image_resizer: ImageResizer = ImageResizer(
-            screen_width, screen_height, path_to_exe_folder
-        )
         self.image_loader: ImageLoader = ImageLoader(
-            image_resizer, image_cache, self.animation_loop
+            path_to_exe_folder,
+            screen_width,
+            screen_height,
+            image_cache,
+            self.animation_loop,
         )
 
         init_PIL(config.font_file, self._scale_pixels_to_height(23))

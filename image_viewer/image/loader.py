@@ -45,12 +45,16 @@ class ImageLoader:
 
     def __init__(
         self,
-        image_resizer: ImageResizer,
+        path_to_exe_folder: str,
+        screen_width: int,
+        screen_height: int,
         image_cache: ImageCache,
         animation_callback: Callable[[int, int], None],
     ) -> None:
         self.image_cache: ImageCache = image_cache
-        self.image_resizer: ImageResizer = image_resizer
+        self.image_resizer: ImageResizer = ImageResizer(
+            path_to_exe_folder, screen_width, screen_height
+        )
 
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
