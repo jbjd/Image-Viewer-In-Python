@@ -164,15 +164,13 @@ class ImageLoader:
 
         return current_image
 
-    # TODO: This was a messy join of zoom and rotation. It should be refactored
-    # For instance, its weird rotation can be passed as None while zoom can't
     def get_zoomed_or_rotated_image(
-        self, direction: ZoomDirection, rotation: Rotation | None = None
+        self, direction: ZoomDirection | None, rotation: Rotation | None = None
     ) -> Image | None:
         """Gets current image with orientation changes like zoom and rotation"""
-        if not self._zoom_state.try_update_zoom_level(direction) and (
-            rotation is None or rotation == self._rotation_state.orientation
-        ):
+        if not self._zoom_state.try_update_zoom_level(
+            direction
+        ) and not self._rotation_state.try_update_state(rotation):
             return None
 
         if rotation is not None:

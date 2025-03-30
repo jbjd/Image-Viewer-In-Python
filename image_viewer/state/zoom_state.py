@@ -13,8 +13,16 @@ class ZoomState(StateBase):
         self.cap: int = self.ZOOM_CAP
         self.level: int = 0
 
-    def try_update_zoom_level(self, direction: ZoomDirection) -> bool:
+    def reset(self) -> None:
+        """Resets zoom level"""
+        self.cap = self.ZOOM_CAP
+        self.level = 0
+
+    def try_update_zoom_level(self, direction: ZoomDirection | None) -> bool:
         """Tries to zoom in or out. Returns True when zoom level changed"""
+        if direction is None:
+            return False
+
         previous_zoom: int = self.level
 
         if direction == ZoomDirection.IN and previous_zoom < self.cap:
@@ -27,8 +35,3 @@ class ZoomState(StateBase):
     def hit_cap(self) -> None:
         """Sets cap to the current zoom level"""
         self.cap = self.level
-
-    def reset(self) -> None:
-        """Resets zoom level"""
-        self.cap = self.ZOOM_CAP
-        self.level = 0

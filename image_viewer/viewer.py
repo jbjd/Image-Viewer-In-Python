@@ -275,7 +275,7 @@ class ViewerApp:
             case _:
                 rotation = Rotation.UP
 
-        self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.NONE, rotation)
+        self.load_zoomed_or_rotated_image_unblocking(rotation=rotation)
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
@@ -361,9 +361,12 @@ class ViewerApp:
             show_info_popup(self.window_id, "Image Details", details)
 
     def load_zoomed_or_rotated_image(
-        self, direction: ZoomDirection, rotation: Rotation | None
+        self, direction: ZoomDirection | None, rotation: Rotation | None
     ) -> None:
         """Loads zoomed image and updates display"""
+        if direction is None and rotation is None:
+            raise ValueError
+
         zoomed_image: Image | None = self.image_loader.get_zoomed_or_rotated_image(
             direction, rotation
         )
@@ -373,9 +376,12 @@ class ViewerApp:
         self._end_image_load()
 
     def load_zoomed_or_rotated_image_unblocking(
-        self, direction: ZoomDirection, rotation: Rotation | None = None
+        self, direction: ZoomDirection | None = None, rotation: Rotation | None = None
     ) -> None:
         """Starts new thread for loading zoomed image"""
+        if direction is None and rotation is None:
+            raise ValueError
+
         if self._currently_animating():
             return
 

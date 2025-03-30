@@ -38,7 +38,6 @@ class ZoomDirection(IntEnum):
     """Either up or down on the mouse wheel"""
 
     IN = 1
-    NONE = 0
     OUT = -1
 
 
