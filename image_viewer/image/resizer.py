@@ -38,16 +38,18 @@ class ImageResizer:
 
         Raises ValueError if image exceeds JPEG limit of 65,535 pixels in any dimension
         """
-        width, height = image.size
-        zoom_factor: float = self._calc_zoom_factor(width, height, zoom_level)
+        image_width, image_height = image.size
+        zoom_factor: float = self._calc_zoom_factor(
+            image_width, image_height, zoom_level
+        )
 
         # Pre-scale to determine interpoaltion since an image we originally shrunk
         # might now grow
         scaled_width, scaled_height = self._scale_dimensions(image.size, zoom_factor)
-        interpolation = self._get_interpolation(scaled_width, scaled_height)
+        interpolation = self.get_resampling(scaled_width, scaled_height)
 
         dimensions = self._scale_dimensions(
-            self.fit_dimensions_to_screen(width, height), zoom_factor
+            self.fit_dimensions_to_screen(image_width, image_height), zoom_factor
         )
 
         # TODO: Refactor handling of hitting JPEG limit of 65,535
@@ -57,9 +59,13 @@ class ImageResizer:
         max_zoom_hit: bool = self._too_zoomed_in(dimensions)
         if max_zoom_hit:
             if dimensions[1] < self.screen_height:
-                dimensions = self._fit_dimensions_to_screen_height(width, height)
+                dimensions = self._fit_dimensions_to_screen_height(
+                    image_width, image_height
+                )
             elif dimensions[0] < self.screen_width:
-                dimensions = self._fit_dimensions_to_screen_width(width, height)
+                dimensions = self._fit_dimensions_to_screen_width(
+                    image_width, image_height
+                )
 
         return resize(image, dimensions, interpolation), max_zoom_hit
 
@@ -106,7 +112,7 @@ class ImageResizer:
         )
         # if small do a normal resize, otherwise utilize libJpegTurbo
         if scale_factor is None:
-            return self._fit_to_screen(image)
+            return self._get_image_fit_to_screen_with_PIL(image)
 
         image.fp.seek(0)  # type: ignore
         image_as_array = self.jpeg_helper.decode(
@@ -115,25 +121,24 @@ class ImageResizer:
             scale_factor,
             0,
         )
-        return self._fit_to_screen(fromarray(image_as_array))
+        return self._get_image_fit_to_screen_with_PIL(fromarray(image_as_array))
 
-    def _fit_to_screen(self, image: Image) -> Image:
+    def _get_image_fit_to_screen_with_PIL(self, image: Image) -> Image:
         """Resizes image to screen with PIL"""
         image_width, image_height = image.size
-        interpolation: Resampling = self._get_interpolation(image_width, image_height)
-
-        return resize(
-            image,
-            self.fit_dimensions_to_screen(image_width, image_height),
-            interpolation,
+        interpolation: Resampling = self.get_resampling(image_width, image_height)
+        dimensions: tuple[int, int] = self.fit_dimensions_to_screen(
+            image_width, image_height
         )
+
+        return resize(image, dimensions, interpolation)
 
     def get_image_fit_to_screen(self, image: Image) -> Image:
         """Resizes image to screen using either libjpeg-turbo or PIL"""
         if image.format == "JPEG":
             return self._get_jpeg_fit_to_screen(image)
 
-        return self._fit_to_screen(image)
+        return self._get_image_fit_to_screen_with_PIL(image)
 
     def fit_dimensions_to_screen(
         self, image_width: int, image_height: int
@@ -150,7 +155,7 @@ class ImageResizer:
             else self._fit_dimensions_to_screen_width(image_width, image_height)
         )
 
-    def _get_interpolation(self, image_width: int, image_height: int) -> Resampling:
+    def get_resampling(self, image_width: int, image_height: int) -> Resampling:
         """Determine resampling to use based on image and screen"""
         height_is_big: bool = image_height >= self.screen_height
         width_is_big: bool = image_width >= self.screen_width
