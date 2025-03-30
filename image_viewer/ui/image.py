@@ -4,7 +4,7 @@ Classes that represent images on a tkinter canvas
 
 from PIL.ImageTk import PhotoImage
 
-from ui.bases import UIElementBase
+from ui.base import UIElementBase
 
 
 class ImageUIElement(UIElementBase):

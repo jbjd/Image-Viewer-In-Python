@@ -11,7 +11,7 @@ from PIL.ImageDraw import ImageDraw
 from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
 
-from constants import TEXT_RGB, Rotation
+from constants import TEXT_RGB
 
 
 def save_image(
@@ -28,8 +28,10 @@ def save_image(
     )
 
 
-def rotate_image(image: Image, angle: Rotation) -> Image:
+def rotate_image(image: Image, angle: int) -> Image:
     """Rotates an image with the highest quality"""
+    if angle == 0:
+        return image
     return image.rotate(angle, Resampling.LANCZOS, expand=True)
 
 

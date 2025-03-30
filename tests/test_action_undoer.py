@@ -1,4 +1,4 @@
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -10,7 +10,6 @@ from image_viewer.actions.undoer import (
     ActionUndoer,
     Convert,
     Delete,
-    Edit,
     FileAction,
     Rename,
     UndoResponse,
@@ -44,7 +43,6 @@ def test_cap():
         (Convert("original_path", "new_path", original_file_deleted=True)),
         (Convert("original_path", "new_path", original_file_deleted=False)),
         (Rename("original_path", "new_path")),
-        (Edit("original_path", "rotation", b"bytes before edit")),
     ],
 )
 def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
@@ -55,7 +53,6 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
         patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
         patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
         patch(f"{MODULE_PATH}.undoer.os.rename") as mock_rename,
-        patch("builtins.open", mock_open()) as mock_builtins_open,
     ):
         undo_response: UndoResponse = action_undoer.undo()
         _assert_correct_undo_response(action, undo_response)
@@ -77,22 +74,14 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
         else:
             mock_rename.assert_not_called()
 
-        if type(action) is Edit:
-            mock_builtins_open.assert_called_once()
-            assert any(call[0] == "().write" for call in mock_builtins_open.mock_calls)
-        else:
-            mock_builtins_open.assert_not_called()
-
 
 def _assert_correct_undo_response(action: FileAction, undo_response: UndoResponse):
-    if type(action) is Delete or type(action) is Edit:
+    if type(action) is Delete:
         assert not undo_response.path_removed
     else:
         assert undo_response.path_removed
 
-    if type(action) is Edit or (
-        type(action) is Convert and not action.original_file_deleted
-    ):
+    if type(action) is Convert and not action.original_file_deleted:
         assert not undo_response.path_restored
     else:
         assert undo_response.path_restored

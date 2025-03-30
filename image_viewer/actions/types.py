@@ -38,17 +38,3 @@ class Delete(FileAction):
     """Represents a file being deleted and sent to the recylce bin"""
 
     __slots__ = ()
-
-
-class Edit(FileAction):
-    """Represent an image file being edited such that its path stays the same,
-    but the underlying image had its bytes altered"""
-
-    __slots__ = ("edit_performed", "original_bytes")
-
-    def __init__(
-        self, original_path: str, edit_performed: str, original_bytes: bytes
-    ) -> None:
-        super().__init__(original_path)
-        self.edit_performed: str = edit_performed
-        self.original_bytes: bytes = original_bytes

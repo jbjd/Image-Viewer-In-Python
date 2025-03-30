@@ -2,7 +2,7 @@ from tkinter import Canvas, Entry, Event, Tk
 from typing import Literal
 
 from constants import TEXT_RGB
-from ui.bases import UIElementBase
+from ui.base import UIElementBase
 
 
 class RenameEntry(Entry, UIElementBase):  # pylint: disable=too-many-ancestors

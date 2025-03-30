@@ -10,9 +10,9 @@ from PIL.ImageTk import PhotoImage
 from animation.frame import Frame
 from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
-from image.loader import ImageLoader, ReadImageResponse
-from image.resizer import ImageResizer
 from files.file_manager import ImageFileManager
+from image.loader import ImageLoader
+from image.resizer import ImageResizer
 from ui.button import HoverableButtonUIElement, ToggleableButtonUIElement
 from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
@@ -20,7 +20,7 @@ from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.image import ImageCache
 from util.os import open_with, show_info_popup
-from util.PIL import create_dropdown_image, image_is_animated, init_PIL
+from util.PIL import create_dropdown_image, init_PIL
 
 
 class ViewerApp:
@@ -254,7 +254,7 @@ class ViewerApp:
         right_mouse_held: bool = getattr(event, "state", 0) & 1024 == 1024
 
         if right_mouse_held:
-            self.load_zoomed_image_unblocking(
+            self.load_zoomed_or_rotated_image_unblocking(
                 ZoomDirection.IN if event.delta > 0 else ZoomDirection.OUT
             )
         else:
@@ -267,30 +267,15 @@ class ViewerApp:
 
         match event.keysym_num:
             case Key.LEFT:
-                angle = Rotation.LEFT
+                rotation = Rotation.LEFT
             case Key.RIGHT:
-                angle = Rotation.RIGHT
+                rotation = Rotation.RIGHT
+            case Key.DOWN:
+                rotation = Rotation.DOWN
             case _:
-                angle = Rotation.FLIP
+                rotation = Rotation.UP
 
-        self.image_loader.reset_and_setup()
-
-        path: str = self.file_manager.path_to_image
-        read_image_response: ReadImageResponse | None = self.image_loader.read_image(
-            path
-        )
-        if read_image_response is None:
-            return
-
-        image: Image = read_image_response.image
-        with image:
-            if image_is_animated(image):
-                return
-            try:
-                self.file_manager.rotate_image_and_save(image, angle)
-                self.load_image_unblocking()
-            except (FileNotFoundError, OSError):
-                pass
+        self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.NONE, rotation)
 
     def handle_canvas_click(self, _: Event) -> None:
         """Toggles the display of topbar when non-topbar area clicked"""
@@ -314,9 +299,9 @@ class ViewerApp:
                 case Key.LEFT | Key.RIGHT:
                     self.handle_lr_arrow(event)
                 case Key.EQUALS:
-                    self.load_zoomed_image_unblocking(ZoomDirection.IN)
+                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN)
                 case Key.MINUS:
-                    self.load_zoomed_image_unblocking(ZoomDirection.OUT)
+                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
@@ -375,20 +360,26 @@ class ViewerApp:
         if details is not None:
             show_info_popup(self.window_id, "Image Details", details)
 
-    def load_zoomed_image(self, direction: ZoomDirection) -> None:
+    def load_zoomed_or_rotated_image(
+        self, direction: ZoomDirection, rotation: Rotation | None
+    ) -> None:
         """Loads zoomed image and updates display"""
-        zoomed_image: Image | None = self.image_loader.get_zoomed_image(direction)
+        zoomed_image: Image | None = self.image_loader.get_zoomed_or_rotated_image(
+            direction, rotation
+        )
         if zoomed_image is not None:
             self._update_existing_image_display(zoomed_image)
 
         self._end_image_load()
 
-    def load_zoomed_image_unblocking(self, direction: ZoomDirection) -> None:
+    def load_zoomed_or_rotated_image_unblocking(
+        self, direction: ZoomDirection, rotation: Rotation | None = None
+    ) -> None:
         """Starts new thread for loading zoomed image"""
         if self._currently_animating():
             return
 
-        self._start_image_load(self.load_zoomed_image, direction)
+        self._start_image_load(self.load_zoomed_or_rotated_image, direction, rotation)
 
     # End functions handling specific user input
 

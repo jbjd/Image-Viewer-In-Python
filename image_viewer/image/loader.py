@@ -9,12 +9,13 @@ from PIL.Image import Image
 from PIL.Image import open as open_image
 
 from animation.frame import Frame
-from constants import ZoomDirection
+from constants import Rotation, ZoomDirection
 from image.resizer import ImageResizer
+from state.rotation_state import RotationState
 from state.zoom_state import ZoomState
 from util.image import ImageCache, ImageCacheEntry, magic_number_guess
 from util.os import get_byte_display
-from util.PIL import get_placeholder_for_errored_image
+from util.PIL import get_placeholder_for_errored_image, rotate_image
 
 
 class ReadImageResponse(namedtuple("_ReadImageResponse", ["image", "format"])):
@@ -30,6 +31,8 @@ class ImageLoader:
     DEFAULT_ANIMATION_SPEED: int = 100  # in milliseconds
 
     __slots__ = (
+        "_rotation_state",
+        "_zoom_state",
         "animation_frames",
         "animation_callback",
         "current_load_id",
@@ -37,7 +40,6 @@ class ImageLoader:
         "image_cache",
         "image_resizer",
         "PIL_image",
-        "zoom_state",
         "zoomed_image_cache",
     )
 
@@ -57,7 +59,8 @@ class ImageLoader:
 
         self.animation_frames: list[Frame | None] = []
         self.frame_index: int = 0
-        self.zoom_state = ZoomState()
+        self._rotation_state = RotationState()
+        self._zoom_state = ZoomState()
         self.zoomed_image_cache: list[Image] = []
 
     def get_next_frame(self) -> Frame | None:
@@ -161,14 +164,26 @@ class ImageLoader:
 
         return current_image
 
-    def get_zoomed_image(self, direction: ZoomDirection) -> Image | None:
-        """Handles getting and caching zoomed versions of the current image"""
-        if not self.zoom_state.try_update_zoom_level(direction):
+    # TODO: This was a messy join of zoom and rotation. It should be refactored
+    # For instance, its weird rotation can be passed as None while zoom can't
+    def get_zoomed_or_rotated_image(
+        self, direction: ZoomDirection, rotation: Rotation | None = None
+    ) -> Image | None:
+        """Gets current image with orientation changes like zoom and rotation"""
+        if not self._zoom_state.try_update_zoom_level(direction) and (
+            rotation is None or rotation == self._rotation_state.orientation
+        ):
             return None
 
-        zoom_level: int = self.zoom_state.level
+        if rotation is not None:
+            self._rotation_state.orientation = rotation
+            rotation_angle = rotation
+        else:
+            rotation_angle = self._rotation_state.orientation
+
+        zoom_level: int = self._zoom_state.level
         if zoom_level < len(self.zoomed_image_cache):
-            return self.zoomed_image_cache[zoom_level]
+            return rotate_image(self.zoomed_image_cache[zoom_level], rotation_angle)
 
         # Not in cache, resize to new zoom
         try:
@@ -176,15 +191,15 @@ class ImageLoader:
                 self.PIL_image, zoom_level
             )
             if hit_zoom_cap:
-                self.zoom_state.hit_cap()
+                self._zoom_state.hit_cap()
 
             self.zoomed_image_cache.append(zoomed_image)
 
-            return zoomed_image
+            return rotate_image(zoomed_image, rotation_angle)
         except ValueError:
             # TODO: Refactor ValueError case (image exceeds JPEG dimension max)
-            self.zoom_state.level -= 1
-            self.zoom_state.hit_cap()
+            self._zoom_state.level -= 1
+            self._zoom_state.hit_cap()
             return None
         except (FileNotFoundError, UnidentifiedImageError):
             pass
@@ -216,5 +231,6 @@ class ImageLoader:
         self.animation_frames = []
         self.frame_index = 0
         self.PIL_image.close()
-        self.zoom_state.reset()
+        self._rotation_state.reset()
+        self._zoom_state.reset()
         self.zoomed_image_cache = []

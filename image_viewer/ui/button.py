@@ -5,7 +5,7 @@ from typing import Callable
 from PIL.ImageTk import PhotoImage
 
 from constants import ButtonName
-from ui.bases import ButtonUIElementBase
+from ui.base import ButtonUIElementBase
 from ui.canvas import CustomCanvas
 
 

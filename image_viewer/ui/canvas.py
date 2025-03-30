@@ -3,7 +3,7 @@ from tkinter import Canvas, Event, Tk
 from PIL.ImageTk import PhotoImage
 
 from constants import TEXT_RGB, ButtonName, TkTags
-from ui.bases import ButtonUIElementBase
+from ui.base import ButtonUIElementBase
 from ui.image import ImageUIElement
 from util.os import maybe_truncate_long_name
 

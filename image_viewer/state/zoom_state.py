@@ -1,7 +1,8 @@
 from constants import ZoomDirection
+from state.base import StateBase
 
 
-class ZoomState:
+class ZoomState(StateBase):
     """Represents level of zoom and regulates maximum zoom"""
 
     ZOOM_CAP: int = 32

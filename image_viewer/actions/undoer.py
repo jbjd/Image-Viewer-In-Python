@@ -5,7 +5,7 @@ Classes representing actions and a class that handles undoing them
 import os
 from collections import deque, namedtuple
 
-from actions.types import Convert, Delete, Edit, FileAction, Rename
+from actions.types import Convert, Delete, FileAction, Rename
 from util.os import restore_from_bin, trash_file
 
 
@@ -50,12 +50,6 @@ class ActionUndoer(deque[FileAction]):
             restore_from_bin(action.original_path)
             return UndoResponse(action.original_path, "")
 
-        if type(action) is Edit:
-
-            with open(action.original_path, "wb") as fp:
-                fp.write(action.original_bytes)
-            return UndoResponse("", "")
-
         assert False  # Unreachable
 
     def get_undo_message(self) -> str:
@@ -74,7 +68,5 @@ class ActionUndoer(deque[FileAction]):
             return f"Delete {action.new_path}?"
         if type(action) is Delete:
             return f"Restore {action.original_path} from trash?"
-        if type(action) is Edit:
-            return f"Undo {action.edit_performed} on {action.original_path}?"
 
         assert False  # Unreachable

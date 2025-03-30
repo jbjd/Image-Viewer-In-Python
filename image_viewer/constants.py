@@ -18,24 +18,27 @@ class ImageFormats(StrEnum):
 class Key(IntEnum):
     """Keysym numbers for various keys"""
 
+    MINUS = 45
+    EQUALS = 61
     LEFT = 65361
     RIGHT = 65363
-    EQUALS = 61
-    MINUS = 45
+    DOWN = 65364
 
 
 class Rotation(IntEnum):
     """Denotes angle of rotation"""
 
+    UP = 0
     LEFT = 90
+    DOWN = 180
     RIGHT = 270
-    FLIP = 180
 
 
 class ZoomDirection(IntEnum):
     """Either up or down on the mouse wheel"""
 
     IN = 1
+    NONE = 0
     OUT = -1
 
 

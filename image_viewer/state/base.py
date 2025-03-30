@@ -1,0 +1,11 @@
+from abc import ABC, abstractmethod
+
+
+class StateBase(ABC):
+    """Base class for states"""
+
+    __slots__ = ()
+
+    @abstractmethod
+    def reset(self) -> None:
+        pass

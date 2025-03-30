@@ -1,17 +1,17 @@
 """Viewer is hard to test due to being all UI code, testing what I can here"""
 
 from tkinter import Tk
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from image_viewer.constants import Key
-from image_viewer.image.loader import ImageLoader
 from image_viewer.files.file_manager import ImageFileManager
+from image_viewer.image.loader import ImageLoader
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.util.image import ImageCache
 from image_viewer.viewer import ViewerApp
-from tests.test_util.mocks import MockEvent, MockImage
+from tests.test_util.mocks import MockEvent
 
 
 @pytest.fixture
@@ -113,7 +113,9 @@ def test_handle_key(
         viewer.handle_key(focused_event)
         mock_lr_arrow.assert_called_once()
 
-    with patch.object(ViewerApp, "load_zoomed_image_unblocking") as mock_zoom:
+    with patch.object(
+        ViewerApp, "load_zoomed_or_rotated_image_unblocking"
+    ) as mock_zoom:
         focused_event.keysym_num = Key.MINUS
         viewer.handle_key(focused_event)
         mock_zoom.assert_called_once()
@@ -158,40 +160,6 @@ def test_remove_image(viewer: ViewerApp):
         with patch.object(ViewerApp, "exit") as mock_exit:
             viewer.remove_current_image()
             mock_exit.assert_called_once()
-
-
-def test_handle_rotate_animated_image(viewer: ViewerApp):
-    """Should exit if animating. Should close the image if not currently animating,
-    but the underlying image itself is an animation"""
-    mock_event = MockEvent()
-
-    with (
-        patch.object(ViewerApp, "_currently_animating", lambda _: True),
-        patch.object(ImageLoader, "read_image") as mock_read_image,
-    ):
-        viewer.handle_rotate_image(mock_event)
-        mock_read_image.assert_not_called()
-
-    with (
-        patch.object(ImageLoader, "read_image", return_value=None) as mock_read_image,
-        patch.object(
-            ImageFileManager, "rotate_image_and_save"
-        ) as mock_rotate_image_and_save,
-    ):
-        viewer.handle_rotate_image(mock_event)
-        mock_read_image.assert_called_once()
-        mock_rotate_image_and_save.assert_not_called()
-
-    mock_image = MockImage(n_frames=3)
-    mock_image_response = MagicMock()
-    mock_image_response.image = mock_image
-
-    with patch.object(
-        ImageLoader, "read_image", return_value=mock_image_response
-    ) as mock_read_image:
-        viewer.handle_rotate_image(mock_event)
-        mock_read_image.assert_called_once()
-        assert mock_image.closed
 
 
 def test_minimize(viewer: ViewerApp):
