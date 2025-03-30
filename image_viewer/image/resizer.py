@@ -6,6 +6,9 @@ from turbojpeg import TJPF_RGB, TurboJPEG
 
 from util.PIL import resize
 
+JPEG_MAX_DIMENSION: Final[int] = 65_535
+MIN_ZOOM_RATIO_TO_SCREEN: int = 2
+
 
 class ImageResizer:
     """Handles resizing images to fit to the screen"""
@@ -53,7 +56,7 @@ class ImageResizer:
         )
 
         # TODO: Refactor handling of hitting JPEG limit of 65,535
-        if dimensions[0] > 65_535 or dimensions[1] > 65_535:
+        if dimensions[0] > JPEG_MAX_DIMENSION or dimensions[1] > JPEG_MAX_DIMENSION:
             raise ValueError
 
         max_zoom_hit: bool = self._too_zoomed_in(dimensions)
@@ -75,14 +78,11 @@ class ImageResizer:
         wh_ratio: int = 1 + max(width // height, height // width) // 6
         return (1.4**zoom_level) * wh_ratio
 
-    # TODO: ZOOM_MIN could be inherent within the dimension check
-    # Check for if dimensions are both 2x larger than screen
-    # This will also allow for all images to be zoomed at least 2x
     def _too_zoomed_in(self, dimensions: tuple[int, int]) -> bool:
         """Returns bool if new image dimensions would zoom in too much"""
         return (
-            dimensions[0] / 2 >= self.screen_width
-            and dimensions[1] / 2 >= self.screen_height
+            dimensions[0] >= self.screen_width * MIN_ZOOM_RATIO_TO_SCREEN
+            and dimensions[1] >= self.screen_height * MIN_ZOOM_RATIO_TO_SCREEN
         )
 
     @staticmethod
