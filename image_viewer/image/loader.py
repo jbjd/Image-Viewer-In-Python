@@ -177,13 +177,9 @@ class ImageLoader:
         ) and not self._rotation_state.try_update_state(rotation):
             return None
 
-        if rotation is not None:
-            self._rotation_state.orientation = rotation
-            rotation_angle = rotation
-        else:
-            rotation_angle = self._rotation_state.orientation
-
+        rotation_angle: int = self._rotation_state.orientation
         zoom_level: int = self._zoom_state.level
+
         if zoom_level < len(self.zoomed_image_cache):
             return rotate_image(self.zoomed_image_cache[zoom_level], rotation_angle)
 

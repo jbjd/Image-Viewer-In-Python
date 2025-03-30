@@ -3,7 +3,7 @@ from state.base import StateBase
 
 
 class RotationState(StateBase):
-    """Represents current rotation orientation of image"""
+    """Represents current rotation orientation of the image"""
 
     __slots__ = ("orientation",)
 

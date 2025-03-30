@@ -379,9 +379,6 @@ class ViewerApp:
         self, direction: ZoomDirection | None = None, rotation: Rotation | None = None
     ) -> None:
         """Starts new thread for loading zoomed image"""
-        if direction is None and rotation is None:
-            raise ValueError
-
         if self._currently_animating():
             return
 
