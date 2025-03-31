@@ -9,10 +9,10 @@ from typing import Iterable
 class FileDialogAsker:
     """Handles asking user file dialogs"""
 
-    __slots__ = ("dialog_file_types",)
+    __slots__ = ("_dialog_file_types",)
 
     def __init__(self, valid_file_types: Iterable[str]) -> None:
-        self.dialog_file_types = [
+        self._dialog_file_types = [
             ("", f"*.{file_type}") for file_type in valid_file_types
         ]
 
@@ -22,5 +22,5 @@ class FileDialogAsker:
         return askopenfilename(
             title="Open Image",
             initialdir=directory,
-            filetypes=self.dialog_file_types,
+            filetypes=self._dialog_file_types,
         )

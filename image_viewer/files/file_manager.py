@@ -67,8 +67,7 @@ class ImageFileManager:
 
         index: int
         found: bool
-        index, found = self._files.binary_search(choosen_file)
-        self._files.display_index = index
+        index, found = self._files.move_index_to_image(choosen_file)
         if not found:
             self.add_new_image(choosen_file, index=index)
         else:
@@ -308,7 +307,7 @@ class ImageFileManager:
         preserve_index: try to keep index at the same image it was before adding"""
         image_name: ImageName = ImageName(new_name)
         if index < 0:
-            index, _ = self._files.binary_search(image_name.name)
+            index, _ = self._files.get_index_of_image(image_name.name)
 
         self._files.insert(index, image_name)
         if preserve_index and index <= self._files.display_index:
@@ -334,7 +333,7 @@ class ImageFileManager:
         if image_to_remove != "":
             index: int
             found: bool
-            index, found = self._files.binary_search(image_to_remove)
+            index, found = self._files.get_index_of_image(image_to_remove)
             if found:
                 self.remove_image(index)
 

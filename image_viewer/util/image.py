@@ -2,7 +2,7 @@
 Contains classes and functions to help with storing and reading images
 """
 
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from os import stat
 from typing import Iterable
 
@@ -98,59 +98,77 @@ class ImageName:
         return OS_name_cmp(self.name, other.name)
 
 
+# TODO: Break ImageNameList into its own file
+class ImageSearchResult(namedtuple("ImageSearchResult", ["index", "found"])):
+    """Represents a search such that index is where the image is or would be inserted
+    and found is True when a match was found"""
+
+    index: int
+    found: bool
+
+
 class ImageNameList(list[ImageName]):
     """Represents list of ImageName objects with extension methods"""
 
-    __slots__ = ("display_index",)
+    __slots__ = ("_display_index",)
 
     def __init__(self, iterable: Iterable[ImageName]) -> None:
         super().__init__(iterable)
-        self.display_index: int = 0
+        self._display_index: int = 0
+
+    @property
+    def display_index(self) -> int:
+        return self._display_index
 
     def get_current_image(self) -> ImageName:
-        return self[self.display_index]
+        return self[self._display_index]
 
     def get_current_image_name(self) -> str:
-        return self[self.display_index].name
+        return self[self._display_index].name
 
     def move_index(self, amount: int) -> None:
         """Moves display_index by the provided amount with wraparound"""
         image_count: int = len(self)
         if image_count > 0:
-            self.display_index = (self.display_index + amount) % len(self)
+            self._display_index = (self._display_index + amount) % len(self)
 
     def sort_and_preserve_index(self, image_to_start_at: str) -> None:
         """Sorts and keeps index at the same image"""
         super().sort()
-        self.display_index, _ = self.binary_search(image_to_start_at)
+        self._display_index, _ = self.get_index_of_image(image_to_start_at)
 
     def remove_current_image(self) -> None:
         """Safely removes current index"""
         try:
-            super().pop(self.display_index)
+            super().pop(self._display_index)
         except IndexError:
             pass
 
         image_count: int = len(self)
 
-        if self.display_index >= image_count:
-            self.display_index = image_count - 1
+        if self._display_index >= image_count:
+            self._display_index = image_count - 1
 
-    def binary_search(self, target_image: str) -> tuple[int, bool]:
+    def get_index_of_image(self, target_image: str) -> ImageSearchResult:
         """Finds index of target_image.
-        Returns tuple of index and if match was found"""
+        If no match found, index returned is where image would be inserted."""
         low: int = 0
         high: int = len(self) - 1
         while low <= high:
             mid: int = (low + high) >> 1
             current_image = self[mid].name
             if target_image == current_image:
-                return mid, True
+                return ImageSearchResult(index=mid, found=True)
             if OS_name_cmp(target_image, current_image):
                 high = mid - 1
             else:
                 low = mid + 1
-        return low, False
+        return ImageSearchResult(index=low, found=False)
+
+    def move_index_to_image(self, target_image: str) -> ImageSearchResult:
+        search_response: ImageSearchResult = self.get_index_of_image(target_image)
+        self._display_index = search_response.index
+        return search_response
 
 
 def magic_number_guess(magic: bytes) -> str:

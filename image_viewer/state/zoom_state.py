@@ -16,7 +16,7 @@ class ZoomState(StateBase):
     def reset(self) -> None:
         """Resets zoom level"""
         self.level = 0
-        self._max_level: int = self.ZOOM_CAP
+        self._max_level = self.ZOOM_CAP
 
     def try_update_zoom_level(self, direction: ZoomDirection | None) -> bool:
         """Tries to zoom in or out. Returns True when zoom level changed"""

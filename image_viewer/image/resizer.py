@@ -11,7 +11,10 @@ JPEG_MAX_DIMENSION: Final[int] = 65_535
 MIN_ZOOM_RATIO_TO_SCREEN: int = 2
 
 
-class ZoomedImageResponse(namedtuple("ZoomedImageResponse", ["image", "status"])):
+class ZoomedImageResult(namedtuple("ZoomedImageResult", ["image", "status"])):
+    """Represents the result of zoom into an image where
+    hit_max_zoom is True when this is the max zoom that is allowed"""
+
     image: Image
     hit_max_zoom: bool
 
@@ -42,9 +45,8 @@ class ImageResizer:
 
         self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
-    def get_zoomed_image(self, image: Image, zoom_level: int) -> ZoomedImageResponse:
-        """Resizes image using the provided zoom_level. Returns response with
-        resized image and bool if the image is currently at the max zoom
+    def get_zoomed_image(self, image: Image, zoom_level: int) -> ZoomedImageResult:
+        """Resizes image using the provided zoom_level.
 
         Raises ValueError if resized image would exceed JPEG size max"""
         image_width, image_height = image.size
@@ -76,9 +78,7 @@ class ImageResizer:
                     image_width, image_height
                 )
 
-        return ZoomedImageResponse(
-            resize(image, dimensions, interpolation), hit_max_zoom
-        )
+        return ZoomedImageResult(resize(image, dimensions, interpolation), hit_max_zoom)
 
     def _calculate_zoom_factor(self, width: int, height: int, zoom_level: int) -> float:
         """Calculates zoom factor based on zoom level and w/h ratio"""
