@@ -3,18 +3,21 @@ Classes representing actions and a class that handles undoing them
 """
 
 import os
-from collections import deque, namedtuple
+from collections import deque
 
 from actions.types import Convert, Delete, FileAction, Rename
 from util.os import restore_from_bin, trash_file
 
 
-class UndoResponse(namedtuple("UndoResponse", ["path_restored", "path_removed"])):
+class UndoResponse:
     """Response when a file action in undone, contains what paths have been edited
     so caller can deal with determining if display needs updating"""
 
-    path_restored: str
-    path_removed: str
+    __slots__ = ("path_to_restore", "path_to_remove")
+
+    def __init__(self, path_to_restore: str, path_to_remove: str) -> None:
+        self.path_to_restore: str = path_to_restore
+        self.path_to_remove: str = path_to_remove
 
 
 class ActionUndoer(deque[FileAction]):

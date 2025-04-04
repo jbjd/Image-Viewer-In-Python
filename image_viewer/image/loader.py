@@ -1,4 +1,3 @@
-from collections import namedtuple
 from collections.abc import Callable
 from io import BytesIO
 from os import stat
@@ -10,7 +9,7 @@ from PIL.Image import open as open_image
 
 from animation.frame import Frame
 from constants import Rotation, ZoomDirection
-from image.resizer import ImageResizer
+from image.resizer import ImageResizer, ZoomedImageResult
 from state.rotation_state import RotationState
 from state.zoom_state import ZoomState
 from util.image import ImageCache, ImageCacheEntry, magic_number_guess
@@ -18,11 +17,14 @@ from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image, rotate_image
 
 
-class ReadImageResponse(namedtuple("_ReadImageResponse", ["image", "format"])):
+class ReadImageResponse:
     """Response when reading an image from disk"""
 
-    image: Image
-    format: str
+    __slots__ = ("image", "format")
+
+    def __init__(self, image: Image, format: str) -> None:
+        self.image: Image = image
+        self.format: str = format
 
 
 class ImageLoader:
@@ -184,11 +186,9 @@ class ImageLoader:
             return rotate_image(self.zoomed_image_cache[zoom_level], rotation_angle)
 
         # Not in cache, resize to new zoom
-        zoomed_image: Image
-        hit_max_zoom: bool
         try:
-            zoomed_image, hit_max_zoom = self.image_resizer.get_zoomed_image(
-                self.PIL_image, zoom_level
+            zoomed_image_result: ZoomedImageResult = (
+                self.image_resizer.get_zoomed_image(self.PIL_image, zoom_level)
             )
         except (FileNotFoundError, UnidentifiedImageError, ValueError) as e:
             if isinstance(e, ValueError):
@@ -196,11 +196,11 @@ class ImageLoader:
                 self._zoom_state.set_current_zoom_level_as_max()
             return None
 
-        if hit_max_zoom:
+        if zoomed_image_result.hit_max_zoom:
             self._zoom_state.set_current_zoom_level_as_max()
 
-        self.zoomed_image_cache.append(zoomed_image)
-        return rotate_image(zoomed_image, rotation_angle)
+        self.zoomed_image_cache.append(zoomed_image_result.image)
+        return rotate_image(zoomed_image_result.image, rotation_angle)
 
     def load_remaining_frames(
         self, original_image: Image, last_frame: int, load_id: int

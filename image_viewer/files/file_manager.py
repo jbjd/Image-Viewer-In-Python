@@ -6,7 +6,7 @@ from tkinter.messagebox import askyesno
 from PIL.Image import Image
 
 from actions.types import Convert, Delete, Rename
-from actions.undoer import ActionUndoer
+from actions.undoer import ActionUndoer, UndoResponse
 from constants import VALID_FILE_TYPES
 from files.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
@@ -320,15 +320,13 @@ class ImageFileManager:
         if not self._ask_to_confirm_undo():
             return False
 
-        image_to_add_path: str
-        image_to_remove_path: str
         try:
-            image_to_add_path, image_to_remove_path = self.action_undoer.undo()
+            undo_response: UndoResponse = self.action_undoer.undo()
         except OSError:
             return False  # TODO: error popup?
 
-        image_to_add: str = os.path.basename(image_to_add_path)
-        image_to_remove: str = os.path.basename(image_to_remove_path)
+        image_to_add: str = os.path.basename(undo_response.path_to_restore)
+        image_to_remove: str = os.path.basename(undo_response.path_to_remove)
 
         if image_to_remove != "":
             index: int

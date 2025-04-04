@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 from typing import Final
 
 from PIL.Image import Image, Resampling, fromarray
@@ -11,12 +10,15 @@ JPEG_MAX_DIMENSION: Final[int] = 65_535
 MIN_ZOOM_RATIO_TO_SCREEN: int = 2
 
 
-class ZoomedImageResult(namedtuple("ZoomedImageResult", ["image", "status"])):
+class ZoomedImageResult:
     """Represents the result of zoom into an image where
     hit_max_zoom is True when this is the max zoom that is allowed"""
 
-    image: Image
-    hit_max_zoom: bool
+    __slots__ = ("image", "hit_max_zoom")
+
+    def __init__(self, image: Image, hit_max_zoom: bool) -> None:
+        self.image: Image = image
+        self.hit_max_zoom: bool = hit_max_zoom
 
 
 class ImageResizer:
