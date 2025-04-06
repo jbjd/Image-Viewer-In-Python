@@ -91,10 +91,10 @@ def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
             "_calculate_zoom_factor",
             return_value=2.25,
         ):
-            _, hit_cap = image_resizer.get_zoomed_image(image, 2)
-            assert hit_cap
+            zoomed_result = image_resizer.get_zoomed_image(image, 2)
+            assert zoomed_result.hit_max_zoom
 
             # With a smaller image, the same zoom factor should not hit cap
             image = new_image("RGB", (800, 1080))
-            _, hit_cap = image_resizer.get_zoomed_image(image, 2)
-            assert not hit_cap
+            zoomed_result = image_resizer.get_zoomed_image(image, 2)
+            assert not zoomed_result.hit_max_zoom
