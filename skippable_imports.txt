@@ -18,6 +18,7 @@ numpy._core.cversions
 numpy._core.defchararray
 numpy._core.einsumfunc
 numpy._core.memmap
+numpy._core.strings
 numpy._core.tests
 numpy._distributor_init
 numpy._expired_attrs_2_0
@@ -37,6 +38,7 @@ numpy.f2py
 numpy.fft
 numpy.lib._array_utils_impl
 numpy.lib._arraypad_impl
+numpy.lib._arraysetops_impl
 numpy.lib._datasource
 numpy.lib._histograms_impl
 numpy.lib._iotools
