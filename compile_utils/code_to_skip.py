@@ -172,13 +172,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_fill_diagonal_dispatcher",
         "_ix__dispatcher",
     },
-    "numpy.lib._histograms_impl": {
-        "_histogram_bin_edges_dispatcher",
-        "_histogram_dispatcher",
-        "_histogramdd_dispatcher",
-        "histogram_bin_edges",
-        "histogramdd",
-    },
     "numpy.lib._nanfunctions_impl": {
         "_nanargmax_dispatcher",
         "_nanargmin_dispatcher",
@@ -529,7 +522,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._arraysetops_impl": {"array_function_dispatch"},
     "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
-    "numpy.lib._histograms_impl": {"array_function_dispatch"},
     "numpy.lib._index_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._nanfunctions_impl": {"array_function_dispatch"},
     "numpy.lib._shape_base_impl": {"array_function_dispatch", "set_module"},
