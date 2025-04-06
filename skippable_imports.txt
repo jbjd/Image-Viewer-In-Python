@@ -39,6 +39,7 @@ numpy.fft
 numpy.lib._array_utils_impl
 numpy.lib._arraypad_impl
 numpy.lib._arraysetops_impl
+numpy.lib._arrayterator_impl
 numpy.lib._datasource
 numpy.lib._histograms_impl
 numpy.lib._iotools

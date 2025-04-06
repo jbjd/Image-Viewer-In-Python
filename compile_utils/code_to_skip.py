@@ -388,6 +388,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "numpy._core.records": {"__module__", "numfmt"},
+    "numpy.lib.__init__": {"__all__"},
     "numpy.lib._shape_base_impl": {"__doc__"},
     "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
@@ -476,6 +477,7 @@ _skip_from_imports: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec"},
     "numpy._core.records": {"_get_legacy_print_mode"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
+    "numpy.lib.__init__": {"Arrayterator"},
     "numpy.lib._function_base_impl": {"histogram", "histogramdd"},
     "numpy.lib._shape_base_impl": {"_arrays_for_stack_dispatcher"},
     "numpy.lib._stride_tricks_impl": {
