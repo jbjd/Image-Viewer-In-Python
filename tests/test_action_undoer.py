@@ -77,11 +77,11 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
 
 def _assert_correct_undo_response(action: FileAction, undo_response: UndoResponse):
     if type(action) is Delete:
-        assert not undo_response.path_removed
+        assert not undo_response.path_to_remove
     else:
-        assert undo_response.path_removed
+        assert undo_response.path_to_remove
 
     if type(action) is Convert and not action.original_file_deleted:
-        assert not undo_response.path_restored
+        assert not undo_response.path_to_restore
     else:
-        assert undo_response.path_restored
+        assert undo_response.path_to_restore
