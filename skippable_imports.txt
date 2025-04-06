@@ -132,6 +132,7 @@ PIL.ImagePath
 PIL.ImageQt
 PIL.ImageShow
 PIL.ImageStat
+PIL.ImageTransform
 PIL.ImageWin
 PIL.TarIO
 PIL.report
