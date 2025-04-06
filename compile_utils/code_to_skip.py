@@ -151,21 +151,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_fill_diagonal_dispatcher",
         "_ix__dispatcher",
     },
-    "numpy.lib._shape_base_impl": {
-        "_apply_along_axis_dispatcher",
-        "_apply_over_axes_dispatcher",
-        "_array_split_dispatcher",
-        "_column_stack_dispatcher",
-        "_dstack_dispatcher",
-        "_expand_dims_dispatcher",
-        "_hvdsplit_dispatcher",
-        "_kron_dispatcher",
-        "_put_along_axis_dispatcher",
-        "_replace_zero_by_x_arrays",
-        "_split_dispatcher",
-        "_take_along_axis_dispatcher",
-        "_tile_dispatcher",
-    },
     "numpy.lib._stride_tricks_impl": {
         "_broadcast_arrays_dispatcher",
         "_broadcast_to_dispatcher",
@@ -373,7 +358,6 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "numpy._core.records": {"__module__", "numfmt"},
     "numpy.lib.__init__": {"__all__"},
-    "numpy.lib._shape_base_impl": {"__doc__"},
     "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
         "__author__",
@@ -463,7 +447,6 @@ _skip_from_imports: dict[str, set[str]] = {
     "numpy._core.umath": {"_add_newdoc_ufunc"},
     "numpy.lib.__init__": {"Arrayterator"},
     "numpy.lib._function_base_impl": {"histogram", "histogramdd"},
-    "numpy.lib._shape_base_impl": {"_arrays_for_stack_dispatcher"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
@@ -503,7 +486,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._index_tricks_impl": {"array_function_dispatch", "set_module"},
-    "numpy.lib._shape_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._twodim_base_impl": {
         "array_function_dispatch",
@@ -577,7 +559,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(

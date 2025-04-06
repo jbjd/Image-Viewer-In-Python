@@ -47,6 +47,7 @@ numpy.lib._nanfunctions_impl
 numpy.lib._npyio_impl
 numpy.lib._polynomial_impl
 numpy.lib._scimath_impl
+numpy.lib._shape_base_impl
 numpy.lib._user_array_impl
 numpy.lib._utils_impl
 numpy.lib._version
