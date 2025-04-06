@@ -166,14 +166,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_vander_dispatcher",
         "histogram2d",
     },
-    "numpy.lib._type_check_impl": {
-        "_common_type_dispatcher",
-        "_imag_dispatcher",
-        "_is_type_dispatcher",
-        "_nan_to_num_dispatcher",
-        "_real_dispatcher",
-        "_real_if_close_dispatcher",
-    },
     "numpy.lib._ufunclike_impl": {"_dispatcher", "fix"},
     "numpy.linalg._linalg": {
         "_cond_dispatcher",
@@ -453,7 +445,6 @@ _skip_from_imports: dict[str, set[str]] = {
         "set_module",
     },
     "numpy.lib._twodim_base_impl": {"finalize_array_function_like", "set_module"},
-    "numpy.lib._type_check_impl": {"set_module"},
     "numpy.lib._ufunclike_impl": {"array_function_dispatch"},
     "numpy.lib.stride_tricks": {"__doc__", "sliding_window_view"},
     "numpy.linalg.__init__": {"linalg"},
@@ -492,7 +483,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
         "finalize_array_function_like",
         "set_module",
     },
-    "numpy.lib._type_check_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._ufunclike_impl": {"array_function_dispatch"},
     "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
     "numpy.matrixlib.defmatrix": {"set_module"},
@@ -559,7 +549,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
