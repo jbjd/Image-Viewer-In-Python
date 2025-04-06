@@ -43,6 +43,7 @@ numpy.lib._arrayterator_impl
 numpy.lib._datasource
 numpy.lib._histograms_impl
 numpy.lib._iotools
+numpy.lib._nanfunctions_impl
 numpy.lib._npyio_impl
 numpy.lib._polynomial_impl
 numpy.lib._scimath_impl

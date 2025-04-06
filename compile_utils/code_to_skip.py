@@ -151,22 +151,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_fill_diagonal_dispatcher",
         "_ix__dispatcher",
     },
-    "numpy.lib._nanfunctions_impl": {
-        "_nanargmax_dispatcher",
-        "_nanargmin_dispatcher",
-        "_nancumprod_dispatcher",
-        "_nancumsum_dispatcher",
-        "_nanmax_dispatcher",
-        "_nanmean_dispatcher",
-        "_nanmedian_dispatcher",
-        "_nanmin_dispatcher",
-        "_nanpercentile_dispatcher",
-        "_nanprod_dispatcher",
-        "_nanquantile_dispatcher",
-        "_nanstd_dispatcher",
-        "_nansum_dispatcher",
-        "_nanvar_dispatcher",
-    },
     "numpy.lib._shape_base_impl": {
         "_apply_along_axis_dispatcher",
         "_apply_over_axes_dispatcher",
@@ -519,7 +503,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._index_tricks_impl": {"array_function_dispatch", "set_module"},
-    "numpy.lib._nanfunctions_impl": {"array_function_dispatch"},
     "numpy.lib._shape_base_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._twodim_base_impl": {
@@ -594,7 +577,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
