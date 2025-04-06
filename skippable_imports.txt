@@ -38,6 +38,7 @@ numpy.fft
 numpy.lib._array_utils_impl
 numpy.lib._arraypad_impl
 numpy.lib._datasource
+numpy.lib._iotools
 numpy.lib._npyio_impl
 numpy.lib._polynomial_impl
 numpy.lib._scimath_impl
