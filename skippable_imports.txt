@@ -41,7 +41,9 @@ numpy.lib._arraypad_impl
 numpy.lib._arraysetops_impl
 numpy.lib._arrayterator_impl
 numpy.lib._datasource
+numpy.lib._function_base_impl
 numpy.lib._histograms_impl
+numpy.lib._index_tricks_impl
 numpy.lib._iotools
 numpy.lib._nanfunctions_impl
 numpy.lib._npyio_impl

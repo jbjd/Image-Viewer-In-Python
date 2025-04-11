@@ -546,7 +546,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_function_base_impl|_index_tricks_impl|_npyio_impl|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
