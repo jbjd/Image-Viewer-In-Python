@@ -118,39 +118,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_vhstack_dispatcher",
     },
     "numpy._globals": {"__repr__"},
-    "numpy.lib._function_base_impl": {
-        "_angle_dispatcher",
-        "_append_dispatcher",
-        "_average_dispatcher",
-        "_copy_dispatcher",
-        "_corrcoef_dispatcher",
-        "_cov_dispatcher",
-        "_delete_dispatcher",
-        "_diff_dispatcher",
-        "_digitize_dispatcher",
-        "_extract_dispatcher",
-        "_flip_dispatcher",
-        "_gradient_dispatcher",
-        "_i0_dispatcher",
-        "_insert_dispatcher",
-        "_interp_dispatcher",
-        "_median_dispatcher",
-        "_meshgrid_dispatcher",
-        "_percentile_dispatcher",
-        "_piecewise_dispatcher",
-        "_place_dispatcher",
-        "_quantile_dispatcher",
-        "_rot90_dispatcher",
-        "_select_dispatcher",
-        "_sinc_dispatcher",
-        "_trapezoid_dispatcher",
-        "_unwrap_dispatcher",
-    },
-    "numpy.lib._index_tricks_impl": {
-        "_diag_indices_from",
-        "_fill_diagonal_dispatcher",
-        "_ix__dispatcher",
-    },
     "numpy.lib._stride_tricks_impl": {
         "_broadcast_arrays_dispatcher",
         "_broadcast_to_dispatcher",
@@ -382,8 +349,6 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "ui.base": {"ABC"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "numpy.lib._function_base_impl": {"vectorize"},
-    "numpy.lib._index_tricks_impl": {"ndenumerate"},
     "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
@@ -437,7 +402,6 @@ _skip_from_imports: dict[str, set[str]] = {
     "numpy._core.records": {"_get_legacy_print_mode"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
     "numpy.lib.__init__": {"Arrayterator"},
-    "numpy.lib._function_base_impl": {"histogram", "histogramdd"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
@@ -473,8 +437,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.numerictypes": {"set_module"},
     "numpy._core.records": {"set_module"},
     "numpy._core.shape_base": {"array_function_dispatch"},
-    "numpy.lib._function_base_impl": {"array_function_dispatch", "set_module"},
-    "numpy.lib._index_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "numpy.lib._twodim_base_impl": {
         "array_function_dispatch",
@@ -546,7 +508,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_npyio_impl|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_function_base_impl|_index_tricks_impl|_npyio_impl|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
                 flags=re.DOTALL,
             ),
             RegexReplacement(
