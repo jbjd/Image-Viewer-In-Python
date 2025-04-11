@@ -16,8 +16,8 @@ from util.os import get_normalized_dir_name, trash_file, walk_dir
 
 class _ShouldPreserveIndex(Enum):
     NO = 1
-    IF_INSERTED_AT_OR_BEFORE = 1
-    YES = 2
+    IF_INSERTED_AT_OR_BEFORE = 2
+    YES = 3
 
 
 class ImageFileManager:
