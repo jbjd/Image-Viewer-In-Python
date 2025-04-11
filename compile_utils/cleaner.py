@@ -8,16 +8,23 @@ from glob import glob
 from re import sub
 from shutil import copyfile
 
-from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
-from personal_python_minifier.flake_wrapper import run_autoflake
-from personal_python_minifier.parser import parse_source_to_module_node
-from personal_python_minifier.parser.config import (
+
+from personal_python_syntax_optimizer.slots.adder import add_slots
+from personal_python_syntax_optimizer.factories.minifier_factory import (
+    ExclusionMinifierFactory,
+)
+from personal_python_syntax_optimizer.flake_wrapper import run_autoflake
+from personal_python_syntax_optimizer.parser import parse_source_to_module_node
+from personal_python_syntax_optimizer.parser.config import (
     SectionsToSkipConfig,
     TokensToSkipConfig,
 )
-from personal_python_minifier.parser.minifier import MinifyUnparser
-from personal_python_minifier.regex import RegexReplacement
-from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_file
+from personal_python_syntax_optimizer.parser.minifier import MinifyUnparser
+from personal_python_syntax_optimizer.regex import RegexReplacement
+from personal_python_syntax_optimizer.regex.apply import (
+    apply_regex,
+    apply_regex_to_file,
+)
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
@@ -90,7 +97,13 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
             variables=vars_to_skip[module_name],
         ),
     )
-    source = code_cleaner.visit(parse_source_to_module_node(source))
+    module_ast = parse_source_to_module_node(source)
+
+    # Have to exclude modules that do weird things like assigning to class vars
+    if module_name not in ("PIL.Image"):
+        module_ast = add_slots(module_ast)
+
+    source = code_cleaner.visit(module_ast)
 
     edit_imports: bool = module_name[:5] != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)
