@@ -8,6 +8,8 @@ from typing import Final
 
 
 class ImageFormats(StrEnum):
+    """Image format strings that this app supports"""
+
     DDS = "DDS"
     GIF = "GIF"
     JPEG = "JPEG"
@@ -61,7 +63,9 @@ class ButtonName(StrEnum):
 class DefaultKeybinds(StrEnum):
     """Defaults for keybinds that config.ini can override"""
 
+    MOVE_TO_NEW_FILE = "<Control-m>"
     SHOW_DETAILS = "<Control-d>"
+    UNDO_MOST_RECENT_ACTION = "<Control-z>"
 
 
 VALID_FILE_TYPES: set[str] = {

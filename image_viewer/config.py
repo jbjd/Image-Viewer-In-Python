@@ -32,18 +32,28 @@ class Config:
             self.max_items_in_cache = DEFAULT_MAX_ITEMS_IN_CACHE
 
         self.keybinds = KeybindConfig(
-            config_parser.get("KEYBINDS", "SHOW_DETAILS", fallback="")
+            config_parser.get("KEYBINDS", "MOVE_TO_NEW_FILE", fallback=""),
+            config_parser.get("KEYBINDS", "SHOW_DETAILS", fallback=""),
+            config_parser.get("KEYBINDS", "UNDO_MOST_RECENT_ACTION", fallback=""),
         )
 
 
 class KeybindConfig:
     """Contains configurable tkinter keybinds"""
 
-    __slots__ = ("show_details",)
+    __slots__ = ("move_to_new_file", "show_details", "undo_most_recent_action")
 
-    def __init__(self, show_details: str) -> None:
-        self.show_details = validate_or_default(
+    def __init__(
+        self, move_to_new_file: str, show_details: str, undo_most_recent_action: str
+    ) -> None:
+        self.move_to_new_file: str = validate_or_default(
+            move_to_new_file, DefaultKeybinds.MOVE_TO_NEW_FILE
+        )
+        self.show_details: str = validate_or_default(
             show_details, DefaultKeybinds.SHOW_DETAILS
+        )
+        self.undo_most_recent_action: str = validate_or_default(
+            undo_most_recent_action, DefaultKeybinds.UNDO_MOST_RECENT_ACTION
         )
 
 

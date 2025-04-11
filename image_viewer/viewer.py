@@ -134,8 +134,8 @@ class ViewerApp:
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
         app.bind(config.keybinds.show_details, self.show_details_popup)
-        app.bind("<Control-m>", self.move_to_new_file)
-        app.bind("<Control-z>", self.undo_most_recent_action)
+        app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
+        app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind(
             "<r>",
