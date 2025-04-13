@@ -6,8 +6,13 @@ import pytest
 
 from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
-from image_viewer.files.file_manager import ImageFileManager
-from image_viewer.util.image import ImageCache, ImageCacheEntry
+from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
+from image_viewer.util.image import (
+    ImageCache,
+    ImageCacheEntry,
+    ImageName,
+    ImageNameList,
+)
 from tests.conftest import IMG_DIR
 from tests.test_util.exception import safe_wrapper
 from tests.test_util.mocks import MockImage, MockStatResult
@@ -18,6 +23,15 @@ def manager(image_cache: ImageCache) -> ImageFileManager:
     return ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
 
 
+@pytest.fixture
+def manager_with_3_images(image_cache: ImageCache) -> ImageFileManager:
+    manager = ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
+    manager._files = ImageNameList(
+        [ImageName(name) for name in ["a.png", "c.jpb", "e.webp"]]
+    )
+    return manager
+
+
 def test_image_file_manager(manager: ImageFileManager):
     """Test various functions of the file manager with empty image files"""
     assert len(manager._files) == 1
@@ -26,7 +40,7 @@ def test_image_file_manager(manager: ImageFileManager):
     assert len(manager._files) == 4
     assert manager._files.get_index_of_image("a.png") == (0, True)
 
-    manager.add_new_image("y.jpeg", False)
+    manager.add_new_image("y.jpeg", _ShouldPreserveIndex.NO)
     assert len(manager._files) == 5
 
     # Should not try to rename/convert when file with that name already exists
@@ -93,7 +107,7 @@ def test_delete_file(manager: ImageFileManager):
     """Tests deleting a file from disk via file manager"""
 
     # add one extra image so it doesn't error after removing the only file
-    manager.add_new_image("Some_image.png", False)
+    manager.add_new_image("Some_image.png", _ShouldPreserveIndex.NO)
 
     tempfile._TemporaryFileWrapper.close = safe_wrapper(  # type: ignore
         tempfile._TemporaryFileWrapper.close
@@ -105,16 +119,32 @@ def test_delete_file(manager: ImageFileManager):
         assert len(manager._files) == 1
 
 
-def test_smart_adjust(manager: ImageFileManager):
-    """Should stay on current image when smart_adjust=True"""
+@pytest.mark.parametrize(
+    "starting_display_index,preserve_index,insertion_index,expected_display_index",
+    [
+        (1, _ShouldPreserveIndex.NO, 1, 1),
+        (1, _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE, 1, 2),
+        (1, _ShouldPreserveIndex.YES, 1, 2),
+        (2, _ShouldPreserveIndex.NO, 3, 2),
+        (2, _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE, 3, 2),
+        (2, _ShouldPreserveIndex.YES, 3, 3),
+    ],
+)
+def test_add_new_image_adjusts_index(
+    manager_with_3_images: ImageFileManager,
+    starting_display_index: int,
+    preserve_index: _ShouldPreserveIndex,
+    insertion_index: int,
+    expected_display_index: int,
+):
+    """Should stay on current image by moving one forward
+    when respective preserve_index value passed"""
 
-    # smart adjust should not kick in
-    manager.add_new_image("zzz.png", True)
-    assert manager._files.display_index == 0
-
-    # smart adjust should move index
-    manager.add_new_image("a.jpg", True)
-    assert manager._files.display_index == 1
+    manager_with_3_images._files._display_index = starting_display_index
+    manager_with_3_images.add_new_image(
+        "test.png", preserve_index=preserve_index, index=insertion_index
+    )
+    assert manager_with_3_images._files.display_index == expected_display_index
 
 
 def test_undo(manager: ImageFileManager):

@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from os import stat_result
 from time import ctime
 from tkinter.messagebox import askyesno
@@ -12,6 +13,12 @@ from files.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import get_normalized_dir_name, trash_file, walk_dir
+
+
+class _ShouldPreserveIndex(Enum):
+    NO = 1
+    IF_INSERTED_AT_OR_BEFORE = 2
+    YES = 3
 
 
 class ImageFileManager:
@@ -207,6 +214,11 @@ class ImageFileManager:
         original_path: str = self.path_to_image
         new_path: str = self._construct_path_for_rename(new_dir, new_image_name.name)
 
+        # if so, we will need to handle moving forward one index due to how future code
+        # removes then adds the image back which will leave one image to the left of
+        # the original image after a rename/convert
+        was_at_last_index: bool = self._files.display_index == len(self._files) - 1
+
         result: Rename
         if (
             new_image_name.suffix != self.current_image.suffix
@@ -226,7 +238,16 @@ class ImageFileManager:
 
         # Only add image if its still in the directory we are currently in
         if get_normalized_dir_name(new_path) == get_normalized_dir_name(original_path):
-            preserve_index: bool = self._should_perserve_index(result)
+            preserve_index: _ShouldPreserveIndex = (
+                _ShouldPreserveIndex.YES
+                if was_at_last_index
+                else (
+                    _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE
+                    if self._should_perserve_index_on_rename(result)
+                    else _ShouldPreserveIndex.NO
+                )
+            )
+
             self.add_new_image(new_name, preserve_index)
         else:
             self._update_after_move_or_edit()
@@ -292,7 +313,7 @@ class ImageFileManager:
         return Rename(original_path, new_path)
 
     @staticmethod
-    def _should_perserve_index(result: Rename) -> bool:
+    def _should_perserve_index_on_rename(result: Rename) -> bool:
         """Returns True when image list shifted or changed size so internal index
         needs to be changed to keep on the same image"""
         if isinstance(result, Convert):
@@ -301,17 +322,25 @@ class ImageFileManager:
         return False
 
     def add_new_image(
-        self, new_name: str, preserve_index: bool = False, index: int = -1
+        self,
+        new_name: str,
+        preserve_index: _ShouldPreserveIndex = _ShouldPreserveIndex.NO,
+        index: int = -1,
     ) -> None:
         """Adds a new image to the image list
-        preserve_index: try to keep index at the same image it was before adding"""
+        preserve_index: try to keep index at the same image it was before adding
+        index: where the image is inserted if provided"""
         image_name: ImageName = ImageName(new_name)
         if index < 0:
             index, _ = self._files.get_index_of_image(image_name.name)
 
         self._files.insert(index, image_name)
-        if preserve_index and index <= self._files.display_index:
+        if preserve_index == _ShouldPreserveIndex.YES or (
+            preserve_index == _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE
+            and index <= self._files.display_index
+        ):
             self._files.move_index(1)
+
         self._update_after_move_or_edit()
 
     def undo_most_recent_action(self) -> bool:
@@ -336,7 +365,11 @@ class ImageFileManager:
                 self.remove_image(index)
 
         if image_to_add != "":
-            preserve_index: bool = image_to_remove == ""
+            preserve_index: _ShouldPreserveIndex = (
+                _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE
+                if image_to_remove == ""
+                else _ShouldPreserveIndex.NO
+            )
             self.add_new_image(image_to_add, preserve_index)
         else:
             self._update_after_move_or_edit()
