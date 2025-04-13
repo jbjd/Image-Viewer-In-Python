@@ -6,7 +6,7 @@ import pytest
 
 from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
-from image_viewer.files.file_manager import _ShouldPreserveIndex, ImageFileManager
+from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
 from image_viewer.util.image import (
     ImageCache,
     ImageCacheEntry,

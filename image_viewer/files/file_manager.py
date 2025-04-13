@@ -1,8 +1,9 @@
 import os
+from enum import Enum
 from os import stat_result
 from time import ctime
 from tkinter.messagebox import askyesno
-from enum import Enum
+
 from PIL.Image import Image
 
 from actions.types import Convert, Delete, Rename
