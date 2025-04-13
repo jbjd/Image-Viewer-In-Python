@@ -238,15 +238,15 @@ class ImageFileManager:
 
         # Only add image if its still in the directory we are currently in
         if get_normalized_dir_name(new_path) == get_normalized_dir_name(original_path):
-            preserve_index: _ShouldPreserveIndex
-            if was_at_last_index:
-                preserve_index = _ShouldPreserveIndex.YES
-            else:
-                preserve_index = (
+            preserve_index: _ShouldPreserveIndex = (
+                _ShouldPreserveIndex.YES
+                if was_at_last_index
+                else (
                     _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE
                     if self._should_perserve_index_on_rename(result)
                     else _ShouldPreserveIndex.NO
                 )
+            )
 
             self.add_new_image(new_name, preserve_index)
         else:
