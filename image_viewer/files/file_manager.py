@@ -327,7 +327,8 @@ class ImageFileManager:
         index: int = -1,
     ) -> None:
         """Adds a new image to the image list
-        preserve_index: try to keep index at the same image it was before adding"""
+        preserve_index: try to keep index at the same image it was before adding
+        index: where the image is inserted if provided"""
         image_name: ImageName = ImageName(new_name)
         if index < 0:
             index, _ = self._files.get_index_of_image(image_name.name)
