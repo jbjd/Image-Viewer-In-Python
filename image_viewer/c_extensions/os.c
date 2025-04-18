@@ -1,37 +1,33 @@
 #include <Python.h>
 #include <shlwapi.h>
 
-PyObject *create_list(PyObject *path)
+PyObject *create_list(PyObject *py_path)
 {
-    PyObject *list = PyList_New(0);
-    if (list == NULL)
+    PyObject *py_list = PyList_New(0);
+    if (py_list == NULL)
     {
         return NULL;
     }
 
-    const char *utf8_path = PyUnicode_AsUTF8(path);
-    if (utf8_path == NULL)
+    const wchar_t *path = PyUnicode_AsWideCharString(py_path, 0);
+    if (path == NULL)
     {
         return NULL;
     }
-    printf("Received UTF-8 string: %s\n", utf8_path);
 
-    struct _WIN32_FIND_DATAA dirData;
+    struct _WIN32_FIND_DATAW dirData;
 
-    HANDLE fileHandle = FindFirstFileA(utf8_path, &dirData);
+    HANDLE fileHandle = FindFirstFileW(path, &dirData);
 
-    printf("Found: %s\n", dirData.cFileName);
-    PyObject *a;
-
+    PyObject *py_file_name;
     do
     {
         if (dirData.dwFileAttributes == FILE_ATTRIBUTE_NORMAL || dirData.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
         {
-            printf("Found: %s\n", dirData.cFileName);
-            a = Py_BuildValue("s", dirData.cFileName);
-            PyList_Append(list, a);
+            py_file_name = Py_BuildValue("u", dirData.cFileName);
+            PyList_Append(py_list, py_file_name);
         }
-    } while (FindNextFileA(fileHandle, &dirData));
+    } while (FindNextFileW(fileHandle, &dirData));
 
-    return list;
+    return py_list;
 }
