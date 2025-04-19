@@ -9,7 +9,7 @@ PyObject *create_list(PyObject *py_path)
         return NULL;
     }
 
-    const wchar_t *path = PyUnicode_AsWideCharString(py_path, 0);
+    wchar_t *path = PyUnicode_AsWideCharString(py_path, 0);
     if (path == NULL)
     {
         return NULL;
@@ -28,6 +28,9 @@ PyObject *create_list(PyObject *py_path)
             PyList_Append(py_list, py_file_name);
         }
     } while (FindNextFileW(fileHandle, &dirData));
+
+    PyMem_Free(path);
+    FindClose(fileHandle);
 
     return py_list;
 }

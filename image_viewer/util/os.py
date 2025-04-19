@@ -13,11 +13,14 @@ if os.name == "nt":
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell
 
+    LPCWSTR = ctypes.c_wchar_p
+    OPEN_AS_INFO_FLAGS = ctypes.c_int32
+
     class OPENASINFO(ctypes.Structure):
         _fields_ = [
-            ("pcszFile", ctypes.c_wchar_p),
-            ("pcszClass", ctypes.c_wchar_p),
-            ("oaifInFlags", ctypes.c_int32),
+            ("pcszFile", LPCWSTR),
+            ("pcszClass", LPCWSTR),
+            ("oaifInFlags", OPEN_AS_INFO_FLAGS),
         ]
 
     def OS_name_cmp(a: str, b: str) -> bool:
