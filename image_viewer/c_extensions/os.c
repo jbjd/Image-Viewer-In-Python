@@ -12,12 +12,13 @@ PyObject *create_list(PyObject *py_path)
     wchar_t *path = PyUnicode_AsWideCharString(py_path, 0);
     if (path == NULL)
     {
+        Py_DECREF(py_list);
         return NULL;
     }
 
     struct _WIN32_FIND_DATAW dirData;
-
     HANDLE fileHandle = FindFirstFileW(path, &dirData);
+    PyMem_Free(path);
 
     PyObject *py_file_name;
     do
@@ -29,7 +30,6 @@ PyObject *create_list(PyObject *py_path)
         }
     } while (FindNextFileW(fileHandle, &dirData));
 
-    PyMem_Free(path);
     FindClose(fileHandle);
 
     return py_list;
