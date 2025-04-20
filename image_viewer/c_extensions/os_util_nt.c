@@ -1,5 +1,5 @@
 #include <Python.h>
-#include <shlwapi.h>
+#include <fileapi.h>
 
 PyObject *get_files_in_folder(PyObject *pyPath)
 {
