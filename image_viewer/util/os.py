@@ -2,11 +2,11 @@
 Code for OS specific stuff
 """
 
+import ctypes
 import os
+import sys
 from collections.abc import Iterator
 from typing import Final
-import ctypes
-import sys
 
 
 class _UtilsDllFactory:
