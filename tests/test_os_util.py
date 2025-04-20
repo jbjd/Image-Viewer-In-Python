@@ -117,7 +117,7 @@ def test_split_name_and_suffix(
     assert suffix == expected_suffix
 
 
-def test_get_files_in_folder_nt():
+def test_get_files_in_folder():
     """Test that get_files_in_folder correctly finds files in dir"""
 
     with patch.object(_UtilsDllFactory, "_load_dll_from_path", mock_load_dll_from_path):
