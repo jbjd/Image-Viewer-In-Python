@@ -1,1 +1,0 @@
-gcc image_viewer/c_extensions/os.c -LC:/Users/jimde/AppData/Local/Programs/Python/Python312/libs/ -IC:/Users/jimde/AppData/Local/Programs/Python/Python312/include/ -lpython312 -O3 -s -shared -o image_viewer/dll/os_utils_nt.dll
