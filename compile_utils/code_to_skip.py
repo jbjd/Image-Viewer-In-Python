@@ -281,8 +281,10 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "solarize",
     },
     "PIL.ImagePalette": {
+        "load",
         "make_gamma_lut",
         "make_linear_lut",
+        "negative",
         "random",
         "sepia",
         "wedge",
