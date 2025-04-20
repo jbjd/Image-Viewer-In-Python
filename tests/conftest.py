@@ -60,4 +60,4 @@ def example_image() -> Image:
 
 
 def mock_load_dll_from_path(self) -> ctypes.PyDLL:
-    return ctypes.PyDLL(f"{CODE_DIR}/dll/os_utils_nt.dll")
+    return ctypes.PyDLL(f"{CODE_DIR}/dll/os_util_nt.dll")

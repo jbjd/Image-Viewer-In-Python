@@ -21,6 +21,12 @@ class _ShouldPreserveIndex(Enum):
     YES = 3
 
 
+class _ShouldPreserveIndex(Enum):
+    NO = 1
+    IF_INSERTED_AT_OR_BEFORE = 2
+    YES = 3
+
+
 class ImageFileManager:
     """Manages internal list of images"""
 
