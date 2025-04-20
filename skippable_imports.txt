@@ -82,6 +82,7 @@ PIL._deprecate
 PIL._tkinter_finder
 PIL._typing
 PIL._version
+PIL.AvifImagePlugin
 PIL.BdfFontFile
 PIL.BlpImagePlugin
 PIL.BmpImagePlugin

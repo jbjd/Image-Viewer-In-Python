@@ -202,12 +202,12 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "__setstate__",
         "_apply_env_variables",
         "_dump",
+        "_expand",
         "_repr_image",
         "_repr_jpeg_",
         "_repr_pretty_",
         "_repr_png_",
         "_show",
-        "_wedge",
         "alpha_composite",
         "blend",
         "composite",
@@ -265,14 +265,18 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.ImageMath": {"deprecate", "eval", "unsafe_eval"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.ImageOps": {
+        "_color",
         "autocontrast",
         "colorize",
+        "contain",
         "cover",
         "deform",
         "equalize",
+        "expand",
         "exif_transpose",
         "grayscale",
         "mirror",
+        "pad",
         "posterize",
         "solarize",
     },
@@ -283,7 +287,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "sepia",
         "wedge",
     },
-    "PIL.ImageTk": {"_get_image_from_kw", "_show"},
+    "PIL.ImageTk": {"_get_image_from_kw"},
     "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
@@ -336,10 +340,15 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "TJFLAG_STOPONWARNING",
     },
     "PIL.features": {"codecs", "features"},
-    "PIL.Image": {"MIME"},
-    "PIL.GifImagePlugin": {"format_description", "_Palette"},
-    "PIL.JpegImagePlugin": {"format_description"},
-    "PIL.PngImagePlugin": {"format_description"},
+    "PIL.Image": {"MIME", "TYPE_CHECKING"},
+    "PIL.ImageDraw": {"Outline", "TYPE_CHECKING"},
+    "PIL.ImageFile": {"TYPE_CHECKING"},
+    "PIL.ImageFont": {"TYPE_CHECKING"},
+    "PIL.ImagePalette": {"TYPE_CHECKING"},
+    "PIL.ImageTk": {"TYPE_CHECKING"},
+    "PIL.GifImagePlugin": {"_Palette", "format_description", "TYPE_CHECKING"},
+    "PIL.JpegImagePlugin": {"format_description", "TYPE_CHECKING"},
+    "PIL.PngImagePlugin": {"format_description", "TYPE_CHECKING"},
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
@@ -681,14 +690,10 @@ except ImportError:
                 count=1,
                 flags=re.DOTALL,
             ),
-            RegexReplacement(
-                pattern=r"try:\s*Outline.*Outline = None", flags=re.DOTALL
-            ),
             RegexReplacement(pattern="(L|l)ist, "),  # codespell:ignore ist
             RegexReplacement(pattern="List", replacement="list"),
         ],
         "PIL.ImageFile": [
-            RegexReplacement(pattern="use_mmap = use_mmap.*"),
             RegexReplacement(
                 pattern="from typing import .*",
                 replacement="""
