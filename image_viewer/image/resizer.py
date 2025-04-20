@@ -35,15 +35,9 @@ class ImageResizer:
         turbo_jpeg_lib_path: str | None = None  # None will auto detect
 
         if os.name == "nt":
-            import platform
-
-            suffix: str = "_x86" if platform.architecture()[0] == "32bit" else ""
             turbo_jpeg_lib_path = os.path.join(
-                path_to_exe_folder,
-                f"dll/libturbojpeg{suffix}.dll",
+                path_to_exe_folder, "dll/libturbojpeg.dll"
             )
-
-            del platform
 
         self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 

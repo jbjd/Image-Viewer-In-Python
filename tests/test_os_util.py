@@ -4,14 +4,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from image_viewer.util.os import (
+    _UtilsDllFactory,
     get_byte_display,
+    get_files_in_folder,
     maybe_truncate_long_name,
     open_with,
     show_info_popup,
     split_name_and_suffix,
-    walk_dir,
 )
-from tests.conftest import IMG_DIR
+from tests.conftest import IMG_DIR, mock_load_dll_from_path
 from tests.test_util.mocks import MockWindll
 
 
@@ -116,12 +117,9 @@ def test_split_name_and_suffix(
     assert suffix == expected_suffix
 
 
-def test_walk_dir():
-    """Test that walk_dir correctly finds files in dir"""
-    files = [p for p in walk_dir(IMG_DIR)]
-    assert len(files) == 5
+def test_get_files_in_folder():
+    """Test that get_files_in_folder correctly finds files in dir"""
 
-    # When is_dir raises os error, assume not a dir like os module does
-    with patch.object(os.DirEntry, "is_dir", side_effect=OSError):
-        files = [p for p in walk_dir(IMG_DIR)]
+    with patch.object(_UtilsDllFactory, "_load_dll_from_path", mock_load_dll_from_path):
+        files = [p for p in get_files_in_folder(IMG_DIR)]
         assert len(files) == 5

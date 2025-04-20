@@ -1,3 +1,4 @@
+import ctypes
 import os
 from tkinter import Tk
 
@@ -56,3 +57,7 @@ def canvas(tk_app) -> CustomCanvas:
 @pytest.fixture(scope="session")
 def example_image() -> Image:
     return new_image("RGB", (10, 10))
+
+
+def mock_load_dll_from_path(self) -> ctypes.PyDLL:
+    return ctypes.PyDLL(f"{CODE_DIR}/dll/os_util_nt.dll")
