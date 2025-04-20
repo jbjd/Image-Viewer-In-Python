@@ -36,7 +36,7 @@ DATA_FILE_PATHS: list[str]
 
 if os.name == "nt":
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
-    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
+    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll", "dll/os_util_nt.dll"]
 else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]

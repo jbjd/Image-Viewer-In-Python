@@ -28,7 +28,7 @@ class _UtilsDllFactory:
     @staticmethod
     def _load_dll_from_path() -> ctypes.PyDLL:
         return ctypes.PyDLL(
-            os.path.join(os.path.dirname(sys.argv[0]), "dll/os_utils_nt.dll")
+            os.path.join(os.path.dirname(sys.argv[0]), "dll/os_util_nt.dll")
         )
 
 
