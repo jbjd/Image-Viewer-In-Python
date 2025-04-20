@@ -20,17 +20,22 @@ class _UtilsDllFactory:
     def get_or_create(self) -> ctypes.PyDLL:
         if self._utils_dll is None:
             self._utils_dll = self._load_dll_from_path()
-            self._utils_dll.get_files_in_folder.argtypes = [ctypes.py_object]
-            self._utils_dll.get_files_in_folder.restype = ctypes.py_object
+
+            if os.name == "nt":
+                self._utils_dll.get_files_in_folder.argtypes = [ctypes.py_object]
+                self._utils_dll.get_files_in_folder.restype = ctypes.py_object
+
+            self._utils_dll.get_byte_display.argtypes = [ctypes.c_int32, ctypes.c_int32]
+            self._utils_dll.get_byte_display.restype = ctypes.py_object
 
         return self._utils_dll
 
     @staticmethod
     def _load_dll_from_path() -> ctypes.PyDLL:
-        return ctypes.PyDLL(
-            os.path.join(os.path.dirname(sys.argv[0]), "dll/os_util_nt.dll")
-        )
+        return ctypes.PyDLL(os.path.join(os.path.dirname(sys.argv[0]), "dll/util.dll"))
 
+
+_utils_dll_factory = _UtilsDllFactory()
 
 if os.name == "nt":
     from ctypes import windll  # type: ignore
@@ -56,8 +61,6 @@ if os.name == "nt":
             undelete(original_path)
         except x_winshell as e:
             raise OSError from e  # change error type so catching is not OS specific
-
-    _utils_dll_factory = _UtilsDllFactory()
 
     def get_files_in_folder(directory_path: str) -> Iterator[str]:
         files: list[str] = _utils_dll_factory.get_or_create().get_files_in_folder(
@@ -156,8 +159,7 @@ def show_info_popup(hwnd: int, title: str, body: str) -> None:
 def get_byte_display(size_in_bytes: int) -> str:
     """Given bytes, formats it into a string using kb or mb"""
     kb_size: int = 1024 if os.name == "nt" else 1000
-    size_in_kb: int = size_in_bytes // kb_size
-    return f"{size_in_kb/kb_size:.2f}mb" if size_in_kb > 999 else f"{size_in_kb}kb"
+    return _utils_dll_factory.get_or_create().get_byte_display(size_in_bytes, kb_size)
 
 
 def trash_file(path: str) -> None:

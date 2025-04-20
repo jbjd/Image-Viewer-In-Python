@@ -1,6 +1,29 @@
 #include <Python.h>
-#include <shlwapi.h>
 
+#ifdef _WIN32
+#include <shlwapi.h>
+#endif
+
+PyObject *get_byte_display(int byteSize, int kbSize)
+{
+    int byteSizeKb = byteSize / kbSize;
+
+    PyObject *pyResultString;
+    if (byteSizeKb <= 999)
+    {
+        pyResultString = PyUnicode_FromFormat("%dkb", byteSizeKb);
+    }
+    else
+    {
+        int sizeInMb = byteSizeKb / kbSize;
+        int remainder = (byteSizeKb % kbSize) % 100;
+        pyResultString = PyUnicode_FromFormat("%d.%dmb", sizeInMb, remainder);
+    }
+
+    return pyResultString;
+}
+
+#ifdef _WIN32
 PyObject *get_files_in_folder(PyObject *pyPath)
 {
     PyObject *pyFiles = PyList_New(0);
@@ -34,3 +57,4 @@ PyObject *get_files_in_folder(PyObject *pyPath)
 
     return pyFiles;
 }
+#endif
