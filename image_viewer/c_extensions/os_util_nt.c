@@ -1,18 +1,18 @@
 #include <Python.h>
 #include <shlwapi.h>
 
-PyObject *get_files_in_folder(PyObject *py_path)
+PyObject *get_files_in_folder(PyObject *pyPath)
 {
-    PyObject *py_list = PyList_New(0);
-    if (py_list == NULL)
+    PyObject *pyFiles = PyList_New(0);
+    if (pyFiles == NULL)
     {
         return NULL;
     }
 
-    wchar_t *path = PyUnicode_AsWideCharString(py_path, 0);
+    wchar_t *path = PyUnicode_AsWideCharString(pyPath, 0);
     if (path == NULL)
     {
-        Py_DECREF(py_list);
+        Py_DECREF(pyFiles);
         return NULL;
     }
 
@@ -20,17 +20,17 @@ PyObject *get_files_in_folder(PyObject *py_path)
     HANDLE fileHandle = FindFirstFileW(path, &dirData);
     PyMem_Free(path);
 
-    PyObject *py_file_name;
+    PyObject *pyFileName;
     do
     {
         if (dirData.dwFileAttributes == FILE_ATTRIBUTE_NORMAL || dirData.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
         {
-            py_file_name = Py_BuildValue("u", dirData.cFileName);
-            PyList_Append(py_list, py_file_name);
+            pyFileName = Py_BuildValue("u", dirData.cFileName);
+            PyList_Append(pyFiles, pyFileName);
         }
     } while (FindNextFileW(fileHandle, &dirData));
 
     FindClose(fileHandle);
 
-    return py_list;
+    return pyFiles;
 }
