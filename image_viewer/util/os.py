@@ -10,7 +10,7 @@ from typing import Final
 
 
 class _UtilsDllFactory:
-    """Contains a PyDLL that it initalizes"""
+    """Contains a PyDLL that is lazy loaded"""
 
     __slots__ = ("_utils_dll",)
 
