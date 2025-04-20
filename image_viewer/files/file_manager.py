@@ -12,7 +12,7 @@ from constants import VALID_FILE_TYPES
 from files.file_dialog_asker import FileDialogAsker
 from util.convert import try_convert_file_and_save_new
 from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
-from util.os import get_normalized_dir_name, trash_file, walk_dir
+from util.os import get_files_in_folder, get_normalized_dir_name, trash_file
 
 
 class _ShouldPreserveIndex(Enum):
@@ -102,7 +102,7 @@ class ImageFileManager:
         self._files = ImageNameList(
             [
                 image_path
-                for path in walk_dir(self.image_directory)
+                for path in get_files_in_folder(self.image_directory)
                 if (image_path := ImageName(path)).suffix in VALID_FILE_TYPES
             ]
         )

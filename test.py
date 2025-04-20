@@ -7,6 +7,6 @@ create_list.argtypes = [ctypes.py_object]
 create_list.restype = ctypes.py_object
 
 a = perf_counter()
-list_of_image_paths = create_list("C:/photos/*")
+list_of_image_paths = create_list("A:/hh/Imaj/*")
 print(perf_counter() - a)
-print(list_of_image_paths)
+# print(list_of_image_paths)

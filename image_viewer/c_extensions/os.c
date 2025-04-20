@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <shlwapi.h>
 
-PyObject *create_list(PyObject *py_path)
+PyObject *get_files_in_folder(PyObject *py_path)
 {
     PyObject *py_list = PyList_New(0);
     if (py_list == NULL)

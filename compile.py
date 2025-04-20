@@ -1,5 +1,4 @@
 import os
-import platform
 from argparse import Namespace
 from glob import glob
 from importlib import import_module
@@ -36,16 +35,8 @@ DEFAULT_INSTALL_PATH: str
 DATA_FILE_PATHS: list[str]
 
 if os.name == "nt":
-    dll_suffix: str
-    folder_suffix: str
-    if platform.architecture()[0] == "32bit":
-        dll_suffix = "_x86"
-        folder_suffix = " (x86)"
-    else:
-        dll_suffix = folder_suffix = ""
-
-    DEFAULT_INSTALL_PATH = f"C:/Program Files{folder_suffix}/Personal Image Viewer/"
-    DATA_FILE_PATHS = ["icon/icon.ico", f"dll/libturbojpeg{dll_suffix}.dll"]
+    DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
+    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]

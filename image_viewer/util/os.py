@@ -5,9 +5,34 @@ Code for OS specific stuff
 import os
 from collections.abc import Iterator
 from typing import Final
+import ctypes
+import sys
+
+
+class _UtilsDllFactory:
+    """Contains a PyDLL that it initalizes"""
+
+    __slots__ = ("_utils_dll",)
+
+    def __init__(self) -> None:
+        self._utils_dll: ctypes.PyDLL | None = None
+
+    def get_or_create(self) -> ctypes.PyDLL:
+        if self._utils_dll is None:
+            self._utils_dll = self._load_dll_from_path()
+            self._utils_dll.get_files_in_folder.argtypes = [ctypes.py_object]
+            self._utils_dll.get_files_in_folder.restype = ctypes.py_object
+
+        return self._utils_dll
+
+    @staticmethod
+    def _load_dll_from_path() -> ctypes.PyDLL:
+        return ctypes.PyDLL(
+            os.path.join(os.path.dirname(sys.argv[0]), "dll/os_utils_nt.dll")
+        )
+
 
 if os.name == "nt":
-    import ctypes
     from ctypes import windll  # type: ignore
 
     from send2trash.win.legacy import send2trash
@@ -31,6 +56,14 @@ if os.name == "nt":
             undelete(original_path)
         except x_winshell as e:
             raise OSError from e  # change error type so catching is not OS specific
+
+    _utils_dll_factory = _UtilsDllFactory()
+
+    def get_files_in_folder(directory_path: str) -> Iterator[str]:
+        files: list[str] = _utils_dll_factory.get_or_create().get_files_in_folder(
+            os.path.join(directory_path, "*")
+        )
+        return iter(files)
 
 else:  # assume linux for now
     from glob import glob
@@ -73,6 +106,25 @@ else:  # assume linux for now
                         os.rename(path_to_trashed_file, original_path)
                         os.remove(info_path)
                         break
+
+    def get_files_in_folder(directory_path: str) -> Iterator[str]:
+        """Copied from OS module and edited to yield each file
+        and only files instead of including dirs/extra info"""
+
+        with os.scandir(directory_path) as scandir_iter:
+            while True:
+                try:
+                    entry = next(scandir_iter)
+                except (StopIteration, OSError):
+                    return
+
+                try:
+                    is_dir = entry.is_dir()
+                except OSError:
+                    is_dir = False
+
+                if not is_dir:
+                    yield entry.name
 
 
 def open_with(hwnd: int, file: str) -> None:
@@ -143,23 +195,3 @@ def split_name_and_suffix(name_and_suffix: str) -> tuple[str, str]:
         suffix = name_and_suffix[suffix_start:]
 
     return file_name, suffix
-
-
-def walk_dir(directory_path: str) -> Iterator[str]:
-    """Copied from OS module and edited to yield each file
-    and only files instead of including dirs/extra info"""
-
-    with os.scandir(directory_path) as scandir_iter:
-        while True:
-            try:
-                entry = next(scandir_iter)
-            except (StopIteration, OSError):
-                return
-
-            try:
-                is_dir = entry.is_dir()
-            except OSError:
-                is_dir = False
-
-            if not is_dir:
-                yield entry.name
