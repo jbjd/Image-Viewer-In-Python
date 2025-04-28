@@ -1,6 +1,8 @@
 #include <Python.h>
 #include <fileapi.h>
 
+#define INVALID_HANDLE_VALUE ((HANDLE)(LONG_PTR)-1)
+
 PyObject *get_files_in_folder(PyObject *pyPath)
 {
     PyObject *pyFiles = PyList_New(0);
@@ -20,17 +22,22 @@ PyObject *get_files_in_folder(PyObject *pyPath)
     HANDLE fileHandle = FindFirstFileW(path, &dirData);
     PyMem_Free(path);
 
-    PyObject *pyFileName;
+    if (fileHandle == INVALID_HANDLE_VALUE)
+	{
+        goto finish;
+    }
+
     do
     {
         if ((dirData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
-            pyFileName = Py_BuildValue("u", dirData.cFileName);
+            PyObject *pyFileName = Py_BuildValue("u", dirData.cFileName);
             PyList_Append(pyFiles, pyFileName);
         }
     } while (FindNextFileW(fileHandle, &dirData));
 
     FindClose(fileHandle);
 
+finish:
     return pyFiles;
 }
