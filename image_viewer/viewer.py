@@ -11,13 +11,13 @@ from animation.frame import Frame
 from config import Config
 from constants import ButtonName, Key, Rotation, TkTags, ZoomDirection
 from files.file_manager import ImageFileManager
+from image.cache import ImageCache
 from image.loader import ImageLoader
 from ui.button import HoverableButtonUIElement, ToggleableButtonUIElement
 from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
-from util.image import ImageCache
 from util.os import open_with, show_info_popup
 from util.PIL import create_dropdown_image, init_PIL
 

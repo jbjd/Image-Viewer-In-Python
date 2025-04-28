@@ -6,10 +6,10 @@ import pytest
 from PIL.Image import Image
 from PIL.Image import new as new_image
 
+from image_viewer.image.cache import ImageCache
 from image_viewer.image.loader import ImageLoader
 from image_viewer.image.resizer import ImageResizer
 from image_viewer.ui.canvas import CustomCanvas
-from image_viewer.util.image import ImageCache
 from tests.test_util.mocks import MockImage
 
 WORKING_DIR: str = os.path.dirname(__file__)

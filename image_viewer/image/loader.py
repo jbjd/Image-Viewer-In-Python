@@ -9,10 +9,11 @@ from PIL.Image import open as open_image
 
 from animation.frame import Frame
 from constants import Rotation, ZoomDirection
+from image.cache import ImageCache, ImageCacheEntry
+from image.file import magic_number_guess
 from image.resizer import ImageResizer, ZoomedImageResult
 from state.rotation_state import RotationState
 from state.zoom_state import ZoomState
-from util.image import ImageCache, ImageCacheEntry, magic_number_guess
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image, rotate_image
 

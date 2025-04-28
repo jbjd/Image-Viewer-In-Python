@@ -68,7 +68,7 @@ def test_convert_between_types(true_file_extension: str, target_format: str):
 
 
 @patch("image_viewer.util.convert.open_image", mock_open_image)
-@patch("image_viewer.util.convert.magic_number_guess", lambda _: "JPEG")
+@patch("image_viewer.image.file.magic_number_guess", lambda _: "JPEG")
 def test_convert_to_bad_type():
     """Should return False if an invalid image extension is passed"""
     with patch("builtins.open", mock_open()):

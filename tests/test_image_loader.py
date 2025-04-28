@@ -4,8 +4,8 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 
 from image_viewer.animation.frame import Frame
+from image_viewer.image.cache import ImageCacheEntry
 from image_viewer.image.loader import ImageLoader
-from image_viewer.util.image import ImageCacheEntry
 from tests.test_util.mocks import MockStatResult
 
 MODULE_PATH: str = "image_viewer.image.loader"

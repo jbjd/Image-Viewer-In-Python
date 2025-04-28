@@ -10,8 +10,9 @@ from actions.types import Convert, Delete, Rename
 from actions.undoer import ActionUndoer, UndoResponse
 from constants import VALID_FILE_TYPES
 from files.file_dialog_asker import FileDialogAsker
+from image.cache import ImageCache, ImageCacheEntry
+from image_viewer.image.file import ImageName, ImageNameList
 from util.convert import try_convert_file_and_save_new
-from util.image import ImageCache, ImageCacheEntry, ImageName, ImageNameList
 from util.os import get_files_in_folder, get_normalized_dir_name, trash_file
 
 

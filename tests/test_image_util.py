@@ -6,12 +6,8 @@ from PIL.Image import Image, new
 from PIL.ImageTk import PhotoImage
 
 from image_viewer.constants import DEFAULT_FONT, ImageFormats
-from image_viewer.util.image import (
-    ImageCache,
-    ImageCacheEntry,
-    ImageName,
-    magic_number_guess,
-)
+from image_viewer.image.cache import ImageCache, ImageCacheEntry
+from image_viewer.image.file import ImageName, magic_number_guess
 from image_viewer.util.PIL import (
     create_dropdown_image,
     get_placeholder_for_errored_image,
@@ -96,7 +92,7 @@ def test_image_cache_fresh(image_cache: ImageCache):
 
     path = "some/path"
 
-    with patch("image_viewer.util.image.stat", return_value=MockStatResult(byte_size)):
+    with patch("image_viewer.image.cache.stat", return_value=MockStatResult(byte_size)):
         # Empty
         assert not image_cache.image_cache_still_fresh(path)
 
@@ -104,5 +100,5 @@ def test_image_cache_fresh(image_cache: ImageCache):
         assert image_cache.image_cache_still_fresh(path)
 
     for error in [FileNotFoundError(), OSError()]:
-        with patch("image_viewer.util.image.stat", side_effect=error):
+        with patch("image_viewer.image.cache.stat", side_effect=error):
             assert not image_cache.image_cache_still_fresh(path)

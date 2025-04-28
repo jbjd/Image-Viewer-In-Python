@@ -7,12 +7,8 @@ import pytest
 from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
 from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
-from image_viewer.util.image import (
-    ImageCache,
-    ImageCacheEntry,
-    ImageName,
-    ImageNameList,
-)
+from image_viewer.image.cache import ImageCache, ImageCacheEntry
+from image_viewer.image.file import ImageName, ImageNameList
 from tests.conftest import IMG_DIR, mock_load_dll_from_path
 from tests.test_util.exception import safe_wrapper
 from tests.test_util.mocks import MockImage, MockStatResult

@@ -1,87 +1,10 @@
-"""
-Contains classes and functions to help with storing and reading images
-"""
+"""Classes representing metadata of image files and functions for reading them"""
 
-from collections import OrderedDict, namedtuple
-from os import stat
+from collections import namedtuple
 from typing import Iterable
 
-from PIL.Image import Image
-
-from constants import DEFAULT_MAX_ITEMS_IN_CACHE, ImageFormats
+from constants import ImageFormats
 from util.os import OS_name_cmp
-
-
-class ImageCacheEntry:
-    """Information stored to skip resizing/system calls on repeated opening"""
-
-    __slots__ = (
-        "format",
-        "height",
-        "image",
-        "mode",
-        "size_display",
-        "byte_size",
-        "width",
-    )
-
-    def __init__(
-        self,
-        image: Image,
-        dimensions: tuple[int, int],
-        size_display: str,
-        byte_size: int,
-        mode: str,
-        format: str,
-    ) -> None:
-        self.width: int
-        self.height: int
-        self.width, self.height = dimensions
-        self.image: Image = image
-        self.size_display: str = size_display
-        self.byte_size: int = byte_size
-        # Store original mode since resizing some images converts to RGB
-        self.mode: str = mode
-        self.format: str = format
-
-
-class ImageCache(OrderedDict[str, ImageCacheEntry]):
-    """Dictionary for caching image data using paths as keys"""
-
-    __slots__ = ("max_items_in_cache",)
-
-    def __init__(self, max_items_in_cache: int = DEFAULT_MAX_ITEMS_IN_CACHE) -> None:
-        super().__init__()
-        self.max_items_in_cache: int = max_items_in_cache
-
-    def pop_safe(self, image_path: str) -> ImageCacheEntry | None:
-        return self.pop(image_path, None)
-
-    def image_cache_still_fresh(self, image_path: str) -> bool:
-        """Returns True when cached image is the same size of the image on disk.
-        Not guaranteed to be correct, but that's not important for this case"""
-        cached_bytes: int = self[image_path].byte_size if image_path in self else -1
-        try:
-            return stat(image_path).st_size == cached_bytes
-        except (FileNotFoundError, OSError):
-            return False
-
-    def update_key(self, old_key: str, new_key: str) -> None:
-        """Moves value from old_key to new_key deleting old_key
-        If new_key does not exist, nothing happens"""
-        target: ImageCacheEntry | None = self.pop_safe(old_key)
-
-        if target is not None:
-            self[new_key] = target
-
-    def __setitem__(self, key: str, value: ImageCacheEntry) -> None:
-        """Adds check for items in the cache and purges LRU if over limit"""
-        if self.max_items_in_cache <= 0:
-            return
-
-        if self.__len__() >= self.max_items_in_cache:
-            self.popitem(last=False)
-        super().__setitem__(key, value)
 
 
 class ImageName:
@@ -98,7 +21,6 @@ class ImageName:
         return OS_name_cmp(self.name, other.name)
 
 
-# TODO: Break ImageNameList into its own file
 class ImageSearchResult(namedtuple("ImageSearchResult", ["index", "found"])):
     """Represents a search such that index is where the image is or would be inserted
     and found is True when a match was found"""
