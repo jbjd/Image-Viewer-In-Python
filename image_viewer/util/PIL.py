@@ -8,7 +8,6 @@ from typing import IO
 from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
 from PIL.ImageDraw import ImageDraw
-from PIL.ImageTk import PhotoImage
 from PIL.JpegImagePlugin import JpegImageFile
 
 from constants import TEXT_RGB
@@ -91,8 +90,8 @@ def _get_longest_line_dimensions(text: str) -> tuple[int, int]:
     return int(width + width_offset), int(height + height_offset)
 
 
-def create_dropdown_image(text: str) -> PhotoImage:
-    """Creates a new PhotoImage with current images metadata"""
+def create_dropdown_image(text: str) -> Image:
+    """Creates a new Image with current images metadata"""
     line_width, line_height = _get_longest_line_dimensions(text)
 
     line_count: int = text.count("\n") + 1
@@ -110,7 +109,7 @@ def create_dropdown_image(text: str) -> PhotoImage:
     draw: ImageDraw = ImageDraw(image)
     draw.text((10, line_spacing), text, fill="white", spacing=line_spacing)
 
-    return PhotoImage(draw._image)
+    return draw._image
 
 
 def get_placeholder_for_errored_image(

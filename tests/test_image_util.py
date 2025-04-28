@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import pytest
 from PIL.Image import Image, new
-from PIL.ImageTk import PhotoImage
 
 from image_viewer.constants import DEFAULT_FONT, ImageFormats
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
@@ -29,22 +28,29 @@ def test_image_path():
     assert example_image_path.suffix == ""
 
 
-# TODO: break this into two separate tests
-def test_PIL_functions(tk_app: Tk):
-    """Ensure no error with font and that PIL.Image gets modified"""
+def test_init_PIL():
+    """Should remove all values from _plugins and set default font"""
     from PIL import Image as _Image
+    from PIL.ImageDraw import ImageDraw
 
     init_PIL(DEFAULT_FONT, 20)
     assert len(_Image._plugins) == 0
+    assert ImageDraw.font is not None
+
     del _Image
+    del ImageDraw
 
-    assert isinstance(create_dropdown_image("test\ntest"), PhotoImage)
 
-    # need to test this here since init_PIL must be called first
+def test_create_images(tk_app: Tk):
+    init_PIL(DEFAULT_FONT, 20)
+
+    dropdown = create_dropdown_image("test\ntest")
+    assert isinstance(dropdown, Image)
+
     example_error = Exception("test")
     placeholder: Image = get_placeholder_for_errored_image(example_error, 10, 10)
 
-    assert type(placeholder) is Image
+    assert isinstance(placeholder, Image)
 
 
 @pytest.mark.parametrize(

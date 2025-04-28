@@ -611,7 +611,7 @@ class ViewerApp:
                 except KeyError:
                     return  # data not present in cache
 
-                dropdown.image = create_dropdown_image(details)
+                dropdown.image = PhotoImage(create_dropdown_image(details))
 
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
