@@ -23,7 +23,7 @@ PyObject *get_files_in_folder(PyObject *pyPath)
     PyObject *pyFileName;
     do
     {
-        if (dirData.dwFileAttributes == FILE_ATTRIBUTE_NORMAL || dirData.dwFileAttributes == FILE_ATTRIBUTE_ARCHIVE)
+        if ((dirData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
             pyFileName = Py_BuildValue("u", dirData.cFileName);
             PyList_Append(pyFiles, pyFileName);
