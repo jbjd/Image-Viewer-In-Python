@@ -33,6 +33,7 @@ PyObject *get_files_in_folder(PyObject *pyPath)
         {
             PyObject *pyFileName = Py_BuildValue("u", dirData.cFileName);
             PyList_Append(pyFiles, pyFileName);
+            Py_DECREF(pyFileName);
         }
     } while (FindNextFileW(fileHandle, &dirData));
 
