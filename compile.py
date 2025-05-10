@@ -10,6 +10,7 @@ from compile_utils.cleaner import (
     clean_file_and_copy,
     clean_tk_files,
     move_files_to_tmp_and_clean,
+    strip_files,
 )
 from compile_utils.file_operations import (
     copy_file,
@@ -116,6 +117,8 @@ try:
 
     if is_standalone:
         clean_tk_files(COMPILE_DIR)
+        if args.strip:
+            strip_files(COMPILE_DIR)
     else:
         # nuitka puts exe outside of dist when not standalone
         os.rename(

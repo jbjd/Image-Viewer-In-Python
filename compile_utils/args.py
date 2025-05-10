@@ -72,6 +72,15 @@ class CompileArgumentParser(ArgumentParser):
                 + _EXPOSED_FOR_DEBUG
             ),
         )
+        self.add_argument(
+            "--strip",
+            action="store_true",
+            help=(
+                "Calls strip on all .exe and .dll files after compilation. "
+                "Requires strip being installed and on PATH. "
+                "This option only works for standalone builds"
+            ),
+        )
         self.add_argument("args", nargs=REMAINDER)
 
     # for some reason mypy gets the super type wrong

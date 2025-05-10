@@ -3,6 +3,7 @@
 import ast
 import os
 import re
+import subprocess
 import warnings
 from glob import glob
 from re import sub
@@ -191,3 +192,18 @@ def clean_tk_files(compile_dir: str) -> None:
         whitespace_around_newlines,
         warning_id="tclIndex",
     )
+
+
+def strip_files(compile_dir: str) -> None:
+    """Runs strip on all exe/dll files in provided dir"""
+    EXIT_SUCCESS: int = 0
+
+    strippable_files: list[str] = glob(
+        os.path.join(compile_dir, "**/*.exe"), recursive=True
+    ) + glob(os.path.join(compile_dir, "**/*.dll"), recursive=True)
+
+    for strippable_file in strippable_files:
+        result = subprocess.run(["strip", "--strip-unneeded", strippable_file])
+
+        if result.returncode != EXIT_SUCCESS:
+            warnings.warn(f"Failed to strip file {strippable_file}")
