@@ -8,6 +8,7 @@ import warnings
 from glob import glob
 from re import sub
 from shutil import copyfile
+from typing import Iterator
 
 from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
 from personal_python_minifier.flake_wrapper import run_autoflake
@@ -101,24 +102,25 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 
 
 def move_files_to_tmp_and_clean(
-    dir: str, tmp_dir: str, mod_prefix: str, modules_to_skip: set[str] | None = None
+    source_dir: str,
+    tmp_dir: str,
+    mod_prefix: str,
+    modules_to_skip: set[str] | None = None,
 ) -> None:
-    """Moves python files from dir to temp_dir and removes unused/unneeded code"""
+    """Moves python files from source_dir to temp_dir
+    and removes unused/unneeded code"""
     if modules_to_skip:
         modules_to_skip_re = rf"^({'|'.join(modules_to_skip)})($|\.)"
     else:
         modules_to_skip_re = ""
 
-    for python_file in iter(
-        os.path.abspath(p)
-        for p in glob(f"{dir}/**/*", recursive=True)
-        if p.endswith((".py", ".pyd"))
-    ):
+    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd")):
         if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
             continue  # skip __main__ in modules other than this one
 
+        python_file = os.path.abspath(python_file)
         relative_path: str = os.path.join(
-            mod_prefix, python_file.replace(dir, "").strip("/\\")
+            mod_prefix, python_file.replace(source_dir, "").strip("/\\")
         )
         new_path: str = os.path.join(tmp_dir, relative_path)
         dir_path: str = os.path.dirname(new_path)
@@ -171,9 +173,7 @@ def clean_tk_files(compile_dir: str) -> None:
     starting_new_line = RegexReplacement(pattern="^\n", count=1)
     whitespace_between_brackets = RegexReplacement(pattern="}\n}", replacement="}}")
 
-    for code_file in glob(os.path.join(compile_dir, "**/*.tcl"), recursive=True) + glob(
-        os.path.join(compile_dir, "**/*.tm"), recursive=True
-    ):
+    for code_file in _files_in_dir_iter(compile_dir, (".tcl", ".tm")):
         apply_regex_to_file(
             code_file,
             [
@@ -198,12 +198,16 @@ def strip_files(compile_dir: str) -> None:
     """Runs strip on all exe/dll files in provided dir"""
     EXIT_SUCCESS: int = 0
 
-    strippable_files: list[str] = glob(
-        os.path.join(compile_dir, "**/*.exe"), recursive=True
-    ) + glob(os.path.join(compile_dir, "**/*.dll"), recursive=True)
-
-    for strippable_file in strippable_files:
+    for strippable_file in _files_in_dir_iter(compile_dir, (".exe", ".dll", ".pyd")):
         result = subprocess.run(["strip", "--strip-all", strippable_file])
 
         if result.returncode != EXIT_SUCCESS:
             warnings.warn(f"Failed to strip file {strippable_file}")
+
+
+def _files_in_dir_iter(dir: str, ext_filter: tuple[str, ...]) -> Iterator[str]:
+    return iter(
+        p
+        for p in glob(os.path.join(dir, "**/*"), recursive=True)
+        if p.endswith(ext_filter)
+    )

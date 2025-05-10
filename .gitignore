@@ -12,6 +12,7 @@ ERROR.log
 *.cmd
 *.build/
 *.dist/
+build/
 compilation-report.xml
 nuitka-crash-report.xml
 *tmp/
