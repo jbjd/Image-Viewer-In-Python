@@ -203,7 +203,7 @@ def strip_files(compile_dir: str) -> None:
     ) + glob(os.path.join(compile_dir, "**/*.dll"), recursive=True)
 
     for strippable_file in strippable_files:
-        result = subprocess.run(["strip", "--strip-unneeded", strippable_file])
+        result = subprocess.run(["strip", "--strip-all", strippable_file])
 
         if result.returncode != EXIT_SUCCESS:
             warnings.warn(f"Failed to strip file {strippable_file}")
