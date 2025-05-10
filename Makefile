@@ -11,3 +11,9 @@ build-dll-windows:
 
 install:
 	$(PYTHON) compile.py --standalone --strip --no-cleanup
+
+clean:
+	rm --preserve-root -Irf __main__.build/ __main__.build/ build/ tmp/ *.egg-info/ .coverage compilation-report.xml nuitka-crash-report.xml
+
+test:
+	pytest --cov=image_viewer --cov-report term-missing
