@@ -53,6 +53,7 @@ nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(imports_to_skip)
 is_standalone = "--standalone" in nuitka_args
 
+nuitka_args.append("--mingw64")
 if os.name == "nt":
     windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
     nuitka_args.append(f"--windows-icon-from-ico={windows_icon_file_path}")
@@ -100,10 +101,9 @@ try:
         args.python_path, input_file, WORKING_DIR, nuitka_args
     )
 
-    install_path: str = args.install_path if not args.debug else COMPILE_DIR
-    os.makedirs(install_path, exist_ok=True)
-
     print("Waiting for nuitka compilation...")
+
+    install_path: str = args.install_path if not args.debug else COMPILE_DIR
 
     if process.wait():
         exit(1)

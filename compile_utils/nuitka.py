@@ -38,7 +38,7 @@ def start_nuitka_compilation(
     compile_env = os.environ.copy()
     # -march=native had a race condition that segfaulted on startup
     # -mtune=native works as intended
-    compile_env["CFLAGS"] = "-O2 -fno-signed-zeros -mtune=native"
+    compile_env["CFLAGS"] = "-O3 -fno-signed-zeros -mtune=native"
 
     args: list[str] = get_base_cmd_args(python_path, input_file)
     args += extra_nuitka_args

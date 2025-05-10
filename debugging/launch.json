@@ -20,7 +20,6 @@
             "args": [
                 "--debug",
                 "--no-cleanup",
-                "--mingw64",
                 "--standalone"
             ],
             "console": "integratedTerminal",

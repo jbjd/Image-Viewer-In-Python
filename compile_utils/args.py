@@ -1,4 +1,5 @@
 import os
+import sys
 from argparse import REMAINDER, ArgumentParser, Namespace
 
 from compile_utils.validation import raise_if_not_root
@@ -10,9 +11,6 @@ class CompileArgumentParser(ArgumentParser):
     __slots__ = ()
 
     VALID_NUITKA_ARGS: set[str] = {
-        "--mingw64",
-        "--clang",
-        "--msvc",
         "--standalone",
         "--quiet",
         "--verbose",
@@ -27,11 +25,16 @@ class CompileArgumentParser(ArgumentParser):
             epilog=f"Some nuitka arguments are also accepted: {self.VALID_NUITKA_ARGS}",
         )
 
+        _EXPOSED_FOR_DEBUG: str = " This option is exposed for debugging"
+
         default_python: str = "python" if os.name == "nt" else "python3"
         self.add_argument(
             "--python-path",
-            help=f"Python to use in compilation, defaults to {default_python}",
-            default=default_python,
+            help=(
+                "Python to use in compilation, "
+                "defaults to interpreter running this program"
+            ),
+            default=f"{sys.exec_prefix}/{default_python}",
         )
         self.add_argument(
             "--install-path",
@@ -58,15 +61,15 @@ class CompileArgumentParser(ArgumentParser):
             action="store_true",
             help=(
                 "Will not compile, will only create tmp directory "
-                "with cleaned .py files. This option is exposed for debugging"
+                "with cleaned .py files." + _EXPOSED_FOR_DEBUG
             ),
         )
         self.add_argument(
             "--no-cleanup",
             action="store_true",
             help=(
-                "Does not delete temporary files used for build/distribution"
-                "This option is exposed for debugging"
+                "Does not delete temporary files used for build/distribution."
+                + _EXPOSED_FOR_DEBUG
             ),
         )
         self.add_argument("args", nargs=REMAINDER)
