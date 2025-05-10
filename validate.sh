@@ -29,8 +29,6 @@ validate_step \
 "Running black formatter" \
 "black . --check"
 
-echo "Formatting check complete" && echo
-
 validate_step \
 "Running mypy type checker" \
 "mypy . --check-untyped-defs"
