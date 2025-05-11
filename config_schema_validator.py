@@ -11,6 +11,7 @@ schema = Schema(
             "show_details": str,
             "undo_most_recent_action": str,
         },
+        "UI": {"background_color": str},
     }
 )
 

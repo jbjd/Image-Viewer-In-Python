@@ -1,3 +1,7 @@
+"""
+Classes representing undoable actions that a user can do
+"""
+
 from abc import ABC
 
 

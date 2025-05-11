@@ -59,7 +59,7 @@ class ViewerApp:
 
         self.app: Tk = self._setup_tk_app(path_to_exe_folder)
         self.window_id: int = self.app.winfo_id()
-        self.canvas: CustomCanvas = CustomCanvas(self.app)
+        self.canvas: CustomCanvas = CustomCanvas(self.app, config.background_color)
         screen_height: int = self.canvas.screen_height
         screen_width: int = self.canvas.screen_width
 
