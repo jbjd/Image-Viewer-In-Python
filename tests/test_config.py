@@ -11,6 +11,7 @@ from image_viewer.constants import (
     DEFAULT_BACKGROUND_COLOR,
     DEFAULT_FONT,
     DEFAULT_MAX_ITEMS_IN_CACHE,
+    DefaultKeybinds,
 )
 from tests.conftest import WORKING_DIR
 
@@ -25,6 +26,10 @@ def test_config_reader():
     assert config.max_items_in_cache == 999
     assert config.background_color == "#ABCDEF"
 
+    assert config.keybinds.move_to_new_file == "<F6>"
+    assert config.keybinds.show_details == "<Control-a>"
+    assert config.keybinds.undo_most_recent_action == "<Control-Z>"
+
 
 def test_config_reader_defaults():
     """Should return all default values"""
@@ -34,6 +39,13 @@ def test_config_reader_defaults():
     assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
     assert config.background_color == DEFAULT_BACKGROUND_COLOR
 
+    assert config.keybinds.move_to_new_file == DefaultKeybinds.MOVE_TO_NEW_FILE
+    assert config.keybinds.show_details == DefaultKeybinds.SHOW_DETAILS
+    assert (
+        config.keybinds.undo_most_recent_action
+        == DefaultKeybinds.UNDO_MOST_RECENT_ACTION
+    )
+
 
 def test_config_reader_int_fallback():
     """Should return default when"""
@@ -42,6 +54,7 @@ def test_config_reader_int_fallback():
     assert config.font_file == DEFAULT_FONT
     assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
     assert config.background_color == DEFAULT_BACKGROUND_COLOR
+    assert config.keybinds.move_to_new_file == DefaultKeybinds.MOVE_TO_NEW_FILE
 
 
 @pytest.mark.parametrize(
