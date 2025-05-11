@@ -1,6 +1,7 @@
 import os
 import sys
 from argparse import REMAINDER, ArgumentParser, Namespace
+from typing import Literal
 
 from compile_utils.validation import raise_if_not_root
 
@@ -25,61 +26,50 @@ class CompileArgumentParser(ArgumentParser):
             epilog=f"Some nuitka arguments are also accepted: {self.VALID_NUITKA_ARGS}",
         )
 
-        _EXPOSED_FOR_DEBUG: str = " This option is exposed for debugging"
-
         default_python: str = "python" if os.name == "nt" else "python3"
-        self.add_argument(
+        self.add_argument_ext(
             "--python-path",
-            help=(
-                "Python to use in compilation, "
-                "defaults to interpreter running this program"
-            ),
-            default=f"{sys.exec_prefix}/{default_python}",
+            "Python to use in compilation, defaults to current interpreter.",
+            f"{sys.exec_prefix}/{default_python}",
         )
-        self.add_argument(
+        self.add_argument_ext(
             "--install-path",
-            help=f"Path to install to, defaults to {install_path}",
-            default=install_path,
+            f"Path to install to, defaults to {install_path}",
+            install_path,
         )
-        self.add_argument(
-            "--report",
-            action="store_true",
-            help="Adds --report=compilation-report.xml flag to nuitka",
+        self.add_argument_ext(
+            "--report", "Adds --report=compilation-report.xml flag to nuitka."
         )
-        self.add_argument(
+        self.add_argument_ext(
             "--debug",
-            action="store_true",
-            help=(
+            (
                 "Doesn't move compiled code to install path, doesn't check for root, "
                 "doesn't cleanup, doesn't pass Go, doesn't collect $200, "
                 "adds --enable-console, --warn-implicit-exceptions, "
-                "--warn-unusual-code, --report=compilation-report.xml flags to nuitka"
+                "--warn-unusual-code, --report=compilation-report.xml flags to nuitka."
             ),
         )
-        self.add_argument(
-            "--skip-nuitka",
-            action="store_true",
-            help=(
-                "Will not compile, will only create tmp directory "
-                "with cleaned .py files." + _EXPOSED_FOR_DEBUG
-            ),
-        )
-        self.add_argument(
-            "--no-cleanup",
-            action="store_true",
-            help=(
-                "Does not delete temporary files used for build/distribution."
-                + _EXPOSED_FOR_DEBUG
-            ),
-        )
-        self.add_argument(
+        self.add_argument_ext(
             "--strip",
-            action="store_true",
-            help=(
-                "Calls strip on all .exe and .dll files after compilation. "
+            (
+                "Calls strip on all .exe/.dll/.pyd files after compilation. "
                 "Requires strip being installed and on PATH. "
-                "This option only works for standalone builds"
+                "This option only works for standalone builds."
             ),
+            is_standalone_only=True,
+        )
+        self.add_argument_ext(
+            "--skip-nuitka",
+            (
+                "Skips running nuitka so no compilation takes place. "
+                "Only creates the tmp directory as it would be before compilation."
+            ),
+            is_debug=True,
+        )
+        self.add_argument_ext(
+            "--no-cleanup",
+            "Does not delete temporary files used for compilation/installation.",
+            is_debug=True,
         )
         self.add_argument("args", nargs=REMAINDER)
 
@@ -140,3 +130,24 @@ class CompileArgumentParser(ArgumentParser):
             nuitka_args.append(ENABLE_CONSOLE if user_args.debug else DISABLE_CONSOLE)
 
         return nuitka_args
+
+    def add_argument_ext(
+        self,
+        name: str,
+        help: str,
+        default: Literal[False] | str = False,
+        is_debug: bool = False,
+        is_standalone_only: bool = False,
+    ) -> None:
+        """Extension of add_argument to simply repeated patterns.
+        Adds argument of name with help text. Help text is expanded
+        if is_debug or is_standalone_only are True. Infers if argument
+        is store or store_true based on passed default."""
+        if is_debug:
+            help += " This option is exposed for debugging."
+        if is_standalone_only:
+            help += " This option only works for standalone builds."
+
+        action: str = "store_true" if default is False else "store"
+
+        super().add_argument(name, help=help, action=action, default=default)
