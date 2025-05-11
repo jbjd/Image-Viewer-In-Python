@@ -5,7 +5,7 @@ from importlib import import_module
 from subprocess import Popen
 from typing import Final
 
-from compile_utils.args import CompileArgumentParser
+from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
     clean_file_and_copy,
     clean_tk_files,
@@ -52,18 +52,20 @@ with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
 args: Namespace
 nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(imports_to_skip)
-is_standalone = "--standalone" in nuitka_args
+is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 
-nuitka_args.append("--mingw64")
+nuitka_args.append(NuitkaArgs.MINGW64)
 if os.name == "nt":
     windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
-    nuitka_args.append(f"--windows-icon-from-ico={windows_icon_file_path}")
+    nuitka_args.append(
+        NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(windows_icon_file_path)
+    )
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
 delete_folder(TMP_DIR)
 try:
-    # use "" as module for image_viewer should it should be considered root
+    # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
 
     for mod_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
