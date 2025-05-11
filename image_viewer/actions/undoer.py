@@ -1,5 +1,5 @@
 """
-Classes representing actions and a class that handles undoing them
+Classes that handle undoing things a user did
 """
 
 import os
