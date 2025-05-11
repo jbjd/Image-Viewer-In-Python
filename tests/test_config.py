@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from image_viewer.config import Config, validate_or_default
+from image_viewer.config import Config, validate_keybind_or_default
 from image_viewer.constants import DEFAULT_FONT, DEFAULT_MAX_ITEMS_IN_CACHE
 from tests.conftest import WORKING_DIR
 
@@ -47,4 +47,4 @@ def test_config_reader_int_fallback():
 )
 def test_validate_or_default(keybind: str, expected_result: str):
     """should return original keybind or default if keybind was invalid"""
-    assert validate_or_default(keybind, DEFAULT) == expected_result
+    assert validate_keybind_or_default(keybind, DEFAULT) == expected_result

@@ -80,7 +80,7 @@ VALID_FILE_TYPES: set[str] = {
     "dds",
 }
 
-
+DEFAULT_BACKGROUND_COLOR: Final[str] = "#000000"
 DEFAULT_FONT: Final[str] = (
     "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
 )

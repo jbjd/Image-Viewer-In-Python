@@ -22,8 +22,8 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         "topbar",
     )
 
-    def __init__(self, master: Tk) -> None:
-        super().__init__(master, bg="black", highlightthickness=0)
+    def __init__(self, master: Tk, background_color: str) -> None:
+        super().__init__(master, bg=background_color, highlightthickness=0)
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
@@ -41,7 +41,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
             0,
             self.screen_width,
             self.screen_height,
-            fill="black",
+            fill=background_color,
             tags=TkTags.BACKGROUND,
         )
 
