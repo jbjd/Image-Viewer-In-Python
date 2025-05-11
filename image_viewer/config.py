@@ -17,13 +17,23 @@ from constants import (
 class Config:
     """Reads configs from config.ini"""
 
-    __slots__ = ("background_color", "font_file", "keybinds", "max_items_in_cache")
+    __slots__ = (
+        "_config_file_path",
+        "background_color",
+        "font_file",
+        "keybinds",
+        "max_items_in_cache",
+    )
 
     def __init__(
         self, working_directory: str, config_file_name: str = "config.ini"
     ) -> None:
+        self._config_file_path: str = os.path.join(working_directory, config_file_name)
+        self.read_configs()
+
+    def read_configs(self) -> None:
         config_parser: ConfigParserExt = ConfigParserExt()
-        config_parser.read(os.path.join(working_directory, config_file_name))
+        config_parser.read(self._config_file_path)
 
         self.font_file: str = config_parser.get_string_safe(
             "FONT", "DEFAULT", DEFAULT_FONT

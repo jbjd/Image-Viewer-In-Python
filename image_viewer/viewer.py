@@ -29,6 +29,7 @@ class ViewerApp:
         "animation_id",
         "app",
         "canvas",
+        "config",
         "dropdown",
         "file_manager",
         "height_ratio",
@@ -42,8 +43,8 @@ class ViewerApp:
     )
 
     def __init__(self, first_image_path: str, path_to_exe_folder: str) -> None:
-        config = Config(path_to_exe_folder)
-        image_cache: ImageCache = ImageCache(config.max_items_in_cache)
+        self.config = Config(path_to_exe_folder)
+        image_cache: ImageCache = ImageCache(self.config.max_items_in_cache)
         self.file_manager: ImageFileManager = ImageFileManager(
             first_image_path, image_cache
         )
@@ -59,7 +60,7 @@ class ViewerApp:
 
         self.app: Tk = self._setup_tk_app(path_to_exe_folder)
         self.window_id: int = self.app.winfo_id()
-        self.canvas: CustomCanvas = CustomCanvas(self.app, config.background_color)
+        self.canvas: CustomCanvas = CustomCanvas(self.app, self.config.background_color)
         screen_height: int = self.canvas.screen_height
         screen_width: int = self.canvas.screen_width
 
@@ -68,7 +69,7 @@ class ViewerApp:
 
         self._load_assests(
             self.canvas,
-            config.font_file,
+            self.config.font_file,
             self.canvas.screen_width,
             self._scale_pixels_to_height(32),
         )
@@ -81,12 +82,17 @@ class ViewerApp:
             self.animation_loop,
         )
 
-        init_PIL(config.font_file, self._scale_pixels_to_height(23))
+        init_PIL(self.config.font_file, self._scale_pixels_to_height(23))
 
         self._init_image_display()
 
-        self.canvas.tag_bind(TkTags.BACKGROUND, "<Button-1>", self.handle_canvas_click)
-        self._add_binds_to_tk(config)
+        self.canvas.tag_bind(
+            self.canvas.image_display.id, "<Button-1>", self.handle_canvas_click
+        )
+        self.canvas.tag_bind(
+            self.canvas.background_id, "<Button-1>", self.handle_canvas_click
+        )
+        self._add_binds_to_tk()
 
         self.app.mainloop()
 
@@ -125,7 +131,7 @@ class ViewerApp:
         if image is None:
             self.load_image()
 
-    def _add_binds_to_tk(self, config: Config) -> None:
+    def _add_binds_to_tk(self) -> None:
         """Assigns binds to Tk instance"""
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
@@ -133,9 +139,12 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind(config.keybinds.show_details, self.show_details_popup)
-        app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
-        app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
+        app.bind(self.config.keybinds.show_details, self.show_details_popup)
+        app.bind(self.config.keybinds.move_to_new_file, self.move_to_new_file)
+        app.bind(
+            self.config.keybinds.undo_most_recent_action, self.undo_most_recent_action
+        )
+        app.bind("<Control-A>", self.refresh_config)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind(
             "<r>",
@@ -419,6 +428,18 @@ class ViewerApp:
         except IndexError:
             self.exit()
         self.load_image_unblocking()
+
+    def refresh_config(self, _: Event) -> None:
+        """Rereads config file and updates [CACHE] and [UI] sections"""
+        self.config.read_configs()
+
+        self.canvas.configure(background=self.config.background_color)
+        self.canvas.itemconfig(
+            self.canvas.background_id, fill=self.config.background_color
+        )
+        self.image_loader.image_cache.max_items_in_cache = (
+            self.config.max_items_in_cache
+        )
 
     def undo_most_recent_action(self, _: Event) -> None:
         """Tries to undo most recent action and loads new image if needed"""

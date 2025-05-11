@@ -12,6 +12,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     """Custom version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
+        "background_id",
         "button_name_to_object",
         "drag_start_x",
         "drag_start_y",
@@ -36,13 +37,12 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.drag_start_y: int
         self.topbar: PhotoImage
 
-        self.create_rectangle(
+        self.background_id: int = self.create_rectangle(
             0,
             0,
             self.screen_width,
             self.screen_height,
             fill=background_color,
-            tags=TkTags.BACKGROUND,
         )
 
         self.bind("<ButtonPress-3>", self._move_from)
@@ -120,7 +120,6 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
             self.screen_width >> 1,
             self.screen_height >> 1,
             anchor="center",
-            tag=TkTags.BACKGROUND,
             image=new_image,
         )
         self.image_display.update(image=new_image, id=new_id)
