@@ -131,7 +131,7 @@ def move_files_to_tmp_and_clean(
             skip_match := re.match(modules_to_skip_re, mod_name)
         ):
             match: str = skip_match.string[: skip_match.end()]
-            if match[-1] == ".":
+            if match[-1:] == ".":
                 match = match[:-1]
             if match in modules_to_skip:
                 modules_to_skip.remove(match)

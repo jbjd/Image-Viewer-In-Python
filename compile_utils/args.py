@@ -45,15 +45,12 @@ class CompileArgumentParser(ArgumentParser):
     __slots__ = ()
 
     VALID_NUITKA_ARGS: list[str] = [
-        str(arg)
-        for arg in (
-            NuitkaArgs.STANDALONE,
-            NuitkaArgs.QUIET,
-            NuitkaArgs.VERBOSE,
-            NuitkaArgs.SHOW_SCONS,
-            NuitkaArgs.SHOW_MEMORY,
-            NuitkaArgs.WINDOWS_CONSOLE_MODE,
-        )
+        NuitkaArgs.STANDALONE.value,
+        NuitkaArgs.QUIET.value,
+        NuitkaArgs.VERBOSE.value,
+        NuitkaArgs.SHOW_SCONS.value,
+        NuitkaArgs.SHOW_MEMORY.value,
+        NuitkaArgs.WINDOWS_CONSOLE_MODE.value,
     ]
 
     def __init__(self, install_path: str) -> None:
