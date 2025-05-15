@@ -5,8 +5,6 @@ from os import stat
 
 from PIL.Image import Image
 
-from constants import DEFAULT_MAX_ITEMS_IN_CACHE
-
 
 class ImageCacheEntry:
     """Information stored to skip resizing/system calls on repeated opening"""
@@ -44,11 +42,23 @@ class ImageCacheEntry:
 class ImageCache(OrderedDict[str, ImageCacheEntry]):
     """Dictionary for caching image data using paths as keys"""
 
-    __slots__ = ("max_items_in_cache",)
+    __slots__ = ("_max_items_in_cache",)
 
-    def __init__(self, max_items_in_cache: int = DEFAULT_MAX_ITEMS_IN_CACHE) -> None:
+    def __init__(self, max_items_in_cache: int) -> None:
         super().__init__()
-        self.max_items_in_cache: int = max_items_in_cache
+        self._max_items_in_cache: int = max(max_items_in_cache, 0)
+
+    @property
+    def max_items_in_cache(self) -> int:
+        return self._max_items_in_cache
+
+    @max_items_in_cache.setter
+    def max_items_in_cache(self, max_items_in_cache: int) -> None:
+        """Also removes entries if max shrunk below previous size"""
+        self._max_items_in_cache = max(max_items_in_cache, 0)
+
+        while self.__len__() >= max_items_in_cache:
+            self.popitem(last=False)
 
     def pop_safe(self, image_path: str) -> ImageCacheEntry | None:
         return self.pop(image_path, None)
