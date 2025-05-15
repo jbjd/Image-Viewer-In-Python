@@ -66,9 +66,11 @@ class ImageCache(OrderedDict[str, ImageCacheEntry]):
     def image_cache_still_fresh(self, image_path: str) -> bool:
         """Returns True when cached image is the same size of the image on disk.
         Not guaranteed to be correct, but that's not important for this case"""
-        cached_bytes: int = self[image_path].byte_size if image_path in self else -1
+        if image_path not in self:
+            return False
+
         try:
-            return stat(image_path).st_size == cached_bytes
+            return stat(image_path).st_size == self[image_path].byte_size
         except (FileNotFoundError, OSError):
             return False
 
