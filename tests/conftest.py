@@ -24,7 +24,7 @@ def image_resizer() -> ImageResizer:
 
 @pytest.fixture
 def image_cache() -> ImageCache:
-    return ImageCache()
+    return ImageCache(20)
 
 
 @pytest.fixture(scope="session")
