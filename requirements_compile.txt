@@ -1,2 +1,2 @@
 nuitka==2.7.1
-personal-python-minifier @ git+https://github.com/jbjd/Python-Minifier@v0.0.3
+personal-python-ast-optimizer @ git+https://github.com/jbjd/Python-Ast-Optimizer@v1.0.0

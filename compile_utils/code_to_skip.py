@@ -6,7 +6,7 @@ import re
 import sys
 from collections import defaultdict
 
-from personal_python_minifier.regex import RegexReplacement
+from personal_python_ast_optimizer.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 _skip_functions_kwargs: dict[str, set[str]] = {

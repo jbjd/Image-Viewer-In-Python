@@ -10,16 +10,18 @@ from re import sub
 from shutil import copyfile
 from typing import Iterator
 
-from personal_python_minifier.factories.minifier_factory import ExclusionMinifierFactory
-from personal_python_minifier.flake_wrapper import run_autoflake
-from personal_python_minifier.parser import parse_source_to_module_node
-from personal_python_minifier.parser.config import (
+from personal_python_ast_optimizer.factories.minifier_factory import (
+    ExclusionMinifierFactory,
+)
+from personal_python_ast_optimizer.flake_wrapper import run_autoflake
+from personal_python_ast_optimizer.parser import parse_source_to_module_node
+from personal_python_ast_optimizer.parser.config import (
     SectionsToSkipConfig,
     TokensToSkipConfig,
 )
-from personal_python_minifier.parser.minifier import MinifyUnparser
-from personal_python_minifier.regex import RegexReplacement
-from personal_python_minifier.regex.apply import apply_regex, apply_regex_to_file
+from personal_python_ast_optimizer.parser.minifier import MinifyUnparser
+from personal_python_ast_optimizer.regex import RegexReplacement
+from personal_python_ast_optimizer.regex.apply import apply_regex, apply_regex_to_file
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
