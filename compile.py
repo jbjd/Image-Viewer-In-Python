@@ -20,6 +20,7 @@ from compile_utils.file_operations import (
     delete_folders,
 )
 from compile_utils.nuitka import start_nuitka_compilation
+from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import raise_if_unsupported_python_version
 
 raise_if_unsupported_python_version()
@@ -66,33 +67,34 @@ if os.name == "nt":
 delete_folder(TMP_DIR)
 try:
     # use "" as module for image_viewer, it should be considered root
-    move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, "")
+    move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
 
-    for mod_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
+    for module_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
         modules_to_skip: set[str] = set(
-            i for i in imports_to_skip if i.startswith(mod_name)
+            i for i in imports_to_skip if i.startswith(module_name)
         )
 
-        module = import_module(mod_name)
+        module = import_module(module_name)
         if module.__file__ is None:
-            print(f"Error getting module {mod_name}'s filepath")
+            print(f"Error getting module {module_name}'s filepath")
             continue
         base_file_name: str = os.path.basename(module.__file__)
-        if mod_name == "numpy":
+        if module_name == "numpy":
             site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
             lib_path: str = os.path.join(site_packages_path, "numpy.libs")
             copy_folder(lib_path, os.path.join(TMP_DIR, "numpy.libs"))
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
-                os.path.dirname(module.__file__), TMP_DIR, mod_name, modules_to_skip
+                os.path.dirname(module.__file__), TMP_DIR, module_name, modules_to_skip
             )
         else:
             # its just one file
             clean_file_and_copy(
                 module.__file__,
                 os.path.join(TMP_DIR, base_file_name),
-                mod_name,
+                module_name,
+                module_name,
             )
 
     if args.skip_nuitka:

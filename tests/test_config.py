@@ -3,15 +3,13 @@ import os
 import pytest
 
 from image_viewer.config import (
-    Config,
-    validate_hex_or_default,
-    validate_keybind_or_default,
-)
-from image_viewer.constants import (
     DEFAULT_BACKGROUND_COLOR,
     DEFAULT_FONT,
     DEFAULT_MAX_ITEMS_IN_CACHE,
+    Config,
     DefaultKeybinds,
+    validate_hex_or_default,
+    validate_keybind_or_default,
 )
 from tests.conftest import WORKING_DIR
 

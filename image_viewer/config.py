@@ -5,13 +5,19 @@ Reads config.ini from root directory and stores results or defaults
 import os
 import re
 from configparser import ConfigParser
+from enum import StrEnum
 
-from constants import (
-    DEFAULT_BACKGROUND_COLOR,
-    DEFAULT_FONT,
-    DEFAULT_MAX_ITEMS_IN_CACHE,
-    DefaultKeybinds,
-)
+DEFAULT_FONT: str = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
+DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
+DEFAULT_BACKGROUND_COLOR: str = "#000000"
+
+
+class DefaultKeybinds(StrEnum):
+    """Defaults for keybinds that config.ini can override"""
+
+    MOVE_TO_NEW_FILE = "<Control-m>"
+    SHOW_DETAILS = "<Control-d>"
+    UNDO_MOST_RECENT_ACTION = "<Control-z>"
 
 
 class Config:
