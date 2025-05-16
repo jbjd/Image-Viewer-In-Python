@@ -2,9 +2,7 @@
 File with constants needed in multiple spots of the codebase
 """
 
-import os
 from enum import IntEnum, StrEnum
-from typing import Final
 
 
 class ImageFormats(StrEnum):
@@ -60,14 +58,6 @@ class ButtonName(StrEnum):
     DROPDOWN = "dropdown"
 
 
-class DefaultKeybinds(StrEnum):
-    """Defaults for keybinds that config.ini can override"""
-
-    MOVE_TO_NEW_FILE = "<Control-m>"
-    SHOW_DETAILS = "<Control-d>"
-    UNDO_MOST_RECENT_ACTION = "<Control-z>"
-
-
 VALID_FILE_TYPES: set[str] = {
     "gif",
     "jpg",
@@ -80,10 +70,5 @@ VALID_FILE_TYPES: set[str] = {
     "dds",
 }
 
-DEFAULT_BACKGROUND_COLOR: Final[str] = "#000000"
-DEFAULT_FONT: Final[str] = (
-    "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
-)
-DEFAULT_MAX_ITEMS_IN_CACHE: Final[int] = 20
 
 TEXT_RGB: str = "#FEFEFE"

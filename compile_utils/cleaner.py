@@ -25,6 +25,7 @@ from personal_python_ast_optimizer.regex.apply import apply_regex, apply_regex_t
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
+    constants_to_fold,
     decorators_to_skip,
     dict_keys_to_skip,
     from_imports_to_skip,
@@ -33,6 +34,7 @@ from compile_utils.code_to_skip import (
     regex_to_apply_tk,
     vars_to_skip,
 )
+from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import MINIMUM_PYTHON_VERSION
 
 if os.name == "nt":
@@ -41,20 +43,25 @@ else:
     separators = r"[/]"
 
 
-class ExclusionUnparser(MinifyUnparser):
-    """Extends parent to exclude specific things only relevant to this codebase"""
+class MinifyUnparserExt(MinifyUnparser):
+    """Extends parent to exclude some specific things only relevant to this codebase"""
 
-    def __init__(self, module_name: str = "") -> None:
+    def __init__(
+        self,
+        module_name: str = "",
+        constant_vars_to_fold: dict[str, int | str] | None = None,
+    ) -> None:
         super().__init__(
-            module_name=module_name, target_python_version=MINIMUM_PYTHON_VERSION
+            module_name=module_name,
+            target_python_version=MINIMUM_PYTHON_VERSION,
+            constant_vars_to_fold=constant_vars_to_fold,
         )
 
     def visit_Call(self, node: ast.Call) -> None:
         if self._node_is_warn(node):
             self.visit_Pass(ast.Pass())
-            return
-
-        super().visit_Call(node)
+        else:
+            super().visit_Call(node)
 
     @staticmethod
     def _node_is_warn(node: ast.Call) -> bool:
@@ -73,30 +80,36 @@ class ExclusionUnparser(MinifyUnparser):
         super().visit_If(node)
 
 
-def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None:
+def clean_file_and_copy(
+    path: str, new_path: str, module_name: str, module_import_path: str
+) -> None:
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
-    if module_name in regex_to_apply_py:
-        regex_replacements: list[RegexReplacement] = regex_to_apply_py[module_name]
-        source = apply_regex(source, regex_replacements, module_name)
+    if module_import_path in regex_to_apply_py:
+        regex_replacements: list[RegexReplacement] = regex_to_apply_py[
+            module_import_path
+        ]
+        source = apply_regex(source, regex_replacements, module_import_path)
 
-    code_cleaner: ExclusionUnparser = ExclusionUnparser(module_name)
+    code_cleaner: MinifyUnparserExt = MinifyUnparserExt(
+        module_import_path, constants_to_fold[module_name]
+    )
     code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
         code_cleaner,
         SectionsToSkipConfig(skip_name_equals_main=True),
         TokensToSkipConfig(
-            classes=classes_to_skip[module_name],
-            decorators=decorators_to_skip[module_name],
-            dict_keys=dict_keys_to_skip[module_name],
-            from_imports=from_imports_to_skip[module_name],
-            functions=functions_to_skip[module_name],
-            variables=vars_to_skip[module_name],
+            classes=classes_to_skip[module_import_path],
+            decorators=decorators_to_skip[module_import_path],
+            dict_keys=dict_keys_to_skip[module_import_path],
+            from_imports=from_imports_to_skip[module_import_path],
+            functions=functions_to_skip[module_import_path],
+            variables=vars_to_skip[module_import_path],
         ),
     )
     source = code_cleaner.visit(parse_source_to_module_node(source))
 
-    edit_imports: bool = module_name[:5] != "numpy"
+    edit_imports: bool = module_name != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)
 
     with open(new_path, "w", encoding="utf-8") as fp:
@@ -106,7 +119,7 @@ def clean_file_and_copy(path: str, new_path: str, module_name: str = "") -> None
 def move_files_to_tmp_and_clean(
     source_dir: str,
     tmp_dir: str,
-    mod_prefix: str,
+    module_name: str,
     modules_to_skip: set[str] | None = None,
 ) -> None:
     """Moves python files from source_dir to temp_dir
@@ -117,20 +130,24 @@ def move_files_to_tmp_and_clean(
         modules_to_skip_re = ""
 
     for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd")):
-        if os.path.basename(python_file) == "__main__.py" and mod_prefix != "":
+        if (
+            os.path.basename(python_file) == "__main__.py"
+            and module_name != IMAGE_VIEWER_NAME
+        ):
             continue  # skip __main__ in modules other than this one
 
         python_file = os.path.abspath(python_file)
-        relative_path: str = os.path.join(
-            mod_prefix, python_file.replace(source_dir, "").strip("/\\")
-        )
-        new_path: str = os.path.join(tmp_dir, relative_path)
-        dir_path: str = os.path.dirname(new_path)
+        relative_path: str = python_file.replace(source_dir, "").strip("/\\")
+        module_import_path: str = sub(separators, ".", f"{module_name}.{relative_path}")
+        module_import_path = module_import_path[:-3]  # chops .py
 
-        mod_name: str = sub(separators, ".", relative_path)[:-3]  # chops .py
+        if module_name != IMAGE_VIEWER_NAME:
+            relative_path = os.path.join(module_name, relative_path)
+
+        new_path: str = os.path.join(tmp_dir, relative_path)
 
         if modules_to_skip is not None and (
-            skip_match := re.match(modules_to_skip_re, mod_name)
+            skip_match := re.match(modules_to_skip_re, module_import_path)
         ):
             match: str = skip_match.string[: skip_match.end()]
             if match[-1:] == ".":
@@ -139,9 +156,9 @@ def move_files_to_tmp_and_clean(
                 modules_to_skip.remove(match)
             continue
 
-        os.makedirs(dir_path, exist_ok=True)
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
         if python_file.endswith(".py"):
-            clean_file_and_copy(python_file, new_path, mod_name)
+            clean_file_and_copy(python_file, new_path, module_name, module_import_path)
         else:
             copyfile(python_file, new_path)
 

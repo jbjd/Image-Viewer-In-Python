@@ -9,6 +9,10 @@ from collections import defaultdict
 from personal_python_ast_optimizer.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
+from compile_utils.package_info import IMAGE_VIEWER_NAME
+from image_viewer.config import DEFAULT_BACKGROUND_COLOR, DEFAULT_MAX_ITEMS_IN_CACHE
+from image_viewer.constants import TEXT_RGB
+
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
     "numpy._core._exceptions": {"_display_as_base"},
@@ -355,9 +359,9 @@ _skip_vars_kwargs: dict[str, set[str]] = {
 }
 
 _skip_classes_kwargs: dict[str, set[str]] = {
-    "actions.types": {"ABC"},
-    "state.base": {"ABC"},
-    "ui.base": {"ABC"},
+    f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
+    f"{IMAGE_VIEWER_NAME}.state.base": {"ABC"},
+    f"{IMAGE_VIEWER_NAME}.ui.base": {"ABC"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
@@ -469,6 +473,16 @@ from_imports_to_skip: defaultdict[str, set[str]] = defaultdict(
     set, **_skip_from_imports
 )
 
+constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
+    dict,
+    {
+        IMAGE_VIEWER_NAME: {
+            "DEFAULT_BACKGROUND_COLOR": DEFAULT_BACKGROUND_COLOR,
+            "DEFAULT_MAX_ITEMS_IN_CACHE": DEFAULT_MAX_ITEMS_IN_CACHE,
+            "TEXT_RGB": TEXT_RGB,
+        }
+    },
+)
 
 remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(
@@ -478,7 +492,9 @@ remove_numpy_pytester_re = RegexReplacement(
 regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
     list,
     {
-        "util.PIL": [RegexReplacement(pattern=r"_Image._plugins = \[\]")],
+        f"{IMAGE_VIEWER_NAME}.util.PIL": [
+            RegexReplacement(pattern=r"_Image._plugins = \[\]")
+        ],
         "numpy.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(

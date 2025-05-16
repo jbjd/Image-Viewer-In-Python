@@ -4,7 +4,8 @@ from unittest.mock import patch
 import pytest
 from PIL.Image import Image, new
 
-from image_viewer.constants import DEFAULT_FONT, ImageFormats
+from image_viewer.config import DEFAULT_FONT
+from image_viewer.constants import ImageFormats
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
 from image_viewer.image.file import ImageName, magic_number_guess
 from image_viewer.util.PIL import (
