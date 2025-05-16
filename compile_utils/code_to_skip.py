@@ -10,6 +10,8 @@ from personal_python_ast_optimizer.regex import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 from compile_utils.package_info import IMAGE_VIEWER_NAME
+from image_viewer.config import DEFAULT_BACKGROUND_COLOR, DEFAULT_MAX_ITEMS_IN_CACHE
+from image_viewer.constants import TEXT_RGB
 
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
@@ -475,8 +477,9 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
     {
         IMAGE_VIEWER_NAME: {
-            "DEFAULT_BACKGROUND_COLOR": "#000000",
-            "DEFAULT_MAX_ITEMS_IN_CACHE": 20,
+            "DEFAULT_BACKGROUND_COLOR": DEFAULT_BACKGROUND_COLOR,
+            "DEFAULT_MAX_ITEMS_IN_CACHE": DEFAULT_MAX_ITEMS_IN_CACHE,
+            "TEXT_RGB": TEXT_RGB,
         }
     },
 )
