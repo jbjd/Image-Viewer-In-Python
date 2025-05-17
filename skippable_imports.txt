@@ -50,6 +50,7 @@ numpy.lib._npyio_impl
 numpy.lib._polynomial_impl
 numpy.lib._scimath_impl
 numpy.lib._shape_base_impl
+numpy.lib._twodim_base_impl
 numpy.lib._type_check_impl
 numpy.lib._ufunclike_impl
 numpy.lib._user_array_impl

@@ -16,6 +16,7 @@ from image_viewer.constants import TEXT_RGB
 _skip_functions_kwargs: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
     "numpy._core._exceptions": {"_display_as_base"},
+    "numpy._core._methods": {"_amax", "_amin", "_any", "_clip", "_prod", "_sum"},
     "numpy._core.arrayprint": {
         "_array_repr_dispatcher",
         "_array_repr_implementation",
@@ -127,15 +128,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_broadcast_to_dispatcher",
         "_sliding_window_view_dispatcher",
         "sliding_window_view",
-    },
-    "numpy.lib._twodim_base_impl": {
-        "_diag_dispatcher",
-        "_flip_dispatcher",
-        "_histogram2d_dispatcher",
-        "_trilu_dispatcher",
-        "_trilu_indices_form_dispatcher",
-        "_vander_dispatcher",
-        "histogram2d",
     },
     "turbojpeg": {
         "__define_cropping_regions",
@@ -324,6 +316,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.state.base": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.ui.base": {"ABC"},
+    "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
     "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
@@ -351,9 +344,10 @@ _skip_from_imports: dict[str, set[str]] = {
         "array_repr",
         "einsum",
         "einsum_path",
+        "finfo",
         "histogram",
         "histogramdd",
-        "histogram2d",
+        "iinfo",
         "matrixlib",
         "version",
     },
@@ -386,7 +380,6 @@ _skip_from_imports: dict[str, set[str]] = {
         "normalize_axis_tuple",
         "set_module",
     },
-    "numpy.lib._twodim_base_impl": {"finalize_array_function_like", "set_module"},
     "PIL.features": {"deprecate"},
     "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
@@ -414,11 +407,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.records": {"set_module"},
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
-    "numpy.lib._twodim_base_impl": {
-        "array_function_dispatch",
-        "finalize_array_function_like",
-        "set_module",
-    },
     "PIL.Image": {"abstractmethod"},
 }
 
@@ -499,7 +487,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
                 pattern=(
-                    r"from \.(lib\.(_arraysetops_impl|_arraypad_impl"
+                    r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_twodim_base_impl"
                     r"|_function_base_impl|_index_tricks_impl|_npyio_impl"
                     r"|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl"
                     r"|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)"
@@ -535,6 +523,9 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         ],
         "numpy._core.function_base": [
             RegexReplacement(pattern="(.logspace.,)|(, .geomspace.)")
+        ],
+        "numpy._core.getlimits": [
+            RegexReplacement(pattern="__all__.*", replacement="__all__=[]")
         ],
         "numpy._core.numeric": [
             RegexReplacement(pattern=".*_asarray.*", count=3),
