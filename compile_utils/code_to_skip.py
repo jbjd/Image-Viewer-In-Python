@@ -137,44 +137,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_vander_dispatcher",
         "histogram2d",
     },
-    "numpy.linalg._linalg": {
-        "_cond_dispatcher",
-        "_convertarray",
-        "_cholesky_dispatcher",
-        "_cross_dispatcher",
-        "_diagonal_dispatcher",
-        "_eigvalsh_dispatcher",
-        "_lstsq_dispatcher",
-        "_matmul_dispatcher",
-        "_matrix_norm_dispatcher",
-        "_matrix_power_dispatcher",
-        "_matrix_rank_dispatcher",
-        "_matrix_transpose_dispatcher",
-        "_multidot_dispatcher",
-        "_norm_dispatcher",
-        "_outer_dispatcher",
-        "_pinv_dispatcher",
-        "_qr_dispatcher",
-        "_raise_linalgerror_qr",
-        "_raise_linalgerror_nonposdef",
-        "_solve_dispatcher",
-        "_svd_dispatcher",
-        "_svdvals_dispatcher",
-        "_tensordot_dispatcher",
-        "_tensorinv_dispatcher",
-        "_tensorsolve_dispatcher",
-        "_trace_dispatcher",
-        "_unary_dispatcher",
-        "_vecdot_dispatcher",
-        "_vector_norm_dispatcher",
-        "cholesky",
-        "cross",
-        "eigvals",
-        "matrix_rank",
-        "qr",
-        "svdvals",
-        "tensorsolve",
-    },
     "turbojpeg": {
         "__define_cropping_regions",
         "__find_dqt",
@@ -327,7 +289,6 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "numpy._core.records": {"__module__", "numfmt"},
     "numpy.lib.__init__": {"__all__"},
-    "numpy.linalg._linalg": {"__doc__", "array_function_dispatch", "fortran_int"},
     "turbojpeg": {
         "__author__",
         "__buffer_size_YUV2",
@@ -418,8 +379,6 @@ _skip_from_imports: dict[str, set[str]] = {
         "set_module",
     },
     "numpy.lib._twodim_base_impl": {"finalize_array_function_like", "set_module"},
-    "numpy.linalg.__init__": {"linalg"},
-    "numpy.linalg._linalg": {"cross", "intc", "set_module", "triu"},
     "PIL.features": {"deprecate"},
     "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
@@ -452,7 +411,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
         "finalize_array_function_like",
         "set_module",
     },
-    "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
     "PIL.Image": {"abstractmethod"},
 }
 
@@ -497,14 +455,18 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         "numpy.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
-                pattern=r"(el)?if attr == .char.*?return char(\.chararray)?",
+                pattern=(
+                    r"if attr == .linalg.:.*?"
+                    r"raise AttributeError\(.module \{!r\} has no attribute .*?\)\)"
+                ),
+                replacement="""if attr=='dtypes':
+            import numpy.dtypes as dtypes
+            return dtypes
+        elif attr=='exceptions':
+            import numpy.exceptions as exceptions
+            return exceptions
+        raise AttributeError('module {!r} has no attribute {!r}'.format(__name__,attr))""",  # noqa E501
                 flags=re.DOTALL,
-            ),
-            RegexReplacement(
-                pattern=r"elif attr == .(array_api|distutils).:.*?\)", flags=re.DOTALL
-            ),
-            RegexReplacement(  # These are all deprecation warnings
-                pattern=r"if attr in _.*?\)", flags=re.DOTALL
             ),
             RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
             RegexReplacement(
@@ -528,33 +490,18 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
-                pattern=r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_function_base_impl|_index_tricks_impl|_npyio_impl|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)",  # noqa E501
+                pattern=(
+                    r"from \.(lib\.(_arraysetops_impl|_arraypad_impl"
+                    r"|_function_base_impl|_index_tricks_impl|_npyio_impl"
+                    r"|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl"
+                    r"|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)"
+                ),
                 flags=re.DOTALL,
             ),
             RegexReplacement(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
             ),
             RegexReplacement(pattern=r"(get)?(set)?_?printoptions,", count=3),
-        ]
-        + [
-            RegexReplacement(
-                pattern="elif attr == .{0}.:.*?return {0}".format(module),
-                flags=re.DOTALL,
-            )
-            for module in (
-                "core",
-                "ctypeslib",
-                "fft",
-                "f2py",
-                "ma",
-                "matlib",
-                "polynomial",
-                "random",
-                "rec",
-                "strings",
-                "testing",
-                "typing",
-            )
         ],
         "numpy._core.__init__": [
             remove_numpy_pytester_re,
@@ -650,14 +597,6 @@ from numpy._core.numeric import normalize_axis_tuple,normalize_axis_index
 __all__=['normalize_axis_tuple','normalize_axis_index']""",
                 flags=re.DOTALL,
             )
-        ],
-        "numpy.linalg.__init__": [remove_numpy_pytester_re],
-        "numpy.linalg._linalg": [
-            RegexReplacement(pattern="from numpy._typing.*"),
-            RegexReplacement(pattern=r",\s*.(cholesky|qr)."),
-            RegexReplacement(
-                pattern=r".(cross|eigvals|matrix_rank|svdvals|tensorsolve).,", count=5
-            ),
         ],
         "PIL.__init__": [
             RegexReplacement(

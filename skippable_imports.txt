@@ -64,6 +64,8 @@ numpy.lib.scimath
 numpy.lib.stride_tricks
 numpy.lib.tests
 numpy.lib.user_array
+numpy.linalg.__init__
+numpy.linalg._linalg
 numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma
