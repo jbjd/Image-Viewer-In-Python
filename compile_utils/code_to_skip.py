@@ -84,7 +84,6 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "geomspace",
         "logspace",
     },
-    "numpy._core.getlimits": {"__repr__"},
     "numpy._core.numeric": {
         "_allclose_dispatcher",
         "_argwhere_dispatcher",
@@ -400,7 +399,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "numpy._core.arrayprint": {"array_function_dispatch", "set_module", "wraps"},
     "numpy._core.fromnumeric": {"array_function_dispatch", "set_module"},
     "numpy._core.function_base": {"array_function_dispatch"},
-    "numpy._core.getlimits": {"set_module"},
     "numpy._core.multiarray": {"array_function_from_c_func_and_dispatcher"},
     "numpy._core.numeric": {
         "array_function_dispatch",
