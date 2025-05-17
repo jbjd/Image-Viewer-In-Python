@@ -12,6 +12,7 @@ numpy._core._add_newdocs
 numpy._core._add_newdocs_scalars
 numpy._core._asarray
 numpy._core._dtype
+numpy._core._dtype_ctypes
 numpy._core._internal
 numpy._core._string_helpers
 numpy._core.cversions
@@ -50,6 +51,7 @@ numpy.lib._npyio_impl
 numpy.lib._polynomial_impl
 numpy.lib._scimath_impl
 numpy.lib._shape_base_impl
+numpy.lib._twodim_base_impl
 numpy.lib._type_check_impl
 numpy.lib._ufunclike_impl
 numpy.lib._user_array_impl
@@ -61,12 +63,17 @@ numpy.lib.mixins
 numpy.lib.npyio
 numpy.lib.recfunctions
 numpy.lib.scimath
+numpy.lib.stride_tricks
 numpy.lib.tests
 numpy.lib.user_array
+numpy.linalg.__init__
+numpy.linalg._linalg
 numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma
 numpy.matlib
+numpy.matrixlib.__init__
+numpy.matrixlib.defmatrix
 numpy.matrixlib.tests
 numpy.polynomial
 numpy.random
