@@ -68,6 +68,8 @@ numpy.linalg.linalg
 numpy.linalg.tests
 numpy.ma
 numpy.matlib
+numpy.matrixlib.__init__
+numpy.matrixlib.defmatrix
 numpy.matrixlib.tests
 numpy.polynomial
 numpy.random

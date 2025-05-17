@@ -156,6 +156,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
         "_pinv_dispatcher",
         "_qr_dispatcher",
         "_raise_linalgerror_qr",
+        "_raise_linalgerror_nonposdef",
         "_solve_dispatcher",
         "_svd_dispatcher",
         "_svdvals_dispatcher",
@@ -452,7 +453,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
         "set_module",
     },
     "numpy.linalg._linalg": {"array_function_dispatch", "set_module"},
-    "numpy.matrixlib.defmatrix": {"set_module"},
     "PIL.Image": {"abstractmethod"},
 }
 
@@ -659,7 +659,6 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
                 pattern=r".(cross|eigvals|matrix_rank|svdvals|tensorsolve).,", count=5
             ),
         ],
-        "numpy.matrixlib.__init__": [remove_numpy_pytester_re],
         "PIL.__init__": [
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
