@@ -15,7 +15,7 @@ ERROR.log
 build/
 compilation-report.xml
 nuitka-crash-report.xml
-*tmp/
+tmp*/
 *.egg-info
 
 *.ipynb
