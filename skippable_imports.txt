@@ -157,6 +157,10 @@ py_compile
 pydoc
 select
 selectors
+send2trash.mac.__init__
+send2trash.mac.legacy
+send2trash.mac.modern
+send2trash.plat_gio
 send2trash.win.modern
 socket
 statistics
