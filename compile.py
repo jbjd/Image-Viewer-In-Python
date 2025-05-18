@@ -11,6 +11,7 @@ from compile_utils.cleaner import (
     clean_tk_files,
     move_files_to_tmp_and_clean,
     strip_files,
+    warn_unused_code_skips,
 )
 from compile_utils.file_operations import (
     copy_file,
@@ -96,6 +97,8 @@ try:
                 module_name,
                 module_name,
             )
+
+    warn_unused_code_skips()
 
     if args.skip_nuitka:
         exit(0)

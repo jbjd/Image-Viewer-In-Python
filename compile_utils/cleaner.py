@@ -99,12 +99,12 @@ def clean_file_and_copy(
         code_cleaner,
         SectionsToSkipConfig(skip_name_equals_main=True),
         TokensToSkipConfig(
-            classes=classes_to_skip[module_import_path],
-            decorators=decorators_to_skip[module_import_path],
-            dict_keys=dict_keys_to_skip[module_import_path],
-            from_imports=from_imports_to_skip[module_import_path],
-            functions=functions_to_skip[module_import_path],
-            variables=vars_to_skip[module_import_path],
+            classes=classes_to_skip.pop(module_import_path, None),
+            decorators=decorators_to_skip.pop(module_import_path, None),
+            dict_keys=dict_keys_to_skip.pop(module_import_path, None),
+            from_imports=from_imports_to_skip.pop(module_import_path, None),
+            functions=functions_to_skip.pop(module_import_path, None),
+            variables=vars_to_skip.pop(module_import_path, None),
         ),
     )
     source = code_cleaner.visit(parse_source_to_module_node(source))
@@ -167,6 +167,24 @@ def move_files_to_tmp_and_clean(
             "Some imports where marked to skip but not found: "
             + " ".join(modules_to_skip)
         )
+
+
+def warn_unused_code_skips() -> None:
+    """If any values remain from code_to_skip imports, warn
+    that they were usunued"""
+    for skips, frendly_name in (
+        (classes_to_skip, "classes"),
+        (decorators_to_skip, "decorators"),
+        (dict_keys_to_skip, "dictionary Keys"),
+        (from_imports_to_skip, "from imports"),
+        (functions_to_skip, "functions"),
+        (vars_to_skip, "variables"),
+    ):
+        for module in skips.keys():
+            warnings.warn(
+                f"Asked to skip {frendly_name} in module {module} "
+                "but it was not found"
+            )
 
 
 def clean_tk_files(compile_dir: str) -> None:

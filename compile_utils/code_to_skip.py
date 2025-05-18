@@ -18,7 +18,7 @@ _JPEG_MAX_DIMENSION = 65_535
 _OAIF_EXEC = 4
 _OAIF_HIDE_REGISTRATION = 32
 
-_skip_functions_kwargs: dict[str, set[str]] = {
+functions_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
     "numpy._core._exceptions": {"_display_as_base"},
     "numpy._core._methods": {"_amax", "_amin", "_any", "_clip", "_prod", "_sum"},
@@ -267,7 +267,7 @@ _skip_functions_kwargs: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
-_skip_vars_kwargs: dict[str, set[str]] = {
+vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
         "__all__",
         "__array_api_version__",
@@ -278,7 +278,6 @@ _skip_vars_kwargs: dict[str, set[str]] = {
         "_specific_msg",
         "_type_info",
     },
-    "numpy._array_api_info": {"__module__"},
     "numpy._core.arrayprint": {"__docformat__", "_default_array_repr"},
     "numpy._core.multiarray": {"__module__"},
     "numpy._core.numerictypes": {"genericTypeRank"},
@@ -316,7 +315,7 @@ _skip_vars_kwargs: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
-_skip_classes_kwargs: dict[str, set[str]] = {
+classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.state.base": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.ui.base": {"ABC"},
@@ -340,7 +339,7 @@ _skip_classes_kwargs: dict[str, set[str]] = {
     "PIL.PngImagePlugin": {"PngInfo"},
 }
 
-_skip_from_imports: dict[str, set[str]] = {
+from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
         "__array_namespace_info__",
         "__version__",
@@ -394,11 +393,11 @@ _skip_from_imports: dict[str, set[str]] = {
     "PIL.JpegImagePlugin": {"deprecate"},
 }
 
-_skip_dict_keys_kwargs: dict[str, set[str]] = {
+dict_keys_to_skip: dict[str, set[str]] = {
     "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
 }
 
-_skip_decorators_kwargs: dict[str, set[str]] = {
+decorators_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.state.base": {"abstractmethod"},
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},
     "numpy._core._exceptions": {"_display_as_base"},
@@ -419,21 +418,6 @@ _skip_decorators_kwargs: dict[str, set[str]] = {
     "PIL.Image": {"abstractmethod"},
 }
 
-
-decorators_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_decorators_kwargs
-)
-dict_keys_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_dict_keys_kwargs
-)
-functions_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_functions_kwargs
-)
-vars_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_vars_kwargs)
-classes_to_skip: defaultdict[str, set[str]] = defaultdict(set, **_skip_classes_kwargs)
-from_imports_to_skip: defaultdict[str, set[str]] = defaultdict(
-    set, **_skip_from_imports
-)
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
