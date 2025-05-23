@@ -22,7 +22,10 @@ from compile_utils.file_operations import (
 )
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
-from compile_utils.validation import raise_if_unsupported_python_version
+from compile_utils.validation import (
+    raise_if_unsupported_python_version,
+    validate_module_dependencies,
+)
 
 raise_if_unsupported_python_version()
 
@@ -32,8 +35,8 @@ TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
 CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
 COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.dist")
 BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
-EXECUTABLE_EXT: Final[str] = ".exe" if os.name == "nt" else ".bin"
-EXECUTABLE_NAME: Final[str] = f"viewer{EXECUTABLE_EXT}"
+EXECUTABLE_EXT: Final[str] = "exe" if os.name == "nt" else "bin"
+EXECUTABLE_NAME: Final[str] = f"viewer.{EXECUTABLE_EXT}"
 DEFAULT_INSTALL_PATH: str
 DATA_FILE_PATHS: list[str]
 
@@ -62,6 +65,8 @@ if os.name == "nt":
     nuitka_args.append(
         NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(windows_icon_file_path)
     )
+
+validate_module_dependencies(is_standalone)
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
