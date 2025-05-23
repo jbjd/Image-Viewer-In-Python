@@ -13,7 +13,7 @@ MINIMUM_PYTHON_VERSION: tuple[int, int] = (3, 11)
 
 def validate_module_dependencies(is_standalone: bool) -> None:
     """Logs warning if installed packages do not match
-    specifications in requirments files and errors if they are
+    specifications in requirements files and errors if they are
     not installed"""
     with open("requirements.txt", "r", encoding="utf-8") as fp:
         file_raw: str = fp.read().strip()
