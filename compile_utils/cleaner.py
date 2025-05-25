@@ -57,17 +57,18 @@ class MinifyUnparserExt(MinifyUnparser):
             constant_vars_to_fold=constant_vars_to_fold,
         )
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Expr(self, node: ast.Expr) -> None:
         if self._node_is_warn(node):
-            self.visit_Pass(ast.Pass())
+            self.visit_Pass()
         else:
-            super().visit_Call(node)
+            super().visit_Expr(node)
 
     @staticmethod
-    def _node_is_warn(node: ast.Call) -> bool:
+    def _node_is_warn(node: ast.Expr) -> bool:
         return (
-            getattr(node.func, "attr", "") == "warn"
-            and getattr(node.func, "value", ast.Name("")).id == "warnings"
+            isinstance(node.value, ast.Call)
+            and getattr(node.value.func, "attr", "") == "warn"
+            and getattr(node.value.func, "value", ast.Name("")).id == "warnings"
         )
 
     def visit_If(self, node: ast.If) -> None:
