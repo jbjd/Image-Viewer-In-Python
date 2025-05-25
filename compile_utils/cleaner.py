@@ -46,6 +46,8 @@ else:
 class MinifyUnparserExt(MinifyUnparser):
     """Extends parent to exclude some specific things only relevant to this codebase"""
 
+    __slots__ = ()
+
     def __init__(
         self,
         module_name: str = "",
@@ -55,20 +57,6 @@ class MinifyUnparserExt(MinifyUnparser):
             module_name=module_name,
             target_python_version=MINIMUM_PYTHON_VERSION,
             constant_vars_to_fold=constant_vars_to_fold,
-        )
-
-    def visit_Expr(self, node: ast.Expr) -> None:
-        if self._node_is_warn(node):
-            self.visit_Pass()
-        else:
-            super().visit_Expr(node)
-
-    @staticmethod
-    def _node_is_warn(node: ast.Expr) -> bool:
-        return (
-            isinstance(node.value, ast.Call)
-            and getattr(node.value.func, "attr", "") == "warn"
-            and getattr(node.value.func, "value", ast.Name("")).id == "warnings"
         )
 
     def visit_If(self, node: ast.If) -> None:
@@ -99,14 +87,7 @@ def clean_file_and_copy(
     code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
         code_cleaner,
         SectionsToSkipConfig(skip_name_equals_main=True),
-        TokensToSkipConfig(
-            classes=classes_to_skip.pop(module_import_path, None),
-            decorators=decorators_to_skip.pop(module_import_path, None),
-            dict_keys=dict_keys_to_skip.pop(module_import_path, None),
-            from_imports=from_imports_to_skip.pop(module_import_path, None),
-            functions=functions_to_skip.pop(module_import_path, None),
-            variables=vars_to_skip.pop(module_import_path, None),
-        ),
+        _get_tokens_to_skip_config(module_import_path),
     )
     source = code_cleaner.visit(parse_source_to_module_node(source))
 
@@ -241,6 +222,30 @@ def strip_files(compile_dir: str) -> None:
 
         if result.returncode != EXIT_SUCCESS:
             warnings.warn(f"Failed to strip file {strippable_file}")
+
+
+def _get_tokens_to_skip_config(module_import_path: str) -> TokensToSkipConfig:
+    classes: set[str] | None = classes_to_skip.pop(module_import_path, None)
+    decorators: set[str] | None = decorators_to_skip.pop(module_import_path, None)
+    dict_keys: set[str] | None = dict_keys_to_skip.pop(module_import_path, None)
+    from_imports: set[str] | None = from_imports_to_skip.pop(module_import_path, None)
+    functions: set[str] | None = functions_to_skip.pop(module_import_path, None)
+    variables: set[str] | None = vars_to_skip.pop(module_import_path, None)
+
+    if functions is not None:
+        functions.add("warn")
+    else:
+        functions = {"warn"}
+
+    return TokensToSkipConfig(
+        classes=classes,
+        decorators=decorators,
+        dict_keys=dict_keys,
+        from_imports=from_imports,
+        functions=functions,
+        variables=variables,
+        no_warn={"warn"},
+    )
 
 
 def _files_in_dir_iter(dir: str, ext_filter: tuple[str, ...]) -> Iterator[str]:
