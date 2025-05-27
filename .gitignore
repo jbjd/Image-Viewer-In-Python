@@ -1,21 +1,26 @@
-.coverage
-.mypy_cache
-.pytest_cache/
+# IDE
 .vscode/
-__pycache__/
 
+# Common Python Ignores
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+build/
+*.egg-info
+
+.coverage
+
+# Image Viewer
 ERROR.log
 
-# compile artifacts
+# Nuitka
 *.bin
 *.exe
 *.cmd
 *.build/
 *.dist/
-build/
 compilation-report.xml
 nuitka-crash-report.xml
 tmp*/
-*.egg-info
 
 *.ipynb
