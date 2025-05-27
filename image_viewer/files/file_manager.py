@@ -169,9 +169,11 @@ class ImageFileManager:
             pass  # don't include if can't get
 
         # Can add more here, just didn't see any others I felt were important enough
-        comment: bytes | None = PIL_Image.info.get("comment")
-        if comment:
-            details += f"Comment: {comment.decode('utf-8')}\n"
+        comment_bytes: bytes | None = PIL_Image.info.get("comment")
+        if comment_bytes is not None:
+            # Windows can't show popup window with embeded null byte
+            comment: str = comment_bytes.decode("utf-8").replace("\x00", "")
+            details += f"Comment: {comment}\n"
 
         return details
 
