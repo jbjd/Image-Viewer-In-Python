@@ -16,7 +16,7 @@ from compile_utils.cleaner import (
 from compile_utils.file_operations import (
     copy_file,
     copy_folder,
-    delete_file_globs,
+    delete_file,
     delete_folder,
     delete_folders,
 )
@@ -144,7 +144,7 @@ try:
 finally:
     if not args.debug and not args.no_cleanup:
         delete_folders([BUILD_DIR, COMPILE_DIR, TMP_DIR])
-        delete_file_globs([os.path.join(WORKING_DIR, f"{FILE}.cmd")])
+        delete_file(os.path.join(WORKING_DIR, f"{FILE}.cmd"))
 
 print("\nFinished")
 print("Installed to", install_path)

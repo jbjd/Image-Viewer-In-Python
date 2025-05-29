@@ -1,17 +1,13 @@
 import os
 import shutil
-from glob import glob
 from typing import Iterable
 
 
-def delete_file_globs(glob_patterns: Iterable[str]) -> None:
-    for glob_pattern in glob_patterns:
-        for file in glob(glob_pattern, recursive=True):
-            os.remove(file)
-
-            dir: str = os.path.dirname(file)
-            if not os.listdir(dir):
-                os.rmdir(dir)
+def delete_file(file: str) -> None:
+    try:
+        os.remove(file)
+    except FileNotFoundError:
+        pass
 
 
 def delete_folder(path: str) -> None:
