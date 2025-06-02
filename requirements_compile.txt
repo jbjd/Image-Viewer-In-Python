@@ -1,2 +1,2 @@
-nuitka==2.7.4
+nuitka==2.7.5
 personal-python-ast-optimizer @ git+https://github.com/jbjd/Python-Ast-Optimizer@v1.1.5
