@@ -1,5 +1,5 @@
 Pillow==11.2.1
-PyTurboJPEG==1.7.7
+PyTurboJPEG==1.8.0
 numpy==2.2.6
 send2trash==1.8.3
 winshell==0.6; platform_system == "Windows"
