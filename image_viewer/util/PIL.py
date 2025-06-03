@@ -121,8 +121,8 @@ def get_placeholder_for_errored_image(
 
     # Wrap each individual line, then join to preserve already existing new lines
     error_text: str = str(error)
-    formated_error: str = "\n".join(
-        ["\n".join(wrap(line, 100)) for line in error_text.split("\n")]
+    formated_error: str = "\n\n".join(
+        "\n".join(wrap(line, 100)) for line in error_text.split("\n")
     ).capitalize()
 
     # Placeholder is black with brownish line going diagonally across

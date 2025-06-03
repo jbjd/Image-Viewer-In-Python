@@ -22,9 +22,7 @@ def manager(image_cache: ImageCache) -> ImageFileManager:
 @pytest.fixture
 def manager_with_3_images(image_cache: ImageCache) -> ImageFileManager:
     manager = ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
-    manager._files = ImageNameList(
-        [ImageName(name) for name in ["a.png", "c.jpb", "e.webp"]]
-    )
+    manager._files = ImageNameList([*map(ImageName, ("a.png", "c.jpg", "e.webp"))])
     return manager
 
 
