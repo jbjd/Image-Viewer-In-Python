@@ -148,7 +148,7 @@ def get_placeholder_for_errored_image(
     return draw._image
 
 
-def _preinit() -> None:  # pragma: no cover
+def _preinit() -> None:
     """Edited version of PIL's preinit to be used as a replacement"""
     if _Image._initialized > 0:
         return
