@@ -5,6 +5,14 @@ from importlib import import_module
 from subprocess import Popen
 from typing import Final
 
+from personal_compile_tools.file_operations import (
+    copy_file,
+    copy_folder,
+    delete_file,
+    delete_folder,
+    delete_folders,
+)
+
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
     clean_file_and_copy,
@@ -13,18 +21,11 @@ from compile_utils.cleaner import (
     strip_files,
     warn_unused_code_skips,
 )
-from compile_utils.file_operations import (
-    copy_file,
-    copy_folder,
-    delete_file,
-    delete_folder,
-    delete_folders,
-)
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
     raise_if_unsupported_python_version,
-    validate_module_dependencies,
+    validate_module_requirements,
 )
 
 raise_if_unsupported_python_version()
@@ -66,7 +67,7 @@ if os.name == "nt":
         NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(windows_icon_file_path)
     )
 
-validate_module_dependencies(is_standalone)
+validate_module_requirements(is_standalone)
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
 # I thought nuitka would handle this, but I guess not?
