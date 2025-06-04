@@ -1,6 +1,5 @@
 import os
 from argparse import Namespace
-from glob import glob
 from importlib import import_module
 from subprocess import Popen
 from typing import Final
@@ -11,6 +10,7 @@ from personal_compile_tools.file_operations import (
     delete_file,
     delete_folder,
     delete_folders,
+    get_folder_size,
 )
 
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
@@ -151,9 +151,5 @@ print("\nFinished")
 print("Installed to", install_path)
 
 path_to_check: str = install_path
-install_byte_size: int = sum(
-    os.stat(p).st_size
-    for p in glob(f"{path_to_check}/**/*", recursive=True)
-    if os.path.isfile(p)
-)
+install_byte_size: int = get_folder_size(path_to_check)
 print(f"Install Size: {install_byte_size:,} bytes")
