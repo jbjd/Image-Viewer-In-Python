@@ -171,7 +171,7 @@ class ImageFileManager:
         # Can add more here, just didn't see any others I felt were important enough
         comment_bytes: bytes | None = PIL_Image.info.get("comment")
         if comment_bytes is not None:
-            # Windows can't show popup window with embeded null byte
+            # Windows can't show popup window with embedded null byte
             comment: str = comment_bytes.decode("utf-8").replace("\x00", "")
             details += f"Comment: {comment}\n"
 
