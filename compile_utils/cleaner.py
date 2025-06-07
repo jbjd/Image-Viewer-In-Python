@@ -46,15 +46,9 @@ class MinifyUnparserExt(MinifyUnparser):
     __slots__ = ()
 
     def __init__(
-        self,
-        module_name: str = "",
-        constant_vars_to_fold: dict[str, int | str] | None = None,
+        self, constant_vars_to_fold: dict[str, int | str] | None = None
     ) -> None:
-        super().__init__(
-            module_name=module_name,
-            target_python_version=MINIMUM_PYTHON_VERSION,
-            constant_vars_to_fold=constant_vars_to_fold,
-        )
+        super().__init__(constant_vars_to_fold=constant_vars_to_fold)
 
     def visit_If(self, node: ast.If) -> None:
         # Skip PIL's blocks about typechecking
@@ -78,12 +72,14 @@ def clean_file_and_copy(
         ]
         source = apply_regex(source, regex_replacements, module_import_path)
 
-    code_cleaner = MinifyUnparserExt(module_import_path, constants_to_fold[module_name])
+    code_cleaner = MinifyUnparserExt(constants_to_fold[module_name])
 
     # if module_import_path == "numpy.__init__":
     source = run_minify_parser(
         code_cleaner,
         source,
+        module_import_path,
+        MINIMUM_PYTHON_VERSION,
         SectionsToSkipConfig(skip_name_equals_main=True),
         _get_tokens_to_skip_config(module_import_path),
     )
