@@ -10,11 +10,8 @@ from re import sub
 from shutil import copyfile
 from typing import Iterator
 
-from personal_python_ast_optimizer.factories.minifier_factory import (
-    ExclusionMinifierFactory,
-)
 from personal_python_ast_optimizer.flake_wrapper import run_autoflake
-from personal_python_ast_optimizer.parser import parse_source_to_module_node
+from personal_python_ast_optimizer.parser import run_minify_parser
 from personal_python_ast_optimizer.parser.config import (
     SectionsToSkipConfig,
     TokensToSkipConfig,
@@ -81,15 +78,15 @@ def clean_file_and_copy(
         ]
         source = apply_regex(source, regex_replacements, module_import_path)
 
-    code_cleaner: MinifyUnparserExt = MinifyUnparserExt(
-        module_import_path, constants_to_fold[module_name]
-    )
-    code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
+    code_cleaner = MinifyUnparserExt(module_import_path, constants_to_fold[module_name])
+
+    # if module_import_path == "numpy.__init__":
+    source = run_minify_parser(
         code_cleaner,
+        source,
         SectionsToSkipConfig(skip_name_equals_main=True),
         _get_tokens_to_skip_config(module_import_path),
     )
-    source = code_cleaner.visit(parse_source_to_module_node(source))
 
     edit_imports: bool = module_name != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)
