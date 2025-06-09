@@ -11,14 +11,15 @@ from shutil import copyfile
 from typing import Iterator
 
 from personal_python_ast_optimizer.flake_wrapper import run_autoflake
-from personal_python_ast_optimizer.parser import run_minify_parser
 from personal_python_ast_optimizer.parser.config import (
     SectionsToSkipConfig,
+    SkipConfig,
     TokensToSkipConfig,
 )
 from personal_python_ast_optimizer.parser.minifier import MinifyUnparser
-from personal_python_ast_optimizer.regex import RegexReplacement
+from personal_python_ast_optimizer.parser.run import run_minify_parser
 from personal_python_ast_optimizer.regex.apply import apply_regex, apply_regex_to_file
+from personal_python_ast_optimizer.regex.classes import RegexReplacement
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
@@ -45,10 +46,8 @@ class MinifyUnparserExt(MinifyUnparser):
 
     __slots__ = ()
 
-    def __init__(
-        self, constant_vars_to_fold: dict[str, int | str] | None = None
-    ) -> None:
-        super().__init__(constant_vars_to_fold=constant_vars_to_fold)
+    def __init__(self) -> None:
+        super().__init__()
 
     def visit_If(self, node: ast.If) -> None:
         # Skip PIL's blocks about typechecking
@@ -72,16 +71,19 @@ def clean_file_and_copy(
         ]
         source = apply_regex(source, regex_replacements, module_import_path)
 
-    code_cleaner = MinifyUnparserExt(constants_to_fold[module_name])
+    code_cleaner = MinifyUnparserExt()
 
-    # if module_import_path == "numpy.__init__":
     source = run_minify_parser(
         code_cleaner,
         source,
-        module_import_path,
-        MINIMUM_PYTHON_VERSION,
-        SectionsToSkipConfig(skip_name_equals_main=True),
-        _get_tokens_to_skip_config(module_import_path),
+        SkipConfig(
+            module_import_path,
+            True,
+            MINIMUM_PYTHON_VERSION,
+            constants_to_fold[module_name],
+            SectionsToSkipConfig(skip_name_equals_main=True),
+            _get_tokens_to_skip_config(module_import_path),
+        ),
     )
 
     edit_imports: bool = module_name != "numpy"
