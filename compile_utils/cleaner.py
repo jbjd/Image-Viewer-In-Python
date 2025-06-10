@@ -78,7 +78,6 @@ def clean_file_and_copy(
         source,
         SkipConfig(
             module_import_path,
-            True,
             MINIMUM_PYTHON_VERSION,
             constants_to_fold[module_name],
             SectionsToSkipConfig(skip_name_equals_main=True),
