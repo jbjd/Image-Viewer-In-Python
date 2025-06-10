@@ -10,18 +10,16 @@ from re import sub
 from shutil import copyfile
 from typing import Iterator
 
-from personal_python_ast_optimizer.factories.minifier_factory import (
-    ExclusionMinifierFactory,
-)
 from personal_python_ast_optimizer.flake_wrapper import run_autoflake
-from personal_python_ast_optimizer.parser import parse_source_to_module_node
 from personal_python_ast_optimizer.parser.config import (
     SectionsToSkipConfig,
+    SkipConfig,
     TokensToSkipConfig,
 )
 from personal_python_ast_optimizer.parser.minifier import MinifyUnparser
-from personal_python_ast_optimizer.regex import RegexReplacement
+from personal_python_ast_optimizer.parser.run import run_minify_parser
 from personal_python_ast_optimizer.regex.apply import apply_regex, apply_regex_to_file
+from personal_python_ast_optimizer.regex.classes import RegexReplacement
 
 from compile_utils.code_to_skip import (
     classes_to_skip,
@@ -48,16 +46,8 @@ class MinifyUnparserExt(MinifyUnparser):
 
     __slots__ = ()
 
-    def __init__(
-        self,
-        module_name: str = "",
-        constant_vars_to_fold: dict[str, int | str] | None = None,
-    ) -> None:
-        super().__init__(
-            module_name=module_name,
-            target_python_version=MINIMUM_PYTHON_VERSION,
-            constant_vars_to_fold=constant_vars_to_fold,
-        )
+    def __init__(self) -> None:
+        super().__init__()
 
     def visit_If(self, node: ast.If) -> None:
         # Skip PIL's blocks about typechecking
@@ -81,15 +71,19 @@ def clean_file_and_copy(
         ]
         source = apply_regex(source, regex_replacements, module_import_path)
 
-    code_cleaner: MinifyUnparserExt = MinifyUnparserExt(
-        module_import_path, constants_to_fold[module_name]
-    )
-    code_cleaner = ExclusionMinifierFactory.create_minify_unparser_with_exclusions(
+    code_cleaner = MinifyUnparserExt()
+
+    source = run_minify_parser(
         code_cleaner,
-        SectionsToSkipConfig(skip_name_equals_main=True),
-        _get_tokens_to_skip_config(module_import_path),
+        source,
+        SkipConfig(
+            module_import_path,
+            MINIMUM_PYTHON_VERSION,
+            constants_to_fold[module_name],
+            SectionsToSkipConfig(skip_name_equals_main=True),
+            _get_tokens_to_skip_config(module_import_path),
+        ),
     )
-    source = code_cleaner.visit(parse_source_to_module_node(source))
 
     edit_imports: bool = module_name != "numpy"
     source = run_autoflake(source, remove_unused_imports=edit_imports)

@@ -6,7 +6,7 @@ import re
 import sys
 from collections import defaultdict
 
-from personal_python_ast_optimizer.regex import RegexReplacement
+from personal_python_ast_optimizer.regex.classes import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 
 from compile_utils.package_info import IMAGE_VIEWER_NAME
