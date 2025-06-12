@@ -26,6 +26,7 @@ numpy._expired_attrs_2_0
 numpy._pyinstaller
 numpy._pytesttester
 numpy._typing
+numpy._utils.__init__
 numpy._utils._convertions
 numpy._utils._inspect
 numpy._utils._pep440
@@ -41,6 +42,7 @@ numpy.lib._arraypad_impl
 numpy.lib._arraysetops_impl
 numpy.lib._arrayterator_impl
 numpy.lib._datasource
+numpy.lib._format_impl
 numpy.lib._function_base_impl
 numpy.lib._histograms_impl
 numpy.lib._index_tricks_impl
