@@ -41,6 +41,7 @@ functions_to_skip: dict[str, set[str]] = {
         "_set_printoptions",
         "_void_scalar_to_string",
         "array_repr",
+        "dtype_is_implied",
         "dtype_short_repr",
         "get_printoptions",
         "printoptions",
@@ -292,7 +293,7 @@ vars_to_skip: dict[str, set[str]] = {
     },
     "numpy._core.__init__": {"__all__"},
     "numpy._core._methods": {"bool_dt"},
-    "numpy._core.arrayprint": {"__docformat__", "_default_array_repr"},
+    "numpy._core.arrayprint": {"__docformat__", "_default_array_repr", "_typelessdata"},
     "numpy._core.fromnumeric": {"array_function_dispatch"},
     "numpy._core.getlimits": {"_convert_to_float"},
     "numpy._core.multiarray": {"__all__", "__module__"},
@@ -550,8 +551,20 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
         ],
         "numpy._core.arrayprint": [
-            RegexReplacement(pattern=", .array_repr."),
-            RegexReplacement(pattern=r"['\"](get)?(set)?_?printoptions['\"],", count=3),
+            RegexReplacement(
+                r"__all__ = \[.*?\]",
+                "__all__=['array2string','array_str','format_float_positional','format_float_scientific']",  # noqa E501
+                flags=re.DOTALL,
+                count=1,
+            ),
+            RegexReplacement(
+                """try:
+    from _thread import get_ident
+except ImportError:
+    from _dummy_thread import get_ident""",
+                "from _thread import get_ident",
+                count=1,
+            ),
         ],
         "numpy._core.function_base": [
             RegexReplacement(pattern="(.logspace.,)|(, .geomspace.)")
@@ -581,17 +594,8 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         ],
+        "numpy._core.umath": [RegexReplacement(r"import numpy\n", count=1)],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
-        "numpy._utils.__init__": [
-            RegexReplacement(
-                pattern="^.*",
-                replacement="""
-def set_module(_):
-    def d(f):return f
-    return d""",
-                flags=re.DOTALL,
-            )
-        ],
         "numpy.lib.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
