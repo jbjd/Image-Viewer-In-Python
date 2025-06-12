@@ -302,7 +302,6 @@ vars_to_skip: dict[str, set[str]] = {
     "numpy._core.records": {"__module__", "numfmt"},
     "numpy._core.function_base": {"array_function_dispatch"},
     "numpy._core.shape_base": {"array_function_dispatch"},
-    "numpy.lib.__init__": {"__all__"},
     "turbojpeg": {
         "__author__",
         "__buffer_size_YUV2",
@@ -406,7 +405,6 @@ from_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
-    "numpy.lib.__init__": {"Arrayterator", "NumpyVersion"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
@@ -445,8 +443,10 @@ decorators_to_skip: dict[str, set[str]] = {
 }
 
 module_imports_to_skip: dict[str, set[str]] = {
-    "numpy._core.umath": {"numpy"},
+    "numpy.__init__": {"_expired_attrs_2_0", "lib"},
+    "numpy._core.numeric": {"_asarray"},
     "numpy._core.overrides": {"numpy._core._multiarray_umath"},
+    "numpy._core.umath": {"numpy"},
 }
 
 
@@ -492,7 +492,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         raise AttributeError('module {!r} has no attribute {!r}'.format(__name__,attr))""",  # noqa E501
                 flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
             RegexReplacement(
                 pattern=r"def (_mac_os_check|_sanity_check)\(.*?del (_mac_os_check|_sanity_check)",  # noqa E501
                 flags=re.DOTALL,
@@ -512,7 +511,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require|geomspace|logspace|cross)"  # noqa E501
             ),
-            RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
                 pattern=(
                     r"from \.(lib\.(_arraysetops_impl|_twodim_base_impl|_npyio_impl"
@@ -579,7 +577,6 @@ except ImportError:
             RegexReplacement(pattern="__all__.*", replacement="__all__=[]")
         ],
         "numpy._core.numeric": [
-            RegexReplacement(pattern=r"from \._asarray import \*", count=1),
             RegexReplacement(pattern=r"extend_all\(_asarray\)", count=1),
             RegexReplacement(pattern=".cross.,", count=1),
         ],
@@ -598,29 +595,10 @@ except ImportError:
         ],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
         "numpy.lib.__init__": [
-            remove_numpy_pytester_re,
             RegexReplacement(
-                pattern=r"elif attr == .emath.*else:\s*",
+                "^.*",
                 flags=re.DOTALL,
-            ),
-            RegexReplacement(pattern=r"from \. import .*?\)", flags=re.DOTALL, count=1),
-            RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
-            RegexReplacement(pattern=r"from numpy\._core.* import .*"),
-            RegexReplacement(
-                pattern=r",\s+.({}).".format(
-                    "|".join(
-                        (
-                            "add_newdoc",
-                            "NumpyVersion",
-                            "introspect",
-                            "mixins",
-                            "npyio",
-                            "tracemalloc_domain",
-                            "add_docstring",
-                        )
-                    )
-                )
-            ),
+            )
         ],
         "numpy.lib.array_utils": [
             RegexReplacement(
