@@ -20,8 +20,18 @@ _OAIF_HIDE_REGISTRATION = 32
 
 functions_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {"__dir__", "_pyinstaller_hooks_dir", "filterwarnings"},
+    "numpy._core.__init__": {"set_typeDict"},
     "numpy._core._exceptions": {"_display_as_base"},
-    "numpy._core._methods": {"_amax", "_amin", "_any", "_clip", "_prod", "_sum"},
+    "numpy._core._machar": {"__str__"},
+    "numpy._core._methods": {
+        "_all",
+        "_amax",
+        "_amin",
+        "_any",
+        "_clip",
+        "_prod",
+        "_sum",
+    },
     "numpy._core.arrayprint": {
         "_array_repr_dispatcher",
         "_array_repr_implementation",
@@ -31,11 +41,13 @@ functions_to_skip: dict[str, set[str]] = {
         "_set_printoptions",
         "_void_scalar_to_string",
         "array_repr",
+        "dtype_is_implied",
         "dtype_short_repr",
         "get_printoptions",
         "printoptions",
         "set_printoptions",
     },
+    "numpy._core.getlimits": {"_discovered_machar", "_get_machar"},
     "numpy._core.fromnumeric": {
         "_all_dispatcher",
         "_any_dispatcher",
@@ -112,6 +124,7 @@ functions_to_skip: dict[str, set[str]] = {
         "_tensordot_dispatcher",
         "_zeros_like_dispatcher",
         "cross",
+        "extend_all",
     },
     "numpy._core.numerictypes": {"maximum_sctype"},
     "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
@@ -278,11 +291,17 @@ vars_to_skip: dict[str, set[str]] = {
         "_specific_msg",
         "_type_info",
     },
-    "numpy._core.arrayprint": {"__docformat__", "_default_array_repr"},
-    "numpy._core.multiarray": {"__module__"},
+    "numpy._core.__init__": {"__all__"},
+    "numpy._core._methods": {"bool_dt"},
+    "numpy._core.arrayprint": {"__docformat__", "_default_array_repr", "_typelessdata"},
+    "numpy._core.fromnumeric": {"array_function_dispatch"},
+    "numpy._core.getlimits": {"_convert_to_float"},
+    "numpy._core.multiarray": {"__all__", "__module__"},
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
     "numpy._core.records": {"__module__", "numfmt"},
+    "numpy._core.function_base": {"array_function_dispatch"},
+    "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib.__init__": {"__all__"},
     "turbojpeg": {
         "__author__",
@@ -344,30 +363,36 @@ from_imports_to_skip: dict[str, set[str]] = {
         "__array_namespace_info__",
         "__version__",
         "_distributor_init",
-        "array_repr",
-        "array_str",
-        "array2string",
-        "einsum",
-        "einsum_path",
-        "finfo",
-        "format_float_positional",
-        "format_float_scientific",
+        "asmatrix",
+        "bmat",
+        "fix",
+        "get_include",
         "histogram",
         "histogramdd",
-        "iinfo",
+        "info",
+        "isneginf",
+        "isposinf",
         "matrixlib",
+        "matrix",
+        "pad",
+        "show_runtime",
         "version",
     },
-    "numpy._core.__init__": {"version"},
-    "numpy._core._exceptions": {"set_module"},
-    "numpy._core._machar": {"set_module"},
-    "numpy._core._methods": {"_exceptions"},
+    "numpy._core.__init__": {
+        "_add_newdocs",
+        "_add_newdocs_scalars",
+        "_dtype",
+        "_dtype_ctypes",
+        "_internal",
+        "_methods",
+        "version",
+    },
     "numpy._core._ufunc_config": {"set_module"},
     "numpy._core.arrayprint": {"set_module"},
     "numpy._core.fromnumeric": {"set_module"},
     "numpy._core.function_base": {"add_docstring"},
     "numpy._core.getlimits": {"set_module"},
-    "numpy._core.numeric": {"set_module"},
+    "numpy._core.numeric": {"_asarray", "set_module"},
     "numpy._core.numerictypes": {
         "LOWER_TABLE",
         "UPPER_TABLE",
@@ -381,7 +406,7 @@ from_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
-    "numpy.lib.__init__": {"Arrayterator", "stride_tricks"},
+    "numpy.lib.__init__": {"Arrayterator"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
@@ -450,7 +475,7 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(
                 pattern=(
                     r"if attr == .linalg.:.*?"
-                    r"raise AttributeError\(.module \{!r\} has no attribute .*?\)\)"
+                    r"AttributeError\(f.module \{__name__!r\} has no attribute .*?\)"
                 ),
                 replacement="""if attr=='dtypes':
             import numpy.dtypes as dtypes
@@ -484,10 +509,10 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(pattern=r"from \.lib import .*"),
             RegexReplacement(
                 pattern=(
-                    r"from \.(lib\.(_arraysetops_impl|_arraypad_impl|_twodim_base_impl"
-                    r"|_function_base_impl|_index_tricks_impl|_npyio_impl"
-                    r"|_ufunclike_impl|_utils_impl|_polynomial_impl|_nanfunctions_impl"
-                    r"|_shape_base_impl|_type_check_impl)|matrixlib) import .*?\)"
+                    r"from \.(lib\.(_arraysetops_impl|_twodim_base_impl|_npyio_impl"
+                    r"|_function_base_impl|_index_tricks_impl"
+                    r"|_polynomial_impl|_nanfunctions_impl"
+                    r"|_shape_base_impl|_type_check_impl)) import .*?\)"
                 ),
                 flags=re.DOTALL,
             ),
@@ -495,28 +520,51 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
             ),
             RegexReplacement(pattern=r"(get)?(set)?_?printoptions,", count=3),
+            RegexReplacement(
+                pattern=r"from \._core import \(.*?\)",
+                replacement="from ._core import *",
+                flags=re.DOTALL,
+                count=1,
+            ),
         ],
         "numpy._core.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
-                pattern=r"if not.*raise ImportError\(msg.format\(path\)\)",
+                pattern=r"env_added = \[\].*?del env_added",
+                flags=re.DOTALL,
+                count=1,
+            ),
+            RegexReplacement(
+                pattern=(
+                    r"if not \(hasattr\(multiarray.*"
+                    r"raise ImportError\(msg.format\(path\)\)"
+                ),
                 flags=re.DOTALL,
             ),
             RegexReplacement(
-                pattern=r"from \. import (_add_newdocs|_internal|_dtype).*"
-            ),
-            RegexReplacement(pattern=r"from \.memmap import \*", count=1),
-            RegexReplacement(
-                pattern=r"except ImportError as exc:.*?raise ImportError\(msg\)",
-                flags=re.DOTALL,
+                pattern=r"from \.memmap import \*",
+                replacement="from .numeric import uint8",
+                count=1,
             ),
             RegexReplacement(
                 pattern=r".*?einsumfunc.*",
             ),
         ],
         "numpy._core.arrayprint": [
-            RegexReplacement(pattern=", .array_repr."),
-            RegexReplacement(pattern=r"['\"](get)?(set)?_?printoptions['\"],", count=3),
+            RegexReplacement(
+                r"__all__ = \[.*?\]",
+                "__all__=['array2string','array_str','format_float_positional','format_float_scientific']",  # noqa E501
+                flags=re.DOTALL,
+                count=1,
+            ),
+            RegexReplacement(
+                """try:
+    from _thread import get_ident
+except ImportError:
+    from _dummy_thread import get_ident""",
+                "from _thread import get_ident",
+                count=1,
+            ),
         ],
         "numpy._core.function_base": [
             RegexReplacement(pattern="(.logspace.,)|(, .geomspace.)")
@@ -525,7 +573,8 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             RegexReplacement(pattern="__all__.*", replacement="__all__=[]")
         ],
         "numpy._core.numeric": [
-            RegexReplacement(pattern=".*_asarray.*", count=3),
+            RegexReplacement(pattern=r"from \._asarray import \*", count=1),
+            RegexReplacement(pattern=r"extend_all\(_asarray\)", count=1),
             RegexReplacement(pattern=".cross.,", count=1),
         ],
         "numpy._core.overrides": [
@@ -545,30 +594,18 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
                 flags=re.DOTALL,
             ),
         ],
+        "numpy._core.umath": [RegexReplacement(r"import numpy\n", count=1)],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
-        "numpy._utils.__init__": [
-            RegexReplacement(
-                pattern="^.*",
-                replacement="""
-def set_module(_):
-    def d(f):return f
-    return d""",
-                flags=re.DOTALL,
-            )
-        ],
         "numpy.lib.__init__": [
             remove_numpy_pytester_re,
             RegexReplacement(
                 pattern=r"elif attr == .emath.*else:\s*",
                 flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r"from \. import _.*"),
+            RegexReplacement(pattern=r"from \. import .*?\)", flags=re.DOTALL, count=1),
             RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
             RegexReplacement(pattern=r"from numpy\._core.* import .*"),
             RegexReplacement(pattern=r"from \._version import NumpyVersion"),
-            RegexReplacement(
-                pattern=r"from \. import (introspect|mixins|npyio|scimath)"
-            ),
             RegexReplacement(
                 pattern=r",\s+.({}).".format(
                     "|".join(

@@ -66,9 +66,9 @@ def clean_file_and_copy(
         source: str = fp.read()
 
     if module_import_path in regex_to_apply_py:
-        regex_replacements: list[RegexReplacement] = regex_to_apply_py[
+        regex_replacements: list[RegexReplacement] = regex_to_apply_py.pop(
             module_import_path
-        ]
+        )
         source = apply_regex(source, regex_replacements, module_import_path)
 
     code_cleaner = MinifyUnparserExt()
@@ -155,6 +155,7 @@ def warn_unused_code_skips() -> None:
         (from_imports_to_skip, "from imports"),
         (functions_to_skip, "functions"),
         (vars_to_skip, "variables"),
+        (regex_to_apply_py, "with regex"),
     ):
         for module in skips.keys():
             warnings.warn(

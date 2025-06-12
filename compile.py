@@ -1,4 +1,5 @@
 import os
+import sys
 from argparse import Namespace
 from importlib import import_module
 from subprocess import Popen
@@ -111,8 +112,10 @@ try:
 
     delete_folder(COMPILE_DIR)
     input_file: str = f"{TMP_DIR}/{FILE}.py"
+    default_python: str = "python" if os.name == "nt" else "python3"
+    python_path: str = f"{sys.exec_prefix}/{default_python}"
     process: Popen = start_nuitka_compilation(
-        args.python_path, input_file, WORKING_DIR, nuitka_args
+        python_path, input_file, WORKING_DIR, nuitka_args
     )
 
     print("Waiting for nuitka compilation...")

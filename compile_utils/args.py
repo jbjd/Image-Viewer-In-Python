@@ -1,5 +1,3 @@
-import os
-import sys
 from argparse import REMAINDER, ArgumentParser, Namespace
 from enum import StrEnum
 from typing import Literal
@@ -59,12 +57,6 @@ class CompileArgumentParser(ArgumentParser):
             epilog=f"Some nuitka arguments are also accepted: {self.VALID_NUITKA_ARGS}",
         )
 
-        default_python: str = "python" if os.name == "nt" else "python3"
-        self.add_argument_ext(
-            "--python-path",
-            "Python to use in compilation, defaults to current interpreter.",
-            f"{sys.exec_prefix}/{default_python}",
-        )
         self.add_argument_ext(
             "--install-path",
             f"Path to install to, defaults to {install_path}",
