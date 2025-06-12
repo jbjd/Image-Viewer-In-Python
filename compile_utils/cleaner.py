@@ -28,6 +28,7 @@ from compile_utils.code_to_skip import (
     dict_keys_to_skip,
     from_imports_to_skip,
     functions_to_skip,
+    module_imports_to_skip,
     regex_to_apply_py,
     regex_to_apply_tk,
     vars_to_skip,
@@ -153,6 +154,7 @@ def warn_unused_code_skips() -> None:
         (decorators_to_skip, "decorators"),
         (dict_keys_to_skip, "dictionary Keys"),
         (from_imports_to_skip, "from imports"),
+        (module_imports_to_skip, "module imports"),
         (functions_to_skip, "functions"),
         (vars_to_skip, "variables"),
         (regex_to_apply_py, "with regex"),
@@ -224,6 +226,9 @@ def _get_tokens_to_skip_config(module_import_path: str) -> TokensToSkipConfig:
     decorators: set[str] | None = decorators_to_skip.pop(module_import_path, None)
     dict_keys: set[str] | None = dict_keys_to_skip.pop(module_import_path, None)
     from_imports: set[str] | None = from_imports_to_skip.pop(module_import_path, None)
+    module_imports: set[str] | None = module_imports_to_skip.pop(
+        module_import_path, None
+    )
     functions: set[str] | None = functions_to_skip.pop(module_import_path, None)
     variables: set[str] | None = vars_to_skip.pop(module_import_path, None)
 
@@ -237,6 +242,7 @@ def _get_tokens_to_skip_config(module_import_path: str) -> TokensToSkipConfig:
         decorators=decorators,
         dict_keys=dict_keys,
         from_imports=from_imports,
+        module_imports=module_imports,
         functions=functions,
         variables=variables,
         no_warn={"warn"},

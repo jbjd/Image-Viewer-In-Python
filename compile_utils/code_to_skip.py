@@ -406,13 +406,14 @@ from_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
-    "numpy.lib.__init__": {"Arrayterator"},
+    "numpy.lib.__init__": {"Arrayterator", "NumpyVersion"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
         "set_module",
     },
     "PIL.features": {"deprecate"},
+    "PIL.Image": {"deprecate"},
     "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.JpegImagePlugin": {"deprecate"},
@@ -441,6 +442,11 @@ decorators_to_skip: dict[str, set[str]] = {
     "numpy._core.shape_base": {"array_function_dispatch"},
     "numpy.lib._stride_tricks_impl": {"array_function_dispatch", "set_module"},
     "PIL.Image": {"abstractmethod"},
+}
+
+module_imports_to_skip: dict[str, set[str]] = {
+    "numpy._core.umath": {"numpy"},
+    "numpy._core.overrides": {"numpy._core._multiarray_umath"},
 }
 
 
@@ -584,17 +590,12 @@ except ImportError:
                 flags=re.DOTALL,
             ),
             RegexReplacement(
-                pattern=r"from numpy._core._multiarray_umath import .*?\)",
-                flags=re.DOTALL,
-            ),
-            RegexReplacement(
                 pattern="def decorator.*?return public_api",
                 replacement="def decorator(i): return i",
                 count=1,
                 flags=re.DOTALL,
             ),
         ],
-        "numpy._core.umath": [RegexReplacement(r"import numpy\n", count=1)],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
         "numpy.lib.__init__": [
             remove_numpy_pytester_re,
@@ -605,7 +606,6 @@ except ImportError:
             RegexReplacement(pattern=r"from \. import .*?\)", flags=re.DOTALL, count=1),
             RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
             RegexReplacement(pattern=r"from numpy\._core.* import .*"),
-            RegexReplacement(pattern=r"from \._version import NumpyVersion"),
             RegexReplacement(
                 pattern=r",\s+.({}).".format(
                     "|".join(
@@ -649,7 +649,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
             ),
             RegexReplacement(
                 pattern=r"_Frame\(NamedTuple\)",
-                replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
+                replacement="_Frame(namedtuple('_Frame',['im','bbox','encoderinfo']))",  # noqa E501
                 count=1,
             ),
         ],
@@ -660,7 +660,6 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
 except ImportError:
     ElementTree = None""",
             ),
-            RegexReplacement(pattern="from ._deprecate import deprecate"),
             RegexReplacement(
                 pattern=r"try:\n    #.*?from \. import _imaging as core.*?except.*?raise",  # noqa: E501
                 replacement="from . import _imaging as core",
@@ -684,8 +683,7 @@ except ImportError:
         "PIL.ImageFile": [
             RegexReplacement(
                 pattern="from typing import .*",
-                replacement="""
-from typing import IO, cast
+                replacement="""from typing import IO, cast
 from collections import namedtuple""",
                 count=1,
             ),
