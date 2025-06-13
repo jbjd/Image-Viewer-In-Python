@@ -234,6 +234,7 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.ImageFont": {
         "__getstate__",
         "__setstate__",
+        "getmetrics",
         "load_default_imagefont",
         "load_default",
         "load_path",
@@ -265,7 +266,7 @@ functions_to_skip: dict[str, set[str]] = {
         "sepia",
         "wedge",
     },
-    "PIL.ImageTk": {"_get_image_from_kw"},
+    "PIL.ImageTk": {"_get_image_from_kw", "getimage"},
     "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
@@ -355,6 +356,9 @@ classes_to_skip: dict[str, set[str]] = {
     "PIL.ImageOps": {"SupportsGetMesh"},
     "PIL.ImageTk": {"BitmapImage"},
     "PIL.PngImagePlugin": {"PngInfo"},
+    f"{IMAGE_VIEWER_NAME}.state.base": {"StateBase"},
+    f"{IMAGE_VIEWER_NAME}.state.rotation_state": {"StateBase"},
+    f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
 
 from_imports_to_skip: dict[str, set[str]] = {
@@ -422,7 +426,6 @@ dict_keys_to_skip: dict[str, set[str]] = {
 }
 
 decorators_to_skip: dict[str, set[str]] = {
-    f"{IMAGE_VIEWER_NAME}.state.base": {"abstractmethod"},
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},
     "numpy._core._exceptions": {"_display_as_base"},
     "numpy._core._ufunc_config": {"set_module", "wraps"},
@@ -676,6 +679,11 @@ from collections import namedtuple""",
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"MAX_STRING_LENGTH is not None and"),
+            RegexReplacement(
+                pattern=r"""try:\s+from packaging\.version import parse as parse_version
+.*?DeprecationWarning,\s+\)""",
+                flags=re.DOTALL,
+            ),
         ],
         "PIL.ImageMode": [
             RegexReplacement(
@@ -712,14 +720,16 @@ from collections import namedtuple""",
         # Fix issue with autoflake
         "send2trash.compat": [
             RegexReplacement(
-                pattern="""
-try:
-    from collections.abc import Iterable as iterable_type
-except ImportError:
-    from collections import Iterable as iterable_type.*""",
-                replacement="""
+                pattern="^.*$",
+                replacement=(
+                    """
+text_type = str
+binary_type = bytes
 from collections.abc import Iterable
-iterable_type = Iterable""",
+iterable_type = Iterable"""
+                    + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
+                ),
+                flags=re.DOTALL,
                 count=1,
             )
         ],
