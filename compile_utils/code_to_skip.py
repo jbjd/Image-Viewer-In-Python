@@ -443,7 +443,19 @@ decorators_to_skip: dict[str, set[str]] = {
 }
 
 module_imports_to_skip: dict[str, set[str]] = {
-    "numpy.__init__": {"_expired_attrs_2_0", "lib"},
+    "numpy.__init__": {
+        "_expired_attrs_2_0",
+        "lib._arraysetops_impl",
+        "lib._function_base_impl",
+        "lib._index_tricks_impl",
+        "lib._nanfunctions_impl",
+        "lib._npyio_impl",
+        "lib._polynomial_impl",
+        "lib._shape_base_impl",
+        "lib._twodim_base_impl",
+        "lib._type_check_impl",
+        "lib",
+    },
     "numpy._core.numeric": {"_asarray"},
     "numpy._core.overrides": {"numpy._core._multiarray_umath"},
     "numpy._core.umath": {"numpy"},
@@ -465,7 +477,7 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     },
 )
 
-remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
+remove_all_re = RegexReplacement(pattern="^.*$", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(
     pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",
     flags=re.DOTALL,
@@ -510,15 +522,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require|geomspace|logspace|cross)"  # noqa E501
-            ),
-            RegexReplacement(
-                pattern=(
-                    r"from \.(lib\.(_arraysetops_impl|_twodim_base_impl|_npyio_impl"
-                    r"|_function_base_impl|_index_tricks_impl"
-                    r"|_polynomial_impl|_nanfunctions_impl"
-                    r"|_shape_base_impl|_type_check_impl)) import .*?\)"
-                ),
-                flags=re.DOTALL,
             ),
             RegexReplacement(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
@@ -583,23 +586,18 @@ except ImportError:
         "numpy._core.overrides": [
             RegexReplacement(
                 pattern="def get_array_function_like_doc.*?return public_api",
-                replacement="def finalize_array_function_like(a): return a",
+                replacement="def finalize_array_function_like(a):return a",
                 flags=re.DOTALL,
             ),
             RegexReplacement(
                 pattern="def decorator.*?return public_api",
-                replacement="def decorator(i): return i",
+                replacement="def decorator(i):return i",
                 count=1,
                 flags=re.DOTALL,
             ),
         ],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
-        "numpy.lib.__init__": [
-            RegexReplacement(
-                "^.*",
-                flags=re.DOTALL,
-            )
-        ],
+        "numpy.lib.__init__": [remove_all_re],
         "numpy.lib.array_utils": [
             RegexReplacement(
                 "^.*",
@@ -651,7 +649,7 @@ except ImportError:
             RegexReplacement(pattern="_Ink =.*"),
             RegexReplacement(
                 pattern=r"def Draw.*?return ImageDraw.*?\)",
-                replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
+                replacement="""def Draw(im,mode=None):return ImageDraw(im,mode)""",
                 count=1,
                 flags=re.DOTALL,
             ),
