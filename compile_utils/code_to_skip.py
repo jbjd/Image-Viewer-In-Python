@@ -234,6 +234,7 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.ImageFont": {
         "__getstate__",
         "__setstate__",
+        "getmetrics",
         "load_default_imagefont",
         "load_default",
         "load_path",
@@ -265,7 +266,7 @@ functions_to_skip: dict[str, set[str]] = {
         "sepia",
         "wedge",
     },
-    "PIL.ImageTk": {"_get_image_from_kw"},
+    "PIL.ImageTk": {"_get_image_from_kw", "getimage"},
     "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
@@ -302,7 +303,6 @@ vars_to_skip: dict[str, set[str]] = {
     "numpy._core.records": {"__module__", "numfmt"},
     "numpy._core.function_base": {"array_function_dispatch"},
     "numpy._core.shape_base": {"array_function_dispatch"},
-    "numpy.lib.__init__": {"__all__"},
     "turbojpeg": {
         "__author__",
         "__buffer_size_YUV2",
@@ -356,6 +356,9 @@ classes_to_skip: dict[str, set[str]] = {
     "PIL.ImageOps": {"SupportsGetMesh"},
     "PIL.ImageTk": {"BitmapImage"},
     "PIL.PngImagePlugin": {"PngInfo"},
+    f"{IMAGE_VIEWER_NAME}.state.base": {"StateBase"},
+    f"{IMAGE_VIEWER_NAME}.state.rotation_state": {"StateBase"},
+    f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
 
 from_imports_to_skip: dict[str, set[str]] = {
@@ -406,13 +409,13 @@ from_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
     "numpy._core.umath": {"_add_newdoc_ufunc"},
-    "numpy.lib.__init__": {"Arrayterator"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
         "set_module",
     },
     "PIL.features": {"deprecate"},
+    "PIL.Image": {"deprecate"},
     "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.JpegImagePlugin": {"deprecate"},
@@ -423,7 +426,6 @@ dict_keys_to_skip: dict[str, set[str]] = {
 }
 
 decorators_to_skip: dict[str, set[str]] = {
-    f"{IMAGE_VIEWER_NAME}.state.base": {"abstractmethod"},
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},
     "numpy._core._exceptions": {"_display_as_base"},
     "numpy._core._ufunc_config": {"set_module", "wraps"},
@@ -443,6 +445,25 @@ decorators_to_skip: dict[str, set[str]] = {
     "PIL.Image": {"abstractmethod"},
 }
 
+module_imports_to_skip: dict[str, set[str]] = {
+    "numpy.__init__": {
+        "_expired_attrs_2_0",
+        "lib._arraysetops_impl",
+        "lib._function_base_impl",
+        "lib._index_tricks_impl",
+        "lib._nanfunctions_impl",
+        "lib._npyio_impl",
+        "lib._polynomial_impl",
+        "lib._shape_base_impl",
+        "lib._twodim_base_impl",
+        "lib._type_check_impl",
+        "lib",
+    },
+    "numpy._core.numeric": {"_asarray"},
+    "numpy._core.overrides": {"numpy._core._multiarray_umath"},
+    "numpy._core.umath": {"numpy"},
+}
+
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
@@ -459,7 +480,7 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     },
 )
 
-remove_all_re = RegexReplacement(pattern=".*", flags=re.DOTALL)
+remove_all_re = RegexReplacement(pattern="^.*$", flags=re.DOTALL)
 remove_numpy_pytester_re = RegexReplacement(
     pattern=r"\s*from numpy._pytesttester import PytestTester.*?del PytestTester",
     flags=re.DOTALL,
@@ -486,7 +507,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
         raise AttributeError('module {!r} has no attribute {!r}'.format(__name__,attr))""",  # noqa E501
                 flags=re.DOTALL,
             ),
-            RegexReplacement(pattern=r"from \._expired_attrs_2_0 .*"),
             RegexReplacement(
                 pattern=r"def (_mac_os_check|_sanity_check)\(.*?del (_mac_os_check|_sanity_check)",  # noqa E501
                 flags=re.DOTALL,
@@ -505,16 +525,6 @@ regex_to_apply_py: defaultdict[str, list[RegexReplacement]] = defaultdict(
             ),
             RegexReplacement(
                 pattern=", (_CopyMode|show_config|histogram_bin_edges|memmap|require|geomspace|logspace|cross)"  # noqa E501
-            ),
-            RegexReplacement(pattern=r"from \.lib import .*"),
-            RegexReplacement(
-                pattern=(
-                    r"from \.(lib\.(_arraysetops_impl|_twodim_base_impl|_npyio_impl"
-                    r"|_function_base_impl|_index_tricks_impl"
-                    r"|_polynomial_impl|_nanfunctions_impl"
-                    r"|_shape_base_impl|_type_check_impl)) import .*?\)"
-                ),
-                flags=re.DOTALL,
             ),
             RegexReplacement(
                 pattern=r"__numpy_submodules__ =.*?\}", count=1, flags=re.DOTALL
@@ -573,55 +583,24 @@ except ImportError:
             RegexReplacement(pattern="__all__.*", replacement="__all__=[]")
         ],
         "numpy._core.numeric": [
-            RegexReplacement(pattern=r"from \._asarray import \*", count=1),
             RegexReplacement(pattern=r"extend_all\(_asarray\)", count=1),
             RegexReplacement(pattern=".cross.,", count=1),
         ],
         "numpy._core.overrides": [
             RegexReplacement(
                 pattern="def get_array_function_like_doc.*?return public_api",
-                replacement="def finalize_array_function_like(a): return a",
-                flags=re.DOTALL,
-            ),
-            RegexReplacement(
-                pattern=r"from numpy._core._multiarray_umath import .*?\)",
+                replacement="def finalize_array_function_like(a):return a",
                 flags=re.DOTALL,
             ),
             RegexReplacement(
                 pattern="def decorator.*?return public_api",
-                replacement="def decorator(i): return i",
+                replacement="def decorator(i):return i",
                 count=1,
                 flags=re.DOTALL,
             ),
         ],
-        "numpy._core.umath": [RegexReplacement(r"import numpy\n", count=1)],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
-        "numpy.lib.__init__": [
-            remove_numpy_pytester_re,
-            RegexReplacement(
-                pattern=r"elif attr == .emath.*else:\s*",
-                flags=re.DOTALL,
-            ),
-            RegexReplacement(pattern=r"from \. import .*?\)", flags=re.DOTALL, count=1),
-            RegexReplacement(pattern=r"add_newdoc\.__module__.*", count=1),
-            RegexReplacement(pattern=r"from numpy\._core.* import .*"),
-            RegexReplacement(pattern=r"from \._version import NumpyVersion"),
-            RegexReplacement(
-                pattern=r",\s+.({}).".format(
-                    "|".join(
-                        (
-                            "add_newdoc",
-                            "NumpyVersion",
-                            "introspect",
-                            "mixins",
-                            "npyio",
-                            "tracemalloc_domain",
-                            "add_docstring",
-                        )
-                    )
-                )
-            ),
-        ],
+        "numpy.lib.__init__": [remove_all_re],
         "numpy.lib.array_utils": [
             RegexReplacement(
                 "^.*",
@@ -649,7 +628,7 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
             ),
             RegexReplacement(
                 pattern=r"_Frame\(NamedTuple\)",
-                replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
+                replacement="_Frame(namedtuple('_Frame',['im','bbox','encoderinfo']))",  # noqa E501
                 count=1,
             ),
         ],
@@ -660,7 +639,6 @@ __all__=['normalize_axis_tuple','normalize_axis_index']""",
 except ImportError:
     ElementTree = None""",
             ),
-            RegexReplacement(pattern="from ._deprecate import deprecate"),
             RegexReplacement(
                 pattern=r"try:\n    #.*?from \. import _imaging as core.*?except.*?raise",  # noqa: E501
                 replacement="from . import _imaging as core",
@@ -674,7 +652,7 @@ except ImportError:
             RegexReplacement(pattern="_Ink =.*"),
             RegexReplacement(
                 pattern=r"def Draw.*?return ImageDraw.*?\)",
-                replacement="""def Draw(im, mode=None): return ImageDraw(im, mode)""",
+                replacement="""def Draw(im,mode=None):return ImageDraw(im,mode)""",
                 count=1,
                 flags=re.DOTALL,
             ),
@@ -684,8 +662,7 @@ except ImportError:
         "PIL.ImageFile": [
             RegexReplacement(
                 pattern="from typing import .*",
-                replacement="""
-from typing import IO, cast
+                replacement="""from typing import IO, cast
 from collections import namedtuple""",
                 count=1,
             ),
@@ -702,6 +679,11 @@ from collections import namedtuple""",
                 flags=re.DOTALL,
             ),
             RegexReplacement(pattern=r"MAX_STRING_LENGTH is not None and"),
+            RegexReplacement(
+                pattern=r"""try:\s+from packaging\.version import parse as parse_version
+.*?DeprecationWarning,\s+\)""",
+                flags=re.DOTALL,
+            ),
         ],
         "PIL.ImageMode": [
             RegexReplacement(
@@ -738,14 +720,16 @@ from collections import namedtuple""",
         # Fix issue with autoflake
         "send2trash.compat": [
             RegexReplacement(
-                pattern="""
-try:
-    from collections.abc import Iterable as iterable_type
-except ImportError:
-    from collections import Iterable as iterable_type.*""",
-                replacement="""
+                pattern="^.*$",
+                replacement=(
+                    """
+text_type = str
+binary_type = bytes
 from collections.abc import Iterable
-iterable_type = Iterable""",
+iterable_type = Iterable"""
+                    + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
+                ),
+                flags=re.DOTALL,
                 count=1,
             )
         ],
