@@ -121,7 +121,7 @@ def get_placeholder_for_errored_image(
 
     # Wrap each individual line, then join to preserve already existing new lines
     error_text: str = str(error)
-    formated_error: str = "\n\n".join(
+    formatted_error: str = "\n\n".join(
         "\n".join(wrap(line, 100)) for line in error_text.split("\n")
     ).capitalize()
 
@@ -135,15 +135,15 @@ def get_placeholder_for_errored_image(
     w: int
     h: int
     *_, w, h = ImageDraw.font.getbbox(error_title)  # type: ignore
-    y_offset: int = screen_height - (h * (5 + formated_error.count("\n"))) >> 1
+    y_offset: int = screen_height - (h * (5 + formatted_error.count("\n"))) >> 1
     x_offset: int = (screen_width - w) >> 1
     draw.text((x_offset, y_offset), error_title, TEXT_RGB)
 
     # Write error body 2 lines of height below title
-    w, h = _get_longest_line_dimensions(formated_error)
+    w, h = _get_longest_line_dimensions(formatted_error)
     y_offset += h * 2
     x_offset = (screen_width - w) >> 1
-    draw.text((x_offset, y_offset), formated_error, TEXT_RGB)
+    draw.text((x_offset, y_offset), formatted_error, TEXT_RGB)
 
     return draw._image
 

@@ -48,7 +48,7 @@ class ButtonIconFactory:
         )
 
     def make_topbar_image(self, screen_width: int) -> PhotoImage:
-        """Makes partially transparient bar used on the screen"""
+        """Makes partially transparent bar used on the screen"""
         TOPBAR_RGBA: tuple[int, int, int, int] = (60, 60, 60, 170)
         size: tuple[int, int] = (screen_width, self.icon_size[0])
         return PhotoImage(new_image("RGBA", size, TOPBAR_RGBA))
@@ -100,8 +100,8 @@ class ButtonIconFactory:
         Returns tuple of down arrow version and up arrow version"""
         draw.line((6, 11, 16, 21), self.LINE_RGB, 2)
         draw.line((16, 21, 26, 11), self.LINE_RGB, 2)
-        resised_img: Image = self._resize_icon(draw._image)
-        return PhotoImage(resised_img), PhotoImage(ImageOps.flip(resised_img))
+        resized_img: Image = self._resize_icon(draw._image)
+        return PhotoImage(resized_img), PhotoImage(ImageOps.flip(resized_img))
 
     def make_dropdown_icons(self) -> tuple[IconImages, IconImages]:
         """Return down arrow icons and up arrow icons as a tuple"""

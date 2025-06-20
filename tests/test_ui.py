@@ -53,8 +53,8 @@ def test_button(canvas: CustomCanvas, button_icons: IconImages):
 
 
 # TODO: add checks for using different images in active/inactive states
-def test_toggable_button(canvas: CustomCanvas, button_icons: IconImages):
-    """Ensure toggable button goes between active/inactive states"""
+def test_toggleable_button(canvas: CustomCanvas, button_icons: IconImages):
+    """Ensure toggleable button goes between active/inactive states"""
     function_to_bind = MagicMock()
     button = ToggleableButtonUIElement(
         canvas, button_icons, button_icons, function_to_bind

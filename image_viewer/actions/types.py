@@ -39,6 +39,6 @@ class Convert(Rename):
 
 
 class Delete(FileAction):
-    """Represents a file being deleted and sent to the recylce bin"""
+    """Represents a file being deleted and sent to the recycle bin"""
 
     __slots__ = ()

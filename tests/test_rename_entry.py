@@ -44,7 +44,7 @@ def test_error_flash(rename_entry: RenameEntry):
 
 
 def test_resize(rename_entry: RenameEntry, canvas: CustomCanvas):
-    """Ensure correct behaviour when user resizes the entry"""
+    """Ensure correct behavior when user resizes the entry"""
 
     with patch.object(RenameEntry, "cget", lambda *_: 250):
         rename_entry._start_resize(MockEvent(x=250))

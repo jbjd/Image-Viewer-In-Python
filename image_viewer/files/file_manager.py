@@ -66,7 +66,7 @@ class ImageFileManager:
         if new_file_path == "":
             return False
 
-        choosen_file: str = os.path.basename(new_file_path)
+        chosen_file: str = os.path.basename(new_file_path)
         new_dir: str = get_normalized_dir_name(new_file_path)
 
         if new_dir != self.image_directory:
@@ -75,9 +75,9 @@ class ImageFileManager:
 
         index: int
         found: bool
-        index, found = self._files.move_index_to_image(choosen_file)
+        index, found = self._files.move_index_to_image(chosen_file)
         if not found:
-            self.add_new_image(choosen_file, index=index)
+            self.add_new_image(chosen_file, index=index)
         else:
             self._update_after_move_or_edit()
 
@@ -112,7 +112,7 @@ class ImageFileManager:
         self._update_after_move_or_edit()
 
     def refresh_image_list(self) -> None:
-        """Clears cache and finds all images in direcrory"""
+        """Clears cache and finds all images in directory"""
         self.image_cache.clear()
         self.find_all_images()
 
@@ -163,8 +163,8 @@ class ImageFileManager:
 
             # [4:] chops of 3 character day like Mon/Tue/etc.
             created_time: str = ctime(created_time_epoch)[4:]
-            modifed_time: str = ctime(modified_time_epoch)[4:]
-            details += f"Created: {created_time}\nLast Modified: {modifed_time}\n"
+            modified_time: str = ctime(modified_time_epoch)[4:]
+            details += f"Created: {created_time}\nLast Modified: {modified_time}\n"
         except (OSError, ValueError):
             pass  # don't include if can't get
 
@@ -246,7 +246,7 @@ class ImageFileManager:
                 if was_at_last_index
                 else (
                     _ShouldPreserveIndex.IF_INSERTED_AT_OR_BEFORE
-                    if self._should_perserve_index_on_rename(result)
+                    if self._should_preserve_index_on_rename(result)
                     else _ShouldPreserveIndex.NO
                 )
             )
@@ -316,7 +316,7 @@ class ImageFileManager:
         return Rename(original_path, new_path)
 
     @staticmethod
-    def _should_perserve_index_on_rename(result: Rename) -> bool:
+    def _should_preserve_index_on_rename(result: Rename) -> bool:
         """Returns True when image list shifted or changed size so internal index
         needs to be changed to keep on the same image"""
         if isinstance(result, Convert):

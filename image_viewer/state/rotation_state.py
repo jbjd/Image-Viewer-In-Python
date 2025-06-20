@@ -15,7 +15,7 @@ class RotationState(StateBase):
         self.orientation = Rotation.UP
 
     def try_update_state(self, target_orientation: Rotation | None) -> bool:
-        """Trys to update oritentation. Returns True if orientation changed"""
+        """Tries to update orientation. Returns True if orientation changed"""
         if target_orientation is None or target_orientation == self.orientation:
             return False
 

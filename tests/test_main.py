@@ -11,6 +11,6 @@ def test_exception_hook():
         # Should catch and not fail writing to file
         exception_hook(type(exception), exception, None, "")  # type: ignore
 
-    with patch("builtins.open", new_callable=mock_open) as mock_bultins_open:
+    with patch("builtins.open", new_callable=mock_open) as mock_builtins_open:
         exception_hook(type(exception), exception, None, "")  # type: ignore
-        mock_bultins_open.assert_called_once()
+        mock_builtins_open.assert_called_once()

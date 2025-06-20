@@ -4,14 +4,13 @@ A lightweight image viewer app to be called like "python image_viewer path/to/im
 
 import os
 import sys
-from functools import partial
 from types import TracebackType
 
 
 def exception_hook(
     error_type: type[BaseException],
     error: BaseException,
-    trace: TracebackType,
+    trace: TracebackType | None,
     destination_path: str,
 ) -> None:
     """Writes unhandled fatal exception to file"""
@@ -27,11 +26,14 @@ def exception_hook(
 
 
 if __name__ == "__main__" and len(sys.argv) > 1:  # pragma: no cover
-    path_to_exe_folder: str = os.path.dirname(sys.argv[0])
+    from functools import partial
+
+    from util.os import get_path_to_exe_folder
+    from viewer import ViewerApp
+
+    path_to_exe_folder: str = get_path_to_exe_folder()
 
     if not __debug__:
         sys.excepthook = partial(exception_hook, destination_path=path_to_exe_folder)
-
-    from viewer import ViewerApp
 
     ViewerApp(sys.argv[1], path_to_exe_folder)

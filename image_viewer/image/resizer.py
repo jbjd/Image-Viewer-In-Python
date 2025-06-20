@@ -50,7 +50,7 @@ class ImageResizer:
             image_width, image_height, zoom_level
         )
 
-        # Pre-scale to determine interpoaltion since an image we originally shrunk
+        # Pre-scale to determine interpolation since an image we originally shrunk
         # might now grow
         scaled_width, scaled_height = self._scale_dimensions(image.size, zoom_factor)
         interpolation = self.get_resampling(scaled_width, scaled_height)

@@ -58,7 +58,7 @@ def test_update_image_display(canvas: CustomCanvas, example_image: Image):
 
 
 def test_widget_visible(canvas: CustomCanvas):
-    """Is widget visible functoin should be accurate"""
+    """Is widget visible function should be accurate"""
     widget_id: int = canvas.create_rectangle(0, 0, 10, 10)
     assert canvas.is_widget_visible(widget_id)
 

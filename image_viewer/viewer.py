@@ -66,7 +66,7 @@ class ViewerApp:
         self.height_ratio: float = screen_height / 1080
         self.width_ratio: float = screen_width / 1920
 
-        self._load_assests(
+        self._load_assets(
             self.canvas,
             config.font_file,
             self.canvas.screen_width,
@@ -164,7 +164,7 @@ class ViewerApp:
             app.bind("<Button-4>", lambda event: self.handle_mouse_wheel(event))
             app.bind("<Button-5>", lambda event: self.handle_mouse_wheel(event))
 
-    def _load_assests(
+    def _load_assets(
         self,
         canvas: CustomCanvas,
         font_file: str,
@@ -411,7 +411,7 @@ class ViewerApp:
             self.app.after_cancel(self.move_id)
 
     def refresh(self, _: Event) -> None:
-        """Updates list of all images in direcrory.
+        """Updates list of all images in directory.
         Display may change if image was removed outside of program"""
         self.clear_image()
         try:

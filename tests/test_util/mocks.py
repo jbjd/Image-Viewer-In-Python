@@ -51,7 +51,7 @@ class MockImage(Image):
         self.n_frames: int = n_frames
         self.closed: bool = False
 
-        if n_frames > 1:  # Like PIL, only set for animtions
+        if n_frames > 1:  # Like PIL, only set for animations
             self.is_animated: bool = True
 
     def convert(self, new_mode: str) -> Self:  # type: ignore

@@ -28,7 +28,7 @@ class _UtilsDllFactory:
     @staticmethod
     def _load_dll_from_path() -> ctypes.PyDLL:
         return ctypes.PyDLL(
-            os.path.join(os.path.dirname(sys.argv[0]), "dll/os_util_nt.dll")
+            os.path.join(get_path_to_exe_folder(), "dll/os_util_nt.dll")
         )
 
 
@@ -195,3 +195,9 @@ def split_name_and_suffix(name_and_suffix: str) -> tuple[str, str]:
         suffix = name_and_suffix[suffix_start:]
 
     return file_name, suffix
+
+
+def get_path_to_exe_folder() -> str:
+    """Returns path to folder containing exe/py file
+    of running program"""
+    return os.path.dirname(sys.argv[0])

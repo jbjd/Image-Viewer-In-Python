@@ -51,7 +51,7 @@ class RenameEntry(Entry, UIElementBase):  # pylint: disable=too-many-ancestors
         self.being_resized = self.mouse_can_resize(event.x)
 
     def _stop_resize(self, _: Event) -> None:
-        """Reallows input when resize event ends"""
+        """Re-allows input when resize event ends"""
         self.config(state="normal")
         self.being_resized = False
 

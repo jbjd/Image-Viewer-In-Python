@@ -18,7 +18,7 @@ def _validate_icon_type(icons: IconImages):
 
 
 def test_create_icons(tk_app: Tk, button_icon_factory: ButtonIconFactory):
-    """Ensure all photoimages created successfully"""
+    """Ensure all PhotoImages created successfully"""
     topbar: PhotoImage = button_icon_factory.make_topbar_image(1920)
     assert isinstance(topbar, PhotoImage)
 
