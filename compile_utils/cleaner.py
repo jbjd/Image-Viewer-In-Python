@@ -7,14 +7,15 @@ import subprocess
 import warnings
 from glob import glob
 from re import sub
-from shutil import copyfile
 from typing import Iterator
 
+from personal_compile_tools.file_operations import copy_file, walk_folder
 from personal_python_ast_optimizer.flake_wrapper import run_autoflake
 from personal_python_ast_optimizer.parser.config import (
-    SectionsToSkipConfig,
+    ExtrasConfig,
+    SectionsConfig,
     SkipConfig,
-    TokensToSkipConfig,
+    TokensConfig,
 )
 from personal_python_ast_optimizer.parser.minifier import MinifyUnparser
 from personal_python_ast_optimizer.parser.run import run_minify_parser
@@ -81,8 +82,9 @@ def clean_file_and_copy(
             module_import_path,
             MINIMUM_PYTHON_VERSION,
             constants_to_fold[module_name],
-            SectionsToSkipConfig(skip_name_equals_main=True),
+            SectionsConfig(skip_name_equals_main=True),
             _get_tokens_to_skip_config(module_import_path),
+            ExtrasConfig(fold_constants=False),  # Nuitka does this internally
         ),
     )
 
@@ -137,7 +139,7 @@ def move_files_to_tmp_and_clean(
         if python_file.endswith(".py"):
             clean_file_and_copy(python_file, new_path, module_name, module_import_path)
         else:
-            copyfile(python_file, new_path)
+            copy_file(python_file, new_path)
 
     if modules_to_skip:
         warnings.warn(
@@ -148,8 +150,8 @@ def move_files_to_tmp_and_clean(
 
 def warn_unused_code_skips() -> None:
     """If any values remain from code_to_skip imports, warn
-    that they were usunued"""
-    for skips, frendly_name in (
+    that they were unused"""
+    for skips, friendly_name in (
         (classes_to_skip, "classes"),
         (decorators_to_skip, "decorators"),
         (dict_keys_to_skip, "dictionary Keys"),
@@ -161,7 +163,7 @@ def warn_unused_code_skips() -> None:
     ):
         for module in skips.keys():
             warnings.warn(
-                f"Asked to skip {frendly_name} in module {module} "
+                f"Asked to skip {friendly_name} in module {module} "
                 "but it was not found"
             )
 
@@ -169,7 +171,7 @@ def warn_unused_code_skips() -> None:
 def clean_tk_files(compile_dir: str) -> None:
     """Removes unwanted files that nuitka auto includes in standalone
     and cleans up comments/whitespace from necessary tcl files"""
-    for path_or_glob, regexs in regex_to_apply_tk.items():
+    for path_or_glob, regexes in regex_to_apply_tk.items():
         glob_result: list[str] = glob(os.path.join(compile_dir, path_or_glob))
         if not glob_result:
             warnings.warn(f"{path_or_glob}: Glob not found")
@@ -178,7 +180,7 @@ def clean_tk_files(compile_dir: str) -> None:
         # globs are used since files may have versioning in name
         # They are intended to target a single file
         code_file: str = glob_result[0]
-        apply_regex_to_file(code_file, regexs, warning_id=path_or_glob)
+        apply_regex_to_file(code_file, regexes, warning_id=path_or_glob)
 
     # strip various things in tcl files
     comments = RegexReplacement(pattern=r"^\s*#.*", flags=re.MULTILINE)
@@ -221,7 +223,7 @@ def strip_files(compile_dir: str) -> None:
             warnings.warn(f"Failed to strip file {strippable_file}")
 
 
-def _get_tokens_to_skip_config(module_import_path: str) -> TokensToSkipConfig:
+def _get_tokens_to_skip_config(module_import_path: str) -> TokensConfig:
     classes: set[str] | None = classes_to_skip.pop(module_import_path, None)
     decorators: set[str] | None = decorators_to_skip.pop(module_import_path, None)
     dict_keys: set[str] | None = dict_keys_to_skip.pop(module_import_path, None)
@@ -237,21 +239,17 @@ def _get_tokens_to_skip_config(module_import_path: str) -> TokensToSkipConfig:
     else:
         functions = {"warn"}
 
-    return TokensToSkipConfig(
-        classes=classes,
-        decorators=decorators,
-        dict_keys=dict_keys,
-        from_imports=from_imports,
-        module_imports=module_imports,
-        functions=functions,
-        variables=variables,
+    return TokensConfig(
+        classes_to_skip=classes,
+        decorators_to_skip=decorators,
+        dict_keys_to_skip=dict_keys,
+        from_imports_to_skip=from_imports,
+        module_imports_to_skip=module_imports,
+        functions_to_skip=functions,
+        variables_to_skip=variables,
         no_warn={"warn"},
     )
 
 
 def _files_in_dir_iter(dir: str, ext_filter: tuple[str, ...]) -> Iterator[str]:
-    return iter(
-        p
-        for p in glob(os.path.join(dir, "**/*"), recursive=True)
-        if p.endswith(ext_filter)
-    )
+    return iter(p for p in walk_folder(dir) if p.endswith(ext_filter))
