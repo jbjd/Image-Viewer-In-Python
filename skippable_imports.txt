@@ -59,6 +59,7 @@ numpy.lib._ufunclike_impl
 numpy.lib._user_array_impl
 numpy.lib._utils_impl
 numpy.lib._version
+numpy.lib.array_utils
 numpy.lib.format
 numpy.lib.introspect
 numpy.lib.mixins

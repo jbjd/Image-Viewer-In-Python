@@ -123,7 +123,15 @@ functions_to_skip: dict[str, set[str]] = {
     },
     "numpy._core.numerictypes": {"maximum_sctype"},
     "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
-    "numpy._core.records": {"__repr__", "__str__", "pprint"},
+    "numpy._core.records": {
+        "__repr__",
+        "__str__",
+        "array",
+        "fromfile",
+        "fromrecords",
+        "fromstring",
+        "pprint",
+    },
     "numpy._core.shape_base": {
         "_arrays_for_stack_dispatcher",
         "_atleast_1d_dispatcher",
@@ -133,6 +141,7 @@ functions_to_skip: dict[str, set[str]] = {
         "_stack_dispatcher",
         "_unstack_dispatcher",
         "_vhstack_dispatcher",
+        "atleast_3d",
     },
     "numpy._globals": {"__repr__"},
     "numpy.lib._stride_tricks_impl": {
@@ -299,8 +308,9 @@ vars_to_skip: dict[str, set[str]] = {
     },
     "numpy._core.numerictypes": {"genericTypeRank"},
     "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
-    "numpy._core.records": {"__module__", "numfmt"},
-    "numpy._core.shape_base": {"array_function_dispatch"},
+    "numpy._core.records": {"__all__", "__module__", "numfmt"},
+    "numpy._core.shape_base": {"__all__", "array_function_dispatch"},
+    "numpy.exceptions": {"__all__", "_is_loaded"},
     "turbojpeg": {
         "__author__",
         "__buffer_size_YUV2",
@@ -596,15 +606,6 @@ except ImportError:
         ],
         "numpy._globals": [RegexReplacement(".*?_set_module.*")],
         "numpy.lib.__init__": [remove_all_re],
-        "numpy.lib.array_utils": [
-            RegexReplacement(
-                "^.*",
-                """
-from numpy._core.numeric import normalize_axis_tuple,normalize_axis_index
-__all__=['normalize_axis_tuple','normalize_axis_index']""",
-                flags=re.DOTALL,
-            )
-        ],
         "PIL.__init__": [
             RegexReplacement(
                 pattern=r"_plugins = \[.*?\]",
