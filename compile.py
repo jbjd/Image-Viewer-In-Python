@@ -153,6 +153,5 @@ finally:
 print("\nFinished")
 print("Installed to", install_path)
 
-path_to_check: str = install_path
-install_byte_size: int = get_folder_size(path_to_check)
+install_byte_size: int = get_folder_size(install_path)
 print(f"Install Size: {install_byte_size:,} bytes")

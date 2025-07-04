@@ -276,7 +276,7 @@ functions_to_skip: dict[str, set[str]] = {
         "load_djpeg",
         "register_mime",
     },
-    "PIL.PngImagePlugin": {"debug", "getLogger", "register_mime"},
+    "PIL.PngImagePlugin": {"debug", "deprecate", "getLogger", "register_mime"},
     "PIL.WebPImagePlugin": {"register_mime"},
     "PIL.TiffTags": {"_populate"},
 }

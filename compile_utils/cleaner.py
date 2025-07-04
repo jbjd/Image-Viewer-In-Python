@@ -143,7 +143,7 @@ def move_files_to_tmp_and_clean(
 
     if modules_to_skip:
         warnings.warn(
-            "Some imports where marked to skip but not found: "
+            "Some modules were marked to skip but were not found: "
             + " ".join(modules_to_skip)
         )
 

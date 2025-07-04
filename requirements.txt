@@ -1,4 +1,4 @@
-Pillow==11.2.1
+Pillow==11.3.0
 PyTurboJPEG==1.8.0
 numpy==2.3.0
 send2trash==1.8.3
