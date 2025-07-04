@@ -18,6 +18,7 @@ numpy._core._string_helpers
 numpy._core.cversions
 numpy._core.defchararray
 numpy._core.einsumfunc
+numpy._core.function_base
 numpy._core.memmap
 numpy._core.strings
 numpy._core.tests
