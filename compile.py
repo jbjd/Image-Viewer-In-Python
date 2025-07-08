@@ -25,11 +25,11 @@ from compile_utils.cleaner import (
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
-    raise_if_unsupported_python_version,
     validate_module_requirements,
+    validate_python_version,
 )
 
-raise_if_unsupported_python_version()
+validate_python_version()
 
 WORKING_DIR: Final[str] = os.path.normpath(os.path.dirname(__file__))
 FILE: Final[str] = "__main__"
