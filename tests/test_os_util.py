@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from image_viewer.util.os import (
-    _UtilsDllFactory,
     get_byte_display,
     get_files_in_folder,
     maybe_truncate_long_name,
@@ -12,7 +11,7 @@ from image_viewer.util.os import (
     show_info_popup,
     split_name_and_suffix,
 )
-from tests.conftest import IMG_DIR, mock_load_dll_from_path
+from tests.conftest import IMG_DIR
 from tests.test_util.mocks import MockWindll
 
 
@@ -120,6 +119,5 @@ def test_split_name_and_suffix(
 def test_get_files_in_folder():
     """Test that get_files_in_folder correctly finds files in dir"""
 
-    with patch.object(_UtilsDllFactory, "_load_dll_from_path", mock_load_dll_from_path):
-        files = [p for p in get_files_in_folder(IMG_DIR)]
-        assert len(files) == 5
+    files = [p for p in get_files_in_folder(IMG_DIR)]
+    assert len(files) == 5

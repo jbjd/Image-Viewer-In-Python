@@ -9,7 +9,7 @@ from image_viewer.constants import ImageFormats
 from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
 from image_viewer.image.file import ImageName, ImageNameList
-from tests.conftest import IMG_DIR, mock_load_dll_from_path
+from tests.conftest import IMG_DIR
 from tests.test_util.exception import safe_wrapper
 from tests.test_util.mocks import MockImage, MockStatResult
 
@@ -30,8 +30,7 @@ def test_image_file_manager(manager: ImageFileManager):
     """Test various functions of the file manager with empty image files"""
     assert len(manager._files) == 1
 
-    with patch("util.os._UtilsDllFactory._load_dll_from_path", mock_load_dll_from_path):
-        manager.find_all_images()
+    manager.find_all_images()
     assert len(manager._files) == 4
     assert manager._files.get_index_of_image("a.png") == (0, True)
 
