@@ -77,7 +77,11 @@ try:
     # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
 
-    for module_name in ["turbojpeg", "send2trash", "PIL", "numpy"]:
+    module_dependencies: list[str] = ["turbojpeg", "send2trash", "PIL", "numpy"]
+    if os.name == "nt":
+        module_dependencies.append("winshell")
+
+    for module_name in module_dependencies:
         modules_to_skip: set[str] = set(
             i for i in imports_to_skip if i.startswith(module_name)
         )

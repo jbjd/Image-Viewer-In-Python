@@ -88,7 +88,7 @@ def clean_file_and_copy(
         ),
     )
 
-    edit_imports: bool = module_name != "numpy"
+    edit_imports: bool = module_name not in ("numpy", "winshell")
     source = run_autoflake(source, remove_unused_imports=edit_imports)
 
     with open(new_path, "w", encoding="utf-8") as fp:

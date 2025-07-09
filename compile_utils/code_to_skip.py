@@ -285,6 +285,22 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
+if os.name == "nt":
+    functions_to_skip["winshell"] = {
+        "__repr__",
+        "CreateShortcut",
+        "dump",
+        "dumped",
+        "dumped_dict",
+        "dumped_flags",
+        "dumped_list",
+        "from_constants",
+        "indented",
+        "shortcut",
+        "structured_storage",
+        "wrapped",
+    }
+
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
         "__all__",
@@ -342,6 +358,14 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
+if os.name == "nt":
+    vars_to_skip["winshell"] = {
+        "bookmarks",
+        "FMTID_CUSTOM_DEFINED_PROPERTIES",
+        "FMTID_USER_DEFINED_PROPERTIES",
+        "my_documents",
+    }
+
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.state.base": {"ABC"},
@@ -368,6 +392,9 @@ classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.state.rotation_state": {"StateBase"},
     f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
+
+if os.name == "nt":
+    classes_to_skip["winshell"] = {"Shortcut"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -471,6 +498,9 @@ module_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"numpy._core._multiarray_umath"},
     "numpy._core.umath": {"numpy"},
 }
+
+if os.name == "nt":
+    module_imports_to_skip["winshell"] = {"__winshell_version__"}
 
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
@@ -740,6 +770,11 @@ if os.name == "nt":
             flags=re.DOTALL,
         )
     )
+
+    regex_to_apply_py["winshell"] = [
+        RegexReplacement("try:.*?basestring = str", "basestring=str", flags=re.DOTALL),
+        RegexReplacement("try:.*?unicode = str", "unicode=str", flags=re.DOTALL),
+    ]
 
 # Use platform since that what these modules check
 if sys.platform != "linux":
