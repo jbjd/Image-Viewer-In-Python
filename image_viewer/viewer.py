@@ -18,7 +18,7 @@ from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
-from util.os import open_with, show_info_popup
+from util.os import show_info_popup
 from util.PIL import create_dropdown_image, init_PIL
 
 
@@ -150,6 +150,8 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
+            from dll.c_os_util import open_with
+
             app.bind(
                 "<Control-b>",
                 lambda _: open_with(

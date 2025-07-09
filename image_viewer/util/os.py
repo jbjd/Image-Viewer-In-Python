@@ -2,12 +2,10 @@
 Code for OS specific stuff
 """
 
-import ctypes
 import os
 import sys
 from collections.abc import Iterator
 from typing import Final
-
 
 if os.name == "nt":
     from ctypes import windll  # type: ignore
@@ -16,16 +14,6 @@ if os.name == "nt":
     from winshell import undelete, x_winshell
 
     from dll.c_os_util import get_files_in_folder as _get_files_in_folder
-
-    LPCWSTR = ctypes.c_wchar_p
-    OPEN_AS_INFO_FLAGS = ctypes.c_int32
-
-    class OPENASINFO(ctypes.Structure):
-        _fields_ = [
-            ("pcszFile", LPCWSTR),
-            ("pcszClass", LPCWSTR),
-            ("oaifInFlags", OPEN_AS_INFO_FLAGS),
-        ]
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
@@ -100,23 +88,6 @@ else:  # assume linux for now
 
                 if not is_dir:
                     yield entry.name
-
-
-def open_with(hwnd: int, file: str) -> None:
-    """Windows Only
-    Opens "Open With" dialog on current image"""
-    if os.name != "nt":
-        raise NotImplementedError
-
-    OAIF_EXEC: Final[int] = 0x04
-    OAIF_HIDE_REGISTRATION: Final[int] = 0x20
-    open_as_info = OPENASINFO(
-        pcszFile=file,
-        pcszClass=None,
-        oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
-    )
-
-    windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
 
 
 def show_info_popup(hwnd: int, title: str, body: str) -> None:
