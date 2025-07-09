@@ -285,6 +285,9 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
+if os.name == "nt":
+    functions_to_skip["winshell"] = {"structured_storage"}
+
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
         "__all__",
@@ -471,6 +474,9 @@ module_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.overrides": {"numpy._core._multiarray_umath"},
     "numpy._core.umath": {"numpy"},
 }
+
+if os.name == "nt":
+    module_imports_to_skip["winshell"] = {"__winshell_version__"}
 
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
@@ -740,6 +746,11 @@ if os.name == "nt":
             flags=re.DOTALL,
         )
     )
+
+    regex_to_apply_py["winshell"] = [
+        RegexReplacement("try:.*?basestring = str", "basestring=str", flags=re.DOTALL),
+        RegexReplacement("try:.*?unicode = str", "unicode=str", flags=re.DOTALL),
+    ]
 
 # Use platform since that what these modules check
 if sys.platform != "linux":
