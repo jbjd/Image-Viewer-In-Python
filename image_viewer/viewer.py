@@ -150,7 +150,7 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
-            from dll.c_os_util import open_with
+            from util._os import open_with
 
             app.bind(
                 "<Control-b>",

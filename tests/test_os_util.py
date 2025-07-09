@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from image_viewer.dll.c_os_util import open_with
+from image_viewer.util._os import open_with
 from image_viewer.util.os import (
     get_byte_display,
     get_files_in_folder,

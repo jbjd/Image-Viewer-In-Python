@@ -7,7 +7,7 @@ endif
 PYTHON_PATH := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
 
 build-dll:
-	gcc image_viewer/c_extensions/os_util.c -L$(PYTHON_PATH)/libs/ -I$(PYTHON_PATH)/include/ -lpython312 -O3 -s -shared -o image_viewer/dll/c_os_util.pyd -Wall -Werror
+	gcc image_viewer/c_extensions/util/os.c -L$(PYTHON_PATH)/libs/ -I$(PYTHON_PATH)/include/ -lpython312 -O3 -s -shared -o image_viewer/util/_os.pyd -Wall -Werror
 
 install:
 	$(PYTHON) compile.py --standalone --strip --no-cleanup

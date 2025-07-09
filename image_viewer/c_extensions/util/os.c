@@ -71,19 +71,19 @@ static PyObject *open_with(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-static PyMethodDef os_util_methods[] = {
+static PyMethodDef os_methods[] = {
     {"open_with", open_with, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
-static struct PyModuleDef os_util_module = {
+static struct PyModuleDef os_module = {
     PyModuleDef_HEAD_INIT,
     "c_os_util",
     "Python interface for utility functions written in C",
     -1,
-    os_util_methods};
+    os_methods};
 
-PyMODINIT_FUNC PyInit_c_os_util(void)
+PyMODINIT_FUNC PyInit__os(void)
 {
-    return PyModule_Create(&os_util_module);
+    return PyModule_Create(&os_module);
 }

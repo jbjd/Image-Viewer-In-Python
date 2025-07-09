@@ -13,7 +13,7 @@ if os.name == "nt":
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell
 
-    from dll.c_os_util import get_files_in_folder as _get_files_in_folder
+    from util._os import get_files_in_folder as _get_files_in_folder
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
