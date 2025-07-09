@@ -63,12 +63,43 @@ static PyObject *open_with(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    struct _openasinfo openAsInfo = {path, NULL,  OAIF_EXEC | OAIF_HIDE_REGISTRATION};
+    struct _openasinfo openAsInfo = {path, NULL, OAIF_EXEC | OAIF_HIDE_REGISTRATION};
     SHOpenWithDialog(hwnd, &openAsInfo);
 
     PyMem_Free(path);
 
     return Py_None;
+}
+
+static PyObject *get_byte_display(PyObject *self, PyObject *args)
+{
+    int sizeInBytes;
+
+    if (!PyArg_ParseTuple(args, "i", &sizeInBytes))
+    {
+        return NULL;
+    }
+
+#ifdef _WIN32
+    const int kbSize = 1024;
+#else
+    const int kbSize = 1000;
+#endif
+
+    char *result;
+    int sizeInKb = sizeInBytes / kbSize;
+
+    if sizeInKb > 999
+    {
+        float sizeInMb = sizeInKb / ((float)kbSize)
+        sprintf(result, "%.2fmb", sizeInMb);
+    }
+    else
+    {
+        sprintf(result, "%dkb", sizeInKb);
+    }
+
+    return Py_BuildValue("s", result);
 }
 
 static PyMethodDef os_methods[] = {
