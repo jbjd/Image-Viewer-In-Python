@@ -289,8 +289,16 @@ if os.name == "nt":
     functions_to_skip["winshell"] = {
         "__repr__",
         "CreateShortcut",
+        "dump",
+        "dumped",
+        "dumped_dict",
+        "dumped_flags",
+        "dumped_list",
+        "from_constants",
+        "indented",
         "shortcut",
         "structured_storage",
+        "wrapped",
     }
 
 vars_to_skip: dict[str, set[str]] = {
@@ -351,7 +359,12 @@ vars_to_skip: dict[str, set[str]] = {
 }
 
 if os.name == "nt":
-    vars_to_skip["winshell"] = {"bookmarks", "my_documents"}
+    vars_to_skip["winshell"] = {
+        "bookmarks",
+        "FMTID_CUSTOM_DEFINED_PROPERTIES",
+        "FMTID_USER_DEFINED_PROPERTIES",
+        "my_documents",
+    }
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
