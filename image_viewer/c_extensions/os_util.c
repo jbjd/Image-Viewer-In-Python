@@ -50,28 +50,23 @@ finish:
 static PyObject *open_with(PyObject *self, PyObject *args)
 {
     HWND hwnd;
-    char *path;
+    PyObject *pyPath;
 
-    if (!PyArg_ParseTuple(args, "is", &hwnd, &path))
+    if (!PyArg_ParseTuple(args, "iU", &hwnd, &pyPath))
     {
         return NULL;
     }
 
-    const size_t path_len = strlen(path) + 1;
-
-    wchar_t *wPath = (wchar_t*)malloc(path_len * sizeof(wchar_t));
-
-    if (wPath == NULL) {
+    wchar_t *path = PyUnicode_AsWideCharString(pyPath, 0);
+    if (path == NULL)
+    {
         return NULL;
     }
 
-    mbstowcs(wPath, path, path_len);
-
-    struct _openasinfo openAsInfo = {wPath, NULL,  OAIF_EXEC | OAIF_HIDE_REGISTRATION};
-
+    struct _openasinfo openAsInfo = {path, NULL,  OAIF_EXEC | OAIF_HIDE_REGISTRATION};
     SHOpenWithDialog(hwnd, &openAsInfo);
 
-    free(wPath);
+    PyMem_Free(path);
 
     return Py_None;
 }
