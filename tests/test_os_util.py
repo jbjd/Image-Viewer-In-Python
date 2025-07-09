@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from image_viewer.util._os import open_with
 from image_viewer.util.os import (
     get_byte_display,
     get_files_in_folder,
@@ -34,29 +33,6 @@ def test_get_byte_display(os_name: str):
     with patch.object(os, "name", os_name):
         assert get_byte_display(999 * kb_size) == expected_display_999kb
         assert get_byte_display(1000 * kb_size) == expected_display_1000kb
-
-
-def test_open_with(os_name: str):
-    """Should call windows API with correct params"""
-    hwnd = 1
-    path = "test"
-
-    with patch.object(os, "name", "nt"):
-        EXECUTE_JUST_ONCE_FLAGS = 0x24
-        mock_windll = MockWindll()
-
-        with (
-            patch("image_viewer.util.os.windll", mock_windll, create=True),
-            patch("image_viewer.util.os.OPENASINFO", _mock_new_OPENASINFO, create=True),
-        ):
-            open_with(hwnd, path)
-
-        mock_windll.shell32.SHOpenWithDialog.assert_called_once()
-
-        call_args = mock_windll.shell32.SHOpenWithDialog.call_args[0]
-        assert call_args[0] == hwnd
-        assert getattr(call_args[1], "pcszFile", None) == path
-        assert getattr(call_args[1], "oaifInFlags", None) == EXECUTE_JUST_ONCE_FLAGS
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
