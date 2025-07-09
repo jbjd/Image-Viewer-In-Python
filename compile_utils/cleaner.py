@@ -35,7 +35,7 @@ from compile_utils.code_to_skip import (
     vars_to_skip,
 )
 from compile_utils.package_info import IMAGE_VIEWER_NAME
-from compile_utils.validation import MINIMUM_PYTHON_VERSION
+from compile_utils.validation import get_required_python_version
 
 if os.name == "nt":
     separators = r"[\\/]"
@@ -80,7 +80,7 @@ def clean_file_and_copy(
         source,
         SkipConfig(
             module_import_path,
-            MINIMUM_PYTHON_VERSION,
+            get_required_python_version(),
             constants_to_fold[module_name],
             SectionsConfig(skip_name_equals_main=True),
             _get_tokens_to_skip_config(module_import_path),

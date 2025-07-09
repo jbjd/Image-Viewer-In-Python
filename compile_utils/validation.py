@@ -1,18 +1,26 @@
 """Validation functions for compilation requirements"""
 
+import tomllib
 import warnings
+from functools import lru_cache
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as get_module_version
 from sys import version_info
 
-from personal_compile_tools.converters import version_tuple_to_str
-from personal_compile_tools.requirements import Requirement, parse_requirements_file
+from personal_compile_tools.converters import version_str_to_tuple, version_tuple_to_str
 from personal_compile_tools.requirement_operators import Operators
+from personal_compile_tools.requirements import Requirement, parse_requirements_file
 from personal_compile_tools.validation import is_root
 
 from nuitka import PythonVersions
 
-MINIMUM_PYTHON_VERSION: tuple[int, int] = (3, 11)
+
+@lru_cache
+def get_required_python_version() -> tuple[int, int]:
+    with open("pyproject.toml", "rb") as fp:
+        project: dict = tomllib.load(fp)["project"]
+
+    return version_str_to_tuple(project["requires-python"][2:])  # type: ignore
 
 
 def validate_module_requirements(is_standalone: bool) -> None:
@@ -51,12 +59,14 @@ def validate_module_requirements(is_standalone: bool) -> None:
         )
 
 
-def raise_if_unsupported_python_version() -> None:
-    if version_info[:2] < MINIMUM_PYTHON_VERSION:
-        minimum_supported: str = version_tuple_to_str(MINIMUM_PYTHON_VERSION)
-        raise Exception(f"Python {minimum_supported} or higher required")
+def validate_python_version() -> None:
+    required_python: tuple[int, int] = get_required_python_version()
+    used_python: tuple[int, int] = version_info[:2]
 
-    version: str = version_tuple_to_str(version_info[:2])
+    if used_python != required_python:
+        warnings.warn(f"Expecting python {required_python} but found {used_python}")
+
+    version: str = version_tuple_to_str(used_python)
     if version in PythonVersions.getNotYetSupportedPythonVersions():
         raise Exception(f"{version} not supported by Nuitka yet")
 

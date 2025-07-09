@@ -2,35 +2,10 @@
 Code for OS specific stuff
 """
 
-import ctypes
 import os
 import sys
 from collections.abc import Iterator
 from typing import Final
-
-
-class _UtilsDllFactory:
-    """Contains a PyDLL that is lazy loaded"""
-
-    __slots__ = ("_utils_dll",)
-
-    def __init__(self) -> None:
-        self._utils_dll: ctypes.PyDLL | None = None
-
-    def get_or_create(self) -> ctypes.PyDLL:
-        if self._utils_dll is None:
-            self._utils_dll = self._load_dll_from_path()
-            self._utils_dll.get_files_in_folder.argtypes = [ctypes.py_object]
-            self._utils_dll.get_files_in_folder.restype = ctypes.py_object
-
-        return self._utils_dll
-
-    @staticmethod
-    def _load_dll_from_path() -> ctypes.PyDLL:
-        return ctypes.PyDLL(
-            os.path.join(get_path_to_exe_folder(), "dll/os_util_nt.dll")
-        )
-
 
 if os.name == "nt":
     from ctypes import windll  # type: ignore
@@ -38,15 +13,7 @@ if os.name == "nt":
     from send2trash.win.legacy import send2trash
     from winshell import undelete, x_winshell
 
-    LPCWSTR = ctypes.c_wchar_p
-    OPEN_AS_INFO_FLAGS = ctypes.c_int32
-
-    class OPENASINFO(ctypes.Structure):
-        _fields_ = [
-            ("pcszFile", LPCWSTR),
-            ("pcszClass", LPCWSTR),
-            ("oaifInFlags", OPEN_AS_INFO_FLAGS),
-        ]
+    from util._os import get_files_in_folder as _get_files_in_folder
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
@@ -57,12 +24,8 @@ if os.name == "nt":
         except x_winshell as e:
             raise OSError from e  # change error type so catching is not OS specific
 
-    _utils_dll_factory = _UtilsDllFactory()
-
     def get_files_in_folder(directory_path: str) -> Iterator[str]:
-        files: list[str] = _utils_dll_factory.get_or_create().get_files_in_folder(
-            os.path.join(directory_path, "*")
-        )
+        files: list[str] = _get_files_in_folder(os.path.join(directory_path, "*"))
         return iter(files)
 
 else:  # assume linux for now
@@ -125,23 +88,6 @@ else:  # assume linux for now
 
                 if not is_dir:
                     yield entry.name
-
-
-def open_with(hwnd: int, file: str) -> None:
-    """Windows Only
-    Opens "Open With" dialog on current image"""
-    if os.name != "nt":
-        raise NotImplementedError
-
-    OAIF_EXEC: Final[int] = 0x04
-    OAIF_HIDE_REGISTRATION: Final[int] = 0x20
-    open_as_info = OPENASINFO(
-        pcszFile=file,
-        pcszClass=None,
-        oaifInFlags=OAIF_EXEC | OAIF_HIDE_REGISTRATION,
-    )
-
-    windll.shell32.SHOpenWithDialog(hwnd, open_as_info)
 
 
 def show_info_popup(hwnd: int, title: str, body: str) -> None:

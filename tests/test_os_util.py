@@ -4,15 +4,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from image_viewer.util.os import (
-    _UtilsDllFactory,
     get_byte_display,
     get_files_in_folder,
     maybe_truncate_long_name,
-    open_with,
     show_info_popup,
     split_name_and_suffix,
 )
-from tests.conftest import IMG_DIR, mock_load_dll_from_path
+from tests.conftest import IMG_DIR
 from tests.test_util.mocks import MockWindll
 
 
@@ -35,36 +33,6 @@ def test_get_byte_display(os_name: str):
     with patch.object(os, "name", os_name):
         assert get_byte_display(999 * kb_size) == expected_display_999kb
         assert get_byte_display(1000 * kb_size) == expected_display_1000kb
-
-
-@pytest.mark.parametrize("os_name", ["nt", "linux"])
-def test_open_with(os_name: str):
-    """Should call windows API with correct params"""
-    hwnd = 1
-    path = "test"
-
-    with patch.object(os, "name", os_name):
-        if os_name != "nt":
-            with pytest.raises(NotImplementedError):
-                open_with(hwnd, path)
-        else:
-            EXECUTE_JUST_ONCE_FLAGS = 0x24
-            mock_windll = MockWindll()
-
-            with (
-                patch("image_viewer.util.os.windll", mock_windll, create=True),
-                patch(
-                    "image_viewer.util.os.OPENASINFO", _mock_new_OPENASINFO, create=True
-                ),
-            ):
-                open_with(hwnd, path)
-
-            mock_windll.shell32.SHOpenWithDialog.assert_called_once()
-
-            call_args = mock_windll.shell32.SHOpenWithDialog.call_args[0]
-            assert call_args[0] == hwnd
-            assert getattr(call_args[1], "pcszFile", None) == path
-            assert getattr(call_args[1], "oaifInFlags", None) == EXECUTE_JUST_ONCE_FLAGS
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
@@ -120,6 +88,5 @@ def test_split_name_and_suffix(
 def test_get_files_in_folder():
     """Test that get_files_in_folder correctly finds files in dir"""
 
-    with patch.object(_UtilsDllFactory, "_load_dll_from_path", mock_load_dll_from_path):
-        files = [p for p in get_files_in_folder(IMG_DIR)]
-        assert len(files) == 5
+    files = [p for p in get_files_in_folder(IMG_DIR)]
+    assert len(files) == 5
