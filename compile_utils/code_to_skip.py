@@ -286,7 +286,12 @@ functions_to_skip: dict[str, set[str]] = {
 }
 
 if os.name == "nt":
-    functions_to_skip["winshell"] = {"structured_storage"}
+    functions_to_skip["winshell"] = {
+        "__repr__",
+        "CreateShortcut",
+        "shortcut",
+        "structured_storage",
+    }
 
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -345,6 +350,9 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
+if os.name == "nt":
+    vars_to_skip["winshell"] = {"bookmarks", "my_documents"}
+
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
     f"{IMAGE_VIEWER_NAME}.state.base": {"ABC"},
@@ -371,6 +379,9 @@ classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.state.rotation_state": {"StateBase"},
     f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
+
+if os.name == "nt":
+    classes_to_skip["winshell"] = {"Shortcut"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
