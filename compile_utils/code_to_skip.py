@@ -300,6 +300,11 @@ if os.name == "nt":
         "structured_storage",
         "wrapped",
     }
+    functions_to_skip["win32timezone"] = {
+        "__repr__",
+        "GetTZCapabilities",
+        "resolveMUITimeZone",
+    }
 
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -365,6 +370,7 @@ if os.name == "nt":
         "FMTID_USER_DEFINED_PROPERTIES",
         "my_documents",
     }
+    vars_to_skip["win32timezone"] = {"__author__", "_T", "log"}
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},

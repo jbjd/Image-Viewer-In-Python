@@ -79,7 +79,7 @@ try:
 
     module_dependencies: list[str] = ["turbojpeg", "send2trash", "PIL", "numpy"]
     if os.name == "nt":
-        module_dependencies.append("winshell")
+        module_dependencies += ["winshell", "win32timezone"]
 
     for module_name in module_dependencies:
         modules_to_skip: set[str] = set(
