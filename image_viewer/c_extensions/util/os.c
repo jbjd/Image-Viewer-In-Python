@@ -86,25 +86,40 @@ static PyObject *get_byte_display(PyObject *self, PyObject *args)
     const int kbSize = 1000;
 #endif
 
-    char *result;
     int sizeInKb = sizeInBytes / kbSize;
 
-    if sizeInKb > 999
+    char *byteDisplay;
+    char *format;
+    size_t byteDisplaySize;
+
+
+    if (sizeInKb > 999)
     {
-        float sizeInMb = sizeInKb / ((float)kbSize)
-        sprintf(result, "%.2fmb", sizeInMb);
+        format = "%.2fmb";
+
+        float sizeInMb = sizeInKb / ((float)kbSize);
+        byteDisplaySize = snprintf(NULL, 0, format, sizeInMb) + 1;
+
+        byteDisplay = malloc(byteDisplaySize);
+        sprintf(byteDisplay, format, sizeInMb);
     }
     else
     {
-        sprintf(result, "%dkb", sizeInKb);
+        format = "%dkb";
+
+        byteDisplaySize = snprintf(NULL, 0, format, sizeInKb) + 1;
+
+        byteDisplay = malloc(byteDisplaySize);
+        sprintf(byteDisplay, format, sizeInKb);
     }
 
-    return Py_BuildValue("s", result);
+    return Py_BuildValue("s", byteDisplay);
 }
 
 static PyMethodDef os_methods[] = {
     {"open_with", open_with, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_VARARGS, NULL},
+    {"get_byte_display", get_byte_display, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {
