@@ -287,8 +287,8 @@ functions_to_skip: dict[str, set[str]] = {
 
 if os.name == "nt":
     functions_to_skip["winshell"] = {
-        "__repr__",
         "CreateShortcut",
+        "__repr__",
         "dump",
         "dumped",
         "dumped_dict",
@@ -299,6 +299,13 @@ if os.name == "nt":
         "shortcut",
         "structured_storage",
         "wrapped",
+    }
+    functions_to_skip["win32timezone"] = {
+        "GetTZCapabilities",
+        "__repr__",
+        "now",
+        "resolveMUITimeZone",
+        "utcnow",
     }
 
 vars_to_skip: dict[str, set[str]] = {
@@ -323,7 +330,7 @@ vars_to_skip: dict[str, set[str]] = {
         "array_function_from_c_func_and_dispatcher",
     },
     "numpy._core.numerictypes": {"genericTypeRank"},
-    "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
+    "numpy._core.overrides": {"ArgSpec", "array_function_like_doc"},
     "numpy._core.records": {"__all__", "__module__", "numfmt"},
     "numpy._core.shape_base": {"__all__", "array_function_dispatch"},
     "numpy.exceptions": {"__all__", "_is_loaded"},
@@ -352,19 +359,20 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.ImageFont": {"TYPE_CHECKING"},
     "PIL.ImagePalette": {"TYPE_CHECKING"},
     "PIL.ImageTk": {"TYPE_CHECKING"},
-    "PIL.GifImagePlugin": {"_Palette", "format_description", "TYPE_CHECKING"},
-    "PIL.JpegImagePlugin": {"format_description", "TYPE_CHECKING"},
-    "PIL.PngImagePlugin": {"format_description", "TYPE_CHECKING"},
+    "PIL.GifImagePlugin": {"TYPE_CHECKING", "_Palette", "format_description"},
+    "PIL.JpegImagePlugin": {"TYPE_CHECKING", "format_description"},
+    "PIL.PngImagePlugin": {"TYPE_CHECKING", "format_description"},
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
 if os.name == "nt":
     vars_to_skip["winshell"] = {
-        "bookmarks",
         "FMTID_CUSTOM_DEFINED_PROPERTIES",
         "FMTID_USER_DEFINED_PROPERTIES",
+        "bookmarks",
         "my_documents",
     }
+    vars_to_skip["win32timezone"] = {"DLLCache", "__author__", "_T", "log"}
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
@@ -395,6 +403,7 @@ classes_to_skip: dict[str, set[str]] = {
 
 if os.name == "nt":
     classes_to_skip["winshell"] = {"Shortcut"}
+    classes_to_skip["win32timezone"] = {"DLLHandleCache"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
