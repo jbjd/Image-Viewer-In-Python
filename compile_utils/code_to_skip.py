@@ -372,7 +372,7 @@ if os.name == "nt":
         "bookmarks",
         "my_documents",
     }
-    vars_to_skip["win32timezone"] = {"__author__", "_T", "log"}
+    vars_to_skip["win32timezone"] = {"DLLCache", "__author__", "_T", "log"}
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
@@ -403,6 +403,7 @@ classes_to_skip: dict[str, set[str]] = {
 
 if os.name == "nt":
     classes_to_skip["winshell"] = {"Shortcut"}
+    classes_to_skip["win32timezone"] = {"DLLHandleCache"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
