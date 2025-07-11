@@ -5,5 +5,5 @@ if os.name == "nt":
         """Calls SHOpenWithDialog without registration option
         on provided file"""
 
-def get_files_in_folder(folder: str) -> list[str]:  # noqa: E302
+def get_files_in_folder(folder: str) -> list[str]:
     """Finds all files in the folder, not checking subfolders"""

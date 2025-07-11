@@ -82,7 +82,7 @@ static PyMethodDef os_methods[] = {
 
 static struct PyModuleDef os_module = {
     PyModuleDef_HEAD_INIT,
-    "c_os_util",
+    "_os",
     "Python interface for utility functions written in C",
     -1,
     os_methods};
