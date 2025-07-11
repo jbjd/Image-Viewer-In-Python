@@ -8,11 +8,10 @@
 #include <shlobj_core.h>
 #endif
 
-static PyObject *get_files_in_folder(PyObject *self, PyObject *args)
+static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 {
-    char *path;
-
-    if (!PyArg_ParseTuple(args, "s", &path))
+    const char *path = PyUnicode_AsUTF8(arg);
+    if (path == NULL)
     {
         return NULL;
     }
@@ -77,7 +76,7 @@ static PyObject *open_with(PyObject *self, PyObject *args)
 
 static PyMethodDef os_methods[] = {
     {"open_with", open_with, METH_VARARGS, NULL},
-    {"get_files_in_folder", get_files_in_folder, METH_VARARGS, NULL},
+    {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {
