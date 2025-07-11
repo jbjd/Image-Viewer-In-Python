@@ -63,8 +63,12 @@ static PyObject *open_with(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    struct _openasinfo openAsInfo = {path, NULL,  OAIF_EXEC | OAIF_HIDE_REGISTRATION};
+    Py_BEGIN_ALLOW_THREADS;
+
+    struct _openasinfo openAsInfo = {path, NULL, OAIF_EXEC | OAIF_HIDE_REGISTRATION};
     SHOpenWithDialog(hwnd, &openAsInfo);
+
+    Py_END_ALLOW_THREADS;
 
     PyMem_Free(path);
 
