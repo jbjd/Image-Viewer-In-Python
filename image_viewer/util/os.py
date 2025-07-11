@@ -25,7 +25,7 @@ if os.name == "nt":
             raise OSError from e  # change error type so catching is not OS specific
 
     def get_files_in_folder(directory_path: str) -> Iterator[str]:
-        files: list[str] = _get_files_in_folder(os.path.join(directory_path, "*"))
+        files: list[str] = _get_files_in_folder(directory_path)
         return iter(files)
 
 else:  # assume linux for now

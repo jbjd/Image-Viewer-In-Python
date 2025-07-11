@@ -10,7 +10,8 @@
 
 static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 {
-    const char *path = PyUnicode_AsUTF8(arg);
+    Py_ssize_t pathSize;
+    const char *path = PyUnicode_AsUTF8AndSize(arg, &pathSize);
     if (path == NULL)
     {
         return NULL;
@@ -22,8 +23,18 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
         return NULL;
     }
 
+    char pathLastChar = path[pathSize - 1];
+
+    char pathWithStar[pathSize + 3];
+    strcpy(pathWithStar, path);
+
+    if (pathLastChar != '/' && pathLastChar != '\\'){
+        strcat(pathWithStar, "/");
+    }
+    strcat(pathWithStar, "*\0");
+
     struct _WIN32_FIND_DATAA dirData;
-    HANDLE fileHandle = FindFirstFileA(path, &dirData);
+    HANDLE fileHandle = FindFirstFileA(pathWithStar, &dirData);
 
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
