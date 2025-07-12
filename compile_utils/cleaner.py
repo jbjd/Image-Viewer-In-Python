@@ -84,7 +84,10 @@ def clean_file_and_copy(
             constants_to_fold[module_name],
             SectionsConfig(skip_name_equals_main=True),
             _get_tokens_to_skip_config(module_import_path),
-            ExtrasConfig(fold_constants=False),  # Nuitka does this internally
+            ExtrasConfig(
+                fold_constants=False,  # Nuitka does this internally
+                skip_overload_functions=True,
+            ),
         ),
     )
 

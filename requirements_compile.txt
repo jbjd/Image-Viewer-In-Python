@@ -1,3 +1,3 @@
 nuitka==2.7.12
-personal-python-ast-optimizer @ git+https://github.com/jbjd/Python-Ast-Optimizer@v2.2.2
+personal-python-ast-optimizer @ git+https://github.com/jbjd/Python-Ast-Optimizer@v2.3.0
 personal-compile-tools @ git+https://github.com/jbjd/Compile-Tools@v1.0.1

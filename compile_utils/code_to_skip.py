@@ -785,6 +785,10 @@ if os.name == "nt":
         RegexReplacement("try:.*?unicode = str", "unicode=str", flags=re.DOTALL),
     ]
 
+    regex_to_apply_py["win32timezone"] = [
+        RegexReplacement(r"Dict\[", "dict["),
+    ]
+
 # Use platform since that what these modules check
 if sys.platform != "linux":
     regex_to_apply_py["numpy.__init__"].append(
