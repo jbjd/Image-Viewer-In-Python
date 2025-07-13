@@ -122,13 +122,13 @@ class CompileArgumentParser(ArgumentParser):
 
     # for some reason mypy gets the super type wrong
     def parse_known_args(  # type: ignore
-        self, imports_to_skip: list[str]
+        self, modules_to_skip: list[str]
     ) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
         user_args, nuitka_args = super().parse_known_args()
         self._validate_args(nuitka_args, user_args.debug)
 
-        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, imports_to_skip)
+        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, modules_to_skip)
 
         return user_args, nuitka_args
 
@@ -143,7 +143,7 @@ class CompileArgumentParser(ArgumentParser):
 
     @staticmethod
     def _expand_nuitka_args(
-        user_args: Namespace, nuitka_args: list[str], imports_to_skip: list[str]
+        user_args: Namespace, nuitka_args: list[str], modules_to_skip: list[str]
     ) -> list[str]:
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""
@@ -165,8 +165,8 @@ class CompileArgumentParser(ArgumentParser):
             nuitka_args.append(NuitkaArgs.ENABLE_PLUGIN.with_value("tk-inter"))
 
             nuitka_args += [
-                NuitkaArgs.NO_FOLLOW_IMPORT.with_value(skipped_import)
-                for skipped_import in imports_to_skip
+                NuitkaArgs.NO_FOLLOW_IMPORT.with_value(skipped_module)
+                for skipped_module in modules_to_skip
             ]
 
         if not any(

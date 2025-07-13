@@ -22,6 +22,7 @@ from compile_utils.cleaner import (
     strip_files,
     warn_unused_code_skips,
 )
+from compile_utils.modules_to_skip import modules_to_skip
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
@@ -53,12 +54,9 @@ DATA_FILE_PATHS.append("config.ini")
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
-with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
-    imports_to_skip: list[str] = fp.read().strip().split("\n")
-
 args: Namespace
 nuitka_args: list[str]
-args, nuitka_args = parser.parse_known_args(imports_to_skip)
+args, nuitka_args = parser.parse_known_args(modules_to_skip)
 is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 
 nuitka_args.append(NuitkaArgs.MINGW64)
@@ -82,8 +80,8 @@ try:
         module_dependencies += ["winshell", "win32timezone"]
 
     for module_name in module_dependencies:
-        modules_to_skip: set[str] = set(
-            i for i in imports_to_skip if i.startswith(module_name)
+        sub_modules_to_skip: set[str] = set(
+            i for i in modules_to_skip if i.startswith(module_name)
         )
 
         module = import_module(module_name)
@@ -98,7 +96,10 @@ try:
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
-                os.path.dirname(module.__file__), TMP_DIR, module_name, modules_to_skip
+                os.path.dirname(module.__file__),
+                TMP_DIR,
+                module_name,
+                sub_modules_to_skip,
             )
         else:
             # its just one file

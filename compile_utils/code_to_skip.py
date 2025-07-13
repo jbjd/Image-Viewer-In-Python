@@ -466,7 +466,8 @@ from_imports_to_skip: dict[str, set[str]] = {
 }
 
 dict_keys_to_skip: dict[str, set[str]] = {
-    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
+    "PIL.features": {"tkinter"},
+    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()},
 }
 
 decorators_to_skip: dict[str, set[str]] = {
@@ -750,26 +751,6 @@ from collections import namedtuple""",
                 replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
             ),
         ],
-        "send2trash.__init__": [remove_all_re],
-        "send2trash.win.__init__": [remove_all_re],
-        # Fix issue with autoflake
-        "send2trash.compat": [
-            RegexReplacement(
-                pattern="^.*$",
-                replacement=(
-                    """
-text_type = str
-binary_type = bytes
-from collections.abc import Iterable
-iterable_type = Iterable"""
-                    + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
-                ),
-                flags=re.DOTALL,
-                count=1,
-            )
-        ],
-        # We don't use pathlib's Path, remove support for it
-        "send2trash.util": [RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")],
     },
 )
 if os.name == "nt":
@@ -787,6 +768,27 @@ if os.name == "nt":
 
     regex_to_apply_py["win32timezone"] = [
         RegexReplacement(r"Dict\[", "dict["),
+    ]
+else:
+    regex_to_apply_py["send2trash.__init__"] = [remove_all_re]
+    regex_to_apply_py["send2trash.compat"] = [  # Fix issue with autoflake
+        RegexReplacement(
+            pattern="^.*$",
+            replacement=(
+                """
+text_type = str
+binary_type = bytes
+from collections.abc import Iterable
+iterable_type = Iterable"""
+                + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
+            ),
+            flags=re.DOTALL,
+            count=1,
+        ),
+    ]
+    # We don't use pathlib's Path, remove support for it
+    regex_to_apply_py["send2trash.util"] = [
+        RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")
     ]
 
 # Use platform since that what these modules check
