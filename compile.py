@@ -22,7 +22,7 @@ from compile_utils.cleaner import (
     strip_files,
     warn_unused_code_skips,
 )
-from compile_utils.modules_to_skip import modules_to_skip
+from compile_utils.module_dependencies import module_dependencies, modules_to_skip
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
@@ -74,10 +74,6 @@ delete_folder(TMP_DIR)
 try:
     # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
-
-    module_dependencies: list[str] = ["turbojpeg", "send2trash", "PIL", "numpy"]
-    if os.name == "nt":
-        module_dependencies += ["winshell", "win32timezone"]
 
     for module_name in module_dependencies:
         sub_modules_to_skip: set[str] = set(
