@@ -365,9 +365,10 @@ class ViewerApp:
 
         try:
             image_base64: str = read_file_as_base64(self.file_manager.path_to_image)
-            self._copy_to_clipboard(image_base64)
         except (FileNotFoundError, OSError):
-            pass
+            return
+
+        self._copy_to_clipboard(image_base64)
 
     def show_details_popup(self, _: Event | None = None) -> None:
         """Gets details on image and shows it in a UI popup"""
