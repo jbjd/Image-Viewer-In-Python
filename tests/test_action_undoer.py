@@ -15,7 +15,7 @@ from image_viewer.actions.undoer import (
     UndoResponse,
 )
 
-MODULE_PATH = "image_viewer.actions"
+_MODULE_PATH = "image_viewer.actions"
 
 
 @pytest.fixture
@@ -50,9 +50,9 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
     assert action_undoer.get_undo_message()
 
     with (
-        patch(f"{MODULE_PATH}.undoer.trash_file") as mock_trash,
-        patch(f"{MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
-        patch(f"{MODULE_PATH}.undoer.os.rename") as mock_rename,
+        patch(f"{_MODULE_PATH}.undoer.trash_file") as mock_trash,
+        patch(f"{_MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
+        patch(f"{_MODULE_PATH}.undoer.os.rename") as mock_rename,
     ):
         undo_response: UndoResponse = action_undoer.undo()
         _assert_correct_undo_response(action, undo_response)
