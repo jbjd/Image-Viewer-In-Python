@@ -1,3 +1,5 @@
+#define PY_SSIZE_T_CLEAN
+
 #include <Python.h>
 #include <fileapi.h>
 #include <windows.h>
@@ -88,7 +90,7 @@ static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
 {
     HWND hwnd;
     const char *path;
-    size_t pathSize;
+    Py_ssize_t pathSize;
 
     if (!PyArg_ParseTuple(args, "is#", &hwnd, &path, &pathSize))
     {
@@ -100,19 +102,21 @@ static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
     size_t sizeToAlloc = sizeof(DROPFILES) + pathSize + 2;
 
     HGLOBAL hGlobal = GlobalAlloc(GHND, sizeToAlloc);
-    if (hGlobal == NULL) {
+    if (hGlobal == NULL)
+    {
         goto end;
     }
 
-    DROPFILES* pDropFiles = (DROPFILES*)GlobalLock(hGlobal);
-    if (pDropFiles == NULL) {
+    DROPFILES *pDropFiles = (DROPFILES *)GlobalLock(hGlobal);
+    if (pDropFiles == NULL)
+    {
         goto error_free_memory;
     }
 
     pDropFiles->pFiles = sizeof(DROPFILES);
-    pDropFiles->fWide = FALSE;  // Should this be true???
+    pDropFiles->fWide = FALSE;
 
-    char* pathDestination = (char*)((BYTE*)pDropFiles + sizeof(DROPFILES));
+    char *pathDestination = (char *)((BYTE *)pDropFiles + sizeof(DROPFILES));
     strcpy(pathDestination, path);
 
     GlobalUnlock(hGlobal);

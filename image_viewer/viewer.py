@@ -29,6 +29,7 @@ class ViewerApp:
     __slots__ = (
         "animation_id",
         "app",
+        "app_id",
         "canvas",
         "dropdown",
         "file_manager",
@@ -39,7 +40,6 @@ class ViewerApp:
         "need_to_redraw",
         "rename_entry",
         "width_ratio",
-        "window_id",
     )
 
     def __init__(self, first_image_path: str, path_to_exe_folder: str) -> None:
@@ -59,7 +59,7 @@ class ViewerApp:
         self.animation_id: str = ""
 
         self.app: Tk = self._setup_tk_app(path_to_exe_folder)
-        self.window_id: int = self.app.winfo_id()
+        self.app_id: int = self.app.winfo_id()
         self.canvas: CustomCanvas = CustomCanvas(self.app, config.background_color)
         screen_height: int = self.canvas.screen_height
         screen_width: int = self.canvas.screen_width
@@ -152,12 +152,16 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
-            from util._os import open_with
+            from util._os import drop_file_to_clipboard, open_with
 
             app.bind(
                 "<Control-b>",
-                lambda _: open_with(
-                    self.app.winfo_id(), self.file_manager.path_to_image
+                lambda _: open_with(self.app_id, self.file_manager.path_to_image),
+            )
+            app.bind(
+                "<Control-D>",
+                lambda _: drop_file_to_clipboard(
+                    self.app_id, self.file_manager.path_to_image
                 ),
             )
             app.bind(
@@ -369,7 +373,7 @@ class ViewerApp:
         )
 
         if details is not None:
-            show_info_popup(self.window_id, "Image Details", details)
+            show_info_popup(self.app_id, "Image Details", details)
 
     def load_zoomed_or_rotated_image(
         self, direction: ZoomDirection | None, rotation: Rotation | None
