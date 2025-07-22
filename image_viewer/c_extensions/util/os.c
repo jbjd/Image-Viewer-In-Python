@@ -59,7 +59,7 @@ finish:
 
 static PyObject *open_with(PyObject *self, PyObject *args)
 {
-    HWND hwnd;
+    const HWND hwnd;
     PyObject *pyPath;
 
     if (!PyArg_ParseTuple(args, "iU", &hwnd, &pyPath))
@@ -75,7 +75,7 @@ static PyObject *open_with(PyObject *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS;
 
-    struct _openasinfo openAsInfo = {path, NULL, OAIF_EXEC | OAIF_HIDE_REGISTRATION};
+    const OPENASINFO openAsInfo = {path, NULL, OAIF_EXEC | OAIF_HIDE_REGISTRATION};
     SHOpenWithDialog(hwnd, &openAsInfo);
 
     Py_END_ALLOW_THREADS;
@@ -88,7 +88,7 @@ static PyObject *open_with(PyObject *self, PyObject *args)
 // https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
 static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
 {
-    HWND hwnd;
+    const HWND hwnd;
     const char *path;
     Py_ssize_t pathSize;
 
@@ -126,7 +126,7 @@ static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
         goto error_free_memory;
     }
 
-    int errorDuringSet = !EmptyClipboard() || !SetClipboardData(CF_HDROP, hGlobal);
+    const int errorDuringSet = !EmptyClipboard() || !SetClipboardData(CF_HDROP, hGlobal);
 
     CloseClipboard();
 
