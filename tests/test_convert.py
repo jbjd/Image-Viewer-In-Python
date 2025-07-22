@@ -3,7 +3,7 @@ from unittest.mock import mock_open, patch
 import pytest
 
 from image_viewer.constants import ImageFormats
-from image_viewer.util.convert import try_convert_file_and_save_new
+from image_viewer.util.io import try_convert_file_and_save_new
 from tests.test_util.mocks import MockImage
 
 
