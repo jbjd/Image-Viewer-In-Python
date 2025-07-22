@@ -23,15 +23,13 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    char pathLastChar = path[pathSize - 1];
+    const char pathLastChar = path[pathSize - 1];
 
     char pathWithStar[pathSize + 3];
     strcpy(pathWithStar, path);
 
-    if (pathLastChar != '/' && pathLastChar != '\\'){
-        strcat(pathWithStar, "/");
-    }
-    strcat(pathWithStar, "*\0");
+    const char *fuzzySearchEnding = pathLastChar != '/' && pathLastChar != '\\' ? "/*\0" : "*\0";
+    strcat(pathWithStar, fuzzySearchEnding);
 
     struct _WIN32_FIND_DATAA dirData;
     HANDLE fileHandle = FindFirstFileA(pathWithStar, &dirData);
@@ -85,9 +83,67 @@ static PyObject *open_with(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+// https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
+static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
+{
+    HWND hwnd;
+    const char *path;
+    size_t pathSize;
+
+    if (!PyArg_ParseTuple(args, "is#", &hwnd, &path, &pathSize))
+    {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    size_t sizeToAlloc = sizeof(DROPFILES) + pathSize + 2;
+
+    HGLOBAL hGlobal = GlobalAlloc(GHND, sizeToAlloc);
+    if (hGlobal == NULL) {
+        goto end;
+    }
+
+    DROPFILES* pDropFiles = (DROPFILES*)GlobalLock(hGlobal);
+    if (pDropFiles == NULL) {
+        goto error_free_memory;
+    }
+
+    pDropFiles->pFiles = sizeof(DROPFILES);
+    pDropFiles->fWide = FALSE;  // Should this be true???
+
+    char* pathDestination = (char*)((BYTE*)pDropFiles + sizeof(DROPFILES));
+    strcpy(pathDestination, path);
+
+    GlobalUnlock(hGlobal);
+
+    if (!OpenClipboard(hwnd))
+    {
+        goto error_free_memory;
+    }
+
+    int errorDuringSet = !EmptyClipboard() || !SetClipboardData(CF_HDROP, hGlobal);
+
+    CloseClipboard();
+
+    if (errorDuringSet)
+    {
+        goto error_free_memory;
+    }
+
+    goto end;
+
+error_free_memory:
+    GlobalFree(hGlobal);
+end:
+    Py_END_ALLOW_THREADS;
+    return Py_None;
+}
+
 static PyMethodDef os_methods[] = {
     {"open_with", open_with, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
+    {"drop_file_to_clipboard", drop_file_to_clipboard, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {
