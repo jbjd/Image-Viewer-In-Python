@@ -68,7 +68,7 @@ def read_file_as_base64(path: str) -> str:
     file_bytes: bytes = read_file_as_bytes(path)
 
     return binascii.b2a_base64(file_bytes, newline=False).decode(
-        "utf-8", errors="ignore"
+        "ascii", errors="ignore"
     )
 
 
