@@ -5,5 +5,8 @@ if os.name == "nt":
         """Calls SHOpenWithDialog without registration option
         on provided file"""
 
-def get_files_in_folder(folder: str) -> list[str]:
-    """Finds all files in the folder, not checking subfolders"""
+    def get_files_in_folder(folder: str) -> list[str]:
+        """Finds all files in the folder, not checking subfolders"""
+
+    def drop_file_to_clipboard(hwnd: int, file: str) -> None:
+        """Copies a file to clipboard as an HDROP"""

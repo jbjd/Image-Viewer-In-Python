@@ -1,6 +1,8 @@
 """
-Deals with converting between image file types
+Deals with converting between image file types and some basic IO
 """
+
+import binascii
 
 from PIL.Image import open as open_image
 
@@ -12,12 +14,14 @@ from util.PIL import image_is_animated, save_image
 def try_convert_file_and_save_new(
     old_path: str, new_path: str, target_format: str
 ) -> bool:
-    """Tries to convert image at old_path to a target format saved at new_path.
-    Raises ValueError if converting animated file to non-animated format.
+    """Tries to convert image at old_path to a target format saved at new_path
 
     Returns True if conversion performed,
-    False if converting to the same type or invalid format
+    False if converting to the same type or an invalid format
+
+    Raises ValueError if converting animated file to non-animated format
     """
+
     target_format = target_format.lower()
 
     if target_format not in VALID_FILE_TYPES:
@@ -52,3 +56,23 @@ def try_convert_file_and_save_new(
             )
 
     return True
+
+
+def read_file_as_base64(path: str) -> str:
+    """Given a file path, opens it and turns it into a base64 string.
+
+    Errors are ignored during byte -> str conversion.
+
+    Raises FileNotFoundError or OSError if failed to open file"""
+
+    file_bytes: bytes = read_file_as_bytes(path)
+
+    return binascii.b2a_base64(file_bytes, newline=False).decode(
+        "ascii", errors="ignore"
+    )
+
+
+def read_file_as_bytes(path: str) -> bytes:
+    """Given a file path, opens it and returns it as bytes"""
+    with open(path, "rb") as fp:
+        return fp.read()
