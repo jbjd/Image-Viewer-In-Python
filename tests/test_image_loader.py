@@ -52,8 +52,6 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
             assert image_loader.load_image("") is None
 
 
-@patch("builtins.open", mock_open(read_data=b"abcd"))
-@patch(f"{MODULE_PATH}.open_image", lambda *_: Image())
 def test_load_image_in_cache(image_loader: ImageLoader):
     """When an image of the same name is in cache, don't load from disk"""
 
@@ -66,7 +64,11 @@ def test_load_image_in_cache(image_loader: ImageLoader):
     image_loader.image_cache["some/path"] = cached_data
 
     mock_os_stat = MockStatResult(image_byte_size)
-    with patch(f"{MODULE_PATH}.stat", lambda _: mock_os_stat):
+    with (
+        patch("builtins.open", mock_open(read_data=b"abcd")),
+        patch(f"{MODULE_PATH}.open_image", lambda *_: Image()),
+        patch(f"{MODULE_PATH}.stat", lambda _: mock_os_stat),
+    ):
         assert image_loader.load_image("some/path") is cached_image
 
 
