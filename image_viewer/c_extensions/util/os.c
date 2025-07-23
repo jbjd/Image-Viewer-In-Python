@@ -10,6 +10,22 @@
 #include <shlobj_core.h>
 #endif
 
+static PyObject *delete_file(PyObject *self, PyObject *args)
+{
+    HWND hwnd;
+    const char *path;
+
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &path))
+    {
+        return NULL;
+    }
+
+    struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_DELETE, path, NULL, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+    SHFileOperationA(&fileOp);
+
+    return Py_None;
+}
+
 static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 {
     Py_ssize_t pathSize;
@@ -85,7 +101,6 @@ static PyObject *open_with(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-// https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
 static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
 {
     const HWND hwnd;
@@ -145,8 +160,9 @@ end:
 }
 
 static PyMethodDef os_methods[] = {
-    {"open_with", open_with, METH_VARARGS, NULL},
+    {"delete_file", delete_file, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
+    {"open_with", open_with, METH_VARARGS, NULL},
     {"drop_file_to_clipboard", drop_file_to_clipboard, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 

@@ -10,8 +10,9 @@ from typing import Final
 if os.name == "nt":
     from ctypes import windll  # type: ignore
 
-    from winshell import delete_file, undelete, x_winshell
+    from winshell import undelete, x_winshell
 
+    from util._os import delete_file
     from util._os import get_files_in_folder as _get_files_in_folder
 
     def OS_name_cmp(a: str, b: str) -> bool:
@@ -108,7 +109,7 @@ def get_byte_display(size_in_bytes: int) -> str:
 def trash_file(path: str) -> None:
     """OS generic way to send files to trash"""
     if os.name == "nt":
-        delete_file(path, silent=True)
+        delete_file(0, path)
     else:
         send2trash(path)
 
