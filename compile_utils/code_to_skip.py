@@ -285,28 +285,6 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
-if os.name == "nt":
-    functions_to_skip["winshell"] = {
-        "CreateShortcut",
-        "__repr__",
-        "dump",
-        "dumped",
-        "dumped_dict",
-        "dumped_flags",
-        "dumped_list",
-        "from_constants",
-        "indented",
-        "shortcut",
-        "structured_storage",
-        "wrapped",
-    }
-    functions_to_skip["win32timezone"] = {
-        "GetTZCapabilities",
-        "__repr__",
-        "now",
-        "resolveMUITimeZone",
-        "utcnow",
-    }
 
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -365,14 +343,6 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
-if os.name == "nt":
-    vars_to_skip["winshell"] = {
-        "FMTID_CUSTOM_DEFINED_PROPERTIES",
-        "FMTID_USER_DEFINED_PROPERTIES",
-        "bookmarks",
-        "my_documents",
-    }
-    vars_to_skip["win32timezone"] = {"DLLCache", "__author__", "_T", "log"}
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
@@ -401,9 +371,6 @@ classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
 
-if os.name == "nt":
-    classes_to_skip["winshell"] = {"Shortcut"}
-    classes_to_skip["win32timezone"] = {"DLLHandleCache"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -760,15 +727,6 @@ if os.name == "nt":
             flags=re.DOTALL,
         )
     )
-
-    regex_to_apply_py["winshell"] = [
-        RegexReplacement("try:.*?basestring = str", "basestring=str", flags=re.DOTALL),
-        RegexReplacement("try:.*?unicode = str", "unicode=str", flags=re.DOTALL),
-    ]
-
-    regex_to_apply_py["win32timezone"] = [
-        RegexReplacement(r"Dict\[", "dict["),
-    ]
 else:
     regex_to_apply_py["send2trash.__init__"] = [remove_all_re]
     regex_to_apply_py["send2trash.compat"] = [  # Fix issue with autoflake

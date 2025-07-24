@@ -1,7 +1,7 @@
 import os
 
 if os.name == "nt":
-    def delete_file(hwnd: int, file: str) -> None:
+    def trash_file(hwnd: int, file: str) -> None:
         """Moves provided file to trash"""
 
     def restore_file(hwnd: int, file: str) -> None:
