@@ -16,6 +16,22 @@
 #include <shlobj_core.h>
 #endif
 
+// Copies str into a new allocated char* buffer and replaces all
+// forward slashes with backslashes
+char *normalize_slashes_to_backslash(const char *str)
+{
+    int i;
+    char *buffer = (char *)malloc((strlen(str) + 1) * sizeof(char));
+
+    for (i = 0; str[i] != '\0'; i++)
+    {
+        buffer[i] = str[i] == '/' ? '\\' : str[i];
+    }
+    buffer[i] = '\0';
+
+    return buffer;
+}
+
 static PyObject *delete_file(PyObject *self, PyObject *args)
 {
     HWND hwnd;
@@ -40,9 +56,9 @@ static PyObject *delete_file(PyObject *self, PyObject *args)
 static PyObject *restore_file(PyObject *self, PyObject *args)
 {
     HWND hwnd;
-    const char *original_path;
+    const char *original_path_raw;
 
-    if (!PyArg_ParseTuple(args, "is", &hwnd, &original_path))
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &original_path_raw))
     {
         return NULL;
     }
@@ -50,6 +66,7 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS;
 
     HRESULT hr;
+    char *original_path = normalize_slashes_to_backslash(original_path_raw);
 
     // Get recycle bin
     LPITEMIDLIST pidlRecycleBin;
@@ -67,25 +84,27 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     }
 
     IEnumIDList *recycleBinIterator = NULL;
-    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, NULL, SHCONTF_NONFOLDERS, &recycleBinIterator);
-    if (FAILED(hr)) {
+    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS, &recycleBinIterator);
+    if (FAILED(hr))
+    {
         goto fail_enum;
     }
 
     CoInitialize(0);
 
     LPITEMIDLIST pidlItem;
-    ULONG fetched;
-    while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, &fetched) == S_OK) {
+    while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, NULL) == S_OK)
+    {
         STRRET displayName;
         char displayNameBuffer[MAX_PATH];
 
         hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayName);
-        if (SUCCEEDED(hr)) {
+        if (SUCCEEDED(hr))
+        {
             StrRetToBuf(&displayName, pidlItem, displayNameBuffer, MAX_PATH);
 
             VARIANT variant;
-            PROPERTYKEY PKey_DisplacedFrom = { FMTID_Displaced, PID_DISPLACED_FROM };
+            PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
             recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
 
             UINT bufferLength = SysStringLen(variant.bstrVal);
@@ -106,6 +125,7 @@ fail_enum:
 fail_bind:
     ILFree(pidlRecycleBin);
 end:
+    free(original_path);
     Py_END_ALLOW_THREADS;
     return Py_None;
 }
