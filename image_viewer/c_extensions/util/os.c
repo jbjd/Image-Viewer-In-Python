@@ -32,6 +32,8 @@ char *normalize_slashes_to_backslash(const char *str)
     return buffer;
 }
 
+
+
 static PyObject *delete_file(PyObject *self, PyObject *args)
 {
     HWND hwnd;
@@ -56,9 +58,9 @@ static PyObject *delete_file(PyObject *self, PyObject *args)
 static PyObject *restore_file(PyObject *self, PyObject *args)
 {
     HWND hwnd;
-    const char *original_path_raw;
+    const char *originalPathRaw;
 
-    if (!PyArg_ParseTuple(args, "is", &hwnd, &original_path_raw))
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &originalPathRaw))
     {
         return NULL;
     }
@@ -66,7 +68,6 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     Py_BEGIN_ALLOW_THREADS;
 
     HRESULT hr;
-    char *original_path = normalize_slashes_to_backslash(original_path_raw);
 
     // Get recycle bin
     LPITEMIDLIST pidlRecycleBin;
@@ -84,13 +85,17 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     }
 
     IEnumIDList *recycleBinIterator = NULL;
-    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS , &recycleBinIterator);
+    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS, &recycleBinIterator);
     if (FAILED(hr))
     {
         goto fail_enum;
     }
 
     CoInitialize(0);
+
+    char *originalPath = normalize_slashes_to_backslash(originalPathRaw);
+    char *targetToRestore = NULL;
+    DATE targetRecycledTime = 0;
 
     LPITEMIDLIST pidlItem;
     while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, NULL) == S_OK)
@@ -104,7 +109,7 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
             StrRetToBuf(&displayName, pidlItem, displayNameBuffer, MAX_PATH);
 
             VARIANT variant;
-            PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
+            const PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
             recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
 
             UINT bufferLength = SysStringLen(variant.bstrVal) + strlen(displayNameBuffer) + 2;
@@ -113,21 +118,45 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
             strcat(deletedFileOriginalPath, "\\");
             strcat(deletedFileOriginalPath, displayNameBuffer);
 
-            printf("%s | %s\n", original_path, deletedFileOriginalPath);
+            if (strcmp(originalPath, deletedFileOriginalPath))
+            {
+                continue;
+            }
+
+            const PROPERTYKEY PKey_DisplacedDate = {FMTID_Displaced, PID_DISPLACED_DATE};
+            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedDate, &variant);
+
+            const DATE recycledTime = variant.date;
+
+            // Restore only the most recently recycled file of this name for consistency
+            if (NULL == targetToRestore || targetRecycledTime < recycledTime)
+            {
+                if (NULL != targetToRestore)
+                {
+                    free(targetToRestore);
+                }
+
+                targetToRestore = (char *)malloc((strlen(deletedFileOriginalPath) + 1) * sizeof(char));
+                strcpy(targetToRestore, deletedFileOriginalPath);
+                targetRecycledTime = recycledTime;
+            }
         }
         CoTaskMemFree(pidlItem);
     }
 
-    // struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, NULL, original_path, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
-    // SHFileOperationA(&fileOp);
+    struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+    int status = SHFileOperationA(&fileOp);
+
+    printf("%d\n", status);
 
     CoUninitialize();
+    free(originalPath);
+    free(targetToRestore);
 fail_enum:
     recycleBinFolder->lpVtbl->Release(recycleBinFolder);
 fail_bind:
     ILFree(pidlRecycleBin);
 end:
-    free(original_path);
     Py_END_ALLOW_THREADS;
     return Py_None;
 }
