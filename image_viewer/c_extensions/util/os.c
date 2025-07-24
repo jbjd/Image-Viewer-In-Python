@@ -133,25 +133,26 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
             {
                 if (NULL != targetToRestore)
                 {
-                    free(targetToRestore);
+                    CoTaskMemFree(targetToRestore);
                 }
 
-                targetToRestore = (char *)malloc((strlen(deletedFileOriginalPath) + 1) * sizeof(char));
-                strcpy(targetToRestore, deletedFileOriginalPath);
+                recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_FORPARSING, &displayName);
+                StrRetToStrA(&displayName, pidlItem, &targetToRestore);
+
                 targetRecycledTime = recycledTime;
             }
         }
         CoTaskMemFree(pidlItem);
     }
 
-    struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
-    int status = SHFileOperationA(&fileOp);
+    if (NULL != targetToRestore) {
+        struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+        SHFileOperationA(&fileOp);
+    }
 
-    printf("%d\n", status);
-
+    CoTaskMemFree(targetToRestore);
     CoUninitialize();
     free(originalPath);
-    free(targetToRestore);
 fail_enum:
     recycleBinFolder->lpVtbl->Release(recycleBinFolder);
 fail_bind:
