@@ -4,6 +4,7 @@
 #include <Python.h>
 #include <fileapi.h>
 #include <shlwapi.h>
+#include <shlguid.h>
 #include <windows.h>
 
 #ifdef __MINGW32__
@@ -57,8 +58,8 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
         goto end;
     }
 
-    IShellFolder *recycleBinFolder = NULL;
-    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder, (void **)&recycleBinFolder);
+    IShellFolder2 *recycleBinFolder = NULL;
+    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder2, (void **)&recycleBinFolder);
     if (FAILED(hr))
     {
         goto fail_bind;
@@ -75,27 +76,28 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     LPITEMIDLIST pidlItem;
     ULONG fetched;
     while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, &fetched) == S_OK) {
-        STRRET str;
-        char filePath[MAX_PATH];
+        STRRET displayNameRet;
+        char displayName[MAX_PATH];
         //WIN32_FIND_DATA findData;
 
-        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &str);
+        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayNameRet);
         if (SUCCEEDED(hr)) {
-            StrRetToBuf(&str, pidlItem, filePath, MAX_PATH);
-            // if (SHGetDataFromIDList(recycleBinFolder, pidlItem, SHGDFIL_FINDDATA, &findData, sizeof(findData)) == S_OK) {
-            //     filePaths = realloc(filePaths, (fileCount + 1) * sizeof(char *));
-            //     filePaths[fileCount] = _strdup(filePath);
-            //     fileCount++;
-            // }
-            printf("%s\n", filePath);
+            StrRetToBuf(&displayNameRet, pidlItem, displayName, MAX_PATH);
+
+            VARIANT a;
+            PROPERTYKEY PKey_DisplacedFrom = { FMTID_Displaced, PID_DISPLACED_FROM };
+            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &a);
+
+            char variantBuffer[INFOTIPSIZE]; // TODO, determine the exact value first
+            SHUnicodeToTChar(a.bstrVal, variantBuffer, ARRAYSIZE(variantBuffer));
+
+            printf("%s\\%s\n", variantBuffer, displayName);
         }
         CoTaskMemFree(pidlItem);
     }
 
     // struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, NULL, original_path, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
     // SHFileOperationA(&fileOp);
-
-    printf("Hello World\n");
 
     CoUninitialize();
 fail_enum:
