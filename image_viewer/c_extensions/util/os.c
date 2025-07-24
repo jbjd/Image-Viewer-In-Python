@@ -3,6 +3,7 @@
 
 #include <Python.h>
 #include <fileapi.h>
+#include <shlwapi.h>
 #include <windows.h>
 
 #ifdef __MINGW32__
@@ -44,6 +45,8 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS;
+
     HRESULT hr;
 
     // Get recycle bin
@@ -54,49 +57,53 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
         goto end;
     }
 
-    IShellFolder *pRecycleBinFolder = NULL;
-    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder, (void **)&pRecycleBinFolder);
+    IShellFolder *recycleBinFolder = NULL;
+    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder, (void **)&recycleBinFolder);
     if (FAILED(hr))
     {
         goto fail_bind;
     }
 
-    IEnumIDList *pEnumIDList = NULL;
-    hr = pRecycleBinFolder->lpVtbl->EnumObjects(pRecycleBinFolder, NULL, SHCONTF_NONFOLDERS, &pEnumIDList);
+    IEnumIDList *recycleBinIterator = NULL;
+    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, NULL, SHCONTF_NONFOLDERS, &recycleBinIterator);
     if (FAILED(hr)) {
         goto fail_enum;
     }
 
-    printf("Hello World\n");
+    CoInitialize(0);
 
-    // LPITEMIDLIST pidlItem;
-    // ULONG fetched;
-    // while (pEnumIDList->lpVtbl->Next(pEnumIDList, 1, &pidlItem, &fetched) == S_OK) {
-    //     STRRET str;
-    //     char filePath[MAX_PATH];
-    //     WIN32_FIND_DATA findData;
+    LPITEMIDLIST pidlItem;
+    ULONG fetched;
+    while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, &fetched) == S_OK) {
+        STRRET str;
+        char filePath[MAX_PATH];
+        //WIN32_FIND_DATA findData;
 
-
-    //     hr = pRecycleBinFolder->lpVtbl->GetDisplayNameOf(pidlItem, SHGDN_INFOLDER, &str);
-    //     if (SUCCEEDED(hr)) {
-    //         // StrRetToBuf(&str, pidlItem, filePath, MAX_PATH);
-    //         // if (SHGetDataFromIDList(pRecycleBinFolder, pidlItem, SHGDFIL_FINDDATA, &findData, sizeof(findData)) == S_OK) {
-    //         //     filePaths = realloc(filePaths, (fileCount + 1) * sizeof(char *));
-    //         //     filePaths[fileCount] = _strdup(filePath);
-    //         //     fileCount++;
-    //         // }
-    //     }
-    //     //CoTaskMemFree((LPVOID)pidlItem);
-    // }
+        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &str);
+        if (SUCCEEDED(hr)) {
+            StrRetToBuf(&str, pidlItem, filePath, MAX_PATH);
+            // if (SHGetDataFromIDList(recycleBinFolder, pidlItem, SHGDFIL_FINDDATA, &findData, sizeof(findData)) == S_OK) {
+            //     filePaths = realloc(filePaths, (fileCount + 1) * sizeof(char *));
+            //     filePaths[fileCount] = _strdup(filePath);
+            //     fileCount++;
+            // }
+            printf("%s\n", filePath);
+        }
+        CoTaskMemFree(pidlItem);
+    }
 
     // struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, NULL, original_path, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
     // SHFileOperationA(&fileOp);
 
+    printf("Hello World\n");
+
+    CoUninitialize();
 fail_enum:
-    pRecycleBinFolder->lpVtbl->Release(pRecycleBinFolder);
+    recycleBinFolder->lpVtbl->Release(recycleBinFolder);
 fail_bind:
     ILFree(pidlRecycleBin);
 end:
+    Py_END_ALLOW_THREADS;
     return Py_None;
 }
 
