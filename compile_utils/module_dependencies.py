@@ -2,9 +2,7 @@ import os
 
 module_dependencies: list[str] = ["turbojpeg", "PIL", "numpy"]
 
-if os.name == "nt":
-    module_dependencies += ["winshell", "win32timezone"]
-else:
+if os.name != "nt":
     module_dependencies += ["send2trash"]
 
 modules_to_skip: list[str] = [
