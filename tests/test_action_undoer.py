@@ -51,7 +51,7 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
 
     with (
         patch(f"{_MODULE_PATH}.undoer.trash_file") as mock_trash,
-        patch(f"{_MODULE_PATH}.undoer.restore_from_bin") as mock_undelete,
+        patch(f"{_MODULE_PATH}.undoer.restore_file") as mock_undelete,
         patch(f"{_MODULE_PATH}.undoer.os.rename") as mock_rename,
     ):
         undo_response: UndoResponse = action_undoer.undo()

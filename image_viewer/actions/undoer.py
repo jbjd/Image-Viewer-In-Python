@@ -6,7 +6,7 @@ import os
 from collections import deque
 
 from actions.types import Convert, Delete, FileAction, Rename
-from util.os import restore_from_bin, trash_file
+from util.os import restore_file, trash_file
 
 
 class UndoResponse:
@@ -39,7 +39,7 @@ class ActionUndoer(deque[FileAction]):
 
         if type(action) is Convert and action.original_file_deleted:
 
-            restore_from_bin(action.original_path)
+            restore_file(action.original_path)
             trash_file(action.new_path)
             return UndoResponse(action.original_path, action.new_path)
 
@@ -50,7 +50,7 @@ class ActionUndoer(deque[FileAction]):
 
         if type(action) is Delete:
 
-            restore_from_bin(action.original_path)
+            restore_file(action.original_path)
             return UndoResponse(action.original_path, "")
 
         assert False  # Unreachable

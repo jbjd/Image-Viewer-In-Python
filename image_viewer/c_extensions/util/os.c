@@ -1,7 +1,11 @@
+#define INITGUID
 #define PY_SSIZE_T_CLEAN
 
-#include <Python.h>
 #include <fileapi.h>
+#include <oleauto.h>
+#include <Python.h>
+#include <shlguid.h>
+#include <shlwapi.h>
 #include <windows.h>
 
 #ifdef __MINGW32__
@@ -9,6 +13,203 @@
 #else
 #include <shlobj_core.h>
 #endif
+
+/**
+ * Copies string into a newly allocated buffer, replaces all
+ * forward slashes with backslashes, and double null terminates it.
+ *
+ * Caller must free this string.
+ */
+static char *normalize_str_for_file_op(const char *str)
+{
+    int i = 0;
+    char *buffer = (char *)malloc((strlen(str) + 2) * sizeof(char));
+
+    for (; str[i] != '\0'; i++)
+    {
+        buffer[i] = str[i] == '/' ? '\\' : str[i];
+    }
+    buffer[i++] = '\0';
+    buffer[i] = '\0';
+
+    return buffer;
+}
+
+/**
+ * Adds another null terminator to a string.
+ *
+ * Caller responsible for ensuring provided string has enough space for one additional char.
+ */
+static void ensure_double_null_terminated(char *str)
+{
+    size_t strLen = strlen(str);
+    str[strLen + 1] = '\0';
+}
+
+static PyObject *trash_file(PyObject *self, PyObject *args)
+{
+    HWND hwnd;
+    const char *pathRaw;
+
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &pathRaw))
+    {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    char *path = normalize_str_for_file_op(pathRaw);
+
+    SHFILEOPSTRUCTA fileOp = {hwnd, FO_DELETE, path, NULL, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+    SHFileOperationA(&fileOp);
+
+    free(path);
+
+    Py_END_ALLOW_THREADS;
+
+    return Py_None;
+}
+
+static PyObject *restore_file(PyObject *self, PyObject *args)
+{
+    HWND hwnd;
+    const char *originalPathRaw;
+
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &originalPathRaw))
+    {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    HRESULT hr;
+
+    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
+    LPITEMIDLIST pidlRecycleBin;
+    hr = SHGetSpecialFolderLocation(hwnd, CSIDL_BITBUCKET, &pidlRecycleBin);
+    if (FAILED(hr))
+    {
+        goto end;
+    }
+
+    IShellFolder2 *recycleBinFolder = NULL;
+    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder2, (void **)&recycleBinFolder);
+    if (FAILED(hr))
+    {
+        goto fail_bind;
+    }
+
+    IEnumIDList *recycleBinIterator = NULL;
+    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS, &recycleBinIterator);
+    if (FAILED(hr))
+    {
+        goto fail_enum;
+    }
+
+    char *originalPath = normalize_str_for_file_op(originalPathRaw);
+    char *targetToRestore = NULL;
+    DATE targetRecycledTime = 0;
+
+    LPITEMIDLIST pidlItem;
+    while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, NULL) == S_OK)
+    {
+        STRRET displayName;
+
+        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayName);
+        if (FAILED(hr))
+        {
+            CoTaskMemFree(pidlItem);
+            continue;
+        }
+
+        char displayNameBuffer[MAX_PATH];
+        if (StrRetToBufA(&displayName, pidlItem, displayNameBuffer, MAX_PATH) != S_OK)
+        {
+            CoTaskMemFree(pidlItem);
+            continue;
+        }
+
+        VARIANT variant;
+        const PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
+        hr = recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
+        if (FAILED(hr))
+        {
+            CoTaskMemFree(pidlItem);
+            continue;
+        }
+
+        UINT bufferLength = SysStringLen(variant.bstrVal) + strlen(displayNameBuffer) + 2;
+        char deletedFileOriginalPath[bufferLength];
+        SHUnicodeToTChar(variant.bstrVal, deletedFileOriginalPath, ARRAYSIZE(deletedFileOriginalPath));
+        strcat(deletedFileOriginalPath, "\\");
+        strcat(deletedFileOriginalPath, displayNameBuffer);
+
+        if (strcmp(originalPath, deletedFileOriginalPath))
+        {
+            CoTaskMemFree(pidlItem);
+            continue;
+        }
+
+        const PROPERTYKEY PKey_DisplacedDate = {FMTID_Displaced, PID_DISPLACED_DATE};
+        hr = recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedDate, &variant);
+        if (FAILED(hr))
+        {
+            CoTaskMemFree(pidlItem);
+            continue;
+        }
+
+        const DATE recycledTime = variant.date;
+
+        // Restore only the most recently recycled file of this name for consistency
+        if (NULL == targetToRestore || targetRecycledTime < recycledTime)
+        {
+            STRRET binDisplayName;
+            hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_FORPARSING, &binDisplayName);
+            if (FAILED(hr))
+            {
+                CoTaskMemFree(pidlItem);
+                continue;
+            }
+
+            if (NULL != targetToRestore)
+            {
+                CoTaskMemFree(targetToRestore);
+            }
+
+            targetToRestore = CoTaskMemAlloc(MAX_PATH + 1);
+            if (StrRetToBufA(&binDisplayName, pidlItem, targetToRestore, MAX_PATH) != S_OK)
+            {
+                CoTaskMemFree(pidlItem);
+                continue;
+            }
+
+            ensure_double_null_terminated(targetToRestore);
+
+            targetRecycledTime = recycledTime;
+        }
+
+        CoTaskMemFree(pidlItem);
+    }
+
+    if (NULL != targetToRestore)
+    {
+        SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+        SHFileOperationA(&fileOp);
+
+        CoTaskMemFree(targetToRestore);
+    }
+
+    free(originalPath);
+fail_enum:
+    recycleBinFolder->lpVtbl->Release(recycleBinFolder);
+fail_bind:
+    ILFree(pidlRecycleBin);
+end:
+    CoUninitialize();
+    Py_END_ALLOW_THREADS;
+    return Py_None; // TODO: Could raise OS error for python code to catch
+}
 
 static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 {
@@ -38,7 +239,7 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
-        goto finish;
+        goto end;
     }
 
     do
@@ -53,7 +254,7 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 
     FindClose(fileHandle);
 
-finish:
+end:
     return pyFiles;
 }
 
@@ -85,7 +286,6 @@ static PyObject *open_with(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-// https://stackoverflow.com/questions/34322132/copy-image-to-clipboard
 static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
 {
     const HWND hwnd;
@@ -145,8 +345,10 @@ end:
 }
 
 static PyMethodDef os_methods[] = {
-    {"open_with", open_with, METH_VARARGS, NULL},
+    {"trash_file", trash_file, METH_VARARGS, NULL},
+    {"restore_file", restore_file, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
+    {"open_with", open_with, METH_VARARGS, NULL},
     {"drop_file_to_clipboard", drop_file_to_clipboard, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
