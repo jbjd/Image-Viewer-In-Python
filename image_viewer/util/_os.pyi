@@ -4,6 +4,9 @@ if os.name == "nt":
     def delete_file(hwnd: int, file: str) -> None:
         """Moves provided file to trash"""
 
+    def restore_file(hwnd: int, file: str) -> None:
+        """Restores a file from recycling bin"""
+
     def get_files_in_folder(folder: str) -> list[str]:
         """Finds all files in the folder, not checking subfolders"""
 

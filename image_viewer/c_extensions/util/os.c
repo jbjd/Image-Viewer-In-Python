@@ -1,3 +1,4 @@
+#define INITGUID
 #define PY_SSIZE_T_CLEAN
 
 #include <Python.h>
@@ -5,8 +6,10 @@
 #include <windows.h>
 
 #ifdef __MINGW32__
+#include <shobjidl.h>
 #include <shlobj.h>
 #else
+#include <shobjidl_core.h>
 #include <shlobj_core.h>
 #endif
 
@@ -20,9 +23,80 @@ static PyObject *delete_file(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    Py_BEGIN_ALLOW_THREADS;
+
     struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_DELETE, path, NULL, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
     SHFileOperationA(&fileOp);
 
+    Py_END_ALLOW_THREADS;
+
+    return Py_None;
+}
+
+// https://github.com/tribhuwan-kumar/trashbhuwan/blob/be3d00f5916132c6de79271124bd8f6e136cc15e/src/windows/utils.c#L184
+static PyObject *restore_file(PyObject *self, PyObject *args)
+{
+    HWND hwnd;
+    const char *original_path;
+
+    if (!PyArg_ParseTuple(args, "is", &hwnd, &original_path))
+    {
+        return NULL;
+    }
+
+    HRESULT hr;
+
+    // Get recycle bin
+    LPITEMIDLIST pidlRecycleBin;
+    hr = SHGetSpecialFolderLocation(hwnd, CSIDL_BITBUCKET, &pidlRecycleBin);
+    if (FAILED(hr))
+    {
+        goto end;
+    }
+
+    IShellFolder *pRecycleBinFolder = NULL;
+    hr = SHBindToObject(NULL, pidlRecycleBin, NULL, &IID_IShellFolder, (void **)&pRecycleBinFolder);
+    if (FAILED(hr))
+    {
+        goto fail_bind;
+    }
+
+    IEnumIDList *pEnumIDList = NULL;
+    hr = pRecycleBinFolder->lpVtbl->EnumObjects(pRecycleBinFolder, NULL, SHCONTF_NONFOLDERS, &pEnumIDList);
+    if (FAILED(hr)) {
+        goto fail_enum;
+    }
+
+    printf("Hello World\n");
+
+    // LPITEMIDLIST pidlItem;
+    // ULONG fetched;
+    // while (pEnumIDList->lpVtbl->Next(pEnumIDList, 1, &pidlItem, &fetched) == S_OK) {
+    //     STRRET str;
+    //     char filePath[MAX_PATH];
+    //     WIN32_FIND_DATA findData;
+
+
+    //     hr = pRecycleBinFolder->lpVtbl->GetDisplayNameOf(pidlItem, SHGDN_INFOLDER, &str);
+    //     if (SUCCEEDED(hr)) {
+    //         // StrRetToBuf(&str, pidlItem, filePath, MAX_PATH);
+    //         // if (SHGetDataFromIDList(pRecycleBinFolder, pidlItem, SHGDFIL_FINDDATA, &findData, sizeof(findData)) == S_OK) {
+    //         //     filePaths = realloc(filePaths, (fileCount + 1) * sizeof(char *));
+    //         //     filePaths[fileCount] = _strdup(filePath);
+    //         //     fileCount++;
+    //         // }
+    //     }
+    //     //CoTaskMemFree((LPVOID)pidlItem);
+    // }
+
+    // struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, NULL, original_path, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+    // SHFileOperationA(&fileOp);
+
+fail_enum:
+    pRecycleBinFolder->lpVtbl->Release(pRecycleBinFolder);
+fail_bind:
+    ILFree(pidlRecycleBin);
+end:
     return Py_None;
 }
 
@@ -54,7 +128,7 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 
     if (fileHandle == INVALID_HANDLE_VALUE)
     {
-        goto finish;
+        goto end;
     }
 
     do
@@ -69,7 +143,7 @@ static PyObject *get_files_in_folder(PyObject *self, PyObject *arg)
 
     FindClose(fileHandle);
 
-finish:
+end:
     return pyFiles;
 }
 
@@ -161,6 +235,7 @@ end:
 
 static PyMethodDef os_methods[] = {
     {"delete_file", delete_file, METH_VARARGS, NULL},
+    {"restore_file", restore_file, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
     {"open_with", open_with, METH_VARARGS, NULL},
     {"drop_file_to_clipboard", drop_file_to_clipboard, METH_VARARGS, NULL},
