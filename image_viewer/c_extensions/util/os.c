@@ -146,7 +146,7 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     }
 
     if (NULL != targetToRestore) {
-        struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
+        struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
         SHFileOperationA(&fileOp);
     }
 
