@@ -84,7 +84,7 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     }
 
     IEnumIDList *recycleBinIterator = NULL;
-    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS, &recycleBinIterator);
+    hr = recycleBinFolder->lpVtbl->EnumObjects(recycleBinFolder, hwnd, SHCONTF_NONFOLDERS , &recycleBinIterator);
     if (FAILED(hr))
     {
         goto fail_enum;
@@ -107,11 +107,13 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
             PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
             recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
 
-            UINT bufferLength = SysStringLen(variant.bstrVal);
-            char variantBuffer[bufferLength];
-            SHUnicodeToTChar(variant.bstrVal, variantBuffer, ARRAYSIZE(variantBuffer));
+            UINT bufferLength = SysStringLen(variant.bstrVal) + strlen(displayNameBuffer) + 2;
+            char deletedFileOriginalPath[bufferLength];
+            SHUnicodeToTChar(variant.bstrVal, deletedFileOriginalPath, ARRAYSIZE(deletedFileOriginalPath));
+            strcat(deletedFileOriginalPath, "\\");
+            strcat(deletedFileOriginalPath, displayNameBuffer);
 
-            printf("%s | %s\\%s\n", original_path, variantBuffer, displayNameBuffer);
+            printf("%s | %s\n", original_path, deletedFileOriginalPath);
         }
         CoTaskMemFree(pidlItem);
     }
