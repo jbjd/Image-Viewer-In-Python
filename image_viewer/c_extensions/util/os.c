@@ -6,6 +6,7 @@
 #include <shlwapi.h>
 #include <shlguid.h>
 #include <windows.h>
+#include <oleauto.h>
 
 #ifdef __MINGW32__
 #include <shobjidl.h>
@@ -76,22 +77,22 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     LPITEMIDLIST pidlItem;
     ULONG fetched;
     while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, &fetched) == S_OK) {
-        STRRET displayNameRet;
-        char displayName[MAX_PATH];
-        //WIN32_FIND_DATA findData;
+        STRRET displayName;
+        char displayNameBuffer[MAX_PATH];
 
-        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayNameRet);
+        hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayName);
         if (SUCCEEDED(hr)) {
-            StrRetToBuf(&displayNameRet, pidlItem, displayName, MAX_PATH);
+            StrRetToBuf(&displayName, pidlItem, displayNameBuffer, MAX_PATH);
 
-            VARIANT a;
+            VARIANT variant;
             PROPERTYKEY PKey_DisplacedFrom = { FMTID_Displaced, PID_DISPLACED_FROM };
-            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &a);
+            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
 
-            char variantBuffer[INFOTIPSIZE]; // TODO, determine the exact value first
-            SHUnicodeToTChar(a.bstrVal, variantBuffer, ARRAYSIZE(variantBuffer));
+            UINT bufferLength = SysStringLen(variant.bstrVal);
+            char variantBuffer[bufferLength];
+            SHUnicodeToTChar(variant.bstrVal, variantBuffer, ARRAYSIZE(variantBuffer));
 
-            printf("%s\\%s\n", variantBuffer, displayName);
+            printf("%s | %s\\%s\n", original_path, variantBuffer, displayNameBuffer);
         }
         CoTaskMemFree(pidlItem);
     }
