@@ -101,54 +101,76 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
     while (recycleBinIterator->lpVtbl->Next(recycleBinIterator, 1, &pidlItem, NULL) == S_OK)
     {
         STRRET displayName;
-        char displayNameBuffer[MAX_PATH];
 
         hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_INFOLDER, &displayName);
-        if (SUCCEEDED(hr))
+        if (FAILED(hr))
         {
-            StrRetToBuf(&displayName, pidlItem, displayNameBuffer, MAX_PATH);
+            continue;
+            CoTaskMemFree(pidlItem);
+        }
 
-            VARIANT variant;
-            const PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
-            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
+        char displayNameBuffer[MAX_PATH];
+        StrRetToBuf(&displayName, pidlItem, displayNameBuffer, MAX_PATH);
 
-            UINT bufferLength = SysStringLen(variant.bstrVal) + strlen(displayNameBuffer) + 2;
-            char deletedFileOriginalPath[bufferLength];
-            SHUnicodeToTChar(variant.bstrVal, deletedFileOriginalPath, ARRAYSIZE(deletedFileOriginalPath));
-            strcat(deletedFileOriginalPath, "\\");
-            strcat(deletedFileOriginalPath, displayNameBuffer);
+        VARIANT variant;
+        const PROPERTYKEY PKey_DisplacedFrom = {FMTID_Displaced, PID_DISPLACED_FROM};
+        hr = recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedFrom, &variant);
+        if (FAILED(hr))
+        {
+            continue;
+            CoTaskMemFree(pidlItem);
+        }
 
-            if (strcmp(originalPath, deletedFileOriginalPath))
+        UINT bufferLength = SysStringLen(variant.bstrVal) + strlen(displayNameBuffer) + 2;
+        char deletedFileOriginalPath[bufferLength];
+        SHUnicodeToTChar(variant.bstrVal, deletedFileOriginalPath, ARRAYSIZE(deletedFileOriginalPath));
+        strcat(deletedFileOriginalPath, "\\");
+        strcat(deletedFileOriginalPath, displayNameBuffer);
+
+        if (strcmp(originalPath, deletedFileOriginalPath))
+        {
+            continue;
+            CoTaskMemFree(pidlItem);
+        }
+
+        const PROPERTYKEY PKey_DisplacedDate = {FMTID_Displaced, PID_DISPLACED_DATE};
+        hr = recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedDate, &variant);
+        if (FAILED(hr))
+        {
+            continue;
+            CoTaskMemFree(pidlItem);
+        }
+
+        const DATE recycledTime = variant.date;
+
+        // Restore only the most recently recycled file of this name for consistency
+        if (NULL == targetToRestore || targetRecycledTime < recycledTime)
+        {
+            STRRET binDisplayName;
+            hr = recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_FORPARSING, &binDisplayName);
+            if (FAILED(hr))
             {
                 continue;
+                CoTaskMemFree(pidlItem);
             }
 
-            const PROPERTYKEY PKey_DisplacedDate = {FMTID_Displaced, PID_DISPLACED_DATE};
-            recycleBinFolder->lpVtbl->GetDetailsEx(recycleBinFolder, pidlItem, &PKey_DisplacedDate, &variant);
-
-            const DATE recycledTime = variant.date;
-
-            // Restore only the most recently recycled file of this name for consistency
-            if (NULL == targetToRestore || targetRecycledTime < recycledTime)
+            if (NULL != targetToRestore)
             {
-                if (NULL != targetToRestore)
-                {
-                    CoTaskMemFree(targetToRestore);
-                }
-
-                STRRET binDisplayName;
-                recycleBinFolder->lpVtbl->GetDisplayNameOf(recycleBinFolder, pidlItem, SHGDN_FORPARSING, &binDisplayName);
-                StrRetToStrA(&binDisplayName, pidlItem, &targetToRestore);
-
-                targetRecycledTime = recycledTime;
+                CoTaskMemFree(targetToRestore);
             }
+            StrRetToStrA(&binDisplayName, pidlItem, &targetToRestore);
+
+            targetRecycledTime = recycledTime;
         }
+
         CoTaskMemFree(pidlItem);
     }
 
     if (NULL != targetToRestore) {
+        //printf("%s    %s", targetToRestore, originalPath);
         struct _SHFILEOPSTRUCTA fileOp = {hwnd, FO_MOVE, targetToRestore, originalPath, FOF_RENAMEONCOLLISION | FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
-        SHFileOperationA(&fileOp);
+        // int s = SHFileOperationA(&fileOp);
+        // printf("%d\n", s);
     }
 
     CoTaskMemFree(targetToRestore);
