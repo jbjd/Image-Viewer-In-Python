@@ -116,10 +116,53 @@ static PyObject *get_byte_display(PyObject *self, PyObject *args)
     return Py_BuildValue("s", byteDisplay);
 }
 
+static PyObject *get_byte_display(PyObject *self, PyObject *arg)
+{
+    long sizeInBytes = PyLong_AsLong(arg);
+
+#ifdef _WIN32
+    const int kbSize = 1024;
+#else
+    const int kbSize = 1000;
+#endif
+
+    long sizeInKb = sizeInBytes / kbSize;
+
+    char *format;
+    size_t byteDisplaySize;
+    PyObject *pyDisplayStr;
+
+    if (sizeInKb > kbSize)
+    {
+        format = "%.2fmb";
+
+        float sizeInMb = sizeInKb / ((float)kbSize);
+        byteDisplaySize = snprintf(NULL, 0, format, sizeInMb) + 1;
+
+        char byteDisplay[byteDisplaySize];
+        sprintf(byteDisplay, format, sizeInMb);
+
+        pyDisplayStr = Py_BuildValue("s", byteDisplay);
+    }
+    else
+    {
+        format = "%dkb";
+
+        byteDisplaySize = snprintf(NULL, 0, format, sizeInKb) + 1;
+
+        char byteDisplay[byteDisplaySize];
+        sprintf(byteDisplay, format, sizeInKb);
+
+        pyDisplayStr = Py_BuildValue("s", byteDisplay);
+    }
+
+    return pyDisplayStr;
+}
+
 static PyMethodDef os_methods[] = {
     {"open_with", open_with, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_VARARGS, NULL},
-    {"get_byte_display", get_byte_display, METH_VARARGS, NULL},
+    {"get_byte_display", get_byte_display, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {
