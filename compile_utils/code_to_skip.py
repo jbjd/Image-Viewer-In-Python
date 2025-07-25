@@ -476,9 +476,6 @@ module_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.umath": {"numpy"},
 }
 
-if os.name == "nt":
-    module_imports_to_skip["winshell"] = {"__winshell_version__"}
-
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
