@@ -4,7 +4,7 @@ cencoder.c - c source to a base64 encoding algorithm implementation
 This is part of the libb64 project, and has been placed in the public domain.
 For details, see http://sourceforge.net/projects/libb64
 
-Taken from https://github.com/BuLogics/libb64/tree/master
+Taken from https://github.com/BuLogics/libb64/tree/master with slight edits
 */
 
 #include "cencode.h"
@@ -24,7 +24,7 @@ char base64_encode_value(char value_in)
     return encoding[(int)value_in];
 }
 
-int base64_encode_block(const char *plaintext_in, int length_in, char *code_out, base64_encodestate *state_in)
+int base64_encode_block(const char *plaintext_in, unsigned int length_in, char *code_out, base64_encodestate *state_in)
 {
     const char *plainchar = plaintext_in;
     const char *const plaintextend = plaintext_in + length_in;

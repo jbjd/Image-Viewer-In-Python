@@ -363,7 +363,7 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     {
         return Py_None;
     }
-    const unsigned long long fileSize = fileSizeContainer.QuadPart;
+    const ULONGLONG fileSize = fileSizeContainer.QuadPart;
 
     HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * fileSize);
     if (hGlobal == NULL)
@@ -373,7 +373,7 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
 
     // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
     base64_encodestate state;
-    const int INPUT_BUFFER_SIZE = 8192;
+    const int INPUT_BUFFER_SIZE = 65536;
     char inputBuffer[INPUT_BUFFER_SIZE];
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
     char *currentPosition = encodedBuffer;
@@ -388,7 +388,7 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     DWORD bytesRead;
     while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0)
     {
-        currentPosition += base64_encode_block(inputBuffer, (int)bytesRead, currentPosition, &state);
+        currentPosition += base64_encode_block(inputBuffer, (unsigned)bytesRead, currentPosition, &state);
     }
 
     base64_encode_blockend(encodedBuffer, &state);
