@@ -15,6 +15,17 @@
 #endif
 
 /**
+ * Given some data, opens, emptys, sets, and closes clipboard
+ * with provided data.
+ *
+ * Returns WINBOOL if successful. If it fails, call GetLastError for information.
+ */
+static WINBOOL set_win_clipboard(const HWND hwnd, const UINT format, void *data)
+{
+    return !OpenClipboard(hwnd) || !EmptyClipboard() || !SetClipboardData(format, data) || !CloseClipboard();
+}
+
+/**
  * Copies string into a newly allocated buffer, replaces all
  * forward slashes with backslashes, and double null terminates it.
  *
@@ -321,24 +332,12 @@ static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *args)
 
     GlobalUnlock(hGlobal);
 
-    if (!OpenClipboard(hwnd))
+    if (!set_win_clipboard(hwnd, CF_HDROP, hGlobal))
     {
-        goto error_free_memory;
+    error_free_memory:
+        GlobalFree(hGlobal);
     }
 
-    const int errorDuringSet = !EmptyClipboard() || !SetClipboardData(CF_HDROP, hGlobal);
-
-    CloseClipboard();
-
-    if (errorDuringSet)
-    {
-        goto error_free_memory;
-    }
-
-    goto end;
-
-error_free_memory:
-    GlobalFree(hGlobal);
 end:
     Py_END_ALLOW_THREADS;
     return Py_None;
