@@ -10,9 +10,9 @@ from typing import Final
 if os.name == "nt":
     from ctypes import windll  # type: ignore
 
-    from util._os import get_files_in_folder as _get_files_in_folder
-    from util._os import restore_file as _restore_file
-    from util._os import trash_file as _trash_file
+    from util._os_nt import get_files_in_folder as _get_files_in_folder
+    from util._os_nt import restore_file as _restore_file
+    from util._os_nt import trash_file as _trash_file
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0

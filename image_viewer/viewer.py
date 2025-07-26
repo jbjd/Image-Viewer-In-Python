@@ -152,7 +152,7 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
-            from util._os import drop_file_to_clipboard, open_with
+            from util._os_nt import drop_file_to_clipboard, open_with
 
             app.bind(
                 "<Control-b>",
