@@ -7,7 +7,7 @@
 #include <shlguid.h>
 #include <shlwapi.h>
 #include <windows.h>
-#include <b64/cencode.h>
+#include "b64/cencode.h"
 
 #ifdef __MINGW32__
 #include <shlobj.h>
@@ -365,12 +365,23 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     }
     const unsigned long long fileSize = fileSizeContainer.QuadPart;
 
+    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * fileSize);
+    if (hGlobal == NULL)
+    {
+        return Py_None;
+    }
+
     // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
     base64_encodestate state;
-    const int INPUT_BUFFER_SIZE = 4096;
+    const int INPUT_BUFFER_SIZE = 8192;
     char inputBuffer[INPUT_BUFFER_SIZE];
-    char *encodedBuffer = (char *)malloc(2 * fileSize);
-    char* currentPosition = encodedBuffer;
+    char *encodedBuffer = (char *)GlobalLock(hGlobal);
+    char *currentPosition = encodedBuffer;
+
+    if (encodedBuffer == NULL){
+        GlobalFree(hGlobal);
+        return Py_None;
+    }
 
     base64_init_encodestate(&state);
 
@@ -382,9 +393,10 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
 
     base64_encode_blockend(encodedBuffer, &state);
 
-    free(encodedBuffer);
-
+    GlobalUnlock(hGlobal);
     CloseHandle(fileAccess);
+
+    set_win_clipboard(0, CF_TEXT, encodedBuffer);
 
     return Py_None;
 }
