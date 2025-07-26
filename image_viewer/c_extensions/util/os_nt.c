@@ -344,8 +344,6 @@ end:
     return Py_None;
 }
 
-
-
 static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
     const char *path = PyUnicode_AsUTF8(arg);
@@ -355,13 +353,13 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     }
 
     const HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if(fileAccess == INVALID_HANDLE_VALUE)
+    if (fileAccess == INVALID_HANDLE_VALUE)
     {
         return Py_None;
     }
 
     LARGE_INTEGER fileSizeContainer;
-    if(!GetFileSizeEx(fileAccess, &fileSizeContainer))
+    if (!GetFileSizeEx(fileAccess, &fileSizeContainer))
     {
         return Py_None;
     }
@@ -371,22 +369,20 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     base64_encodestate state;
     const int INPUT_BUFFER_SIZE = 4096;
     char inputBuffer[INPUT_BUFFER_SIZE];
-    char encodedBuffer[fileSize * 2];
+    char *encodedBuffer = (char *)malloc(2 * fileSize);
+    char* currentPosition = encodedBuffer;
 
     base64_init_encodestate(&state);
 
     DWORD bytesRead;
-    while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
-        //base64_encode_block(inputBuffer, (int)bytesRead, encodedBuffer, &state);
+    while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0)
+    {
+        currentPosition += base64_encode_block(inputBuffer, (int)bytesRead, currentPosition, &state);
     }
 
-    // // size_t bytes_read;
-    // // while ((bytes_read = fread(input_buffer, 1, BUFFER_SIZE, input_file)) > 0) {
-    // //     int encoded_bytes = base64_encode_block(input_buffer, bytes_read, output_buffer, &state);
-    // //     fwrite(output_buffer, 1, encoded_bytes, output_file);
-    // // }
+    base64_encode_blockend(encodedBuffer, &state);
 
-    //base64_encode_blockend(encodedBuffer, &state);
+    free(encodedBuffer);
 
     CloseHandle(fileAccess);
 
