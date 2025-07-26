@@ -7,6 +7,7 @@
 #include <shlguid.h>
 #include <shlwapi.h>
 #include <windows.h>
+#include <b64/cencode.h>
 
 #ifdef __MINGW32__
 #include <shlobj.h>
@@ -343,12 +344,53 @@ end:
     return Py_None;
 }
 
+
+
+static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
+{
+    const char *path = PyUnicode_AsUTF8(arg);
+    if (path == NULL)
+    {
+        return NULL;
+    }
+
+    HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(fileAccess == INVALID_HANDLE_VALUE)
+    {
+        return Py_None;
+    }
+
+    LARGE_INTEGER fileSizeContainer;
+    if(!GetFileSizeEx(fileAccess, &fileSizeContainer))
+    {
+        return Py_None;
+    }
+    unsigned long long fileSize = fileSizeContainer.QuadPart;
+
+    // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
+    base64_encodestate state;
+    char encodedBuffer[fileSize * 2];
+
+    base64_init_encodestate(&state);
+
+    // // size_t bytes_read;
+    // // while ((bytes_read = fread(input_buffer, 1, BUFFER_SIZE, input_file)) > 0) {
+    // //     int encoded_bytes = base64_encode_block(input_buffer, bytes_read, output_buffer, &state);
+    // //     fwrite(output_buffer, 1, encoded_bytes, output_file);
+    // // }
+
+    // base64_encode_blockend(encodedBuffer, &state);
+
+    return Py_None;
+}
+
 static PyMethodDef os_methods[] = {
     {"trash_file", trash_file, METH_VARARGS, NULL},
     {"restore_file", restore_file, METH_VARARGS, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
     {"open_with", open_with, METH_VARARGS, NULL},
     {"drop_file_to_clipboard", drop_file_to_clipboard, METH_VARARGS, NULL},
+    {"convert_file_to_base64_and_save_to_clipboard", convert_file_to_base64_and_save_to_clipboard, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {
