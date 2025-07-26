@@ -6,7 +6,7 @@ endif
 
 PYTHON_PATH := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
 
-build-dll:
+build-os-util:
 	gcc image_viewer/c_extensions/util/os_nt.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_PATH)/libs/ -I$(PYTHON_PATH)/include/ -lpython312 -lshlwapi -loleaut32 -lole32 -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_nt.pyd -Wall -Werror
 
 install:
