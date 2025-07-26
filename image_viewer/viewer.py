@@ -22,6 +22,9 @@ from util.io import read_file_as_base64
 from util.os import show_info_popup
 from util.PIL import create_dropdown_image, init_PIL
 
+if os.name == "nt":
+    from util._os_nt import convert_file_to_base64_and_save_to_clipboard
+
 
 class ViewerApp:
     """Main UI class handling IO and on screen widgets"""
@@ -363,12 +366,19 @@ class ViewerApp:
         """Converts the file's bytes into base64 and copies
         it to the clipboard"""
 
-        try:
-            image_base64: str = read_file_as_base64(self.file_manager.path_to_image)
-        except (FileNotFoundError, OSError):
-            return
+        if os.name == "nt":
+            convert_file_to_base64_and_save_to_clipboard(
+                self.file_manager.path_to_image
+            )
+        else:  # TODO: Write a C implementation and remove python implementation
 
-        self._copy_to_clipboard(image_base64)
+            try:
+                image_base64: str = read_file_as_base64(self.file_manager.path_to_image)
+            except (FileNotFoundError, OSError):
+                return
+
+            self.app.clipboard_clear()
+            self.app.clipboard_append(image_base64)
 
     def show_details_popup(self, _: Event | None = None) -> None:
         """Gets details on image and shows it in a UI popup"""
@@ -635,10 +645,6 @@ class ViewerApp:
             self.canvas.itemconfigure(dropdown.id, image=dropdown.image, state="normal")
         else:
             self.canvas.itemconfigure(dropdown.id, state="hidden")
-
-    def _copy_to_clipboard(self, text: str) -> None:
-        self.app.clipboard_clear()
-        self.app.clipboard_append(text)
 
     def _start_image_load(self, function: Callable, *args):
         """Cancels any previous image load thread and starts a new one"""
