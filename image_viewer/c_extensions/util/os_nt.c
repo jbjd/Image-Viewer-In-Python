@@ -354,7 +354,7 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
         return NULL;
     }
 
-    HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if(fileAccess == INVALID_HANDLE_VALUE)
     {
         return Py_None;
@@ -365,13 +365,20 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     {
         return Py_None;
     }
-    unsigned long long fileSize = fileSizeContainer.QuadPart;
+    const unsigned long long fileSize = fileSizeContainer.QuadPart;
 
     // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
     base64_encodestate state;
+    const int INPUT_BUFFER_SIZE = 4096;
+    char inputBuffer[INPUT_BUFFER_SIZE];
     char encodedBuffer[fileSize * 2];
 
     base64_init_encodestate(&state);
+
+    DWORD bytesRead;
+    while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0) {
+        //base64_encode_block(inputBuffer, (int)bytesRead, encodedBuffer, &state);
+    }
 
     // // size_t bytes_read;
     // // while ((bytes_read = fread(input_buffer, 1, BUFFER_SIZE, input_file)) > 0) {
@@ -379,7 +386,9 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     // //     fwrite(output_buffer, 1, encoded_bytes, output_file);
     // // }
 
-    // base64_encode_blockend(encodedBuffer, &state);
+    //base64_encode_blockend(encodedBuffer, &state);
+
+    CloseHandle(fileAccess);
 
     return Py_None;
 }
