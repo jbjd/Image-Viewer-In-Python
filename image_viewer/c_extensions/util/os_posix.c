@@ -21,16 +21,29 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
         return Py_None;
     }
 
+    // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
+    base64_encodestate state;
     const int INPUT_BUFFER_SIZE = 65536;
     char inputBuffer[INPUT_BUFFER_SIZE];
+    char *encodedBuffer = (char *)malloc((fileSize * 2) * sizeof(char));
+    char *currentPosition = encodedBuffer;
 
-    int bytesRead = 1;
+    base64_init_encodestate(&state);
+
+    size_t bytesRead = 1;
     while (bytesRead != 0)
     {
         bytesRead = fread(inputBuffer, sizeof(char), INPUT_BUFFER_SIZE, fp);
+        currentPosition += base64_encode_block(inputBuffer, (unsigned)bytesRead, currentPosition, &state);
     }
 
+    base64_encode_blockend(encodedBuffer, &state);
+
+    printf("%s\n", encodedBuffer);
+
     fclose(fp);
+    free(encodedBuffer);
+
     return Py_None;
 }
 
