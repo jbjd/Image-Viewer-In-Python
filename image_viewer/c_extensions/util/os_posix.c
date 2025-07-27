@@ -1,7 +1,20 @@
 #include <sys/stat.h>
 #include <Python.h>
+#include <X11/Xlib.h>
 
 #include "b64/cencode.h"
+
+// https://github.com/ColleagueRiley/Clipboard-Copy-Paste/blob/main/x11.c
+static void set_x11_clipboard()
+{
+    Display *display = XOpenDisplay(NULL);
+
+    Window window = XCreateWindow(display, (Window)NULL, 0, 0, 0, 0, 0, 0, InputOnly, NULL, 0 ,NULL);
+
+    // const Atom CLIPBOARD = XInternAtom(display, "CLIPBOARD", False);
+
+    // XConvertSelection(display, CLIPBOARD, XA_STRING, None, window, CurrentTime);
+}
 
 static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
@@ -40,6 +53,8 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     base64_encode_blockend(encodedBuffer, &state);
 
     printf("%s\n", encodedBuffer);
+
+    set_x11_clipboard();
 
     fclose(fp);
     free(encodedBuffer);
