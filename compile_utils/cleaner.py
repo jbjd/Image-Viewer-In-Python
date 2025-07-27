@@ -111,7 +111,7 @@ def move_files_to_tmp_and_clean(
     else:
         modules_to_skip_re = ""
 
-    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd")):
+    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd", ".so")):
         if (
             os.path.basename(python_file) == "__main__.py"
             and module_name != IMAGE_VIEWER_NAME
@@ -219,7 +219,9 @@ def strip_files(compile_dir: str) -> None:
     """Runs strip on all exe/dll files in provided dir"""
     EXIT_SUCCESS: int = 0
 
-    for strippable_file in _files_in_dir_iter(compile_dir, (".exe", ".dll", ".pyd")):
+    for strippable_file in _files_in_dir_iter(
+        compile_dir, (".exe", ".dll", ".so", ".pyd")
+    ):
         result = subprocess.run(["strip", "--strip-all", strippable_file])
 
         if result.returncode != EXIT_SUCCESS:
