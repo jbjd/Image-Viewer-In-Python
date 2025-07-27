@@ -111,7 +111,7 @@ def move_files_to_tmp_and_clean(
     else:
         modules_to_skip_re = ""
 
-    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd")):
+    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd", ".so")):
         if (
             os.path.basename(python_file) == "__main__.py"
             and module_name != IMAGE_VIEWER_NAME
