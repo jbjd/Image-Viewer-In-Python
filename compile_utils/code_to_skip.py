@@ -741,6 +741,18 @@ iterable_type = Iterable"""
             count=1,
         ),
     ]
+    regex_to_apply_py["send2trash.exceptions"] = [
+        RegexReplacement(
+            pattern="^.*$",
+            replacement="""
+import errno
+class TrashPermissionError(PermissionError):
+    def __init__(self, filename):
+        PermissionError.__init__(self, errno.EACCES, "Permission denied", filename)""",
+            flags=re.DOTALL,
+            count=1,
+        )
+    ]
     # We don't use pathlib's Path, remove support for it
     regex_to_apply_py["send2trash.util"] = [
         RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")

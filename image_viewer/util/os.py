@@ -25,8 +25,7 @@ else:  # assume linux for now
     from glob import glob
     from tkinter.messagebox import showinfo
 
-    from send2trash import send2trash
-    from send2trash.plat_other import HOMETRASH
+    from send2trash.plat_other import HOMETRASH, send2trash
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b

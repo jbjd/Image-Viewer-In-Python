@@ -97,7 +97,6 @@ modules_to_skip: list[str] = [
     "lzma",
     "packaging",
     "PIL._deprecate",
-    "PIL._tkinter_finder",
     "PIL._typing",
     "PIL._version",
     "PIL.AvifImagePlugin",
@@ -167,16 +166,14 @@ modules_to_skip: list[str] = [
     "py_compile",
     "pydoc",
     "select",
-    "selectors",
     "socket",
     "statistics",
-    "tempfile",
     "urllib.error",
     "urllib.request",
 ]
 
 if os.name == "nt":
-    modules_to_skip.append("send2trash")
+    modules_to_skip += ["PIL._tkinter_finder", "selectors", "send2trash", "tempfile"]
 else:
     # TODO: Skip everything but plat other?
     modules_to_skip += [
