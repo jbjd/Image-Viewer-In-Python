@@ -10,7 +10,7 @@ build-os-util:
 ifeq ($(OS),Windows_NT)
 	gcc image_viewer/c_extensions/util/os_nt.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_PATH)/libs/ -I$(PYTHON_PATH)/include/ -Iimage_viewer/c_extensions/ -lpython312 -lshlwapi -loleaut32 -lole32 -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_nt.pyd -Wall -Werror
 else
-	gcc image_viewer/c_extensions/util/os_posix.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_LIB_PATH) -I/usr/include/python3.12 -Iimage_viewer/c_extensions/ -lpython3.12 -fPIC -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_posix.os -Wall -Werror
+	gcc image_viewer/c_extensions/util/os_posix.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_LIB_PATH) -I/usr/include/python3.12 -Iimage_viewer/c_extensions/ -lpython3.12 -fPIC -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_posix.so -Wall -Werror
 endif
 
 install:
