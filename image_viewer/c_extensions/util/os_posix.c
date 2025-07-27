@@ -11,31 +11,26 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
         return NULL;
     }
 
-    struct stat st; 
+    struct stat st;
     stat(path, &st);
     long fileSize = st.st_size;
-    fileSize = 9999999999;
 
-    printf("%ld\n", fileSize);
+    FILE *fp = fopen(path, "r");
+    if (fp == NULL)
+    {
+        return Py_None;
+    }
 
-    // FILE *fp = fopen(path, "r");
-    // if (fp == NULL)
-    // {
-    //     return Py_None;
-    // }
+    const int INPUT_BUFFER_SIZE = 65536;
+    char inputBuffer[INPUT_BUFFER_SIZE];
 
+    int bytesRead = 1;
+    while (bytesRead != 0)
+    {
+        bytesRead = fread(inputBuffer, sizeof(char), INPUT_BUFFER_SIZE, fp);
+    }
 
-
-    // fseek(f, 0, SEEK_END);
-    // const int size = ftell(f);
-    // if( size == -1)
-    // {
-    //     fclose(fp);
-    //     return Py_None; 
-    // }
-    // fseek(f, 0, SEEK_SET);
-
-    // fclose(fp);
+    fclose(fp);
     return Py_None;
 }
 
