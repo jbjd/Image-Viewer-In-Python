@@ -90,8 +90,8 @@ try:
             lib_path: str = os.path.join(site_packages_path, "numpy.libs")
             copy_folder(lib_path, os.path.join(TMP_DIR, "numpy.libs"))
         elif module_name == "PIL" and os.name == "posix":
-            site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
-            lib_path: str = os.path.join(site_packages_path, "pillow.libs")
+            site_packages_path = os.path.dirname(os.path.dirname(module.__file__))
+            lib_path = os.path.join(site_packages_path, "pillow.libs")
             copy_folder(lib_path, os.path.join(TMP_DIR, "pillow.libs"))
         if base_file_name == "__init__.py":
             # its really a folder
