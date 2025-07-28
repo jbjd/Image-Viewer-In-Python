@@ -98,6 +98,8 @@ def magic_number_guess(magic: bytes) -> str:
     match magic:
         case b"\x89PNG":
             return ImageFormats.PNG
+        case b"\xff\xd8\xff\xe0":
+            return ImageFormats.JPEG
         case b"RIFF":
             return ImageFormats.WEBP
         case b"GIF8":
@@ -105,4 +107,4 @@ def magic_number_guess(magic: bytes) -> str:
         case b"DDS ":
             return ImageFormats.DDS
         case _:
-            return ImageFormats.JPEG
+            return ImageFormats.AVIF
