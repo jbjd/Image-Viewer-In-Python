@@ -61,7 +61,8 @@ def test_create_images(tk_app: Tk):
         (b"RIFF", ImageFormats.WEBP),
         (b"GIF8", ImageFormats.GIF),
         (b"DDS ", ImageFormats.DDS),
-        (b"ABCD", ImageFormats.JPEG),  # default to JPEG
+        (b"\xff\xd8\xff\xe0", ImageFormats.JPEG),
+        (b"ABCD", ImageFormats.AVIF),  # default to AVIF
     ],
 )
 def test_magic_number_guess(magic_bytes: bytes, expected_format: ImageFormats):

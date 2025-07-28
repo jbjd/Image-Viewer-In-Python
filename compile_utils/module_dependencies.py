@@ -99,7 +99,6 @@ modules_to_skip: list[str] = [
     "PIL._deprecate",
     "PIL._typing",
     "PIL._version",
-    "PIL.AvifImagePlugin",
     "PIL.BdfFontFile",
     "PIL.BlpImagePlugin",
     "PIL.BmpImagePlugin",

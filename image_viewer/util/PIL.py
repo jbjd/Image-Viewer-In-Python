@@ -153,6 +153,7 @@ def _preinit() -> None:
     if _Image._initialized > 0:
         return
 
+    __import__("PIL.AvifImagePlugin", globals(), locals(), ())
     __import__("PIL.JpegImagePlugin", globals(), locals(), ())
     __import__("PIL.GifImagePlugin", globals(), locals(), ())
     __import__("PIL.PngImagePlugin", globals(), locals(), ())

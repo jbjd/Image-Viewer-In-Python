@@ -8,6 +8,7 @@ from enum import IntEnum, StrEnum
 class ImageFormats(StrEnum):
     """Image format strings that this app supports"""
 
+    AVIF = "AVIF"
     DDS = "DDS"
     GIF = "GIF"
     JPEG = "JPEG"
@@ -59,6 +60,7 @@ class ButtonName(StrEnum):
 
 
 VALID_FILE_TYPES: set[str] = {
+    "avif",
     "gif",
     "jpg",
     "jpeg",

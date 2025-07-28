@@ -176,6 +176,7 @@ functions_to_skip: dict[str, set[str]] = {
         "version_codec",
         "version_feature",
     },
+    "PIL.AvifImagePlugin": {"get_codec_version", "register_mime"},
     "PIL.Image": {
         "__getstate__",
         "__repr__",
@@ -271,7 +272,6 @@ functions_to_skip: dict[str, set[str]] = {
         "wedge",
     },
     "PIL.ImageTk": {"_get_image_from_kw", "getimage"},
-    "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
         "_getexif",
@@ -343,6 +343,9 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.WebPImagePlugin": {"format_description"},
 }
 
+if os.name == "nt":
+    vars_to_skip["PIL.AvifImagePlugin"] = {"DEFAULT_MAX_THREADS"}
+
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
@@ -351,13 +354,9 @@ classes_to_skip: dict[str, set[str]] = {
     "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "Parser",
-        "PyCodec",
-        "PyCodecState",
-        "PyDecoder",
         "PyEncoder",
         "StubHandler",
         "StubImageFile",
@@ -724,6 +723,14 @@ if os.name == "nt":
             flags=re.DOTALL,
         )
     )
+    regex_to_apply_py["PIL.AvifImagePlugin"] = [
+        RegexReplacement(
+            r"def _get_default_max_threads\(\).*?or 1",
+            "def _get_default_max_threads():return os.cpu_count() or 1",
+            flags=re.DOTALL,
+            count=1,
+        )
+    ]
 else:
     regex_to_apply_py["send2trash.__init__"] = [remove_all_re]
     regex_to_apply_py["send2trash.compat"] = [  # Fix issue with autoflake
