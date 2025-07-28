@@ -272,7 +272,6 @@ functions_to_skip: dict[str, set[str]] = {
         "wedge",
     },
     "PIL.ImageTk": {"_get_image_from_kw", "getimage"},
-    "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
         "_getexif",
@@ -355,13 +354,9 @@ classes_to_skip: dict[str, set[str]] = {
     "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "Parser",
-        "PyCodec",
-        "PyCodecState",
-        "PyDecoder",
         "PyEncoder",
         "StubHandler",
         "StubImageFile",
