@@ -1,6 +1,8 @@
 from unittest.mock import patch
-from image_viewer.image.cache import ImageCache, ImageCacheEntry
+
 from PIL.Image import Image
+
+from image_viewer.image.cache import ImageCache, ImageCacheEntry
 
 
 def test_image_cache_full():
