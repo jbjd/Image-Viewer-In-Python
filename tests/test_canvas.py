@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL.Image import Image
@@ -99,3 +99,16 @@ def test_drag(
         mock_move.assert_called_once_with(
             canvas.image_display.id, *expected_move_amount
         )
+
+
+def test_get_button_id(canvas: CustomCanvas, example_image: Image):
+    """Should keep track of buttons and correctly return their id"""
+
+    button = MagicMock()
+    button_id = 1234
+    button.id = button_id
+    button_name: str = "my_button"
+
+    canvas.create_button(button, button_name, 0, 0, PhotoImage(example_image))
+
+    assert canvas.get_button_id(button_name) == button_id

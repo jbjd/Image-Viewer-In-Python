@@ -6,6 +6,7 @@ import pytest
 
 from image_viewer.actions.undoer import ActionUndoer, UndoResponse
 from image_viewer.constants import ImageFormats
+from image_viewer.files.file_dialog_asker import FileDialogAsker
 from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
 from image_viewer.image.file import ImageName, ImageNameList
@@ -219,6 +220,18 @@ def test_split_with_weird_names(manager: ImageFileManager):
     assert manager._split_dir_and_name("C:/example/...") == expected_split
 
 
+def test_move_to_new_file(manager: ImageFileManager):
+    """When user chooses a file in file dialog, should move to selected file"""
+    chosen_path: str = os.path.join(IMG_DIR, "d.jpg")
+
+    with patch(
+        "image_viewer.files.file_manager.FileDialogAsker.ask_open_image",
+        return_value=chosen_path,
+    ):
+        assert manager.move_to_new_file()
+        assert manager.path_to_image == chosen_path
+
+
 def test_move_to_new_file_cancelled(manager: ImageFileManager):
     """When user closes file dialog, function exits immediately"""
     with patch(
@@ -226,3 +239,19 @@ def test_move_to_new_file_cancelled(manager: ImageFileManager):
         return_value="",
     ):
         assert not manager.move_to_new_file()
+
+
+def test_ask_open_image():
+    """When user closes file dialog, function exits immediately"""
+    asker = FileDialogAsker(["jpg", "png"])
+    chosen_dir: str = "/"
+
+    with patch(
+        "image_viewer.files.file_dialog_asker.askopenfilename"
+    ) as mock_ask_open_filename:
+        asker.ask_open_image(chosen_dir)
+        mock_ask_open_filename.assert_called_once_with(
+            title="Open Image",
+            initialdir=chosen_dir,
+            filetypes=asker._dialog_file_types,
+        )

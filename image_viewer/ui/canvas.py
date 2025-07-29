@@ -2,7 +2,7 @@ from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
 
-from constants import TEXT_RGB, ButtonName, TkTags
+from constants import TEXT_RGB, TkTags
 from ui.base import ButtonUIElementBase
 from ui.image import ImageUIElement
 from util.os import maybe_truncate_long_name
@@ -27,7 +27,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.pack(anchor="nw", fill="both", expand=1)
 
         master.update()  # updates winfo width and height to the current size
-        self.button_name_to_object: dict[ButtonName, ButtonUIElementBase] = {}
+        self.button_name_to_object: dict[str, ButtonUIElementBase] = {}
         self.file_name_text_id: int = -1
         self.image_display = ImageUIElement(None, -1)
         self.screen_width: int = master.winfo_width()
@@ -76,7 +76,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
     def create_button(
         self,
         button_object: ButtonUIElementBase,
-        name: ButtonName,
+        name: str,
         x_offset: int,
         y_offset: int,
         image: PhotoImage,
@@ -143,10 +143,10 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         """Returns bool of if provided tag/id is visible"""
         return self.itemcget(tag_or_id, "state") != "hidden"
 
-    def get_button_id(self, name: ButtonName) -> int:
+    def get_button_id(self, name: str) -> int:
         return self.button_name_to_object[name].id
 
-    def mock_button_click(self, name: ButtonName) -> None:
+    def mock_button_click(self, name: str) -> None:
         """Triggers on click event of button programmatically
         passing None as event"""
         button: ButtonUIElementBase = self.button_name_to_object[name]

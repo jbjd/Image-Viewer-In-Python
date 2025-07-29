@@ -53,7 +53,7 @@ class ActionUndoer(deque[FileAction]):
             restore_file(action.original_path)
             return UndoResponse(action.original_path, "")
 
-        assert False  # Unreachable
+        assert False  # pragma: no cover (unreachable)
 
     def get_undo_message(self) -> str:
         """Looks at top of deque and formats the information in a string.
@@ -72,4 +72,4 @@ class ActionUndoer(deque[FileAction]):
         if type(action) is Delete:
             return f"Restore {action.original_path} from trash?"
 
-        assert False  # Unreachable
+        assert False  # pragma: no cover (unreachable)
