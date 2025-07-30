@@ -3,6 +3,7 @@ from unittest.mock import patch
 from PIL.Image import Image
 
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
+from tests.test_util.mocks import MockStatResult
 
 
 def test_image_cache_full():
@@ -49,6 +50,28 @@ def test_update_key():
     cache.update_key(old_key, new_key)
     assert old_key not in cache
     assert new_key in cache
+
+
+def test_image_cache_fresh(image_cache: ImageCache):
+    """Should say image cache is fresh if cached byte size
+    is the same as size on disk"""
+
+    image = Image()
+    byte_size = 99
+    entry = ImageCacheEntry(image, (10, 10), "", byte_size, "", "")
+
+    path = "some/path"
+
+    with patch("image_viewer.image.cache.stat", return_value=MockStatResult(byte_size)):
+        # Empty
+        assert not image_cache.image_cache_still_fresh(path)
+
+        image_cache[path] = entry
+        assert image_cache.image_cache_still_fresh(path)
+
+    for error in [FileNotFoundError(), OSError()]:
+        with patch("image_viewer.image.cache.stat", side_effect=error):
+            assert not image_cache.image_cache_still_fresh(path)
 
 
 def _get_empty_cache_entry() -> ImageCacheEntry:
