@@ -10,19 +10,19 @@ from image_viewer.files.file_dialog_asker import FileDialogAsker
 from image_viewer.files.file_manager import ImageFileManager, _ShouldPreserveIndex
 from image_viewer.image.cache import ImageCache, ImageCacheEntry
 from image_viewer.image.file import ImageName, ImageNameList
-from tests.conftest import IMG_DIR
+from tests.conftest import EXAMPLE_IMG_PATH, IMG_DIR
 from tests.test_util.exception import safe_wrapper
 from tests.test_util.mocks import MockImage, MockStatResult
 
 
 @pytest.fixture
 def manager(image_cache: ImageCache) -> ImageFileManager:
-    return ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
+    return ImageFileManager(EXAMPLE_IMG_PATH, image_cache)
 
 
 @pytest.fixture
 def manager_with_3_images(image_cache: ImageCache) -> ImageFileManager:
-    manager = ImageFileManager(os.path.join(IMG_DIR, "a.png"), image_cache)
+    manager = ImageFileManager(EXAMPLE_IMG_PATH, image_cache)
     manager._files = ImageNameList([*map(ImageName, ("a.png", "c.jpg", "e.webp"))])
     return manager
 
@@ -89,7 +89,7 @@ def test_bad_path_for_rename(manager: ImageFileManager):
         )
     # If path exists, error when user cancels (mocked in askyesno)
     with pytest.raises(OSError):
-        manager.rename_or_convert_current_image(os.path.join(IMG_DIR, "a.png"))
+        manager.rename_or_convert_current_image(EXAMPLE_IMG_PATH)
 
 
 def test_move_index(manager: ImageFileManager):
@@ -223,6 +223,7 @@ def test_split_with_weird_names(manager: ImageFileManager):
 def test_move_to_new_file(manager: ImageFileManager):
     """When user chooses a file in file dialog, should move to selected file"""
     chosen_path: str = os.path.join(IMG_DIR, "d.jpg")
+    manager.image_directory = "some/path"
 
     with patch(
         "image_viewer.files.file_manager.FileDialogAsker.ask_open_image",
@@ -230,6 +231,7 @@ def test_move_to_new_file(manager: ImageFileManager):
     ):
         assert manager.move_to_new_file()
         assert manager.path_to_image == chosen_path
+        assert manager.image_directory == IMG_DIR
 
 
 def test_move_to_new_file_cancelled(manager: ImageFileManager):
@@ -255,3 +257,13 @@ def test_ask_open_image():
             initialdir=chosen_dir,
             filetypes=asker._dialog_file_types,
         )
+
+
+def test_current_image_cache_still_fresh(manager: ImageFileManager):
+    """Should call ImageCache function with current path"""
+    with patch.object(
+        ImageCache, "image_cache_still_fresh"
+    ) as mock_image_cache_still_fresh:
+        manager.current_image_cache_still_fresh()
+
+        mock_image_cache_still_fresh.assert_called_once_with(manager.path_to_image)
