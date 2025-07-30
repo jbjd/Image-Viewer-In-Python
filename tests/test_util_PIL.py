@@ -1,20 +1,18 @@
 from tkinter import Tk
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import pytest
 from PIL.Image import Image, new
 
 from image_viewer.config import DEFAULT_FONT
 from image_viewer.constants import ImageFormats
-from image_viewer.image.cache import ImageCache, ImageCacheEntry
-from image_viewer.image.file import ImageName, magic_number_guess
+from image_viewer.image.file import ImageName
 from image_viewer.util.PIL import (
+    _preinit,
     create_dropdown_image,
     get_placeholder_for_errored_image,
     init_PIL,
     resize,
 )
-from tests.test_util.mocks import MockStatResult
 
 
 def test_image_path():
@@ -54,22 +52,6 @@ def test_create_images(tk_app: Tk):
     assert isinstance(placeholder, Image)
 
 
-@pytest.mark.parametrize(
-    "magic_bytes,expected_format",
-    [
-        (b"\x89PNG", ImageFormats.PNG),
-        (b"RIFF", ImageFormats.WEBP),
-        (b"GIF8", ImageFormats.GIF),
-        (b"DDS ", ImageFormats.DDS),
-        (b"\xff\xd8\xff\xe0", ImageFormats.JPEG),
-        (b"ABCD", ImageFormats.AVIF),  # default to AVIF
-    ],
-)
-def test_magic_number_guess(magic_bytes: bytes, expected_format: ImageFormats):
-    """Ensure correct image type guessed"""
-    assert magic_number_guess(magic_bytes) == expected_format
-
-
 def test_resize():
     """Test a variety of PIL Image resize scenarios"""
 
@@ -90,23 +72,60 @@ def test_resize():
     assert new_image.size == (15, 15)
 
 
-def test_image_cache_fresh(image_cache: ImageCache):
-    """Should say image cache is fresh if cached byte size
-    is the same as size on disk"""
+def test_preinit():
+    """Should import supported formats and set PIL as initialized"""
 
-    image = Image()
-    byte_size = 99
-    entry = ImageCacheEntry(image, (10, 10), "", byte_size, "", "")
+    supported_formats: set[str] = {
+        "PIL.AvifImagePlugin",
+        "PIL.JpegImagePlugin",
+        "PIL.GifImagePlugin",
+        "PIL.PngImagePlugin",
+        "PIL.WebPImagePlugin",
+        "PIL.DdsImagePlugin",
+    }
 
-    path = "some/path"
+    assert len(supported_formats) == len(
+        ImageFormats
+    ), "Test not accounting for all supported formats"
 
-    with patch("image_viewer.image.cache.stat", return_value=MockStatResult(byte_size)):
-        # Empty
-        assert not image_cache.image_cache_still_fresh(path)
+    mock_import = MagicMock()
+    mock_register_open = MagicMock()
+    mock_image_module = MagicMock()
+    mock_image_module._initialized = 0
 
-        image_cache[path] = entry
-        assert image_cache.image_cache_still_fresh(path)
+    with (
+        patch("builtins.__import__", mock_import),
+        patch("image_viewer.util.PIL._Image", mock_image_module),
+        patch("image_viewer.util.PIL.register_open", mock_register_open),
+    ):
+        _preinit()
 
-    for error in [FileNotFoundError(), OSError()]:
-        with patch("image_viewer.image.cache.stat", side_effect=error):
-            assert not image_cache.image_cache_still_fresh(path)
+    mock_register_open.assert_called_once()
+
+    # 2 is PIL's marker for everything initialized
+    assert mock_image_module._initialized == 2
+
+    # Throw out irrelevant imports since some others happen during the call
+    imported_formats: set[str] = set(
+        imported_format
+        for inputs in mock_import.call_args_list
+        if (imported_format := inputs[0][0]) in supported_formats
+    )
+
+    assert supported_formats == imported_formats
+
+
+def test_preinit_already_initialized():
+    """Should do nothing since already initialized"""
+
+    mock_register_open = MagicMock()
+    mock_image_module = MagicMock()
+    mock_image_module._initialized = 2
+
+    with (
+        patch("image_viewer.util.PIL._Image", mock_image_module),
+        patch("image_viewer.util.PIL.register_open", mock_register_open),
+    ):
+        _preinit()
+
+    mock_register_open.assert_not_called()

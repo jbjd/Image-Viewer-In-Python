@@ -29,8 +29,6 @@ def save_image(
 
 def rotate_image(image: Image, angle: int) -> Image:
     """Rotates an image with the highest quality"""
-    if angle == 0:
-        return image
     return image.rotate(angle, Resampling.LANCZOS, expand=True)
 
 
@@ -153,12 +151,12 @@ def _preinit() -> None:
     if _Image._initialized > 0:
         return
 
-    __import__("PIL.AvifImagePlugin", globals(), locals(), ())
-    __import__("PIL.JpegImagePlugin", globals(), locals(), ())
-    __import__("PIL.GifImagePlugin", globals(), locals(), ())
-    __import__("PIL.PngImagePlugin", globals(), locals(), ())
-    __import__("PIL.WebPImagePlugin", globals(), locals(), ())
-    __import__("PIL.DdsImagePlugin", globals(), locals(), ())
+    __import__("PIL.AvifImagePlugin", globals(), {}, ())
+    __import__("PIL.JpegImagePlugin", globals(), {}, ())
+    __import__("PIL.GifImagePlugin", globals(), {}, ())
+    __import__("PIL.PngImagePlugin", globals(), {}, ())
+    __import__("PIL.WebPImagePlugin", globals(), {}, ())
+    __import__("PIL.DdsImagePlugin", globals(), {}, ())
 
     def new_jpeg_factory(fp: IO[bytes], filename=None) -> JpegImageFile:
         return JpegImageFile(fp, filename)

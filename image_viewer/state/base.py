@@ -8,4 +8,4 @@ class StateBase(ABC):
 
     @abstractmethod
     def reset(self) -> None:
-        pass
+        """Reset state to default values"""

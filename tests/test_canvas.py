@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL.Image import Image
@@ -99,3 +99,33 @@ def test_drag(
         mock_move.assert_called_once_with(
             canvas.image_display.id, *expected_move_amount
         )
+
+
+def test_get_button_id(canvas: CustomCanvas, example_image: Image):
+    """Should keep track of buttons and correctly return their id"""
+
+    mock_button = MagicMock()
+    mock_button.id = 1234
+    button_name: str = "my_button"
+
+    canvas.create_button(mock_button, button_name, 0, 0, PhotoImage(example_image))
+
+    assert canvas.get_button_id(button_name) == mock_button.id
+
+
+def test_mock_button_click(canvas: CustomCanvas, example_image: Image):
+    """Should call on_click and on_leave functions of button"""
+
+    mock_button = MagicMock()
+    button_name: str = "my_button"
+    mock_on_click = MagicMock()
+    mock_on_leave = MagicMock()
+    mock_button.on_click = mock_on_click
+    mock_button.on_leave = mock_on_leave
+
+    canvas.create_button(mock_button, button_name, 0, 0, PhotoImage(example_image))
+
+    canvas.mock_button_click(button_name)
+
+    mock_on_click.assert_called_once_with(None)
+    mock_on_leave.assert_called_once_with(None)

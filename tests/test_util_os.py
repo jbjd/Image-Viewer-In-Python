@@ -1,5 +1,5 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -12,15 +12,6 @@ from image_viewer.util.os import (
 )
 from tests.conftest import IMG_DIR
 from tests.test_util.mocks import MockWindll
-
-
-def _mock_new_OPENASINFO(pcszFile, pcszClass, oaifInFlags) -> MagicMock:
-    self = MagicMock()
-    self.pcszFile = pcszFile
-    self.pcszClass = pcszClass
-    self.oaifInFlags = oaifInFlags
-
-    return self
 
 
 @pytest.mark.parametrize("os_name", ["nt", "linux"])
