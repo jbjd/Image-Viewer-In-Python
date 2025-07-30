@@ -22,7 +22,7 @@ def file_manager(empty_image_cache: ImageCache) -> ImageFileManager:
 
 @pytest.fixture
 def partial_viewer(tk_app: Tk, image_loader: ImageLoader, file_manager) -> ViewerApp:
-    """A Viewer object thats not properly initialized.
+    """A Viewer object that's not properly initialized.
     Can be used to test standalone parts of the class"""
 
     def mock_viewer_init(self, *_):
