@@ -4,7 +4,7 @@ else
     PYTHON := python3
 endif
 
-ifeq ("$(wildcard $(.venv))", "")
+ifneq (,$(wildcard .venv))
     PYTHON_PREFIX := .venv
 else
     PYTHON_PREFIX := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
