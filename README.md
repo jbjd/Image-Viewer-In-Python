@@ -1,42 +1,47 @@
 # Personal Image Viewer
 
-A lightweight "Personal Image Viewer" written in Python 3.11
+A lightweight "Personal Image Viewer" written in Python 3.12
 
 ## Supported File Types
 
-PNG, JPEG, WebP, GIF, DDS
+PNG, JPEG, WebP, AVIF, GIF, DDS
 
 Animation support for PNG/WebP/GIF
 
 ## Description
 
 An image viewer with the intent of being clean and simple; Images are fit to your screen in the best quality without
-the clutter that other image viewers have. Currently includes a button for deletion, renaming a file,
-and file info, but more features might be added in the future. All buttons are on a transparent bar that comes and goes when you click.
+the clutter that other image viewers have.
 
-Please see the "todo" file for future plans. However, I don't always update it and will work on unlisted tasks as I feel the need. I made that file just as a place to put my ideas down.
+Features Include:
+* Renaming
+* Conversion between supported types
+* Deletion
+* Undoing rename/convert/delete
+* Drop via clipboard (Windows only)
+* Exporting image as base64
 
-Feel free to take this code and edit it however you like.
+Feel free to take this code and edit it however you like. Please don't use it for commercial purposes.
 
 # Instructions To Get It Running
 
-1. Have Python 3.11+ installed.
+1. Have Python 3.12.x installed.
 
 2. Linux Users: you will need to install libjpeg-turbo-official
 
 3. Install pip packages listed in requirements.txt, this can be done with "pip install -r requirements.txt".
 
-4. Use 'python3 viewer.py "C:/example/path/to/image.png"' to run it, or continue to convert it to an executable.
+4. Use 'python \_\_main\_\_.py "C:/example/path/to/image.png"' to run it, or continue to convert it to an executable.
 
 5. Install requirements to compile with "pip install -r requirements_compile.txt".
 
-6. Run the compile.py script as root. On Linux use sudo or on windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run "python3 compile.py -h" to list them.
+6. Run 'make install' or 'python compile.py' as root. On Linux use sudo or on Windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run 'python compile.py -h' to list them.
 
-7. To use it as an exe, go to an image file and right-click > select 'open with' > 'Choose another app' > select the exe file you just created.
+7. To use it as an exe on Windows, go to an image file and right-click > select 'open with' > 'Choose another app' > select the exe file you just created.
 
 # Development
 
-I am currently the only dev and tend to work on windows. I have a linux laptop that I periodically check things on, but due to this being a UI app, I can't cover everything with a unittest. Its possible I break linux compatibility from time to time, so be warned.
+I am currently the only dev and tend to work on Windows. I have a Linux laptop that I periodically check things on, but due to this being a UI app, I can't cover everything with a unit test. Its possible I break Linux compatibility from time to time, so be warned.
 
 # Other Info
 
