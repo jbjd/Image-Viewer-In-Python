@@ -23,7 +23,7 @@ install:
 	$(PYTHON_PATH) compile.py --standalone --strip --no-cleanup
 
 clean:
-	rm --preserve-root -Irf __main__.build/ build/ tmp/ *.egg-info/ .coverage compilation-report.xml nuitka-crash-report.xml
+	rm --preserve-root -Irf */__pycache__/ *.dist/ *.build/ build/ tmp*/ *.egg-info/ .mypy_cache/ .pytest_cache/ */ERROR.log *.exe .coverage compilation-report.xml nuitka-crash-report.xml
 
 test:
 	pytest --cov=image_viewer --cov-report term-missing
