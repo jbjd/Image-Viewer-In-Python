@@ -12,6 +12,7 @@ from image_viewer.image.file import magic_number_guess
         (b"GIF8", ImageFormats.GIF),
         (b"DDS ", ImageFormats.DDS),
         (b"\xff\xd8\xff\xe0", ImageFormats.JPEG),
+        (b"\xff\xd8\xff\xed", ImageFormats.JPEG),
         (b"ABCD", ImageFormats.AVIF),  # default to AVIF
     ],
 )
