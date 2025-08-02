@@ -34,7 +34,7 @@ Feel free to take this code and edit it however you like. Please don't use it fo
 
 5. Install requirements to compile with "pip install -r requirements_compile.txt".
 
-6. Run 'make install' or 'python compile.py' as root. On Linux use sudo or on Windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run 'python compile.py -h' to list them.
+6. Run 'make install' (recommended) or 'python compile.py' as root. On Linux use sudo or on Windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run 'python compile.py -h' to list them.
 
 7. To use it as an exe on Windows, go to an image file and right-click > select 'open with' > 'Choose another app' > select the exe file you just created.
 

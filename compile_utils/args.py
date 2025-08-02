@@ -1,10 +1,8 @@
 from argparse import REMAINDER, ArgumentParser, Namespace
 from enum import StrEnum
-from typing import Literal
 
+from compile_utils.constants import BUILD_INFO_FILE, REPORT_FILE
 from compile_utils.validation import raise_if_not_root
-
-_REPORT_NAME: str = "compilation-report.xml"
 
 
 class ConsoleMode(StrEnum):
@@ -64,7 +62,7 @@ class CompileArgumentParser(ArgumentParser):
         )
         self.add_argument_ext(
             "--report",
-            f"Adds {NuitkaArgs.REPORT.with_value(_REPORT_NAME)} flag to nuitka.",
+            f"Adds {NuitkaArgs.REPORT.with_value(REPORT_FILE)} flag to nuitka.",
         )
         self.add_argument_ext(
             "--debug",
@@ -72,7 +70,7 @@ class CompileArgumentParser(ArgumentParser):
                 "Doesn't move compiled code to install path, doesn't check for root, "
                 "doesn't cleanup, doesn't pass Go, doesn't collect $200, adds "
                 f"{NuitkaArgs.WARN_IMPLICIT_EXCEPTIONS}, {NuitkaArgs.WARN_UNUSUAL_CODE}"
-                f", {NuitkaArgs.REPORT.with_value(_REPORT_NAME)}, and "
+                f", {NuitkaArgs.REPORT.with_value(REPORT_FILE)}, and "
                 f"{NuitkaArgs.WINDOWS_CONSOLE_MODE}={ConsoleMode.FORCE}"
                 " flags to nuitka."
             ),
@@ -98,13 +96,16 @@ class CompileArgumentParser(ArgumentParser):
             "Does not delete temporary files used for compilation/installation.",
             is_debug=True,
         )
+        self.add_argument_ext(
+            "--build-info-file", f"Includes {BUILD_INFO_FILE} with distribution."
+        )
         self.add_argument("args", nargs=REMAINDER)
 
     def add_argument_ext(
         self,
         name: str,
         help: str,
-        default: Literal[False] | str = False,
+        default: str | bool = False,
         is_debug: bool = False,
         is_standalone_only: bool = False,
     ) -> None:
@@ -116,7 +117,7 @@ class CompileArgumentParser(ArgumentParser):
         if is_standalone_only:
             help += " This option only works for standalone builds."
 
-        action: str = "store_true" if default is False else "store"
+        action: str = "store_true" if isinstance(default, bool) else "store"
 
         super().add_argument(name, help=help, action=action, default=default)
 
@@ -148,7 +149,7 @@ class CompileArgumentParser(ArgumentParser):
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""
         if user_args.report or user_args.debug:
-            nuitka_args.append(NuitkaArgs.REPORT.with_value(_REPORT_NAME))
+            nuitka_args.append(NuitkaArgs.REPORT.with_value(REPORT_FILE))
             if user_args.debug:
                 nuitka_args += [
                     NuitkaArgs.WARN_IMPLICIT_EXCEPTIONS,
