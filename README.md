@@ -14,9 +14,8 @@ An image viewer with the intent of being clean and simple; Images are fit to you
 the clutter that other image viewers have.
 
 Features Include:
-* Renaming
-* Conversion between supported types
-* Deletion
+* Optimized JPEG decoding with turbojpeg
+* Renaming/Conversion/Deletion of images
 * Undoing rename/convert/delete
 * Drop via clipboard (Windows only)
 * Exporting image as base64

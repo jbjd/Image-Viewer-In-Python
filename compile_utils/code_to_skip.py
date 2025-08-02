@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from personal_python_ast_optimizer.regex.classes import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
+from turbojpeg import MCU_HEIGHT, MCU_SIZE, MCU_WIDTH, TJERR_WARNING
 
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from image_viewer.animation.frame import DEFAULT_ANIMATION_SPEED_MS
@@ -312,24 +313,6 @@ vars_to_skip: dict[str, set[str]] = {
     "numpy._core.records": {"__all__", "__module__", "numfmt"},
     "numpy._core.shape_base": {"__all__", "array_function_dispatch"},
     "numpy.exceptions": {"__all__", "_is_loaded"},
-    "turbojpeg": {
-        "__author__",
-        "__buffer_size_YUV2",
-        "__compressFromYUV",
-        "__decompressToYUVPlanes",
-        "__decompressToYUV2",
-        "__version__",
-        "TJERR_FATAL",
-        "TJCS_CMYK",
-        "TJPF_ABGR",
-        "TJPF_ARGB",
-        "TJPF_BGRX",
-        "TJPF_BGRA",
-        "TJPF_CMYK",
-        "TJPF_XBGR",
-        "TJFLAG_LIMITSCANS",
-        "TJFLAG_STOPONWARNING",
-    },
     "PIL.features": {"codecs", "features"},
     "PIL.Image": {"MIME", "TYPE_CHECKING"},
     "PIL.ImageDraw": {"Outline", "TYPE_CHECKING"},
@@ -341,6 +324,25 @@ vars_to_skip: dict[str, set[str]] = {
     "PIL.JpegImagePlugin": {"TYPE_CHECKING", "format_description"},
     "PIL.PngImagePlugin": {"TYPE_CHECKING", "format_description"},
     "PIL.WebPImagePlugin": {"format_description"},
+    "turbojpeg": {
+        "__author__",
+        "__buffer_size_YUV2",
+        "__compressFromYUV",
+        "__decompressToYUVPlanes",
+        "__decompressToYUV2",
+        "__version__",
+        "DEFAULT_LIB_PATHS",
+        "TJERR_FATAL",
+        "TJCS_CMYK",
+        "TJPF_ABGR",
+        "TJPF_ARGB",
+        "TJPF_BGRX",
+        "TJPF_BGRA",
+        "TJPF_CMYK",
+        "TJPF_XBGR",
+        "TJFLAG_LIMITSCANS",
+        "TJFLAG_STOPONWARNING",
+    },
 }
 
 if os.name == "nt":
@@ -431,10 +433,7 @@ from_imports_to_skip: dict[str, set[str]] = {
     "PIL.JpegImagePlugin": {"deprecate"},
 }
 
-dict_keys_to_skip: dict[str, set[str]] = {
-    "PIL.features": {"tkinter"},
-    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()},
-}
+dict_keys_to_skip: dict[str, set[str]] = {"PIL.features": {"tkinter"}}
 
 decorators_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},
@@ -487,7 +486,13 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
             "OAIF_EXEC": _OAIF_EXEC,
             "OAIF_HIDE_REGISTRATION": _OAIF_HIDE_REGISTRATION,
             "TEXT_RGB": TEXT_RGB,
-        }
+        },
+        "turbojpeg": {
+            "MCU_HEIGHT": MCU_HEIGHT,
+            "MCU_SIZE": MCU_SIZE,
+            "MCU_WIDTH": MCU_WIDTH,
+            "TJERR_WARNING": TJERR_WARNING,
+        },
     },
 )
 
@@ -713,6 +718,13 @@ from collections import namedtuple""",
                 pattern=r"_Frame\(NamedTuple\)",
                 replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
             ),
+        ],
+        "turbojpeg": [
+            RegexReplacement(
+                r"DEFAULT_LIB_PATHS\[platform\.system\(\)\]",
+                str(turbojpeg_platforms[platform.system()]),
+                count=1,
+            )
         ],
     },
 )
