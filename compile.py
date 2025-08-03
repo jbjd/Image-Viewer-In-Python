@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import Namespace
 from importlib import import_module
+from importlib.metadata import version as get_module_version
 from subprocess import Popen
 from typing import Final
 
@@ -13,6 +14,7 @@ from personal_compile_tools.file_operations import (
     delete_folders,
     get_folder_size,
 )
+from personal_compile_tools.requirements import parse_requirements_file
 
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
@@ -22,6 +24,7 @@ from compile_utils.cleaner import (
     strip_files,
     warn_unused_code_skips,
 )
+from compile_utils.constants import BUILD_INFO_FILE
 from compile_utils.module_dependencies import module_dependencies, modules_to_skip
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
@@ -41,7 +44,7 @@ BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
 EXECUTABLE_EXT: Final[str] = "exe" if os.name == "nt" else "bin"
 EXECUTABLE_NAME: Final[str] = f"viewer.{EXECUTABLE_EXT}"
 DEFAULT_INSTALL_PATH: str
-DATA_FILE_PATHS: list[str]
+DATA_FILE_PATHS: list[str] = ["config.ini"]
 
 if os.name == "nt":
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
@@ -49,8 +52,6 @@ if os.name == "nt":
 else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]
-
-DATA_FILE_PATHS.append("config.ini")
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
@@ -135,6 +136,16 @@ try:
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_file(old_path, new_path)
+
+    if args.build_info_file:
+        with open(os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w") as fp:
+            fp.write(f"OS: {os.name}\n")
+            fp.write(f"Python: {sys.version}\n")
+            fp.write("Dependencies:\n")
+            for requirement in parse_requirements_file("requirements.txt"):
+                name: str = requirement.name
+                fp.write(f"\t{name}: {get_module_version(name)}\n")
+            fp.write(f"Arguments: {args}\n")
 
     if is_standalone:
         clean_tk_files(COMPILE_DIR)
