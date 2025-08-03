@@ -1,4 +1,4 @@
-from argparse import REMAINDER, ArgumentParser, Namespace
+from argparse import ArgumentParser, Namespace
 from enum import StrEnum
 
 from compile_utils.constants import BUILD_INFO_FILE, REPORT_FILE
@@ -99,7 +99,6 @@ class CompileArgumentParser(ArgumentParser):
         self.add_argument_ext(
             "--build-info-file", f"Includes {BUILD_INFO_FILE} with distribution."
         )
-        self.add_argument("args", nargs=REMAINDER)
 
     def add_argument_ext(
         self,
@@ -126,12 +125,14 @@ class CompileArgumentParser(ArgumentParser):
         self, modules_to_skip: list[str]
     ) -> tuple[Namespace, list[str]]:
         """Returns Namespace of user arguments and string of args to pass to nuitka"""
-        user_args, nuitka_args = super().parse_known_args()
-        self._validate_args(nuitka_args, user_args.debug)
+        args, nuitka_args = super().parse_known_args()
+        self._validate_args(nuitka_args, args.debug)
 
-        nuitka_args = self._expand_nuitka_args(user_args, nuitka_args, modules_to_skip)
+        # Preserve just what the user inputted since this list will get expanded
+        args.user_nuitka_args = nuitka_args[:]
+        nuitka_args = self._expand_nuitka_args(args, nuitka_args, modules_to_skip)
 
-        return user_args, nuitka_args
+        return args, nuitka_args
 
     def _validate_args(self, nuitka_args: list[str], debug: bool) -> None:
         """Validates root privilege and no unknown arguments present"""
@@ -144,22 +145,22 @@ class CompileArgumentParser(ArgumentParser):
 
     @staticmethod
     def _expand_nuitka_args(
-        user_args: Namespace, nuitka_args: list[str], modules_to_skip: list[str]
+        args: Namespace, nuitka_args: list[str], modules_to_skip: list[str]
     ) -> list[str]:
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""
-        if user_args.report or user_args.debug:
+        if args.report or args.debug:
             nuitka_args.append(NuitkaArgs.REPORT.with_value(REPORT_FILE))
-            if user_args.debug:
+            if args.debug:
                 nuitka_args += [
                     NuitkaArgs.WARN_IMPLICIT_EXCEPTIONS,
                     NuitkaArgs.WARN_UNUSUAL_CODE,
                 ]
 
-        if not user_args.debug:
+        if not args.debug:
             nuitka_args.append(NuitkaArgs.DEPLOYMENT)
 
-            if not user_args.no_cleanup:
+            if not args.no_cleanup:
                 nuitka_args.append(NuitkaArgs.REMOVE_OUTPUT)
 
         if NuitkaArgs.STANDALONE in nuitka_args:
@@ -175,7 +176,7 @@ class CompileArgumentParser(ArgumentParser):
         ):
             nuitka_args.append(
                 NuitkaArgs.WINDOWS_CONSOLE_MODE.with_value(
-                    ConsoleMode.FORCE if user_args.debug else ConsoleMode.DISABLE
+                    ConsoleMode.FORCE if args.debug else ConsoleMode.DISABLE
                 )
             )
 

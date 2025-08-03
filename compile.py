@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import Namespace
 from importlib import import_module
+from importlib.metadata import version as get_module_version
 from subprocess import Popen
 from typing import Final
 
@@ -13,6 +14,7 @@ from personal_compile_tools.file_operations import (
     delete_folders,
     get_folder_size,
 )
+from personal_compile_tools.requirements import parse_requirements_file
 
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
@@ -137,7 +139,13 @@ try:
 
     if args.build_info_file:
         with open(os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w") as fp:
-            fp.write(f"{sys.version}\n")
+            fp.write(f"OS: {os.name}\n")
+            fp.write(f"Python: {sys.version}\n")
+            fp.write("Dependencies:\n")
+            for requirement in parse_requirements_file("requirements.txt"):
+                name: str = requirement.name
+                fp.write(f"\t{name}: {get_module_version(name)}\n")
+            fp.write(f"Arguments: {args}\n")
 
     if is_standalone:
         clean_tk_files(COMPILE_DIR)
