@@ -17,7 +17,7 @@ else
 endif
 
 build-os-util:
-	gcc image_viewer/c_extensions/util/os_nt.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_PREFIX)/libs/ -I$(PYTHOchoN_PREFIX)/include/ -Iimage_viewer/c_extensions/ -lpython312 -lshlwapi -loleaut32 -lole32 -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_nt.pyd -Wall -Werror
+	gcc image_viewer/c_extensions/util/os_nt.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_PREFIX)/libs/ -I$(PYTHON_PREFIX)/include/ -Iimage_viewer/c_extensions/ -lpython312 -lshlwapi -loleaut32 -lole32 -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_nt.pyd -Wall -Werror
 
 install:
 	$(PYTHON_PATH) compile.py --standalone --strip --no-cleanup
