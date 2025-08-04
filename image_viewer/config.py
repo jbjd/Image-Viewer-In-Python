@@ -84,9 +84,10 @@ def validate_keybind_or_default(keybind: str, default: str) -> str:
 
 def validate_hex_or_default(hex_code: str, default: str) -> str:
     """Returns hex_code if its in the valid hex format or default if not"""
-    if len(hex_code) == 7 and all(
-        c in "0123456789abcdefABCDEF" if index > 0 else c == "#"
-        for index, c in enumerate(hex_code)
+    if (
+        len(hex_code) == 7
+        and hex_code[0] == "#"
+        and all(hex_code[index] in "0123456789abcdefABCDEF" for index in range(1, 7))
     ):
         return hex_code
 

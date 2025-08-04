@@ -13,7 +13,7 @@ from image_viewer.config import (
 )
 from tests.conftest import WORKING_DIR
 
-DEFAULT = "default"
+_DEFAULT = "default"
 
 
 def test_config_reader():
@@ -58,31 +58,31 @@ def test_config_reader_int_fallback():
 @pytest.mark.parametrize(
     "keybind,expected_keybind",
     [
-        ("asdvbiu34uiyg", DEFAULT),
+        ("asdvbiu34uiyg", _DEFAULT),
         ("<Control-d>", "<Control-d>"),
-        ("<Control->", DEFAULT),
-        ("<F0>", DEFAULT),
+        ("<Control->", _DEFAULT),
+        ("<F0>", _DEFAULT),
         ("<F1>", "<F1>"),
         ("<F12>", "<F12>"),
-        ("<F13>", DEFAULT),
-        ("<F91>", DEFAULT),
+        ("<F13>", _DEFAULT),
+        ("<F91>", _DEFAULT),
     ],
 )
 def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
     """Should return original keybind or default if keybind was invalid"""
-    assert validate_keybind_or_default(keybind, DEFAULT) == expected_keybind
+    assert validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
 
 
 @pytest.mark.parametrize(
     "hex,expected_hex",
     [
-        ("asdvbiu34uiyg", DEFAULT),
+        ("asdvbiu34uiyg", _DEFAULT),
         ("#010101", "#010101"),
         ("#01ABEF", "#01ABEF"),
-        ("#01ABEG", DEFAULT),
-        ("#01", DEFAULT),
+        ("#01ABEG", _DEFAULT),
+        ("#01", _DEFAULT),
     ],
 )
 def test_validate_hex_or_default(hex: str, expected_hex: str):
     """Should return original hex or default if it was invalid"""
-    assert validate_hex_or_default(hex, DEFAULT) == expected_hex
+    assert validate_hex_or_default(hex, _DEFAULT) == expected_hex
