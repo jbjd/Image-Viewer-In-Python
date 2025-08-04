@@ -1,6 +1,6 @@
 import os
 from time import perf_counter
-from image_viewer.util._os_nt import get_files_in_folder, is_hex
+from image_viewer.util._os_nt import get_files_in_folder
 
 # path = "A:/hh/Imaj"
 # files = get_files_in_folder(path)
@@ -19,14 +19,27 @@ hex_to_test = [
 
 
 # def is_hex(hex_code: str):
-#     return len(hex_code) == 7 and all(
-#         c in "0123456789abcdefABCDEF" if index > 0 else c == "#"
-#         for index, c in enumerate(hex_code)
+#     return (
+#         len(hex_code) == 7
+#         and hex_code[0] == "#"
+#         and all(hex_code[index] in "0123456789abcdefABCDEF" for index in range(1, 7))
 #     )
 
 
+# def validate_hex_or_default(hex_code: str, default: str) -> str:
+#     if is_hex(hex_code):
+#         return hex_code
+
+#     return default
+
+
 def validate_hex_or_default(hex_code: str, default: str) -> str:
-    if is_hex(hex_code):
+    """Returns hex_code if its in the valid hex format or default if not"""
+    if (
+        len(hex_code) == 7
+        and hex_code[0] == "#"
+        and all(hex_code[index] in "0123456789abcdefABCDEF" for index in range(1, 7))
+    ):
         return hex_code
 
     return default

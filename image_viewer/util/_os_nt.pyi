@@ -10,6 +10,9 @@ if os.name == "nt":
     def get_files_in_folder(folder: str) -> list[str]:
         """Finds all files in the folder, not checking subfolders"""
 
+    def get_byte_display(bytes: int) -> str:
+        """Given the byte count, return how it should be displayed on screen"""
+
     def open_with(hwnd: int, file: str) -> None:
         """Calls SHOpenWithDialog without registration option
         on provided file"""

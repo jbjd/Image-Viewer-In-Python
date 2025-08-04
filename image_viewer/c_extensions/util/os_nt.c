@@ -378,7 +378,8 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
     char *currentPosition = encodedBuffer;
 
-    if (encodedBuffer == NULL){
+    if (encodedBuffer == NULL)
+    {
         GlobalFree(hGlobal);
         return Py_None;
     }
@@ -409,38 +410,45 @@ static PyObject *get_byte_display(PyObject *self, PyObject *arg)
 
     long sizeInKb = sizeInBytes / kbSize;
 
-    char *format;
-    size_t byteDisplaySize;
     PyObject *pyDisplayStr;
 
     if (sizeInKb > kbSize)
     {
-        format = "%.2fmb";
-
-        float sizeInMb = sizeInKb / ((float)kbSize);
-        byteDisplaySize = snprintf(NULL, 0, format, sizeInMb) + 1;
-
-        char byteDisplay[byteDisplaySize];
-        sprintf(byteDisplay, format, sizeInMb);
-
-        pyDisplayStr = Py_BuildValue("s", byteDisplay);
+        double sizeInMb = sizeInKb / ((double)kbSize);
+        pyDisplayStr = PyUnicode_FromFormat("%f", sizeInMb);
     }
     else
     {
-        format = "%dkb";
-
-        byteDisplaySize = snprintf(NULL, 0, format, sizeInKb) + 1;
-
-        char byteDisplay[byteDisplaySize];
-        sprintf(byteDisplay, format, sizeInKb);
-
-        pyDisplayStr = Py_BuildValue("s", byteDisplay);
+        pyDisplayStr = PyUnicode_FromFormat("%dkb", sizeInKb);
     }
 
     return pyDisplayStr;
 }
 
+static PyObject *is_hex(PyObject *self, PyObject *arg)
+{
+    const char *hex = PyUnicode_AsUTF8(arg);
+
+    const size_t hexLen = strlen(hex);
+
+    if (hexLen != 7 || hex[0] != '#')
+    {
+        return Py_False;
+    }
+
+    for (int i = 1; i < 7; ++i)
+    {
+        if (!isxdigit(hex[i]))
+        {
+            return Py_False;
+        }
+    }
+
+    return Py_True;
+}
+
 static PyMethodDef os_methods[] = {
+    {"is_hex", is_hex, METH_O, NULL},
     {"get_byte_display", get_byte_display, METH_O, NULL},
     {"trash_file", trash_file, METH_VARARGS, NULL},
     {"restore_file", restore_file, METH_VARARGS, NULL},
