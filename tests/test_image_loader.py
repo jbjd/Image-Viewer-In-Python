@@ -8,7 +8,7 @@ from image_viewer.image.cache import ImageCacheEntry
 from image_viewer.image.loader import ImageLoader
 from tests.test_util.mocks import MockStatResult
 
-MODULE_PATH: str = "image_viewer.image.loader"
+_MODULE_PATH: str = "image_viewer.image.loader"
 
 
 def test_next_frame(image_loader: ImageLoader):
@@ -48,12 +48,10 @@ def test_load_image_error_on_open(image_loader: ImageLoader):
         assert image_loader.load_image("") is None
 
     with patch("builtins.open", mock_open(read_data=b"abcd")):
-        with patch(f"{MODULE_PATH}.open_image", side_effect=UnidentifiedImageError()):
+        with patch(f"{_MODULE_PATH}.open_image", side_effect=UnidentifiedImageError()):
             assert image_loader.load_image("") is None
 
 
-@patch("builtins.open", mock_open(read_data=b"abcd"))
-@patch(f"{MODULE_PATH}.open_image", lambda *_: Image())
 def test_load_image_in_cache(image_loader: ImageLoader):
     """When an image of the same name is in cache, don't load from disk"""
 
@@ -66,17 +64,21 @@ def test_load_image_in_cache(image_loader: ImageLoader):
     image_loader.image_cache["some/path"] = cached_data
 
     mock_os_stat = MockStatResult(image_byte_size)
-    with patch(f"{MODULE_PATH}.stat", lambda _: mock_os_stat):
+    with (
+        patch("builtins.open", mock_open(read_data=b"abcd")),
+        patch(f"{_MODULE_PATH}.open_image", lambda *_: Image()),
+        patch(f"{_MODULE_PATH}.stat", lambda _: mock_os_stat),
+    ):
         assert image_loader.load_image("some/path") is cached_image
 
 
 def test_load_image_resize_error(image_loader: ImageLoader):
     """Should get placeholder image when resize errors"""
     with patch(
-        f"{MODULE_PATH}.ImageResizer.get_image_fit_to_screen", side_effect=OSError
+        f"{_MODULE_PATH}.ImageResizer.get_image_fit_to_screen", side_effect=OSError
     ):
         with patch(
-            f"{MODULE_PATH}.get_placeholder_for_errored_image"
+            f"{_MODULE_PATH}.get_placeholder_for_errored_image"
         ) as mock_get_placeholder:
             image_loader._resize_or_get_placeholder()
             mock_get_placeholder.assert_called_once()

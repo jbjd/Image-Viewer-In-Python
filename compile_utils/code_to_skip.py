@@ -8,6 +8,7 @@ from collections import defaultdict
 
 from personal_python_ast_optimizer.regex.classes import RegexReplacement
 from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
+from turbojpeg import MCU_HEIGHT, MCU_SIZE, MCU_WIDTH, TJERR_WARNING
 
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from image_viewer.animation.frame import DEFAULT_ANIMATION_SPEED_MS
@@ -176,6 +177,7 @@ functions_to_skip: dict[str, set[str]] = {
         "version_codec",
         "version_feature",
     },
+    "PIL.AvifImagePlugin": {"get_codec_version", "register_mime"},
     "PIL.Image": {
         "__getstate__",
         "__repr__",
@@ -271,7 +273,6 @@ functions_to_skip: dict[str, set[str]] = {
         "wedge",
     },
     "PIL.ImageTk": {"_get_image_from_kw", "getimage"},
-    "PIL.DdsImagePlugin": {"register_decoder"},
     "PIL.GifImagePlugin": {"_save_netpbm", "getheader", "register_mime"},
     "PIL.JpegImagePlugin": {
         "_getexif",
@@ -285,21 +286,6 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL.TiffTags": {"_populate"},
 }
 
-if os.name == "nt":
-    functions_to_skip["winshell"] = {
-        "__repr__",
-        "CreateShortcut",
-        "dump",
-        "dumped",
-        "dumped_dict",
-        "dumped_flags",
-        "dumped_list",
-        "from_constants",
-        "indented",
-        "shortcut",
-        "structured_storage",
-        "wrapped",
-    }
 
 vars_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -323,10 +309,21 @@ vars_to_skip: dict[str, set[str]] = {
         "array_function_from_c_func_and_dispatcher",
     },
     "numpy._core.numerictypes": {"genericTypeRank"},
-    "numpy._core.overrides": {"array_function_like_doc", "ArgSpec"},
+    "numpy._core.overrides": {"ArgSpec", "array_function_like_doc"},
     "numpy._core.records": {"__all__", "__module__", "numfmt"},
     "numpy._core.shape_base": {"__all__", "array_function_dispatch"},
     "numpy.exceptions": {"__all__", "_is_loaded"},
+    "PIL.features": {"codecs", "features"},
+    "PIL.Image": {"MIME", "TYPE_CHECKING"},
+    "PIL.ImageDraw": {"Outline", "TYPE_CHECKING"},
+    "PIL.ImageFile": {"TYPE_CHECKING"},
+    "PIL.ImageFont": {"TYPE_CHECKING"},
+    "PIL.ImagePalette": {"TYPE_CHECKING"},
+    "PIL.ImageTk": {"TYPE_CHECKING"},
+    "PIL.GifImagePlugin": {"TYPE_CHECKING", "_Palette", "format_description"},
+    "PIL.JpegImagePlugin": {"TYPE_CHECKING", "format_description"},
+    "PIL.PngImagePlugin": {"TYPE_CHECKING", "format_description"},
+    "PIL.WebPImagePlugin": {"format_description"},
     "turbojpeg": {
         "__author__",
         "__buffer_size_YUV2",
@@ -334,6 +331,7 @@ vars_to_skip: dict[str, set[str]] = {
         "__decompressToYUVPlanes",
         "__decompressToYUV2",
         "__version__",
+        "DEFAULT_LIB_PATHS",
         "TJERR_FATAL",
         "TJCS_CMYK",
         "TJPF_ABGR",
@@ -345,26 +343,11 @@ vars_to_skip: dict[str, set[str]] = {
         "TJFLAG_LIMITSCANS",
         "TJFLAG_STOPONWARNING",
     },
-    "PIL.features": {"codecs", "features"},
-    "PIL.Image": {"MIME", "TYPE_CHECKING"},
-    "PIL.ImageDraw": {"Outline", "TYPE_CHECKING"},
-    "PIL.ImageFile": {"TYPE_CHECKING"},
-    "PIL.ImageFont": {"TYPE_CHECKING"},
-    "PIL.ImagePalette": {"TYPE_CHECKING"},
-    "PIL.ImageTk": {"TYPE_CHECKING"},
-    "PIL.GifImagePlugin": {"_Palette", "format_description", "TYPE_CHECKING"},
-    "PIL.JpegImagePlugin": {"format_description", "TYPE_CHECKING"},
-    "PIL.PngImagePlugin": {"format_description", "TYPE_CHECKING"},
-    "PIL.WebPImagePlugin": {"format_description"},
 }
 
 if os.name == "nt":
-    vars_to_skip["winshell"] = {
-        "bookmarks",
-        "FMTID_CUSTOM_DEFINED_PROPERTIES",
-        "FMTID_USER_DEFINED_PROPERTIES",
-        "my_documents",
-    }
+    vars_to_skip["PIL.AvifImagePlugin"] = {"DEFAULT_MAX_THREADS"}
+
 
 classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.actions.types": {"ABC"},
@@ -373,13 +356,9 @@ classes_to_skip: dict[str, set[str]] = {
     "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "PIL.DdsImagePlugin": {"DdsRgbDecoder"},
     "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
     "PIL.ImageFile": {
         "Parser",
-        "PyCodec",
-        "PyCodecState",
-        "PyDecoder",
         "PyEncoder",
         "StubHandler",
         "StubImageFile",
@@ -393,8 +372,6 @@ classes_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.state.zoom_state": {"StateBase"},
 }
 
-if os.name == "nt":
-    classes_to_skip["winshell"] = {"Shortcut"}
 
 from_imports_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -456,9 +433,7 @@ from_imports_to_skip: dict[str, set[str]] = {
     "PIL.JpegImagePlugin": {"deprecate"},
 }
 
-dict_keys_to_skip: dict[str, set[str]] = {
-    "turbojpeg": {k for k in turbojpeg_platforms if k != platform.system()}
-}
+dict_keys_to_skip: dict[str, set[str]] = {"PIL.features": {"tkinter"}}
 
 decorators_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},
@@ -499,9 +474,6 @@ module_imports_to_skip: dict[str, set[str]] = {
     "numpy._core.umath": {"numpy"},
 }
 
-if os.name == "nt":
-    module_imports_to_skip["winshell"] = {"__winshell_version__"}
-
 
 constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
@@ -514,7 +486,13 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
             "OAIF_EXEC": _OAIF_EXEC,
             "OAIF_HIDE_REGISTRATION": _OAIF_HIDE_REGISTRATION,
             "TEXT_RGB": TEXT_RGB,
-        }
+        },
+        "turbojpeg": {
+            "MCU_HEIGHT": MCU_HEIGHT,
+            "MCU_SIZE": MCU_SIZE,
+            "MCU_WIDTH": MCU_WIDTH,
+            "TJERR_WARNING": TJERR_WARNING,
+        },
     },
 )
 
@@ -741,26 +719,13 @@ from collections import namedtuple""",
                 replacement="_Frame(namedtuple('_Frame', ['im', 'bbox', 'encoderinfo']))",  # noqa E501
             ),
         ],
-        "send2trash.__init__": [remove_all_re],
-        "send2trash.win.__init__": [remove_all_re],
-        # Fix issue with autoflake
-        "send2trash.compat": [
+        "turbojpeg": [
             RegexReplacement(
-                pattern="^.*$",
-                replacement=(
-                    """
-text_type = str
-binary_type = bytes
-from collections.abc import Iterable
-iterable_type = Iterable"""
-                    + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
-                ),
-                flags=re.DOTALL,
+                r"DEFAULT_LIB_PATHS\[platform\.system\(\)\]",
+                str(turbojpeg_platforms[platform.system()]),
                 count=1,
             )
         ],
-        # We don't use pathlib's Path, remove support for it
-        "send2trash.util": [RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")],
     },
 )
 if os.name == "nt":
@@ -770,10 +735,46 @@ if os.name == "nt":
             flags=re.DOTALL,
         )
     )
-
-    regex_to_apply_py["winshell"] = [
-        RegexReplacement("try:.*?basestring = str", "basestring=str", flags=re.DOTALL),
-        RegexReplacement("try:.*?unicode = str", "unicode=str", flags=re.DOTALL),
+    regex_to_apply_py["PIL.AvifImagePlugin"] = [
+        RegexReplacement(
+            r"def _get_default_max_threads\(\).*?or 1",
+            "def _get_default_max_threads():return os.cpu_count() or 1",
+            flags=re.DOTALL,
+            count=1,
+        )
+    ]
+else:
+    regex_to_apply_py["send2trash.__init__"] = [remove_all_re]
+    regex_to_apply_py["send2trash.compat"] = [  # Fix issue with autoflake
+        RegexReplacement(
+            pattern="^.*$",
+            replacement=(
+                """
+text_type = str
+binary_type = bytes
+from collections.abc import Iterable
+iterable_type = Iterable"""
+                + ("" if os.name == "nt" else "\nimport os\nenvironb = os.environb")
+            ),
+            flags=re.DOTALL,
+            count=1,
+        ),
+    ]
+    regex_to_apply_py["send2trash.exceptions"] = [
+        RegexReplacement(
+            pattern="^.*$",
+            replacement="""
+import errno
+class TrashPermissionError(PermissionError):
+    def __init__(self, filename):
+        PermissionError.__init__(self, errno.EACCES, "Permission denied", filename)""",
+            flags=re.DOTALL,
+            count=1,
+        )
+    ]
+    # We don't use pathlib's Path, remove support for it
+    regex_to_apply_py["send2trash.util"] = [
+        RegexReplacement(pattern=r".*\[path\.__fspath__\(\).*\]")
     ]
 
 # Use platform since that what these modules check

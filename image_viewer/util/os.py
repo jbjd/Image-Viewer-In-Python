@@ -10,36 +10,28 @@ from typing import Final
 if os.name == "nt":
     from ctypes import windll  # type: ignore
 
-    from send2trash.win.legacy import send2trash
-    from winshell import undelete, x_winshell
-
-    from util._os import get_files_in_folder as _get_files_in_folder
+    from util._os_nt import get_files_in_folder as _get_files_in_folder
+    from util._os_nt import restore_file as _restore_file
+    from util._os_nt import trash_file as _trash_file
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
-    def restore_from_bin(original_path: str) -> None:
-        try:
-            undelete(original_path)
-        except x_winshell as e:
-            raise OSError from e  # change error type so catching is not OS specific
-
     def get_files_in_folder(directory_path: str) -> Iterator[str]:
-        files: list[str] = _get_files_in_folder(os.path.join(directory_path, "*"))
+        files: list[str] = _get_files_in_folder(directory_path)
         return iter(files)
 
 else:  # assume linux for now
     from glob import glob
     from tkinter.messagebox import showinfo
 
-    from send2trash import send2trash
-    from send2trash.plat_other import HOMETRASH
+    from send2trash.plat_other import HOMETRASH, send2trash
 
     def OS_name_cmp(a: str, b: str) -> bool:
         return a < b
 
     # TODO: break this function into smaller bits
-    def restore_from_bin(original_path: str) -> None:
+    def _restore_file(original_path: str) -> None:
         name_start: int = original_path.rfind("/")
         name_and_suffix: str = (
             original_path if name_start == -1 else original_path[name_start + 1 :]
@@ -108,7 +100,18 @@ def get_byte_display(size_in_bytes: int) -> str:
 
 def trash_file(path: str) -> None:
     """OS generic way to send files to trash"""
-    send2trash(path)
+    if os.name == "nt":
+        _trash_file(0, path)
+    else:
+        send2trash(path)
+
+
+def restore_file(path: str) -> None:
+    """OS Generic way to restore a file from trash"""
+    if os.name == "nt":
+        _restore_file(0, path)
+    else:
+        _restore_file(path)
 
 
 def get_normalized_dir_name(path: str) -> str:

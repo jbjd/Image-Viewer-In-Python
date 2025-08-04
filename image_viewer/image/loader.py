@@ -14,6 +14,7 @@ from image.file import magic_number_guess
 from image.resizer import ImageResizer, ZoomedImageResult
 from state.rotation_state import RotationState
 from state.zoom_state import ZoomState
+from util.io import read_file_as_bytes
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image, rotate_image
 
@@ -106,14 +107,13 @@ class ImageLoader:
         """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
-            with open(path_to_image, "rb") as fp:
-                expected_format: str = magic_number_guess(fp.read(4))
+            image_bytes: bytes = read_file_as_bytes(path_to_image)
 
-                fp.seek(0)
-                image_bytes: BytesIO = BytesIO(fp.read())
-                image: Image = open_image(image_bytes, "r", (expected_format,))
+            image_bytes_io = BytesIO(image_bytes)
+            expected_format: str = magic_number_guess(image_bytes[:4])
+            image: Image = open_image(image_bytes_io, "r", (expected_format,))
 
-                return ReadImageResponse(image, expected_format)
+            return ReadImageResponse(image, expected_format)
         except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 

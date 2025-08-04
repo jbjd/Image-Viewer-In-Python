@@ -4,16 +4,26 @@ else
     PYTHON := python3
 endif
 
-PYTHON_PATH := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
+ifneq (,$(wildcard .venv))
+    PYTHON_PREFIX := .venv
+else
+    PYTHON_PREFIX := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
+endif
 
-build-dll:
-	gcc image_viewer/c_extensions/util/os.c -L$(PYTHON_PATH)/libs/ -I$(PYTHON_PATH)/include/ -lpython312 -O3 -s -shared -o image_viewer/util/_os.pyd -Wall -Werror
+ifeq ($(OS),Windows_NT)
+    PYTHON_PATH := $(PYTHON_PREFIX)/$(PYTHON)
+else
+    PYTHON_PATH := $(PYTHON_PREFIX)/bin/$(PYTHON)
+endif
+
+build-os-util:
+	gcc image_viewer/c_extensions/util/os_nt.c image_viewer/c_extensions/b64/cencode.c -L$(PYTHON_PREFIX)/libs/ -I$(PYTHON_PREFIX)/include/ -Iimage_viewer/c_extensions/ -lpython312 -lshlwapi -loleaut32 -lole32 -O3 -fno-signed-zeros -s -shared -o image_viewer/util/_os_nt.pyd -Wall -Werror
 
 install:
-	$(PYTHON) compile.py --standalone --strip --no-cleanup
+	$(PYTHON_PATH) compile.py --standalone --strip --no-cleanup
 
 clean:
-	rm --preserve-root -Irf __main__.build/ build/ tmp/ *.egg-info/ .coverage compilation-report.xml nuitka-crash-report.xml
+	rm --preserve-root -Irf */__pycache__/ *.dist/ *.build/ build/ tmp*/ *.egg-info/ .mypy_cache/ .pytest_cache/ */ERROR.log *.exe .coverage compilation-report.xml nuitka-crash-report.xml
 
 test:
 	pytest --cov=image_viewer --cov-report term-missing

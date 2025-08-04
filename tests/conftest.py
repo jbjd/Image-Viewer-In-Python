@@ -13,6 +13,7 @@ from tests.test_util.mocks import MockImage
 
 WORKING_DIR: str = os.path.dirname(__file__)
 IMG_DIR: str = os.path.join(WORKING_DIR, "example_images")
+EXAMPLE_IMG_PATH: str = os.path.join(IMG_DIR, "a.png")
 CODE_DIR: str = os.path.join(os.path.dirname(WORKING_DIR), "image_viewer")
 
 

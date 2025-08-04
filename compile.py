@@ -2,6 +2,7 @@ import os
 import sys
 from argparse import Namespace
 from importlib import import_module
+from importlib.metadata import version as get_module_version
 from subprocess import Popen
 from typing import Final
 
@@ -13,6 +14,7 @@ from personal_compile_tools.file_operations import (
     delete_folders,
     get_folder_size,
 )
+from personal_compile_tools.requirements import parse_requirements_file
 
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
@@ -22,6 +24,8 @@ from compile_utils.cleaner import (
     strip_files,
     warn_unused_code_skips,
 )
+from compile_utils.constants import BUILD_INFO_FILE
+from compile_utils.module_dependencies import module_dependencies, modules_to_skip
 from compile_utils.nuitka import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
@@ -40,7 +44,7 @@ BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
 EXECUTABLE_EXT: Final[str] = "exe" if os.name == "nt" else "bin"
 EXECUTABLE_NAME: Final[str] = f"viewer.{EXECUTABLE_EXT}"
 DEFAULT_INSTALL_PATH: str
-DATA_FILE_PATHS: list[str]
+DATA_FILE_PATHS: list[str] = ["config.ini"]
 
 if os.name == "nt":
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
@@ -49,16 +53,11 @@ else:
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     DATA_FILE_PATHS = ["icon/icon.png"]
 
-DATA_FILE_PATHS.append("config.ini")
-
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
-
-with open(os.path.join(WORKING_DIR, "skippable_imports.txt"), "r") as fp:
-    imports_to_skip: list[str] = fp.read().strip().split("\n")
 
 args: Namespace
 nuitka_args: list[str]
-args, nuitka_args = parser.parse_known_args(imports_to_skip)
+args, nuitka_args = parser.parse_known_args(modules_to_skip)
 is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 
 nuitka_args.append(NuitkaArgs.MINGW64)
@@ -77,13 +76,9 @@ try:
     # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
 
-    module_dependencies: list[str] = ["turbojpeg", "send2trash", "PIL", "numpy"]
-    if os.name == "nt":
-        module_dependencies.append("winshell")
-
     for module_name in module_dependencies:
-        modules_to_skip: set[str] = set(
-            i for i in imports_to_skip if i.startswith(module_name)
+        sub_modules_to_skip: set[str] = set(
+            i for i in modules_to_skip if i.startswith(module_name)
         )
 
         module = import_module(module_name)
@@ -95,10 +90,17 @@ try:
             site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
             lib_path: str = os.path.join(site_packages_path, "numpy.libs")
             copy_folder(lib_path, os.path.join(TMP_DIR, "numpy.libs"))
+        elif module_name == "PIL" and os.name == "posix":
+            site_packages_path = os.path.dirname(os.path.dirname(module.__file__))
+            lib_path = os.path.join(site_packages_path, "pillow.libs")
+            copy_folder(lib_path, os.path.join(TMP_DIR, "pillow.libs"))
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
-                os.path.dirname(module.__file__), TMP_DIR, module_name, modules_to_skip
+                os.path.dirname(module.__file__),
+                TMP_DIR,
+                module_name,
+                sub_modules_to_skip,
             )
         else:
             # its just one file
@@ -116,7 +118,7 @@ try:
 
     delete_folder(COMPILE_DIR)
     input_file: str = f"{TMP_DIR}/{FILE}.py"
-    default_python: str = "python" if os.name == "nt" else "python3"
+    default_python: str = "python" if os.name == "nt" else "bin/python3"
     python_path: str = f"{sys.exec_prefix}/{default_python}"
     process: Popen = start_nuitka_compilation(
         python_path, input_file, WORKING_DIR, nuitka_args
@@ -134,6 +136,16 @@ try:
         new_path = os.path.join(COMPILE_DIR, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_file(old_path, new_path)
+
+    if args.build_info_file:
+        with open(os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w") as fp:
+            fp.write(f"OS: {os.name}\n")
+            fp.write(f"Python: {sys.version}\n")
+            fp.write("Dependencies:\n")
+            for requirement in parse_requirements_file("requirements.txt"):
+                name: str = requirement.name
+                fp.write(f"\t{name}: {get_module_version(name)}\n")
+            fp.write(f"Arguments: {args}\n")
 
     if is_standalone:
         clean_tk_files(COMPILE_DIR)

@@ -105,4 +105,6 @@ def magic_number_guess(magic: bytes) -> str:
         case b"DDS ":
             return ImageFormats.DDS
         case _:
-            return ImageFormats.JPEG
+            return (
+                ImageFormats.JPEG if magic[:3] == b"\xff\xd8\xff" else ImageFormats.AVIF
+            )

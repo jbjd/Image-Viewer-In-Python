@@ -12,6 +12,7 @@ def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
     cmd_args: list[str] = (
         [
             python_path,
+            "-OO",
             "-m",
             "nuitka",
             input_file,

@@ -5,7 +5,7 @@ These are an alternative to MagicMock when certain ones are used often
 
 from __future__ import annotations
 
-from tkinter import Event, Tk
+from tkinter import Event, Misc
 from typing import Self
 from unittest.mock import MagicMock
 
@@ -27,11 +27,11 @@ class MockEvent(Event):
     """Mocks Tk Event"""
 
     def __init__(
-        self, widget: Tk | None = None, keysym_num: int = 0, x: int = 0, y: int = 0
+        self, widget: Misc | None = None, keysym_num: int = 0, x: int = 0, y: int = 0
     ) -> None:
         super().__init__()
 
-        self.widget: Tk | None = widget
+        self.widget: Misc = widget if widget is not None else MagicMock()
         self.keysym_num: int = keysym_num
         self.x: int = x
         self.y: int = y
@@ -75,20 +75,10 @@ class MockWindll:
     """Mock windll import. Instead of patching the specific function call,
     this allows windll itself to be patched which simplifies patching logic"""
 
-    __slots__ = ("shell32", "user32")
+    __slots__ = ("user32",)
 
     def __init__(self) -> None:
-        self.shell32 = _MockShell32()
         self.user32 = _MockUser32()
-
-
-class _MockShell32:
-    """Mocks shell32 in the windll library"""
-
-    __slots__ = ("SHOpenWithDialog",)
-
-    def __init__(self) -> None:
-        self.SHOpenWithDialog = MagicMock()
 
 
 class _MockUser32:
