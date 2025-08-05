@@ -26,17 +26,23 @@ Feel free to take this code and edit it however you like. Please don't use it fo
 
 1. Have Python 3.12.x installed.
 
-2. Linux Users: you will need to install libjpeg-turbo-official
+1. (Linux) Install *libjpeg-turbo-official*.
 
-3. Install pip packages listed in requirements.txt, this can be done with "pip install -r requirements.txt".
+1. Install *gcc* to compile \*.c into python module extensions and *make* to run Makefile commands.
 
-4. Use 'python \_\_main\_\_.py "C:/example/path/to/image.png"' to run it, or continue to convert it to an executable.
+1. Run 'make build-all' to build all \*.pyd/\*.so python module extensions.
 
-5. Install requirements to compile with "pip install -r requirements_compile.txt".
+1. Run 'pip install -r requirements.txt' to install python dependencies.
 
-6. Run 'make install' (recommended) or 'python compile.py' as root. On Linux use sudo or on Windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run 'python compile.py -h' to list them.
+1. Run 'python \_\_main\_\_.py "C:/example/path/to/image.png"' to start the program.
 
-7. To use it as an exe on Windows, go to an image file and right-click > select 'open with' > 'Choose another app' > select the exe file you just created.
+## Instructions To Compile
+
+1. Complete steps in [Instructions To Get It Running](#instructions-to-get-it-running)
+
+1. Run 'pip install -r requirements_compile.txt' to install python dependencies for compilation.
+
+1. Run 'make install' (recommended) or 'python compile.py' as root. On Linux use sudo or on Windows run your terminal as admin. This will compile the code and install it into a default directory. You can edit the install path, and many other things, with various flags you can pass to compile.py. Run 'python compile.py -h' to list them.
 
 # Development
 

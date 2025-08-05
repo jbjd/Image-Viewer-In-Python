@@ -20,8 +20,12 @@ ERROR.log
 *.cmd
 *.build/
 *.dist/
+tmp*/
 compilation-report.xml
 nuitka-crash-report.xml
-tmp*/
+
+# Compiled Python Extensions
+*.pyd
+*.so
 
 *.ipynb

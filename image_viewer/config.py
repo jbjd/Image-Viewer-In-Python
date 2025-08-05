@@ -7,6 +7,8 @@ import re
 from configparser import ConfigParser
 from enum import StrEnum
 
+from util._generic import is_hex
+
 DEFAULT_FONT: str = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
 DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
 DEFAULT_BACKGROUND_COLOR: str = "#000000"
@@ -84,11 +86,7 @@ def validate_keybind_or_default(keybind: str, default: str) -> str:
 
 def validate_hex_or_default(hex_code: str, default: str) -> str:
     """Returns hex_code if its in the valid hex format or default if not"""
-    if (
-        len(hex_code) == 7
-        and hex_code[0] == "#"
-        and all(hex_code[index] in "0123456789abcdefABCDEF" for index in range(1, 7))
-    ):
+    if is_hex(hex_code):
         return hex_code
 
     return default

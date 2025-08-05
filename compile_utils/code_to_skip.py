@@ -11,13 +11,7 @@ from turbojpeg import DEFAULT_LIB_PATHS as turbojpeg_platforms
 from turbojpeg import MCU_HEIGHT, MCU_SIZE, MCU_WIDTH, TJERR_WARNING
 
 from compile_utils.package_info import IMAGE_VIEWER_NAME
-from image_viewer.animation.frame import DEFAULT_ANIMATION_SPEED_MS
-from image_viewer.config import DEFAULT_BACKGROUND_COLOR, DEFAULT_MAX_ITEMS_IN_CACHE
 from image_viewer.constants import TEXT_RGB
-
-_JPEG_MAX_DIMENSION = 65_535
-_OAIF_EXEC = 4
-_OAIF_HIDE_REGISTRATION = 32
 
 functions_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
@@ -479,12 +473,10 @@ constants_to_fold: defaultdict[str, dict[str, int | str]] = defaultdict(
     dict,
     {
         IMAGE_VIEWER_NAME: {
-            "DEFAULT_ANIMATION_SPEED_MS": DEFAULT_ANIMATION_SPEED_MS,
-            "DEFAULT_BACKGROUND_COLOR": DEFAULT_BACKGROUND_COLOR,
-            "DEFAULT_MAX_ITEMS_IN_CACHE": DEFAULT_MAX_ITEMS_IN_CACHE,
-            "JPEG_MAX_DIMENSION": _JPEG_MAX_DIMENSION,
-            "OAIF_EXEC": _OAIF_EXEC,
-            "OAIF_HIDE_REGISTRATION": _OAIF_HIDE_REGISTRATION,
+            "DEFAULT_ANIMATION_SPEED_MS": 100,
+            "DEFAULT_BACKGROUND_COLOR": "#000000",
+            "DEFAULT_MAX_ITEMS_IN_CACHE": 20,
+            "JPEG_MAX_DIMENSION": 65_535,
             "TEXT_RGB": TEXT_RGB,
         },
         "turbojpeg": {

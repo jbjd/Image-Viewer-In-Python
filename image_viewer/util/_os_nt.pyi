@@ -1,3 +1,5 @@
+"""Utility functions that interact with the Windows API"""
+
 import os
 
 if os.name == "nt":
