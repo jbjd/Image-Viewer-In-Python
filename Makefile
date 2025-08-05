@@ -20,7 +20,7 @@ ifneq (,$(wildcard .venv))  # If .venv folder exists, use that
 		INSTALL_STEP_PREFIX = .venv
 	endif
 else
-    INSTALL_STEP_PREFIX := PYTHON_BASE_PREFIX
+    INSTALL_STEP_PREFIX := $(PYTHON_BASE_PREFIX)
 endif
 
 # Install step python may be venv or not
