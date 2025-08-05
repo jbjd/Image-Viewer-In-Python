@@ -7,7 +7,11 @@ else
 endif
 
 ifneq (,$(wildcard .venv))  # If .venv folder exists, use that
-    PYTHON_PREFIX := .venv
+	ifeq ($(OS),Windows_NT)
+		PYTHON_PREFIX = .venv/Scripts
+	else
+		PYTHON_PREFIX = .venv
+	endif
 else
     PYTHON_PREFIX := $(shell $(PYTHON) -c "import sys;print(sys.exec_prefix)")
 endif
