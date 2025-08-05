@@ -13,7 +13,6 @@ from turbojpeg import MCU_HEIGHT, MCU_SIZE, MCU_WIDTH, TJERR_WARNING
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from image_viewer.constants import TEXT_RGB
 
-
 functions_to_skip: dict[str, set[str]] = {
     "numpy.__init__": {
         "__dir__",

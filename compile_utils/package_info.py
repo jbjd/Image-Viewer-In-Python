@@ -2,7 +2,6 @@
 
 import os
 
-
 IMAGE_VIEWER_NAME: str = "image_viewer"
 
 # All modules that nuitka will need to follow imports to
