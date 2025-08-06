@@ -60,12 +60,11 @@ nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(modules_to_skip)
 is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 
-nuitka_args.append(NuitkaArgs.MINGW64)
 if os.name == "nt":
-    windows_icon_file_path: str = f"{CODE_DIR}/icon/icon.ico"
-    nuitka_args.append(
-        NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(windows_icon_file_path)
-    )
+    nuitka_args += [
+        NuitkaArgs.MINGW64,
+        NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(f"{CODE_DIR}/icon/icon.ico"),
+    ]
 
 validate_module_requirements(is_standalone)
 
