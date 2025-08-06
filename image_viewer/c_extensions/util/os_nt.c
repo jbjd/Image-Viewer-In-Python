@@ -32,17 +32,17 @@ static inline WINBOOL set_win_clipboard(const HWND hwnd, const UINT format, void
  *
  * Caller must free this string.
  */
-static inline char *normalize_str_for_file_op(const char *str)
+static inline char *normalize_str_for_file_op(const char *str, const Py_ssize_t size)
 {
-    int i = 0;
-    char *buffer = (char *)malloc((strlen(str) + 2) * sizeof(char));
+    Py_ssize_t i = 0;
+    char *buffer = (char *)malloc((size + 2) * sizeof(char));
 
-    for (; str[i] != '\0'; i++)
+    for (; i < size; i++)
     {
         buffer[i] = str[i] == '/' ? '\\' : str[i];
     }
-    buffer[i++] = '\0';
     buffer[i] = '\0';
+    buffer[++i] = '\0';
 
     return buffer;
 }
@@ -58,19 +58,28 @@ static inline void ensure_double_null_terminated(char *str)
     str[strLen + 1] = '\0';
 }
 
-static PyObject *trash_file(PyObject *self, PyObject *args)
+static PyObject *trash_file(PyObject *self, PyObject *const *args, Py_ssize_t argLen)
 {
-    HWND hwnd;
-    const char *pathRaw;
+    if (argLen != 2)
+    {
+        PyErr_SetString(PyExc_TypeError, "trash_file takes exactly two arguments");
+        return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "is", &hwnd, &pathRaw))
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+    const HWND hwnd = (HWND)PyLong_AsLong(args[0]);
+#pragma GCC diagnostic pop
+
+    Py_ssize_t rawPathSize;
+    const char *rawPath = PyUnicode_AsUTF8AndSize(args[1], &rawPathSize);
+    if (rawPath == NULL)
     {
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS;
 
-    char *path = normalize_str_for_file_op(pathRaw);
+    char *path = normalize_str_for_file_op(rawPath, rawPathSize);
 
     SHFILEOPSTRUCTA fileOp = {hwnd, FO_DELETE, path, NULL, FOF_ALLOWUNDO | FOF_FILESONLY | FOF_NOCONFIRMATION | FOF_NOERRORUI};
     SHFileOperationA(&fileOp);
@@ -82,12 +91,21 @@ static PyObject *trash_file(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-static PyObject *restore_file(PyObject *self, PyObject *args)
+static PyObject *restore_file(PyObject *self, PyObject *const *args, Py_ssize_t argLen)
 {
-    HWND hwnd;
-    const char *originalPathRaw;
+    if (argLen != 2)
+    {
+        PyErr_SetString(PyExc_TypeError, "restore_file takes exactly two arguments");
+        return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "is", &hwnd, &originalPathRaw))
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+    const HWND hwnd = (HWND)PyLong_AsLong(args[0]);
+#pragma GCC diagnostic pop
+
+    Py_ssize_t rawOriginalPathSize;
+    const char *rawOriginalPath = PyUnicode_AsUTF8AndSize(args[1], &rawOriginalPathSize);
+    if (rawOriginalPath == NULL)
     {
         return NULL;
     }
@@ -119,7 +137,7 @@ static PyObject *restore_file(PyObject *self, PyObject *args)
         goto fail_enum;
     }
 
-    char *originalPath = normalize_str_for_file_op(originalPathRaw);
+    char *originalPath = normalize_str_for_file_op(rawOriginalPath, rawOriginalPathSize);
     char *targetToRestore = NULL;
     DATE targetRecycledTime = 0;
 
@@ -270,17 +288,19 @@ end:
     return pyFiles;
 }
 
-static PyObject *open_with(PyObject *self, PyObject *args)
+static PyObject *open_with(PyObject *self, PyObject *const *args, Py_ssize_t argLen)
 {
-    const HWND hwnd;
-    PyObject *pyPath;
-
-    if (!PyArg_ParseTuple(args, "iU", &hwnd, &pyPath))
+    if (argLen != 2)
     {
+        PyErr_SetString(PyExc_TypeError, "open_with takes exactly two arguments");
         return NULL;
     }
 
-    wchar_t *path = PyUnicode_AsWideCharString(pyPath, 0);
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+    const HWND hwnd = (HWND)PyLong_AsLong(args[0]);
+#pragma GCC diagnostic pop
+
+    wchar_t *path = PyUnicode_AsWideCharString(args[1], 0);
     if (path == NULL)
     {
         return NULL;
@@ -306,12 +326,16 @@ static PyObject *drop_file_to_clipboard(PyObject *self, PyObject *const *args, P
         return NULL;
     }
 
-    #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
     const HWND hwnd = (HWND)PyLong_AsLong(args[0]);
-    #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 
     Py_ssize_t pathSize;
     const char *path = PyUnicode_AsUTF8AndSize(args[1], &pathSize);
+    if (path == NULL)
+    {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS;
 
@@ -382,7 +406,8 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
     char *currentPosition = encodedBuffer;
 
-    if (encodedBuffer == NULL){
+    if (encodedBuffer == NULL)
+    {
         GlobalFree(hGlobal);
         return Py_None;
     }
@@ -406,10 +431,10 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
 }
 
 static PyMethodDef os_methods[] = {
-    {"trash_file", trash_file, METH_VARARGS, NULL},
-    {"restore_file", restore_file, METH_VARARGS, NULL},
+    {"trash_file", (PyCFunction)trash_file, METH_FASTCALL, NULL},
+    {"restore_file", (PyCFunction)restore_file, METH_FASTCALL, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
-    {"open_with", open_with, METH_VARARGS, NULL},
+    {"open_with", (PyCFunction)open_with, METH_FASTCALL, NULL},
     {"drop_file_to_clipboard", (PyCFunction)drop_file_to_clipboard, METH_FASTCALL, NULL},
     {"convert_file_to_base64_and_save_to_clipboard", convert_file_to_base64_and_save_to_clipboard, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
