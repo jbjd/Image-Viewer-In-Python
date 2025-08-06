@@ -21,7 +21,7 @@
  *
  * Returns WINBOOL if successful. If it fails, call GetLastError for information.
  */
-static WINBOOL set_win_clipboard(const HWND hwnd, const UINT format, void *data)
+static inline WINBOOL set_win_clipboard(const HWND hwnd, const UINT format, void *data)
 {
     return !OpenClipboard(hwnd) || !EmptyClipboard() || !SetClipboardData(format, data) || !CloseClipboard();
 }
@@ -32,7 +32,7 @@ static WINBOOL set_win_clipboard(const HWND hwnd, const UINT format, void *data)
  *
  * Caller must free this string.
  */
-static char *normalize_str_for_file_op(const char *str)
+static inline char *normalize_str_for_file_op(const char *str)
 {
     int i = 0;
     char *buffer = (char *)malloc((strlen(str) + 2) * sizeof(char));
@@ -52,7 +52,7 @@ static char *normalize_str_for_file_op(const char *str)
  *
  * Caller responsible for ensuring provided string has enough space for one additional char.
  */
-static void ensure_double_null_terminated(char *str)
+static inline void ensure_double_null_terminated(char *str)
 {
     size_t strLen = strlen(str);
     str[strLen + 1] = '\0';
