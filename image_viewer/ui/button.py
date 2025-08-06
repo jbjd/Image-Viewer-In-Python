@@ -1,3 +1,5 @@
+"""Classes representing button UI elements"""
+
 from collections import namedtuple
 from tkinter import Event
 from typing import Callable

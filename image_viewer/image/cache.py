@@ -49,6 +49,7 @@ class ImageCache(OrderedDict[str, ImageCacheEntry]):
         self.max_items_in_cache: int = max_items_in_cache
 
     def pop_safe(self, image_path: str) -> ImageCacheEntry | None:
+        """Pops and returns image_path or None if it doesn't exist"""
         return self.pop(image_path, None)
 
     def image_cache_still_fresh(self, image_path: str) -> bool:

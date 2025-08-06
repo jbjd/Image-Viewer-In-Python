@@ -1,3 +1,5 @@
+"""Classes that represent the zoom state"""
+
 from constants import ZoomDirection
 from state.base import StateBase
 

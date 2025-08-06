@@ -1,3 +1,5 @@
+"""A script to compile the image viewer into an executable file via nuitka"""
+
 import os
 import sys
 from argparse import Namespace
@@ -14,7 +16,6 @@ from personal_compile_tools.file_operations import (
     delete_folders,
     get_folder_size,
 )
-from personal_compile_tools.requirements import parse_requirements_file
 
 from compile_utils.args import CompileArgumentParser, NuitkaArgs
 from compile_utils.cleaner import (
@@ -25,8 +26,12 @@ from compile_utils.cleaner import (
     warn_unused_code_skips,
 )
 from compile_utils.constants import BUILD_INFO_FILE
-from compile_utils.module_dependencies import module_dependencies, modules_to_skip
-from compile_utils.nuitka import start_nuitka_compilation
+from compile_utils.module_dependencies import (
+    get_normalized_module_name,
+    module_dependencies,
+    modules_to_skip,
+)
+from compile_utils.nuitka_ext import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
     validate_module_requirements,
@@ -76,7 +81,8 @@ try:
     # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
 
-    for module_name in module_dependencies:
+    for module in module_dependencies:
+        module_name: str = get_normalized_module_name(module)
         sub_modules_to_skip: set[str] = set(
             i for i in modules_to_skip if i.startswith(module_name)
         )
@@ -114,7 +120,7 @@ try:
     warn_unused_code_skips()
 
     if args.skip_nuitka:
-        exit(0)
+        sys.exit(0)
 
     delete_folder(COMPILE_DIR)
     input_file: str = f"{TMP_DIR}/{FILE}.py"
@@ -129,7 +135,7 @@ try:
     install_path: str = args.install_path if not args.debug else COMPILE_DIR
 
     if process.wait():
-        exit(1)
+        sys.exit(1)
 
     for data_file_path in DATA_FILE_PATHS:
         old_path = os.path.join(CODE_DIR, data_file_path)
@@ -138,12 +144,14 @@ try:
         copy_file(old_path, new_path)
 
     if args.build_info_file:
-        with open(os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w") as fp:
+        with open(
+            os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w", encoding="utf-8"
+        ) as fp:
             fp.write(f"OS: {os.name}\n")
             fp.write(f"Python: {sys.version}\n")
             fp.write("Dependencies:\n")
-            for requirement in parse_requirements_file("requirements.txt"):
-                name: str = requirement.name
+            for module in module_dependencies:
+                name: str = module.name
                 fp.write(f"\t{name}: {get_module_version(name)}\n")
             fp.write(f"Arguments: {args}\n")
 

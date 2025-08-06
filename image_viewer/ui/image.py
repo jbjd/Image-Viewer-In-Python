@@ -1,6 +1,4 @@
-"""
-Classes that represent images on a tkinter canvas
-"""
+"""Classes that represent images on a tkinter canvas"""
 
 from PIL.ImageTk import PhotoImage
 

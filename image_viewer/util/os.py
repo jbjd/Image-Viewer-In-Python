@@ -14,7 +14,7 @@ if os.name == "nt":
     from util._os_nt import restore_file as _restore_file
     from util._os_nt import trash_file as _trash_file
 
-    def OS_name_cmp(a: str, b: str) -> bool:
+    def os_name_cmp(a: str, b: str) -> bool:
         return windll.shlwapi.StrCmpLogicalW(a, b) < 0
 
     def get_files_in_folder(directory_path: str) -> Iterator[str]:
@@ -27,7 +27,7 @@ else:  # assume linux for now
 
     from send2trash.plat_other import HOMETRASH, send2trash
 
-    def OS_name_cmp(a: str, b: str) -> bool:
+    def os_name_cmp(a: str, b: str) -> bool:
         return a < b
 
     # TODO: break this function into smaller bits

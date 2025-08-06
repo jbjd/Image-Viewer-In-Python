@@ -1,3 +1,5 @@
+"""Base classes for state"""
+
 from abc import ABC, abstractmethod
 
 

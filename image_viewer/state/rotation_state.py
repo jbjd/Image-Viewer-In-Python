@@ -1,3 +1,5 @@
+"""Classes that represent the rotation state"""
+
 from constants import Rotation
 from state.base import StateBase
 

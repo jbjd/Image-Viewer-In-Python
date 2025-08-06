@@ -1,3 +1,5 @@
+"""Representations of frames of an animated image"""
+
 from PIL.Image import Image
 
 DEFAULT_ANIMATION_SPEED_MS: int = 100

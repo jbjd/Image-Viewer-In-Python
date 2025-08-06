@@ -1,3 +1,5 @@
+"""Classes representing a canvas UI element"""
+
 from tkinter import Canvas, Event, Tk
 
 from PIL.ImageTk import PhotoImage
@@ -9,7 +11,7 @@ from util.os import maybe_truncate_long_name
 
 
 class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
-    """Custom version of tkinter's canvas to support internal methods"""
+    """Extended version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
         "button_name_to_object",

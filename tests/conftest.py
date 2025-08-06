@@ -5,6 +5,7 @@ import pytest
 from PIL.Image import Image
 from PIL.Image import new as new_image
 
+from image_viewer.files.file_manager import ImageFileManager
 from image_viewer.image.cache import ImageCache
 from image_viewer.image.loader import ImageLoader
 from image_viewer.image.resizer import ImageResizer
@@ -30,6 +31,11 @@ def image_cache() -> ImageCache:
 @pytest.fixture(scope="session")
 def empty_image_cache() -> ImageCache:
     return ImageCache(0)
+
+
+@pytest.fixture
+def file_manager(empty_image_cache: ImageCache) -> ImageFileManager:
+    return ImageFileManager(EXAMPLE_IMG_PATH, empty_image_cache)
 
 
 @pytest.fixture

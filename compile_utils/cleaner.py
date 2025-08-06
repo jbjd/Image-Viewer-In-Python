@@ -38,18 +38,15 @@ from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import get_required_python_version
 
 if os.name == "nt":
-    separators = r"[\\/]"
+    SEPARATORS = r"[\\/]"
 else:
-    separators = r"[/]"
+    SEPARATORS = r"[/]"
 
 
 class MinifyUnparserExt(MinifyUnparser):
     """Extends parent to exclude some specific things only relevant to this codebase"""
 
     __slots__ = ()
-
-    def __init__(self) -> None:
-        super().__init__()
 
     def visit_If(self, node: ast.If) -> None:
         # Skip PIL's blocks about typechecking
@@ -64,6 +61,9 @@ class MinifyUnparserExt(MinifyUnparser):
 def clean_file_and_copy(
     path: str, new_path: str, module_name: str, module_import_path: str
 ) -> None:
+    """Given a python file path,
+    applies regexes/skips/minification and writes results to new_path"""
+
     with open(path, "r", encoding="utf-8") as fp:
         source: str = fp.read()
 
@@ -111,7 +111,7 @@ def move_files_to_tmp_and_clean(
     else:
         modules_to_skip_re = ""
 
-    for python_file in _files_in_dir_iter(source_dir, (".py", ".pyd", ".so")):
+    for python_file in _files_in_folder_iter(source_dir, (".py", ".pyd", ".so")):
         if (
             os.path.basename(python_file) == "__main__.py"
             and module_name != IMAGE_VIEWER_NAME
@@ -120,7 +120,7 @@ def move_files_to_tmp_and_clean(
 
         python_file = os.path.abspath(python_file)
         relative_path: str = python_file.replace(source_dir, "").strip("/\\")
-        module_import_path: str = sub(separators, ".", f"{module_name}.{relative_path}")
+        module_import_path: str = sub(SEPARATORS, ".", f"{module_name}.{relative_path}")
         module_import_path = module_import_path[:-3]  # chops .py
 
         if module_name != IMAGE_VIEWER_NAME:
@@ -164,7 +164,7 @@ def warn_unused_code_skips() -> None:
         (vars_to_skip, "variables"),
         (regex_to_apply_py, "with regex"),
     ):
-        for module in skips.keys():
+        for module in skips:
             warnings.warn(
                 f"Asked to skip {friendly_name} in module {module} "
                 "but it was not found"
@@ -194,7 +194,7 @@ def clean_tk_files(compile_dir: str) -> None:
     starting_new_line = RegexReplacement(pattern="^\n", count=1)
     whitespace_between_brackets = RegexReplacement(pattern="}\n}", replacement="}}")
 
-    for code_file in _files_in_dir_iter(compile_dir, (".tcl", ".tm")):
+    for code_file in _files_in_folder_iter(compile_dir, (".tcl", ".tm")):
         apply_regex_to_file(
             code_file,
             [
@@ -219,7 +219,7 @@ def strip_files(compile_dir: str) -> None:
     """Runs strip on all exe/dll files in provided dir"""
     EXIT_SUCCESS: int = 0
 
-    for strippable_file in _files_in_dir_iter(compile_dir, (".exe", ".dll", ".pyd")):
+    for strippable_file in _files_in_folder_iter(compile_dir, (".exe", ".dll", ".pyd")):
         result = subprocess.run(["strip", "--strip-all", strippable_file])
 
         if result.returncode != EXIT_SUCCESS:
@@ -254,5 +254,5 @@ def _get_tokens_to_skip_config(module_import_path: str) -> TokensConfig:
     )
 
 
-def _files_in_dir_iter(dir: str, ext_filter: tuple[str, ...]) -> Iterator[str]:
-    return iter(p for p in walk_folder(dir) if p.endswith(ext_filter))
+def _files_in_folder_iter(folder: str, ext_filter: tuple[str, ...]) -> Iterator[str]:
+    return iter(p for p in walk_folder(folder) if p.endswith(ext_filter))

@@ -4,7 +4,7 @@ from collections import namedtuple
 from typing import Iterable
 
 from constants import ImageFormats
-from util.os import OS_name_cmp
+from util.os import os_name_cmp
 
 
 class ImageName:
@@ -18,7 +18,7 @@ class ImageName:
         self.name: str = name
 
     def __lt__(self, other: "ImageName") -> bool:
-        return OS_name_cmp(self.name, other.name)
+        return os_name_cmp(self.name, other.name)
 
 
 class ImageSearchResult(namedtuple("ImageSearchResult", ["index", "found"])):
@@ -81,7 +81,7 @@ class ImageNameList(list[ImageName]):
             current_image = self[mid].name
             if target_image == current_image:
                 return ImageSearchResult(index=mid, found=True)
-            if OS_name_cmp(target_image, current_image):
+            if os_name_cmp(target_image, current_image):
                 high = mid - 1
             else:
                 low = mid + 1

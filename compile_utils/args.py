@@ -1,3 +1,5 @@
+"""Argument definition and parsing for compilation"""
+
 from argparse import ArgumentParser, Namespace
 from enum import StrEnum
 
@@ -32,6 +34,7 @@ class NuitkaArgs(StrEnum):
     SHOW_MEMORY = "--show-memory"
 
     def with_value(self, value: str) -> str:
+        """Returns the flag in the format {flag}={value}"""
         return f"{self}={value}"
 
 
@@ -103,7 +106,7 @@ class CompileArgumentParser(ArgumentParser):
     def add_argument_ext(
         self,
         name: str,
-        help: str,
+        help_text: str,
         default: str | bool = False,
         is_debug: bool = False,
         is_standalone_only: bool = False,
@@ -112,13 +115,13 @@ class CompileArgumentParser(ArgumentParser):
         Help text is expanded if is_debug or is_standalone_only are True.
         Infers if argument is store or store_true based on passed default."""
         if is_debug:
-            help += " This option is exposed for debugging."
+            help_text += " This option is exposed for debugging."
         if is_standalone_only:
-            help += " This option only works for standalone builds."
+            help_text += " This option only works for standalone builds."
 
         action: str = "store_true" if isinstance(default, bool) else "store"
 
-        super().add_argument(name, help=help, action=action, default=default)
+        super().add_argument(name, help=help_text, action=action, default=default)
 
     # for some reason mypy gets the super type wrong
     def parse_known_args(  # type: ignore

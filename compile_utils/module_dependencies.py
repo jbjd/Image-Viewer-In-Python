@@ -1,9 +1,23 @@
+"""Information on dependencies modules including:
+* Dependencies based on current OS
+* Modules that need to be explicitly included in standalone builds
+* Modules that are not needed in standalone builds"""
+
 import os
 
-module_dependencies: list[str] = ["turbojpeg", "PIL", "numpy"]
+from personal_compile_tools.requirements import Requirement, parse_requirements_file
 
-if os.name != "nt":
-    module_dependencies += ["send2trash"]
+module_dependencies: list[Requirement] = parse_requirements_file("requirements.txt")
+
+# Some modules can't be followed normally or need to
+# be checked explicitly
+modules_to_include: list[str] = [
+    "numpy._core._exceptions",
+    "util._generic",
+]
+
+if os.name == "nt":
+    modules_to_include += ["util._os_nt"]
 
 modules_to_skip: list[str] = [
     "argparse",
@@ -171,6 +185,7 @@ modules_to_skip: list[str] = [
     "urllib.request",
 ]
 
+
 if os.name == "nt":
     modules_to_skip += ["PIL._tkinter_finder", "selectors", "send2trash", "tempfile"]
 else:
@@ -180,3 +195,11 @@ else:
         "send2trash.plat_gio",
         "send2trash.win",
     ]
+
+
+def get_normalized_module_name(module: Requirement) -> str:
+    """Given the name used for pip install,
+    return the name used to import the module in python."""
+    module_name: str = module.name.lower()
+
+    return {"pillow": "PIL", "pyturbojpeg": "turbojpeg"}.get(module_name, module_name)

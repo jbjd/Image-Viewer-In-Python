@@ -1,10 +1,11 @@
-[MESSAGES CONTROL]
-disable=import-error,
-        import-outside-toplevel,
-        import-self,
-        no-name-in-module,
-        too-few-public-methods,
-        protected-access
+[MAIN]
 
-ignore=__main__.build,
-       tmp
+ignore=tmp
+ignore-paths=.+build/.*.py,.*.pyi
+
+[MESSAGES CONTROL]
+
+disable=import-error,
+        line-too-long,
+        protected-access,
+        too-few-public-methods

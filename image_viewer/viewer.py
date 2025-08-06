@@ -23,7 +23,13 @@ from util.os import show_info_popup
 from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
-    from util._os_nt import convert_file_to_base64_and_save_to_clipboard
+    from util._os_nt import (
+        convert_file_to_base64_and_save_to_clipboard,
+        drop_file_to_clipboard,
+        open_with,
+    )
+else:
+    from tkinter import PhotoImage as tkPhotoImage  # pylint: disable=ungrouped-imports
 
 
 class ViewerApp:
@@ -104,13 +110,10 @@ class ViewerApp:
             app.state("zoomed")
             app.wm_iconbitmap(default=os.path.join(path_to_exe_folder, "icon/icon.ico"))
         else:
-            from tkinter import PhotoImage as tkPhotoImage
-
             app.wm_iconphoto(
                 True,
                 tkPhotoImage(file=os.path.join(path_to_exe_folder, "icon/icon.png")),
             )
-            del tkPhotoImage
 
         return app
 
@@ -155,8 +158,6 @@ class ViewerApp:
         app.bind("<Alt-Down>", self.handle_rotate_image)
 
         if os.name == "nt":
-            from util._os_nt import drop_file_to_clipboard, open_with
-
             app.bind(
                 "<Control-b>",
                 lambda _: open_with(self.app_id, self.file_manager.path_to_image),
@@ -167,15 +168,12 @@ class ViewerApp:
                     self.app_id, self.file_manager.path_to_image
                 ),
             )
-            app.bind(
-                "<MouseWheel>",
-                lambda event: self.handle_mouse_wheel(event),
-            )
+            app.bind("<MouseWheel>", self.handle_mouse_wheel)
         else:
-            app.bind("<Button-4>", lambda event: self.handle_mouse_wheel(event))
-            app.bind("<Button-5>", lambda event: self.handle_mouse_wheel(event))
+            app.bind("<Button-4>", self.handle_mouse_wheel)
+            app.bind("<Button-5>", self.handle_mouse_wheel)
 
-    def _load_assets(
+    def _load_assets(  # pylint: disable=too-many-locals
         self,
         canvas: CustomCanvas,
         font_file: str,
@@ -188,7 +186,7 @@ class ViewerApp:
 
         font_family: str = font_file[:-4].lower()  # -4 chops extension .ttf/.otf
         # negative size makes font absolute for consistency with different monitors
-        FONT: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
+        font: str = f"{font_family} -{self._scale_pixels_to_height(18)}"
 
         button_icon_factory = ButtonIconFactory(icon_size)
 
@@ -196,7 +194,7 @@ class ViewerApp:
         # weird case, scale x offset by height, not width, since icon to its left
         # is scaled by height, small screen could overlap otherwise
         canvas.create_name_text(
-            self._scale_pixels_to_height(36), self._scale_pixels_to_height(16), FONT
+            self._scale_pixels_to_height(36), self._scale_pixels_to_height(16), font
         )
 
         button_x_offset: int = screen_width - icon_size
@@ -245,7 +243,7 @@ class ViewerApp:
             anchor="nw",
         )
         self.rename_entry: RenameEntry = RenameEntry(
-            self.app, canvas, rename_id, rename_window_width, font=FONT
+            self.app, canvas, rename_id, rename_window_width, font=font
         )
         self.rename_entry.bind("<Return>", self.rename_or_convert)
 
@@ -273,7 +271,7 @@ class ViewerApp:
 
     def handle_rotate_image(self, event: Event) -> None:
         """Rotates image, saves it to disk, and updates the display"""
-        if self._currently_animating():
+        if self.currently_animating():
             return
 
         match event.keysym_num:
@@ -296,12 +294,12 @@ class ViewerApp:
             self.show_topbar()
 
     def _only_for_this_window(
-        self, event: Event, callable: Callable[[Event | None], None]
+        self, event: Event, function_to_call: Callable[[Event | None], None]
     ) -> None:
         """Given a callable that accepts a tkinter Event,
         only call it if self.app is the target"""
         if event.widget is self.app:
-            callable(event)
+            function_to_call(event)
 
     def handle_key(self, event: Event) -> None:
         """Key binds that happen only on main app focus"""
@@ -345,12 +343,14 @@ class ViewerApp:
         self.exit()
 
     def handle_up_arrow(self, _: Event):
+        """Hides either dropdown or topbar in that order if either visible"""
         if self.canvas.is_widget_visible(self.dropdown.id):
             self.canvas.mock_button_click(ButtonName.DROPDOWN)
         else:
             self.hide_topbar()
 
     def handle_down_arrow(self, _: Event):
+        """Shows either topbar or dropdown in that order if either not visible"""
         if self.canvas.is_widget_visible(TkTags.TOPBAR):
             if not self.canvas.is_widget_visible(self.dropdown.id):
                 self.canvas.mock_button_click(ButtonName.DROPDOWN)
@@ -408,7 +408,7 @@ class ViewerApp:
         self, direction: ZoomDirection | None = None, rotation: Rotation | None = None
     ) -> None:
         """Starts new thread for loading zoomed image"""
-        if self._currently_animating():
+        if self.currently_animating():
             return
 
         self._start_image_load(self.load_zoomed_or_rotated_image, direction, rotation)
@@ -595,17 +595,17 @@ class ViewerApp:
 
         self.update_details_dropdown()
 
-    def _currently_animating(self) -> bool:
+    def currently_animating(self) -> bool:
         """Returns True when currently in an animation loop"""
         return self.animation_id != ""
 
     def animation_loop(self, ms_until_next_frame: int, ms_backoff: int) -> None:
         """Handles looping between animation frames"""
         self.animation_id = self.app.after(
-            ms_until_next_frame, self.show_next_frame, ms_backoff
+            ms_until_next_frame, self._show_next_frame, ms_backoff
         )
 
-    def show_next_frame(self, ms_backoff: int) -> None:
+    def _show_next_frame(self, ms_backoff: int) -> None:
         """Displays a frame on screen and loops to next frame after a delay"""
         start: float = perf_counter()
         frame: Frame | None = self.image_loader.get_next_frame()
@@ -623,7 +623,7 @@ class ViewerApp:
 
     def clear_image(self) -> None:
         """Clears all image data"""
-        if self._currently_animating():
+        if self.currently_animating():
             self.app.after_cancel(self.animation_id)
             self.animation_id = ""
         self.image_loader.reset_and_setup()

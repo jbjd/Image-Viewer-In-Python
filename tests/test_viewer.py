@@ -7,17 +7,10 @@ import pytest
 
 from image_viewer.constants import Key
 from image_viewer.files.file_manager import ImageFileManager
-from image_viewer.image.cache import ImageCache
 from image_viewer.image.loader import ImageLoader
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.viewer import ViewerApp
-from tests.conftest import EXAMPLE_IMG_PATH
 from tests.test_util.mocks import MockEvent
-
-
-@pytest.fixture
-def file_manager(empty_image_cache: ImageCache) -> ImageFileManager:
-    return ImageFileManager(EXAMPLE_IMG_PATH, empty_image_cache)
 
 
 @pytest.fixture

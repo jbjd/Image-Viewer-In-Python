@@ -1,3 +1,5 @@
+"""Classes for loading PIL images from disk"""
+
 from collections.abc import Callable
 from io import BytesIO
 from os import stat

@@ -8,6 +8,7 @@ from typing import IO
 from PIL import Image as _Image  # avoid name conflicts
 from PIL.Image import Image, Resampling, new, register_open
 from PIL.ImageDraw import ImageDraw
+from PIL.ImageFont import truetype
 from PIL.JpegImagePlugin import JpegImageFile
 
 from constants import TEXT_RGB
@@ -170,7 +171,7 @@ def _preinit() -> None:
     _Image._initialized = 2
 
 
-def _stop_unwanted_PIL_imports() -> None:
+def _stop_unwanted_PIL_imports() -> None:  # pylint: disable=invalid-name
     """Edits parts of PIL module to prevent excessive imports"""
     from PIL.JpegImagePlugin import MARKER, Skip
 
@@ -185,11 +186,9 @@ def _stop_unwanted_PIL_imports() -> None:
     _Image.preinit = _preinit
 
 
-def init_PIL(font_file: str, font_size: int) -> None:
+def init_PIL(font_file: str, font_size: int) -> None:  # pylint: disable=invalid-name
     """Sets up font and edit PIL's internal list of plugins to load"""
-    from PIL.ImageFont import truetype
 
     ImageDraw.font = truetype(font_file, font_size)
-    del truetype
 
     _stop_unwanted_PIL_imports()

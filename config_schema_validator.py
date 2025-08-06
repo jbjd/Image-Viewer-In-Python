@@ -1,3 +1,6 @@
+"""A simple script to valid the config.ini file
+to ensure it presents accurate examples"""
+
 from configparser import ConfigParser
 
 from schema import Schema

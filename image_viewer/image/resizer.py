@@ -1,3 +1,5 @@
+"""Classes for resizing PIL images"""
+
 import os
 from typing import Final
 
@@ -127,7 +129,9 @@ class ImageResizer:
         )
         return self._get_image_fit_to_screen_with_PIL(fromarray(image_as_array))
 
-    def _get_image_fit_to_screen_with_PIL(self, image: Image) -> Image:
+    def _get_image_fit_to_screen_with_PIL(  # pylint: disable=invalid-name
+        self, image: Image
+    ) -> Image:
         """Resizes image to screen with PIL"""
         image_width, image_height = image.size
         interpolation: Resampling = self.get_resampling(image_width, image_height)

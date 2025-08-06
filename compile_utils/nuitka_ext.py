@@ -4,7 +4,8 @@ import os
 from subprocess import Popen
 
 from compile_utils.code_to_skip import data_files_to_exclude, dlls_to_exclude
-from compile_utils.package_info import MODULES, STANDALONE_MODULES_TO_INCLUDE
+from compile_utils.module_dependencies import modules_to_include
+from compile_utils.package_info import MODULES
 
 
 def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
@@ -19,7 +20,7 @@ def get_base_cmd_args(python_path: str, input_file: str) -> list[str]:
             "--python-flag=-OO,no_annotations,no_warnings,static_hashes",
             "--output-filename=viewer",
         ]
-        + [f"--include-module={module}" for module in STANDALONE_MODULES_TO_INCLUDE]
+        + [f"--include-module={module}" for module in modules_to_include]
         + [f"--follow-import-to={module}" for module in MODULES]
         + [f"--noinclude-data-files={glob}" for glob in data_files_to_exclude]
         + [f"--noinclude-dlls={glob}" for glob in dlls_to_exclude]

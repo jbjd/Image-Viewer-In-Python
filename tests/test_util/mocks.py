@@ -87,4 +87,4 @@ class _MockUser32:
     __slots__ = ("MessageBoxW",)
 
     def __init__(self) -> None:
-        self.MessageBoxW = MagicMock()
+        self.MessageBoxW = MagicMock()  # pylint: disable=invalid-name
