@@ -102,8 +102,8 @@ def create_dropdown_image(text: str) -> Image:
     width: int = line_width + x_padding
     height: int = (line_height * line_count) + y_padding
 
-    DROPDOWN_RGBA: tuple[int, int, int, int] = (40, 40, 40, 170)
-    image: Image = new("RGBA", (width, height), DROPDOWN_RGBA)
+    dropdown_rgba: tuple[int, int, int, int] = (40, 40, 40, 170)
+    image: Image = new("RGBA", (width, height), dropdown_rgba)
 
     draw: ImageDraw = ImageDraw(image)
     draw.text((10, line_spacing), text, fill="white", spacing=line_spacing)
@@ -127,8 +127,8 @@ def get_placeholder_for_errored_image(
     # Placeholder is black with brownish line going diagonally across
     blank_image: Image = new("RGB", (screen_width, screen_height))
     draw: ImageDraw = ImageDraw(blank_image)
-    LINE_RGB: tuple[int, int, int] = (30, 20, 20)
-    draw.line((0, 0, screen_width, screen_height), LINE_RGB, width=100)
+    line_rgb: tuple[int, int, int] = (30, 20, 20)
+    draw.line((0, 0, screen_width, screen_height), line_rgb, width=100)
 
     # Write title
     w: int

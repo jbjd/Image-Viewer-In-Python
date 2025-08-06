@@ -1,15 +1,9 @@
 from tkinter import Tk
 
-import pytest
 from PIL.ImageTk import PhotoImage
 
 from image_viewer.ui.button import IconImages
 from image_viewer.ui.button_icon_factory import ButtonIconFactory
-
-
-@pytest.fixture(scope="module")
-def button_icon_factory() -> ButtonIconFactory:
-    return ButtonIconFactory(32)
 
 
 def _validate_icon_type(icons: IconImages):

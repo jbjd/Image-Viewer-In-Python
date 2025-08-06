@@ -117,8 +117,8 @@ class ImageFileManager:
         self.find_all_images()
 
     def get_cached_metadata(self, get_all_details: bool = True) -> str:
-        """Returns formatted string of various metadata on current image
-        Can raise KeyError on failure to get data"""
+        """Returns formatted string of cached metadata on current image.
+        Can raise KeyError on failure to get data."""
         image_info: ImageCacheEntry = self.image_cache[self.path_to_image]
         short_details: str = (
             f"Pixels: {image_info.width}x{image_info.height}\n"
@@ -148,7 +148,11 @@ class ImageFileManager:
         )
         return details
 
-    def get_image_details(self, PIL_Image: Image) -> str | None:
+    def get_image_details(
+        self, PIL_image: Image  # pylint: disable=invalid-name
+    ) -> str | None:
+        """Returns a formatted string of data from cache/OS call/PIL object
+        or None if failed to read from cache."""
         try:
             details: str = self.get_cached_metadata()
         except KeyError:
@@ -169,7 +173,7 @@ class ImageFileManager:
             pass  # don't include if can't get
 
         # Can add more here, just didn't see any others I felt were important enough
-        comment_bytes: bytes | None = PIL_Image.info.get("comment")
+        comment_bytes: bytes | None = PIL_image.info.get("comment")
         if comment_bytes is not None:
             # Windows can't show popup window with embedded null byte
             comment: str = comment_bytes.decode("utf-8").replace("\x00", "")

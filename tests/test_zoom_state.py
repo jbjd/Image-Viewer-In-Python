@@ -1,12 +1,5 @@
-import pytest
-
 from image_viewer.constants import ZoomDirection
 from image_viewer.state.zoom_state import ZoomState
-
-
-@pytest.fixture
-def zoom_state() -> ZoomState:
-    return ZoomState()
 
 
 def test_try_update_zoom_level(zoom_state: ZoomState):

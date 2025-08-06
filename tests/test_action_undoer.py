@@ -18,11 +18,6 @@ from image_viewer.actions.undoer import (
 _MODULE_PATH = "image_viewer.actions"
 
 
-@pytest.fixture
-def action_undoer() -> ActionUndoer:
-    return ActionUndoer()
-
-
 def test_cap():
     """Test that last X actions are preserved"""
     action_undoer = ActionUndoer(maxlen=4)

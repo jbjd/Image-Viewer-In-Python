@@ -71,7 +71,7 @@ def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
     image: Image = new_image("RGB", (10, 10))
 
     with patch("image_viewer.image.resizer.resize", return_value=image) as mock_resize:
-        assert type(image_resizer._get_image_fit_to_screen_with_PIL(image)) is Image
+        assert isinstance(image_resizer._get_image_fit_to_screen_with_PIL(image), Image)
         mock_resize.assert_called_once()
 
 

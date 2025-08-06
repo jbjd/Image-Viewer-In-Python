@@ -2,7 +2,6 @@
 A lightweight image viewer app to be called like "python image_viewer path/to/image"
 """
 
-import os
 import sys
 from types import TracebackType
 
@@ -14,9 +13,10 @@ def exception_hook(
     destination_path: str,
 ) -> None:
     """Writes unhandled fatal exception to file"""
-    error_file: str = os.path.join(destination_path, "ERROR.log")
-
+    import os
     import traceback
+
+    error_file: str = os.path.join(destination_path, "ERROR.log")
 
     try:  # Try to write, but don't allow another exception since that may be confusing
         with open(error_file, "w", encoding="utf-8") as fp:

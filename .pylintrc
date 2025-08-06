@@ -6,6 +6,7 @@ ignore-paths=.+build/.*.py,.*.pyi
 [MESSAGES CONTROL]
 
 disable=import-error,
+        import-outside-toplevel,
         line-too-long,
         protected-access,
         too-few-public-methods

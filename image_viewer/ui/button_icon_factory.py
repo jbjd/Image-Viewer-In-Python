@@ -9,7 +9,7 @@ from PIL.ImageTk import PhotoImage
 from ui.button import IconImages
 from util.PIL import resize
 
-DEFAULT_SIZE: tuple[int, int] = (32, 32)
+DEFAULT_ICON_SIZE: tuple[int, int] = (32, 32)
 
 LINE_RGB: tuple[int, int, int] = (170, 170, 170)
 ICON_RGB: tuple[int, int, int] = (100, 104, 102)
@@ -34,7 +34,7 @@ class ButtonIconFactory:
 
     def _new_rgb_image(self, rgb: tuple[int, int, int]) -> Image:
         """Returns new default sized RGB Image"""
-        return new_image("RGB", DEFAULT_SIZE, rgb)
+        return new_image("RGB", DEFAULT_ICON_SIZE, rgb)
 
     def _make_icon_base(
         self,
@@ -116,7 +116,7 @@ class ButtonIconFactory:
         return self.make_icon_from_draw(draw)
 
     def make_rename_icons(self) -> IconImages:
-        transparent_icon: Image = new_image("RGBA", DEFAULT_SIZE)
+        transparent_icon: Image = new_image("RGBA", DEFAULT_ICON_SIZE)
         draw: ImageDraw = ImageDraw(transparent_icon.copy())
         draw_hovered: ImageDraw = ImageDraw(transparent_icon)
         draw_hovered.rectangle((4, 5, 28, 27), ICON_HOVERED_RGB, width=1)

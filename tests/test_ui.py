@@ -1,9 +1,5 @@
 from unittest.mock import MagicMock
 
-import pytest
-from PIL.Image import Image
-from PIL.ImageTk import PhotoImage
-
 from image_viewer.constants import ButtonName
 from image_viewer.ui.button import (
     HoverableButtonUIElement,
@@ -12,13 +8,6 @@ from image_viewer.ui.button import (
 )
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.image import DropdownImageUIElement
-
-
-@pytest.fixture(scope="module")
-def button_icons(example_image: Image) -> IconImages:
-    default_icon = PhotoImage(example_image)
-    hovered_icon = PhotoImage(example_image)
-    return IconImages(default_icon, hovered_icon)
 
 
 def test_show_dropdown_image():

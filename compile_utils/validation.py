@@ -30,8 +30,8 @@ def get_required_python_version() -> tuple[int, int]:
 
 
 def validate_module_requirements(is_standalone: bool) -> None:
-    """Logs warning if installed packages do not match
-    specifications in requirements files and errors if they are
+    """Logs warning if installed packages do not match specifications
+    in requirements files and raises PackageNotFoundError if they are
     not installed"""
     requirements: list[Requirement] = module_dependencies + parse_requirements_file(
         "requirements_compile.txt"
@@ -59,7 +59,7 @@ def validate_module_requirements(is_standalone: bool) -> None:
             missing_modules.append(requirement.name)
 
     if is_standalone and len(missing_modules) != 0:
-        raise Exception(
+        raise PackageNotFoundError(
             f"Missing module dependencies {missing_modules}\n"
             "Please install them to compile as standalone"
         )

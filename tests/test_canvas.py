@@ -4,19 +4,8 @@ import pytest
 from PIL.Image import Image
 from PIL.ImageTk import PhotoImage
 
-from image_viewer.constants import Key
 from image_viewer.ui.canvas import CustomCanvas
 from tests.test_util.mocks import MockEvent
-
-
-@pytest.fixture(scope="module")
-def left_key_event(tk_app):
-    return MockEvent(widget=tk_app, keysym_num=Key.LEFT)
-
-
-@pytest.fixture(scope="module")
-def right_key_event(tk_app):
-    return MockEvent(widget=tk_app, keysym_num=Key.RIGHT)
 
 
 def test_create_assets(canvas: CustomCanvas, example_image: Image):

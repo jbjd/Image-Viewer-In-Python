@@ -1,24 +1,9 @@
-from tkinter import Tk
 from unittest.mock import patch
-
-import pytest
 
 from image_viewer.constants import TEXT_RGB
 from image_viewer.ui.canvas import CustomCanvas
 from image_viewer.ui.rename_entry import RenameEntry
 from tests.test_util.mocks import MockEvent
-
-
-@pytest.fixture
-def rename_entry(tk_app: Tk, canvas: CustomCanvas) -> RenameEntry:
-    rename_id: int = canvas.create_window(
-        0,
-        0,
-        width=250,
-        height=20,
-        anchor="nw",
-    )
-    return RenameEntry(tk_app, canvas, rename_id, 250, "roboto 18")
 
 
 def test_get(rename_entry: RenameEntry):

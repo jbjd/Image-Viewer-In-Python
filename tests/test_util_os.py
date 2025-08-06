@@ -79,5 +79,5 @@ def test_split_name_and_suffix(
 def test_get_files_in_folder():
     """Test that get_files_in_folder correctly finds files in dir"""
 
-    files = [p for p in get_files_in_folder(IMG_DIR)]
+    files = list(get_files_in_folder(IMG_DIR))
     assert len(files) == 5

@@ -74,7 +74,7 @@ def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
 
 
 @pytest.mark.parametrize(
-    "hex,expected_hex",
+    "hex_color,expected",
     [
         ("asdvbiu34uiyg", _DEFAULT),
         ("#010101", "#010101"),
@@ -83,6 +83,6 @@ def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
         ("#01", _DEFAULT),
     ],
 )
-def test_validate_hex_or_default(hex: str, expected_hex: str):
+def test_validate_hex_or_default(hex_color: str, expected: str):
     """Should return original hex or default if it was invalid"""
-    assert validate_hex_or_default(hex, _DEFAULT) == expected_hex
+    assert validate_hex_or_default(hex_color, _DEFAULT) == expected
