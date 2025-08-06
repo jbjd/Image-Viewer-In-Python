@@ -3,11 +3,10 @@ Reads config.ini from root directory and stores results or defaults
 """
 
 import os
-import re
 from configparser import ConfigParser
 from enum import StrEnum
 
-from util._generic import is_hex
+from util._generic import is_valid_hex_color, is_valid_keybind
 
 DEFAULT_FONT: str = "arial.ttf" if os.name == "nt" else "LiberationSans-Regular.ttf"
 DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
@@ -74,22 +73,17 @@ class KeybindConfig:
 
 
 def validate_keybind_or_default(keybind: str, default: str) -> str:
-    """Given a tkinter keybind, validate if its allowed
-    and return keybind if its valid or the default if its not"""
-    f_key_re = r"F([1-9]|10|11|12)"
-    control_key_re = r"Control-[a-zA-Z0-9]"
+    """Returns keybind if it follows the format
+    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
+    or default if not"""
 
-    match = re.match(f"^<(({f_key_re})|({control_key_re}))>$", keybind)
-
-    return default if match is None else keybind
+    return keybind if is_valid_keybind(keybind) else default
 
 
-def validate_hex_or_default(hex_code: str, default: str) -> str:
-    """Returns hex_code if its in the valid hex format or default if not"""
-    if is_hex(hex_code):
-        return hex_code
+def validate_hex_or_default(hex_color: str, default: str) -> str:
+    """Returns hex_color if its in the valid hex format or default if not"""
 
-    return default
+    return hex_color if is_valid_hex_color(hex_color) else default
 
 
 class ConfigParserExt(ConfigParser):

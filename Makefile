@@ -46,7 +46,7 @@ else
 endif
 
 build-util-generic:
-	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT)
+	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) -Wl,-Bstatic -ltre
 
 build-all: build-util-os-nt build-util-generic
 
