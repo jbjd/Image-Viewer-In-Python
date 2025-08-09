@@ -160,8 +160,11 @@ class ImageFileManager:
 
         try:
             image_metadata: stat_result = os.stat(self.path_to_image)
-            created_time_epoch: float = getattr(
-                image_metadata, "st_birthtime", image_metadata.st_ctime
+
+            created_time_epoch: float = (
+                image_metadata.st_birthtime
+                if os.name == "nt"
+                else image_metadata.st_ctime
             )
             modified_time_epoch: float = image_metadata.st_mtime
 
