@@ -10,13 +10,13 @@ def exception_hook(
     error_type: type[BaseException],
     error: BaseException,
     trace: TracebackType | None,
-    destination_path: str,
+    destination_folder: str,
 ) -> None:
     """Writes unhandled fatal exception to file"""
     import os
     import traceback
 
-    error_file: str = os.path.join(destination_path, "ERROR.log")
+    error_file: str = os.path.join(destination_folder, "ERROR.log")
 
     try:  # Try to write, but don't allow another exception since that may be confusing
         with open(error_file, "w", encoding="utf-8") as fp:
@@ -34,6 +34,6 @@ if __name__ == "__main__" and len(sys.argv) > 1:  # pragma: no cover
     path_to_exe_folder: str = get_path_to_exe_folder()
 
     if not __debug__:
-        sys.excepthook = partial(exception_hook, destination_path=path_to_exe_folder)
+        sys.excepthook = partial(exception_hook, destination_folder=path_to_exe_folder)
 
     ViewerApp(sys.argv[1], path_to_exe_folder)

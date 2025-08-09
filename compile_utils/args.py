@@ -38,6 +38,19 @@ class NuitkaArgs(StrEnum):
         return f"{self}={value}"
 
 
+class CompileNamespace(Namespace):
+    """Namespace for compilation flags"""
+
+    install_path: str
+    report: bool
+    debug: bool
+    strip: bool
+    skip_nuitka: bool
+    no_cleanup: bool
+    build_info_file: bool
+    user_nuitka_args: list[str]
+
+
 class CompileArgumentParser(ArgumentParser):
     """Argument Parser for compilation flags"""
 
@@ -123,12 +136,12 @@ class CompileArgumentParser(ArgumentParser):
 
         super().add_argument(name, help=help_text, action=action, default=default)
 
-    # for some reason mypy gets the super type wrong
+    # Override the args of the super class
     def parse_known_args(  # type: ignore
         self, modules_to_skip: list[str]
-    ) -> tuple[Namespace, list[str]]:
-        """Returns Namespace of user arguments and string of args to pass to nuitka"""
-        args, nuitka_args = super().parse_known_args()
+    ) -> tuple[CompileNamespace, list[str]]:
+        """Returns CompileNamespace of user args and list of args to pass to nuitka"""
+        args, nuitka_args = super().parse_known_args(namespace=CompileNamespace())
         self._validate_args(nuitka_args, args.debug)
 
         # Preserve just what the user inputted since this list will get expanded
@@ -148,7 +161,7 @@ class CompileArgumentParser(ArgumentParser):
 
     @staticmethod
     def _expand_nuitka_args(
-        args: Namespace, nuitka_args: list[str], modules_to_skip: list[str]
+        args: CompileNamespace, nuitka_args: list[str], modules_to_skip: list[str]
     ) -> list[str]:
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""

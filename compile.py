@@ -2,7 +2,6 @@
 
 import os
 import sys
-from argparse import Namespace
 from importlib import import_module
 from importlib.metadata import version as get_module_version
 from subprocess import Popen
@@ -17,7 +16,7 @@ from personal_compile_tools.file_operations import (
     get_folder_size,
 )
 
-from compile_utils.args import CompileArgumentParser, NuitkaArgs
+from compile_utils.args import CompileArgumentParser, CompileNamespace, NuitkaArgs
 from compile_utils.cleaner import (
     clean_file_and_copy,
     clean_tk_files,
@@ -60,7 +59,7 @@ else:
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
-args: Namespace
+args: CompileNamespace
 nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(modules_to_skip)
 is_standalone = NuitkaArgs.STANDALONE in nuitka_args
@@ -77,7 +76,6 @@ validate_module_requirements(is_standalone)
 # I thought nuitka would handle this, but I guess not?
 delete_folder(TMP_DIR)
 try:
-    # use "" as module for image_viewer, it should be considered root
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
 
     for module in module_dependencies:
