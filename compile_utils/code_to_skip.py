@@ -619,7 +619,7 @@ except ImportError:
         "PIL.GifImagePlugin": [
             RegexReplacement(
                 pattern="from typing import .*",
-                replacement="from collections import namedtuple",
+                replacement="from typing import cast;from collections import namedtuple",  # noqa E501
                 count=1,
             ),
             RegexReplacement(
