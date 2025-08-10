@@ -288,6 +288,32 @@ end:
     return pyFiles;
 }
 
+static PyObject *get_file_metadata_display(PyObject *self, PyObject *arg)
+{
+    const char *path = PyUnicode_AsUTF8(arg);
+    if (path == NULL)
+    {
+        return NULL;
+    }
+
+    WIN32_FILE_ATTRIBUTE_DATA fileAttributes = {0};
+    GetFileAttributesExA(path, GetFileExInfoStandard, &fileAttributes);
+
+    SYSTEMTIME createdSystemTime = {0};
+    FileTimeToSystemTime(&fileAttributes.ftCreationTime, &createdSystemTime);
+    SYSTEMTIME modifiedSystemTime = {0};
+    FileTimeToSystemTime(&fileAttributes.ftLastWriteTime, &modifiedSystemTime);
+
+    TIME_ZONE_INFORMATION tzi = {0};
+    if (GetTimeZoneInformation(&tzi) != TIME_ZONE_ID_INVALID)
+    {
+        SystemTimeToTzSpecificLocalTime(&tzi, &createdSystemTime, &createdSystemTime);
+        SystemTimeToTzSpecificLocalTime(&tzi, &modifiedSystemTime, &modifiedSystemTime);
+    }
+
+    return PyUnicode_FromFormat("Created: %u/%u/%u %u:%u:%u\nLast Modified: %u/%u/%u %u:%u:%u\n", createdSystemTime.wYear, createdSystemTime.wMonth, createdSystemTime.wDay, createdSystemTime.wHour, createdSystemTime.wMinute, createdSystemTime.wSecond, modifiedSystemTime.wYear, modifiedSystemTime.wMonth, modifiedSystemTime.wDay, modifiedSystemTime.wHour, modifiedSystemTime.wMinute, modifiedSystemTime.wSecond);
+}
+
 static PyObject *open_with(PyObject *self, PyObject *const *args, Py_ssize_t argLen)
 {
     if (argLen != 2)
@@ -434,6 +460,7 @@ static PyMethodDef os_methods[] = {
     {"trash_file", (PyCFunction)trash_file, METH_FASTCALL, NULL},
     {"restore_file", (PyCFunction)restore_file, METH_FASTCALL, NULL},
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
+    {"get_file_metadata_display", get_file_metadata_display, METH_O, NULL},
     {"open_with", (PyCFunction)open_with, METH_FASTCALL, NULL},
     {"drop_file_to_clipboard", (PyCFunction)drop_file_to_clipboard, METH_FASTCALL, NULL},
     {"convert_file_to_base64_and_save_to_clipboard", convert_file_to_base64_and_save_to_clipboard, METH_O, NULL},
