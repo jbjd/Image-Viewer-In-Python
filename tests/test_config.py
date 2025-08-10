@@ -8,8 +8,8 @@ from image_viewer.config import (
     DEFAULT_MAX_ITEMS_IN_CACHE,
     Config,
     DefaultKeybinds,
-    validate_hex_or_default,
-    validate_keybind_or_default,
+    _validate_hex_or_default,
+    _validate_keybind_or_default,
 )
 from tests.conftest import WORKING_DIR
 
@@ -70,7 +70,7 @@ def test_config_reader_int_fallback():
 )
 def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
     """Should return original keybind or default if keybind was invalid"""
-    assert validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
+    assert _validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
 
 
 @pytest.mark.parametrize(
@@ -85,4 +85,4 @@ def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
 )
 def test_validate_hex_or_default(hex_color: str, expected: str):
     """Should return original hex or default if it was invalid"""
-    assert validate_hex_or_default(hex_color, _DEFAULT) == expected
+    assert _validate_hex_or_default(hex_color, _DEFAULT) == expected

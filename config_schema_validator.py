@@ -5,16 +5,19 @@ from configparser import ConfigParser
 
 from schema import Schema
 
+from image_viewer.util._generic import is_valid_hex_color, is_valid_keybind
+
 schema = Schema(
     {
         "FONT": {"default": str},
         "CACHE": {"size": lambda size: size == "" or int(size) >= 0},
         "KEYBINDS": {
-            "move_to_new_file": str,
-            "show_details": str,
-            "undo_most_recent_action": str,
+            "COPY_TO_CLIPBOARD_AS_BASE64": is_valid_keybind,
+            "move_to_new_file": is_valid_keybind,
+            "show_details": is_valid_keybind,
+            "undo_most_recent_action": is_valid_keybind,
         },
-        "UI": {"background_color": str},
+        "UI": {"background_color": is_valid_hex_color},
     }
 )
 

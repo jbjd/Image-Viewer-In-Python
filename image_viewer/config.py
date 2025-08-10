@@ -13,9 +13,24 @@ DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
 DEFAULT_BACKGROUND_COLOR: str = "#000000"
 
 
+def _validate_keybind_or_default(keybind: str, default: str) -> str:
+    """Returns keybind if it follows the format
+    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
+    or default if not"""
+
+    return keybind if is_valid_keybind(keybind) else default
+
+
+def _validate_hex_or_default(hex_color: str, default: str) -> str:
+    """Returns hex_color if its in the valid hex format or default if not"""
+
+    return hex_color if is_valid_hex_color(hex_color) else default
+
+
 class DefaultKeybinds(StrEnum):
     """Defaults for keybinds that config.ini can override"""
 
+    COPY_TO_CLIPBOARD_AS_BASE64 = "<Control-E>"
     MOVE_TO_NEW_FILE = "<Control-m>"
     SHOW_DETAILS = "<Control-d>"
     UNDO_MOST_RECENT_ACTION = "<Control-z>"
@@ -40,12 +55,13 @@ class Config:
         )
 
         self.keybinds = KeybindConfig(
+            config_parser.get_string_safe("KEYBINDS", "COPY_TO_CLIPBOARD_AS_BASE64"),
             config_parser.get_string_safe("KEYBINDS", "MOVE_TO_NEW_FILE"),
             config_parser.get_string_safe("KEYBINDS", "SHOW_DETAILS"),
             config_parser.get_string_safe("KEYBINDS", "UNDO_MOST_RECENT_ACTION"),
         )
 
-        self.background_color = validate_hex_or_default(
+        self.background_color = _validate_hex_or_default(
             config_parser.get_string_safe(
                 "UI", "BACKGROUND_COLOR", DEFAULT_BACKGROUND_COLOR
             ),
@@ -56,34 +72,32 @@ class Config:
 class KeybindConfig:
     """Contains configurable tkinter keybinds"""
 
-    __slots__ = ("move_to_new_file", "show_details", "undo_most_recent_action")
+    __slots__ = (
+        "copy_to_clipboard_as_base64",
+        "move_to_new_file",
+        "show_details",
+        "undo_most_recent_action",
+    )
 
     def __init__(
-        self, move_to_new_file: str, show_details: str, undo_most_recent_action: str
+        self,
+        copy_to_clipboard_as_base64: str,
+        move_to_new_file: str,
+        show_details: str,
+        undo_most_recent_action: str,
     ) -> None:
-        self.move_to_new_file: str = validate_keybind_or_default(
+        self.copy_to_clipboard_as_base64: str = _validate_keybind_or_default(
+            copy_to_clipboard_as_base64, DefaultKeybinds.COPY_TO_CLIPBOARD_AS_BASE64
+        )
+        self.move_to_new_file: str = _validate_keybind_or_default(
             move_to_new_file, DefaultKeybinds.MOVE_TO_NEW_FILE
         )
-        self.show_details: str = validate_keybind_or_default(
+        self.show_details: str = _validate_keybind_or_default(
             show_details, DefaultKeybinds.SHOW_DETAILS
         )
-        self.undo_most_recent_action: str = validate_keybind_or_default(
+        self.undo_most_recent_action: str = _validate_keybind_or_default(
             undo_most_recent_action, DefaultKeybinds.UNDO_MOST_RECENT_ACTION
         )
-
-
-def validate_keybind_or_default(keybind: str, default: str) -> str:
-    """Returns keybind if it follows the format
-    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
-    or default if not"""
-
-    return keybind if is_valid_keybind(keybind) else default
-
-
-def validate_hex_or_default(hex_color: str, default: str) -> str:
-    """Returns hex_color if its in the valid hex format or default if not"""
-
-    return hex_color if is_valid_hex_color(hex_color) else default
 
 
 class ConfigParserExt(ConfigParser):

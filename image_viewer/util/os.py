@@ -82,7 +82,7 @@ else:  # assume linux for now
                     yield entry.name
 
 
-def show_info_popup(hwnd: int, title: str, body: str) -> None:
+def show_info(hwnd: int, title: str, body: str) -> None:
     """If on Windows, shows info popup as child of parent
     Otherwise shows parent-less info popup"""
     if os.name == "nt":

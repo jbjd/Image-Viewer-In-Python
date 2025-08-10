@@ -19,7 +19,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.io import read_file_as_base64
-from util.os import show_info_popup
+from util.os import show_info
 from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
@@ -140,8 +140,11 @@ class ViewerApp:
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind("<Control-r>", self.refresh)
-        app.bind("<Control-E>", self.copy_file_to_clipboard_as_base64)
-        app.bind(config.keybinds.show_details, self.show_details_popup)
+        app.bind(
+            config.keybinds.copy_to_clipboard_as_base64,
+            self.copy_to_clipboard_as_base64,
+        )
+        app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
         app.bind("<F2>", self.toggle_show_rename_window)
@@ -362,7 +365,7 @@ class ViewerApp:
         self.dropdown.toggle_display()
         self.update_details_dropdown()
 
-    def copy_file_to_clipboard_as_base64(self, _: Event) -> None:
+    def copy_to_clipboard_as_base64(self, _: Event) -> None:
         """Converts the file's bytes into base64 and copies
         it to the clipboard"""
 
@@ -380,14 +383,14 @@ class ViewerApp:
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)
 
-    def show_details_popup(self, _: Event | None = None) -> None:
+    def show_details(self, _: Event | None = None) -> None:
         """Gets details on image and shows it in a UI popup"""
         details: str | None = self.file_manager.get_image_details(
             self.image_loader.PIL_image
         )
 
         if details is not None:
-            show_info_popup(self.app_id, "Image Details", details)
+            show_info(self.app_id, "Image Details", details)
 
     def load_zoomed_or_rotated_image(
         self, direction: ZoomDirection | None, rotation: Rotation | None

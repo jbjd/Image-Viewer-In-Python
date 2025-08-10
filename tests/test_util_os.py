@@ -7,7 +7,7 @@ from image_viewer.util.os import (
     get_byte_display,
     get_files_in_folder,
     maybe_truncate_long_name,
-    show_info_popup,
+    show_info,
     split_name_and_suffix,
 )
 from tests.conftest import IMG_DIR
@@ -39,14 +39,14 @@ def test_show_info_popup(os_name: str):
             expected_flags = 0
 
             with patch("image_viewer.util.os.windll", create=True, new=mock_windll):
-                show_info_popup(hwnd, title, body)
+                show_info(hwnd, title, body)
 
             mock_windll.user32.MessageBoxW.assert_called_once_with(
                 hwnd, body, title, expected_flags
             )
         else:
             with patch("image_viewer.util.os.showinfo", create=True) as mock_showinfo:
-                show_info_popup(hwnd, title, body)
+                show_info(hwnd, title, body)
 
                 mock_showinfo.assert_called_once_with(title, body)
 
