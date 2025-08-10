@@ -30,6 +30,7 @@ def _validate_hex_or_default(hex_color: str, default: str) -> str:
 class DefaultKeybinds(StrEnum):
     """Defaults for keybinds that config.ini can override"""
 
+    REFRESH = "<Control-r>"
     COPY_TO_CLIPBOARD_AS_BASE64 = "<Control-E>"
     MOVE_TO_NEW_FILE = "<Control-m>"
     SHOW_DETAILS = "<Control-d>"
@@ -57,6 +58,7 @@ class Config:
         self.keybinds = KeybindConfig(
             config_parser.get_string_safe("KEYBINDS", "COPY_TO_CLIPBOARD_AS_BASE64"),
             config_parser.get_string_safe("KEYBINDS", "MOVE_TO_NEW_FILE"),
+            config_parser.get_string_safe("KEYBINDS", "REFRESH"),
             config_parser.get_string_safe("KEYBINDS", "SHOW_DETAILS"),
             config_parser.get_string_safe("KEYBINDS", "UNDO_MOST_RECENT_ACTION"),
         )
@@ -75,6 +77,7 @@ class KeybindConfig:
     __slots__ = (
         "copy_to_clipboard_as_base64",
         "move_to_new_file",
+        "refresh",
         "show_details",
         "undo_most_recent_action",
     )
@@ -83,6 +86,7 @@ class KeybindConfig:
         self,
         copy_to_clipboard_as_base64: str,
         move_to_new_file: str,
+        refresh: str,
         show_details: str,
         undo_most_recent_action: str,
     ) -> None:
@@ -91,6 +95,9 @@ class KeybindConfig:
         )
         self.move_to_new_file: str = _validate_keybind_or_default(
             move_to_new_file, DefaultKeybinds.MOVE_TO_NEW_FILE
+        )
+        self.refresh: str = _validate_keybind_or_default(
+            refresh, DefaultKeybinds.REFRESH
         )
         self.show_details: str = _validate_keybind_or_default(
             show_details, DefaultKeybinds.SHOW_DETAILS

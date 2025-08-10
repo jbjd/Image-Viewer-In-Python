@@ -139,7 +139,7 @@ class ViewerApp:
         app.bind("<Escape>", self.handle_esc)
         app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
-        app.bind("<Control-r>", self.refresh)
+        app.bind(config.keybinds.refresh, self.refresh)
         app.bind(
             config.keybinds.copy_to_clipboard_as_base64,
             self.copy_to_clipboard_as_base64,

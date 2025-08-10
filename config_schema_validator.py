@@ -7,22 +7,46 @@ from schema import Schema
 
 from image_viewer.util._generic import is_valid_hex_color, is_valid_keybind
 
+
+def strip_quotes(input: str) -> str:
+    return input.strip("'\"")
+
+
+def empty_or_valid_hex_color(keybind: str) -> bool:
+    keybind = strip_quotes(keybind)
+    return keybind == "" or is_valid_hex_color(keybind)
+
+
+def empty_or_valid_int(possible_int: str) -> bool:
+    possible_int = strip_quotes(possible_int)
+    try:
+        return possible_int == "" or int(possible_int) >= 0
+    except ValueError:
+        return False
+
+
+def empty_or_valid_keybind(keybind: str) -> bool:
+    keybind = strip_quotes(keybind)
+    return keybind == "" or is_valid_keybind(keybind)
+
+
 schema = Schema(
     {
         "FONT": {"default": str},
-        "CACHE": {"size": lambda size: size == "" or int(size) >= 0},
+        "CACHE": {"size": empty_or_valid_int},
         "KEYBINDS": {
-            "COPY_TO_CLIPBOARD_AS_BASE64": is_valid_keybind,
-            "move_to_new_file": is_valid_keybind,
-            "show_details": is_valid_keybind,
-            "undo_most_recent_action": is_valid_keybind,
+            "copy_to_clipboard_as_base64": empty_or_valid_keybind,
+            "move_to_new_file": empty_or_valid_keybind,
+            "refresh": empty_or_valid_keybind,
+            "show_details": empty_or_valid_keybind,
+            "undo_most_recent_action": empty_or_valid_keybind,
         },
-        "UI": {"background_color": is_valid_hex_color},
+        "UI": {"background_color": empty_or_valid_hex_color},
     }
 )
 
 
-config_parser: ConfigParser = ConfigParser()
+config_parser = ConfigParser()
 config_parser.read("image_viewer/config.ini")
 
 config: dict = {}
