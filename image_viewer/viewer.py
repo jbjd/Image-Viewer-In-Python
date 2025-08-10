@@ -317,7 +317,11 @@ class ViewerApp:
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
-        if self.move_id != "" and event.keysym_num in (Key.LEFT, Key.RIGHT):
+        if (
+            event.widget is self.app
+            and event.keysym_num in (Key.LEFT, Key.RIGHT)
+            and self.move_id != ""
+        ):
             self.app.after_cancel(self.move_id)
             self.move_id = ""
 
