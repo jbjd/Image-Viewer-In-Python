@@ -137,7 +137,6 @@ class ViewerApp:
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
-        app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
         app.bind(config.keybinds.refresh, self.refresh)
         app.bind(
@@ -147,6 +146,16 @@ class ViewerApp:
         app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
+        app.bind(
+            "<minus>",
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
+        )
+        app.bind(
+            "<equal>",
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
+        )
+        app.bind("<Left>", self.handle_lr_arrow)
+        app.bind("<Right>", self.handle_lr_arrow)
         app.bind("<F2>", self.toggle_show_rename_window)
         app.bind(
             "<r>",
@@ -297,23 +306,14 @@ class ViewerApp:
             self.show_topbar()
 
     def _only_for_this_window(
-        self, event: Event, function_to_call: Callable[[Event | None], None]
+        self,
+        event: Event,
+        function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
     ) -> None:
         """Given a callable that accepts a tkinter Event,
         only call it if self.app is the target"""
         if event.widget is self.app:
             function_to_call(event)
-
-    def handle_key(self, event: Event) -> None:
-        """Key binds that happen only on main app focus"""
-        if event.widget is self.app:
-            match event.keysym_num:
-                case Key.LEFT | Key.RIGHT:
-                    self.handle_lr_arrow(event)
-                case Key.EQUALS:
-                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN)
-                case Key.MINUS:
-                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
@@ -328,7 +328,7 @@ class ViewerApp:
     def handle_lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
-        if self.move_id == "":
+        if event.widget is self.app and self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (getattr(event, "state", 0) & 5)
             if event.keysym_num == Key.LEFT:

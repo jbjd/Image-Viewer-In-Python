@@ -13,18 +13,18 @@ DEFAULT_MAX_ITEMS_IN_CACHE: int = 20
 DEFAULT_BACKGROUND_COLOR: str = "#000000"
 
 
+def _validate_hex_or_default(hex_color: str, default: str) -> str:
+    """Returns hex_color if its in the valid hex format or default if not"""
+
+    return hex_color if is_valid_hex_color(hex_color) else default
+
+
 def _validate_keybind_or_default(keybind: str, default: str) -> str:
     """Returns keybind if it follows the format
     <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
     or default if not"""
 
     return keybind if is_valid_keybind(keybind) else default
-
-
-def _validate_hex_or_default(hex_color: str, default: str) -> str:
-    """Returns hex_color if its in the valid hex format or default if not"""
-
-    return hex_color if is_valid_hex_color(hex_color) else default
 
 
 class DefaultKeybinds(StrEnum):
