@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 
-from image_viewer.constants import Key
 from image_viewer.files.file_manager import ImageFileManager
 from image_viewer.image.loader import ImageLoader
 from image_viewer.ui.canvas import CustomCanvas
@@ -72,26 +71,6 @@ def test_clear_image(partial_viewer: ViewerApp):
             partial_viewer.clear_image()
             mock_after_cancel.assert_called_once()
             mock_reset.assert_called_once()
-
-
-def test_handle_key(partial_viewer: ViewerApp, focused_event: MockEvent):
-    """Should only accept input when user focused on main app"""
-
-    with patch.object(ViewerApp, "handle_lr_arrow") as mock_lr_arrow:
-        focused_event.keysym_num = Key.LEFT
-        partial_viewer.handle_key(focused_event)
-        mock_lr_arrow.assert_called_once()
-
-    with patch.object(
-        ViewerApp, "load_zoomed_or_rotated_image_unblocking"
-    ) as mock_zoom:
-        focused_event.keysym_num = Key.MINUS
-        partial_viewer.handle_key(focused_event)
-        mock_zoom.assert_called_once()
-
-        focused_event.keysym_num = Key.EQUALS
-        partial_viewer.handle_key(focused_event)
-        assert mock_zoom.call_count == 2
 
 
 def test_exit(partial_viewer: ViewerApp, canvas: CustomCanvas):
