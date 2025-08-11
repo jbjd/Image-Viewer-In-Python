@@ -18,7 +18,7 @@ _DEFAULT = "default"
 
 
 def test_config_reader():
-    """Should return all default values"""
+    """Should return all specified values"""
     config = Config(os.path.join(WORKING_DIR, "data"), "config.ini")
 
     assert config.font_file == "test"
@@ -30,7 +30,7 @@ def test_config_reader():
     assert config.keybinds.undo_most_recent_action == "<Control-Z>"
 
 
-def test_config_reader_defaults():  # TODO: Update
+def test_config_reader_defaults():
     """Should return all default values"""
     config = Config(os.path.join(WORKING_DIR, "data"), "config_empty.ini")
 
@@ -38,12 +38,21 @@ def test_config_reader_defaults():  # TODO: Update
     assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
     assert config.background_color == DEFAULT_BACKGROUND_COLOR
 
+    assert (
+        config.keybinds.copy_to_clipboard_as_base64
+        == DefaultKeybinds.COPY_TO_CLIPBOARD_AS_BASE64
+    )
     assert config.keybinds.move_to_new_file == DefaultKeybinds.MOVE_TO_NEW_FILE
+    assert config.keybinds.refresh == DefaultKeybinds.REFRESH
+    assert config.keybinds.reload_image == DefaultKeybinds.RELOAD_IMAGE
+    assert config.keybinds.rename == DefaultKeybinds.RENAME
     assert config.keybinds.show_details == DefaultKeybinds.SHOW_DETAILS
     assert (
         config.keybinds.undo_most_recent_action
         == DefaultKeybinds.UNDO_MOST_RECENT_ACTION
     )
+    assert config.keybinds.zoom_in == DefaultKeybinds.ZOOM_IN
+    assert config.keybinds.zoom_out == DefaultKeybinds.ZOOM_OUT
 
 
 def test_config_reader_int_fallback():
