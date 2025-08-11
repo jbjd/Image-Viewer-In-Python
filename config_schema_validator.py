@@ -38,8 +38,12 @@ schema = Schema(
             "copy_to_clipboard_as_base64": empty_or_valid_keybind,
             "move_to_new_file": empty_or_valid_keybind,
             "refresh": empty_or_valid_keybind,
+            "reload_image": empty_or_valid_keybind,
+            "rename": empty_or_valid_keybind,
             "show_details": empty_or_valid_keybind,
             "undo_most_recent_action": empty_or_valid_keybind,
+            "zoom_in": empty_or_valid_keybind,
+            "zoom_out": empty_or_valid_keybind,
         },
         "UI": {"background_color": empty_or_valid_hex_color},
     }

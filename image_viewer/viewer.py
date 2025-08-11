@@ -138,30 +138,26 @@ class ViewerApp:
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
         app.bind("<KeyRelease>", self.handle_key_release)
-        app.bind(config.keybinds.refresh, self.refresh)
         app.bind(
             config.keybinds.copy_to_clipboard_as_base64,
             self.copy_to_clipboard_as_base64,
         )
+        app.bind(config.keybinds.refresh, self.refresh)
+        app.bind(config.keybinds.reload_image, lambda _: self.load_image_unblocking())
+        app.bind(config.keybinds.rename, self.toggle_show_rename_window)
         app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
         app.bind(
-            "<minus>",
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
+            config.keybinds.zoom_in,
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
         )
         app.bind(
-            "<equal>",
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
+            config.keybinds.zoom_out,
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
         )
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
-        app.bind("<F2>", self.toggle_show_rename_window)
-        app.bind(
-            "<r>",
-            lambda e: self._only_for_this_window(e, self.toggle_show_rename_window),
-        )
-        app.bind("<F5>", lambda _: self.load_image_unblocking())
         app.bind("<Up>", self.handle_up_arrow)
         app.bind("<Down>", self.handle_down_arrow)
         app.bind("<Alt-Left>", self.handle_rotate_image)
@@ -305,15 +301,16 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    def _only_for_this_window(
-        self,
-        event: Event,
-        function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
-    ) -> None:
-        """Given a callable that accepts a tkinter Event,
-        only call it if self.app is the target"""
-        if event.widget is self.app:
-            function_to_call(event)
+    # Leaving this since may be helpful in a future keybind refactor
+    # def _only_for_this_window(
+    #     self,
+    #     event: Event,
+    #     function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
+    # ) -> None:
+    #     """Given a callable that accepts a tkinter Event,
+    #     only call it if self.app is the target"""
+    #     if event.widget is self.app:
+    #         function_to_call(event)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""

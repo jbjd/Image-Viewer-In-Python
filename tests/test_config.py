@@ -11,6 +11,7 @@ from image_viewer.config import (
     _validate_hex_or_default,
     _validate_keybind_or_default,
 )
+from image_viewer.util._generic import is_valid_keybind
 from tests.conftest import WORKING_DIR
 
 _DEFAULT = "default"
@@ -29,7 +30,7 @@ def test_config_reader():
     assert config.keybinds.undo_most_recent_action == "<Control-Z>"
 
 
-def test_config_reader_defaults():
+def test_config_reader_defaults():  # TODO: Update
     """Should return all default values"""
     config = Config(os.path.join(WORKING_DIR, "data"), "config_empty.ini")
 
@@ -66,11 +67,21 @@ def test_config_reader_int_fallback():
         ("<F12>", "<F12>"),
         ("<F13>", _DEFAULT),
         ("<F91>", _DEFAULT),
+        ("<k>", "<k>"),
+        ("<-k>", _DEFAULT),
+        ("<Control-minus>", "<Control-minus>"),
+        ("<equal>", "<equal>"),
+        ("<equals>", _DEFAULT),
     ],
 )
 def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
     """Should return original keybind or default if keybind was invalid"""
     assert _validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
+
+
+def test_default_keybinds_are_valid():
+    for keybind in DefaultKeybinds:
+        assert is_valid_keybind(keybind)
 
 
 @pytest.mark.parametrize(
