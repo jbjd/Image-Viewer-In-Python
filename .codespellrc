@@ -1,2 +1,3 @@
 [codespell]
+ignore-words-list = tre
 skip = tmp,main.build,main.dist,compilation-report.xml
