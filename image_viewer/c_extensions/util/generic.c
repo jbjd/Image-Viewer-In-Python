@@ -1,5 +1,5 @@
 #include <Python.h>
-#include <regex.h>
+#include <tre/tre.h>
 
 static regex_t valid_keybind_regex;
 static int compile_valid_keybind_regex = 1;
