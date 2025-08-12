@@ -26,7 +26,7 @@ Feel free to take this code and edit it however you like. Please don't use it fo
 
 1. Have Python 3.12.x installed.
 
-1. (Linux) Install *libjpeg-turbo-official*.
+1. (Linux) Install *libjpeg-turbo-official* and *libtre-dev*.
 
 1. Install *gcc* to compile \*.c into python module extensions and *make* to run Makefile commands.
 
