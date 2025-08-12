@@ -19,7 +19,7 @@ from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
 from util.io import read_file_as_base64
-from util.os import show_info_popup
+from util.os import show_info
 from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
@@ -137,19 +137,27 @@ class ViewerApp:
         app: Tk = self.app
         app.bind("<FocusIn>", self.redraw)
         app.bind("<Escape>", self.handle_esc)
-        app.bind("<KeyPress>", self.handle_key)
         app.bind("<KeyRelease>", self.handle_key_release)
-        app.bind("<Control-r>", self.refresh)
-        app.bind("<Control-E>", self.copy_file_to_clipboard_as_base64)
-        app.bind(config.keybinds.show_details, self.show_details_popup)
+        app.bind(
+            config.keybinds.copy_to_clipboard_as_base64,
+            self.copy_to_clipboard_as_base64,
+        )
+        app.bind(config.keybinds.refresh, self.refresh)
+        app.bind(config.keybinds.reload_image, lambda _: self.load_image_unblocking())
+        app.bind(config.keybinds.rename, self.toggle_show_rename_window)
+        app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
-        app.bind("<F2>", self.toggle_show_rename_window)
         app.bind(
-            "<r>",
-            lambda e: self._only_for_this_window(e, self.toggle_show_rename_window),
+            config.keybinds.zoom_in,
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
         )
-        app.bind("<F5>", lambda _: self.load_image_unblocking())
+        app.bind(
+            config.keybinds.zoom_out,
+            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
+        )
+        app.bind("<Left>", self.handle_lr_arrow)
+        app.bind("<Right>", self.handle_lr_arrow)
         app.bind("<Up>", self.handle_up_arrow)
         app.bind("<Down>", self.handle_down_arrow)
         app.bind("<Alt-Left>", self.handle_rotate_image)
@@ -293,35 +301,31 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    def _only_for_this_window(
-        self, event: Event, function_to_call: Callable[[Event | None], None]
-    ) -> None:
-        """Given a callable that accepts a tkinter Event,
-        only call it if self.app is the target"""
-        if event.widget is self.app:
-            function_to_call(event)
-
-    def handle_key(self, event: Event) -> None:
-        """Key binds that happen only on main app focus"""
-        if event.widget is self.app:
-            match event.keysym_num:
-                case Key.LEFT | Key.RIGHT:
-                    self.handle_lr_arrow(event)
-                case Key.EQUALS:
-                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN)
-                case Key.MINUS:
-                    self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT)
+    # Leaving this since may be helpful in a future keybind refactor
+    # def _only_for_this_window(
+    #     self,
+    #     event: Event,
+    #     function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
+    # ) -> None:
+    #     """Given a callable that accepts a tkinter Event,
+    #     only call it if self.app is the target"""
+    #     if event.widget is self.app:
+    #         function_to_call(event)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
-        if self.move_id != "" and event.keysym_num in (Key.LEFT, Key.RIGHT):
+        if (
+            event.widget is self.app
+            and event.keysym_num in (Key.LEFT, Key.RIGHT)
+            and self.move_id != ""
+        ):
             self.app.after_cancel(self.move_id)
             self.move_id = ""
 
     def handle_lr_arrow(self, event: Event) -> None:
         """Handle L/R arrow key input
         Doesn't move when main window unfocused"""
-        if self.move_id == "":
+        if event.widget is self.app and self.move_id == "":
             # move +4 when ctrl held, +1 when shift held
             move_amount: int = 1 + (getattr(event, "state", 0) & 5)
             if event.keysym_num == Key.LEFT:
@@ -362,7 +366,7 @@ class ViewerApp:
         self.dropdown.toggle_display()
         self.update_details_dropdown()
 
-    def copy_file_to_clipboard_as_base64(self, _: Event) -> None:
+    def copy_to_clipboard_as_base64(self, _: Event) -> None:
         """Converts the file's bytes into base64 and copies
         it to the clipboard"""
 
@@ -380,14 +384,14 @@ class ViewerApp:
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)
 
-    def show_details_popup(self, _: Event | None = None) -> None:
+    def show_details(self, _: Event | None = None) -> None:
         """Gets details on image and shows it in a UI popup"""
         details: str | None = self.file_manager.get_image_details(
             self.image_loader.PIL_image
         )
 
         if details is not None:
-            show_info_popup(self.app_id, "Image Details", details)
+            show_info(self.app_id, "Image Details", details)
 
     def load_zoomed_or_rotated_image(
         self, direction: ZoomDirection | None, rotation: Rotation | None

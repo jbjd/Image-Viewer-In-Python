@@ -8,16 +8,17 @@ from image_viewer.config import (
     DEFAULT_MAX_ITEMS_IN_CACHE,
     Config,
     DefaultKeybinds,
-    validate_hex_or_default,
-    validate_keybind_or_default,
+    _validate_hex_or_default,
+    _validate_keybind_or_default,
 )
+from image_viewer.util._generic import is_valid_keybind
 from tests.conftest import WORKING_DIR
 
 _DEFAULT = "default"
 
 
 def test_config_reader():
-    """Should return all default values"""
+    """Should return all specified values"""
     config = Config(os.path.join(WORKING_DIR, "data"), "config.ini")
 
     assert config.font_file == "test"
@@ -37,12 +38,21 @@ def test_config_reader_defaults():
     assert config.max_items_in_cache == DEFAULT_MAX_ITEMS_IN_CACHE
     assert config.background_color == DEFAULT_BACKGROUND_COLOR
 
+    assert (
+        config.keybinds.copy_to_clipboard_as_base64
+        == DefaultKeybinds.COPY_TO_CLIPBOARD_AS_BASE64
+    )
     assert config.keybinds.move_to_new_file == DefaultKeybinds.MOVE_TO_NEW_FILE
+    assert config.keybinds.refresh == DefaultKeybinds.REFRESH
+    assert config.keybinds.reload_image == DefaultKeybinds.RELOAD_IMAGE
+    assert config.keybinds.rename == DefaultKeybinds.RENAME
     assert config.keybinds.show_details == DefaultKeybinds.SHOW_DETAILS
     assert (
         config.keybinds.undo_most_recent_action
         == DefaultKeybinds.UNDO_MOST_RECENT_ACTION
     )
+    assert config.keybinds.zoom_in == DefaultKeybinds.ZOOM_IN
+    assert config.keybinds.zoom_out == DefaultKeybinds.ZOOM_OUT
 
 
 def test_config_reader_int_fallback():
@@ -66,11 +76,21 @@ def test_config_reader_int_fallback():
         ("<F12>", "<F12>"),
         ("<F13>", _DEFAULT),
         ("<F91>", _DEFAULT),
+        ("<k>", "<k>"),
+        ("<-k>", _DEFAULT),
+        ("<Control-minus>", "<Control-minus>"),
+        ("<equal>", "<equal>"),
+        ("<equals>", _DEFAULT),
     ],
 )
 def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
     """Should return original keybind or default if keybind was invalid"""
-    assert validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
+    assert _validate_keybind_or_default(keybind, _DEFAULT) == expected_keybind
+
+
+def test_default_keybinds_are_valid():
+    for keybind in DefaultKeybinds:
+        assert is_valid_keybind(keybind)
 
 
 @pytest.mark.parametrize(
@@ -85,4 +105,4 @@ def test_validate_keybind_or_default(keybind: str, expected_keybind: str):
 )
 def test_validate_hex_or_default(hex_color: str, expected: str):
     """Should return original hex or default if it was invalid"""
-    assert validate_hex_or_default(hex_color, _DEFAULT) == expected
+    assert _validate_hex_or_default(hex_color, _DEFAULT) == expected

@@ -30,7 +30,10 @@ jobs:
           python-version: ${{ steps.python-version.outputs.version }}
 
       - name: Install Validate Dependencies
-        run: pip install -r requirements_dev.txt
+        run: |
+          pip install -r requirements_dev.txt
+          sudo apt-get install libtre-dev
+          make build-all
 
       - name: Validate Config.ini Schema
         run: python ./config_schema_validator.py
@@ -44,7 +47,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           sudo apt-get install -y libturbojpeg
-          make build-all
 
         # xvfb enables tkinter in these tests
       - name: Unit Tests

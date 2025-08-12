@@ -1,5 +1,5 @@
 #include <Python.h>
-#include <regex.h>
+#include <tre/tre.h>
 
 static regex_t valid_keybind_regex;
 static int compile_valid_keybind_regex = 1;
@@ -35,7 +35,7 @@ static PyObject *is_valid_keybind(PyObject *self, PyObject *arg)
 {
     if (compile_valid_keybind_regex)
     {
-        compile_valid_keybind_regex = tre_regcomp(&valid_keybind_regex, "^<((F([1-9]|(1[0-2])))|(Control-[a-zA-Z0-9]))>$", REG_EXTENDED);
+        compile_valid_keybind_regex = tre_regcomp(&valid_keybind_regex, "^<((F([1-9]|(1[0-2])))|((Control-)?([a-zA-Z0-9]|minus|equal)))>$", REG_EXTENDED);
         if (compile_valid_keybind_regex != 0)
         {
             // Failed to compile regex

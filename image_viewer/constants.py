@@ -19,8 +19,6 @@ class ImageFormats(StrEnum):
 class Key(IntEnum):
     """Keysym numbers for various keys"""
 
-    MINUS = 45
-    EQUALS = 61
     LEFT = 65361
     RIGHT = 65363
     DOWN = 65364
