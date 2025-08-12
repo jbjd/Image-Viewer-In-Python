@@ -32,6 +32,7 @@ jobs:
       - name: Install Validate Dependencies
         run: |
           pip install -r requirements_dev.txt
+          sudo apt-get install libtre-dev
           make build-all
 
       - name: Validate Config.ini Schema
