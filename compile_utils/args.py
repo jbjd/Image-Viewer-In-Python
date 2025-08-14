@@ -70,7 +70,7 @@ class CompileArgumentParser(ArgumentParser):
         NuitkaArgs.WINDOWS_CONSOLE_MODE.value,
     ]
 
-    def __init__(self, code_folder: str, install_path: str) -> None:
+    def __init__(self, install_path: str) -> None:
         super().__init__(
             description="Compiles Personal Image Viewer to an executable",
             epilog=f"Some nuitka arguments are also accepted: {self.VALID_NUITKA_ARGS}",

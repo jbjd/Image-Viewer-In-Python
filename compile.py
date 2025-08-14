@@ -60,7 +60,7 @@ else:
 
 EXECUTABLE_NAME: str = "viewer" + EXECUTABLE_EXT
 
-parser = CompileArgumentParser(CODE_FOLDER, DEFAULT_INSTALL_PATH)
+parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
 args: CompileNamespace
 nuitka_args: list[str]
