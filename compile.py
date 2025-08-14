@@ -7,6 +7,7 @@ from importlib.metadata import version as get_module_version
 from subprocess import Popen
 
 from personal_compile_tools.file_operations import (
+    copy_file,
     copy_folder,
     delete_file,
     delete_folder,
@@ -28,12 +29,13 @@ from compile_utils.module_dependencies import (
     module_dependencies,
     modules_to_skip,
 )
-from compile_utils.nuitka_ext import has_standalone_flag, start_nuitka_compilation
+from compile_utils.nuitka_ext import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
     validate_module_requirements,
     validate_python_version,
 )
+from compile_utils.module_dependencies import compiled_modules
 
 validate_python_version()
 
@@ -46,20 +48,21 @@ BUILD_DIR: str = os.path.join(WORKING_DIR, f"{FILE}.build")
 
 EXECUTABLE_EXT: str
 PY_LIBRARY_EXT: str
+DEFAULT_INSTALL_PATH: str
 files_to_include: list[str] = ["config.ini"]
 
 if os.name == "nt":
-    EXECUTABLE_EXT = "exe"
-    PY_LIBRARY_EXT = "pyd"
+    EXECUTABLE_EXT = ".exe"
+    PY_LIBRARY_EXT = ".pyd"
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
     files_to_include += ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
-    EXECUTABLE_EXT = "bin"
-    PY_LIBRARY_EXT = "so"
+    EXECUTABLE_EXT = ".bin"
+    PY_LIBRARY_EXT = ".so"
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     files_to_include += ["icon/icon.png"]
 
-EXECUTABLE_NAME: str = f"viewer.{EXECUTABLE_EXT}"
+EXECUTABLE_NAME: str = "viewer" + EXECUTABLE_EXT
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
@@ -73,11 +76,24 @@ if os.name == "nt":
         NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(f"{CODE_DIR}/icon/icon.ico"),
     ]
 
-is_standalone = has_standalone_flag(nuitka_args)
+is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 validate_module_requirements(is_standalone)
 
-# Before compiling, copy to tmp dir and remove type-hints/clean code
-# I thought nuitka would handle this, but I guess not?
+# We need to handle this since nuitka refuses to allow
+# --include-module in non-standalone builds
+compile_module_files: list[str] = [
+    mod.replace(".", "/") + PY_LIBRARY_EXT for mod in compiled_modules
+]
+if not is_standalone:
+    files_to_include += compile_module_files
+
+
+for module in compile_module_files:
+    if not os.path.exists(os.path.join(CODE_DIR, module)):
+        raise FileNotFoundError(
+            f"{module} not found. You can run 'make build-all' to compile it"
+        )
+
 delete_folder(TMP_DIR)
 try:
     move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
@@ -128,7 +144,7 @@ try:
     default_python: str = "python" if os.name == "nt" else "bin/python3"
     python_path: str = f"{sys.exec_prefix}/{default_python}"
     process: Popen = start_nuitka_compilation(
-        python_path, input_file, CODE_DIR, WORKING_DIR, nuitka_args, files_to_include
+        python_path, input_file, WORKING_DIR, nuitka_args
     )
 
     print("Waiting for nuitka compilation...")
@@ -137,6 +153,12 @@ try:
 
     if process.wait():
         sys.exit(1)
+
+    for data_file_path in files_to_include:
+        old_path = os.path.join(CODE_DIR, data_file_path)
+        new_path = os.path.join(COMPILE_DIR, data_file_path)
+        os.makedirs(os.path.dirname(new_path), exist_ok=True)
+        copy_file(old_path, new_path)
 
     if args.build_info_file:
         with open(

@@ -33,6 +33,11 @@ class NuitkaArgs(StrEnum):
     SHOW_SCONS = "--show-scons"
     SHOW_MEMORY = "--show-memory"
 
+    INCLUDE_DATA_FILES = "--include-data-files"
+    NO_INCLUDE_DATA_FILES = "--noinclude-data-files"
+    INCLUDE_MODULE = "--include-module"
+    NO_INCLUDE_DLLS = "--noinclude-dlls"
+
     def with_value(self, value: str) -> str:
         """Returns the flag in the format {flag}={value}"""
         return f"{self}={value}"

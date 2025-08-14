@@ -18,9 +18,6 @@ if os.name == "nt":
 # be checked explicitly
 modules_to_include: list[str] = ["numpy._core._exceptions"]
 
-if os.name == "nt":
-    modules_to_include += ["util._os_nt"]
-
 modules_to_skip: list[str] = [
     "argparse",
     "bz2",
