@@ -5,10 +5,8 @@ import sys
 from importlib import import_module
 from importlib.metadata import version as get_module_version
 from subprocess import Popen
-from typing import Final
 
 from personal_compile_tools.file_operations import (
-    copy_file,
     copy_folder,
     delete_file,
     delete_folder,
@@ -30,7 +28,7 @@ from compile_utils.module_dependencies import (
     module_dependencies,
     modules_to_skip,
 )
-from compile_utils.nuitka_ext import start_nuitka_compilation
+from compile_utils.nuitka_ext import has_standalone_flag, start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
     validate_module_requirements,
@@ -39,30 +37,35 @@ from compile_utils.validation import (
 
 validate_python_version()
 
-WORKING_DIR: Final[str] = os.path.normpath(os.path.dirname(__file__))
-FILE: Final[str] = "__main__"
-TMP_DIR: Final[str] = os.path.join(WORKING_DIR, "tmp")
-CODE_DIR: Final[str] = os.path.join(WORKING_DIR, "image_viewer")
-COMPILE_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.dist")
-BUILD_DIR: Final[str] = os.path.join(WORKING_DIR, f"{FILE}.build")
-EXECUTABLE_EXT: Final[str] = "exe" if os.name == "nt" else "bin"
-EXECUTABLE_NAME: Final[str] = f"viewer.{EXECUTABLE_EXT}"
-DEFAULT_INSTALL_PATH: str
-DATA_FILE_PATHS: list[str] = ["config.ini"]
+WORKING_DIR: str = os.path.normpath(os.path.dirname(__file__))
+FILE: str = "__main__"
+TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
+CODE_DIR: str = os.path.join(WORKING_DIR, "image_viewer")
+COMPILE_DIR: str = os.path.join(WORKING_DIR, f"{FILE}.dist")
+BUILD_DIR: str = os.path.join(WORKING_DIR, f"{FILE}.build")
+
+EXECUTABLE_EXT: str
+PY_LIBRARY_EXT: str
+files_to_include: list[str] = ["config.ini"]
 
 if os.name == "nt":
+    EXECUTABLE_EXT = "exe"
+    PY_LIBRARY_EXT = "pyd"
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
-    DATA_FILE_PATHS = ["icon/icon.ico", "dll/libturbojpeg.dll"]
+    files_to_include += ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
+    EXECUTABLE_EXT = "bin"
+    PY_LIBRARY_EXT = "so"
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
-    DATA_FILE_PATHS = ["icon/icon.png"]
+    files_to_include += ["icon/icon.png"]
+
+EXECUTABLE_NAME: str = f"viewer.{EXECUTABLE_EXT}"
 
 parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 
 args: CompileNamespace
 nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(modules_to_skip)
-is_standalone = NuitkaArgs.STANDALONE in nuitka_args
 
 if os.name == "nt":
     nuitka_args += [
@@ -70,6 +73,7 @@ if os.name == "nt":
         NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(f"{CODE_DIR}/icon/icon.ico"),
     ]
 
+is_standalone = has_standalone_flag(nuitka_args)
 validate_module_requirements(is_standalone)
 
 # Before compiling, copy to tmp dir and remove type-hints/clean code
@@ -124,7 +128,7 @@ try:
     default_python: str = "python" if os.name == "nt" else "bin/python3"
     python_path: str = f"{sys.exec_prefix}/{default_python}"
     process: Popen = start_nuitka_compilation(
-        python_path, input_file, WORKING_DIR, nuitka_args
+        python_path, input_file, CODE_DIR, WORKING_DIR, nuitka_args, files_to_include
     )
 
     print("Waiting for nuitka compilation...")
@@ -133,12 +137,6 @@ try:
 
     if process.wait():
         sys.exit(1)
-
-    for data_file_path in DATA_FILE_PATHS:
-        old_path = os.path.join(CODE_DIR, data_file_path)
-        new_path = os.path.join(COMPILE_DIR, data_file_path)
-        os.makedirs(os.path.dirname(new_path), exist_ok=True)
-        copy_file(old_path, new_path)
 
     if args.build_info_file:
         with open(
