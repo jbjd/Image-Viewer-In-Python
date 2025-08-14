@@ -3,10 +3,6 @@
 import os
 from subprocess import Popen
 
-from compile_utils.args import NuitkaArgs
-from compile_utils.code_to_skip import data_files_to_exclude, dlls_to_exclude
-from compile_utils.module_dependencies import modules_to_include
-
 
 def start_nuitka_compilation(
     python_path: str, input_file: str, working_dir: str, nuitka_args: list[str]
@@ -14,7 +10,7 @@ def start_nuitka_compilation(
     """Begins nuitka compilation in another process"""
 
     print("Starting compilation with nuitka")
-    print(f'Using python install "{python_path}"')
+    print("Using python install", python_path)
 
     compile_env = os.environ.copy()
     # -march=native had a race condition that segfaulted on startup
@@ -30,27 +26,14 @@ def get_nuitka_command(
     python_path: str, input_file: str, nuitka_args: list[str]
 ) -> list[str]:
     """Returns the command that this package uses to compile"""
-    command: list[str] = (
-        [
-            python_path,
-            "-OO",
-            "-m",
-            "nuitka",
-            input_file,
-            "--python-flag=-OO,no_annotations,no_warnings,static_hashes",
-            "--output-filename=viewer",
-            "--follow-imports",  # TODO: Fix
-        ]
-        + nuitka_args
-        + [
-            NuitkaArgs.NO_INCLUDE_DATA_FILES.with_value(glob)
-            for glob in data_files_to_exclude
-        ]
-        + [
-            NuitkaArgs.INCLUDE_MODULE.with_value(module)
-            for module in modules_to_include
-        ]
-        + [NuitkaArgs.NO_INCLUDE_DLLS.with_value(glob) for glob in dlls_to_exclude]
-    )
+    command: list[str] = [
+        python_path,
+        "-OO",
+        "-m",
+        "nuitka",
+        input_file,
+        "--python-flag=-OO,no_annotations,no_warnings,static_hashes",
+        "--output-filename=viewer",
+    ] + nuitka_args
 
     return command

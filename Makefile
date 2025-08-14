@@ -51,7 +51,7 @@ build-util-generic:
 build-all: build-util-os-nt build-util-generic
 
 install:
-	$(PYTHON_FOR_INSTALL_STEP) compile.py --standalone --strip --no-cleanup
+	$(PYTHON_FOR_INSTALL_STEP) compile.py --strip --no-cleanup
 
 clean:
 	rm --preserve-root -Irf */__pycache__/ *.dist/ *.build/ build/ tmp*/ *.egg-info/ .mypy_cache/ .pytest_cache/ */ERROR.log *.exe .coverage compilation-report.xml nuitka-crash-report.xml

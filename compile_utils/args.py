@@ -3,7 +3,9 @@
 from argparse import ArgumentParser, Namespace
 from enum import StrEnum
 
+from compile_utils.code_to_skip import data_files_to_exclude, dlls_to_exclude
 from compile_utils.constants import BUILD_INFO_FILE, REPORT_FILE
+from compile_utils.module_dependencies import modules_to_include
 from compile_utils.validation import raise_if_not_root
 
 
@@ -22,6 +24,10 @@ class NuitkaArgs(StrEnum):
     MINGW64 = "--mingw64"
     ENABLE_PLUGIN = "--enable-plugin"
     NO_FOLLOW_IMPORT = "--nofollow-import-to"
+    INCLUDE_DATA_FILES = "--include-data-files"
+    NO_INCLUDE_DATA_FILES = "--noinclude-data-files"
+    INCLUDE_MODULE = "--include-module"
+    NO_INCLUDE_DLLS = "--noinclude-dlls"
     WINDOWS_ICON_FROM_ICO = "--windows-icon-from-ico"
     WINDOWS_CONSOLE_MODE = "--windows-console-mode"
     REMOVE_OUTPUT = "--remove-output"
@@ -32,11 +38,6 @@ class NuitkaArgs(StrEnum):
     WARN_UNUSUAL_CODE = "--warn-unusual-code"
     SHOW_SCONS = "--show-scons"
     SHOW_MEMORY = "--show-memory"
-
-    INCLUDE_DATA_FILES = "--include-data-files"
-    NO_INCLUDE_DATA_FILES = "--noinclude-data-files"
-    INCLUDE_MODULE = "--include-module"
-    NO_INCLUDE_DLLS = "--noinclude-dlls"
 
     def with_value(self, value: str) -> str:
         """Returns the flag in the format {flag}={value}"""
@@ -62,7 +63,6 @@ class CompileArgumentParser(ArgumentParser):
     __slots__ = ()
 
     VALID_NUITKA_ARGS: list[str] = [
-        NuitkaArgs.STANDALONE.value,
         NuitkaArgs.QUIET.value,
         NuitkaArgs.VERBOSE.value,
         NuitkaArgs.SHOW_SCONS.value,
@@ -70,7 +70,7 @@ class CompileArgumentParser(ArgumentParser):
         NuitkaArgs.WINDOWS_CONSOLE_MODE.value,
     ]
 
-    def __init__(self, install_path: str) -> None:
+    def __init__(self, code_folder: str, install_path: str) -> None:
         super().__init__(
             description="Compiles Personal Image Viewer to an executable",
             epilog=f"Some nuitka arguments are also accepted: {self.VALID_NUITKA_ARGS}",
@@ -170,6 +170,8 @@ class CompileArgumentParser(ArgumentParser):
     ) -> list[str]:
         """Given the input list of nuitka args, adds extra arguments
         based on flags user specified"""
+        nuitka_args.append(NuitkaArgs.STANDALONE)
+
         if args.report or args.debug:
             nuitka_args.append(NuitkaArgs.REPORT.with_value(REPORT_FILE))
             if args.debug:
@@ -184,13 +186,22 @@ class CompileArgumentParser(ArgumentParser):
             if not args.no_cleanup:
                 nuitka_args.append(NuitkaArgs.REMOVE_OUTPUT)
 
-        if NuitkaArgs.STANDALONE in nuitka_args:
-            nuitka_args.append(NuitkaArgs.ENABLE_PLUGIN.with_value("tk-inter"))
+        nuitka_args.append(NuitkaArgs.ENABLE_PLUGIN.with_value("tk-inter"))
 
-            nuitka_args += [
-                NuitkaArgs.NO_FOLLOW_IMPORT.with_value(skipped_module)
-                for skipped_module in modules_to_skip
-            ]
+        nuitka_args += [
+            NuitkaArgs.NO_FOLLOW_IMPORT.with_value(module) for module in modules_to_skip
+        ]
+        nuitka_args += [
+            NuitkaArgs.NO_INCLUDE_DATA_FILES.with_value(glob)
+            for glob in data_files_to_exclude
+        ]
+        nuitka_args += [
+            NuitkaArgs.INCLUDE_MODULE.with_value(module)
+            for module in modules_to_include
+        ]
+        nuitka_args += [
+            NuitkaArgs.NO_INCLUDE_DLLS.with_value(glob) for glob in dlls_to_exclude
+        ]
 
         if not any(
             arg.startswith(NuitkaArgs.WINDOWS_CONSOLE_MODE) for arg in nuitka_args

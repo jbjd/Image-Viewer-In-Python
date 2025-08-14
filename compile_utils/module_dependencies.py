@@ -9,14 +9,11 @@ from personal_compile_tools.requirements import Requirement, parse_requirements_
 
 module_dependencies: list[Requirement] = parse_requirements_file("requirements.txt")
 
-compiled_modules: list[str] = ["util._generic"]
-
-if os.name == "nt":
-    compiled_modules += ["util._os_nt"]
-
 # Some modules can't be followed normally or need to
 # be checked explicitly
-modules_to_include: list[str] = ["numpy._core._exceptions"]
+modules_to_include: list[str] = ["numpy._core._exceptions", "util._generic"]
+if os.name == "nt":
+    modules_to_include += ["util._os_nt"]
 
 modules_to_skip: list[str] = [
     "argparse",

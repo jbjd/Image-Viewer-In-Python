@@ -35,36 +35,32 @@ from compile_utils.validation import (
     validate_module_requirements,
     validate_python_version,
 )
-from compile_utils.module_dependencies import compiled_modules
 
 validate_python_version()
 
-WORKING_DIR: str = os.path.normpath(os.path.dirname(__file__))
+WORKING_FOLDER: str = os.path.normpath(os.path.dirname(__file__))
 FILE: str = "__main__"
-TMP_DIR: str = os.path.join(WORKING_DIR, "tmp")
-CODE_DIR: str = os.path.join(WORKING_DIR, "image_viewer")
-COMPILE_DIR: str = os.path.join(WORKING_DIR, f"{FILE}.dist")
-BUILD_DIR: str = os.path.join(WORKING_DIR, f"{FILE}.build")
+TMP_FOLDER: str = os.path.join(WORKING_FOLDER, "tmp")
+CODE_FOLDER: str = os.path.join(WORKING_FOLDER, "image_viewer")
+COMPILE_FOLDER: str = os.path.join(WORKING_FOLDER, f"{FILE}.dist")
+BUILD_FOLDER: str = os.path.join(WORKING_FOLDER, f"{FILE}.build")
 
 EXECUTABLE_EXT: str
-PY_LIBRARY_EXT: str
 DEFAULT_INSTALL_PATH: str
 files_to_include: list[str] = ["config.ini"]
 
 if os.name == "nt":
     EXECUTABLE_EXT = ".exe"
-    PY_LIBRARY_EXT = ".pyd"
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
     files_to_include += ["icon/icon.ico", "dll/libturbojpeg.dll"]
 else:
     EXECUTABLE_EXT = ".bin"
-    PY_LIBRARY_EXT = ".so"
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
     files_to_include += ["icon/icon.png"]
 
 EXECUTABLE_NAME: str = "viewer" + EXECUTABLE_EXT
 
-parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
+parser = CompileArgumentParser(CODE_FOLDER, DEFAULT_INSTALL_PATH)
 
 args: CompileNamespace
 nuitka_args: list[str]
@@ -73,30 +69,14 @@ args, nuitka_args = parser.parse_known_args(modules_to_skip)
 if os.name == "nt":
     nuitka_args += [
         NuitkaArgs.MINGW64,
-        NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(f"{CODE_DIR}/icon/icon.ico"),
+        NuitkaArgs.WINDOWS_ICON_FROM_ICO.with_value(f"{CODE_FOLDER}/icon/icon.ico"),
     ]
 
-is_standalone = NuitkaArgs.STANDALONE in nuitka_args
-validate_module_requirements(is_standalone)
+validate_module_requirements()
 
-# We need to handle this since nuitka refuses to allow
-# --include-module in non-standalone builds
-compile_module_files: list[str] = [
-    mod.replace(".", "/") + PY_LIBRARY_EXT for mod in compiled_modules
-]
-if not is_standalone:
-    files_to_include += compile_module_files
-
-
-for module in compile_module_files:
-    if not os.path.exists(os.path.join(CODE_DIR, module)):
-        raise FileNotFoundError(
-            f"{module} not found. You can run 'make build-all' to compile it"
-        )
-
-delete_folder(TMP_DIR)
+delete_folder(TMP_FOLDER)
 try:
-    move_files_to_tmp_and_clean(CODE_DIR, TMP_DIR, IMAGE_VIEWER_NAME)
+    move_files_to_tmp_and_clean(CODE_FOLDER, TMP_FOLDER, IMAGE_VIEWER_NAME)
 
     for module in module_dependencies:
         module_name: str = get_normalized_module_name(module)
@@ -112,16 +92,16 @@ try:
         if module_name == "numpy":
             site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
             lib_path: str = os.path.join(site_packages_path, "numpy.libs")
-            copy_folder(lib_path, os.path.join(TMP_DIR, "numpy.libs"))
-        elif module_name == "PIL" and os.name == "posix":
+            copy_folder(lib_path, os.path.join(TMP_FOLDER, "numpy.libs"))
+        elif module_name == "PIL" and os.name != "nt":
             site_packages_path = os.path.dirname(os.path.dirname(module.__file__))
             lib_path = os.path.join(site_packages_path, "pillow.libs")
-            copy_folder(lib_path, os.path.join(TMP_DIR, "pillow.libs"))
+            copy_folder(lib_path, os.path.join(TMP_FOLDER, "pillow.libs"))
         if base_file_name == "__init__.py":
             # its really a folder
             move_files_to_tmp_and_clean(
                 os.path.dirname(module.__file__),
-                TMP_DIR,
+                TMP_FOLDER,
                 module_name,
                 sub_modules_to_skip,
             )
@@ -129,7 +109,7 @@ try:
             # its just one file
             clean_file_and_copy(
                 module.__file__,
-                os.path.join(TMP_DIR, base_file_name),
+                os.path.join(TMP_FOLDER, base_file_name),
                 module_name,
                 module_name,
             )
@@ -139,30 +119,30 @@ try:
     if args.skip_nuitka:
         sys.exit(0)
 
-    delete_folder(COMPILE_DIR)
-    input_file: str = f"{TMP_DIR}/{FILE}.py"
+    delete_folder(COMPILE_FOLDER)
+    input_file: str = f"{TMP_FOLDER}/{FILE}.py"
     default_python: str = "python" if os.name == "nt" else "bin/python3"
     python_path: str = f"{sys.exec_prefix}/{default_python}"
     process: Popen = start_nuitka_compilation(
-        python_path, input_file, WORKING_DIR, nuitka_args
+        python_path, input_file, WORKING_FOLDER, nuitka_args
     )
 
     print("Waiting for nuitka compilation...")
 
-    install_path: str = args.install_path if not args.debug else COMPILE_DIR
+    install_path: str = args.install_path if not args.debug else COMPILE_FOLDER
 
     if process.wait():
         sys.exit(1)
 
     for data_file_path in files_to_include:
-        old_path = os.path.join(CODE_DIR, data_file_path)
-        new_path = os.path.join(COMPILE_DIR, data_file_path)
+        old_path = os.path.join(CODE_FOLDER, data_file_path)
+        new_path = os.path.join(COMPILE_FOLDER, data_file_path)
         os.makedirs(os.path.dirname(new_path), exist_ok=True)
         copy_file(old_path, new_path)
 
     if args.build_info_file:
         with open(
-            os.path.join(COMPILE_DIR, BUILD_INFO_FILE), "w", encoding="utf-8"
+            os.path.join(COMPILE_FOLDER, BUILD_INFO_FILE), "w", encoding="utf-8"
         ) as fp:
             fp.write(f"OS: {os.name}\n")
             fp.write(f"Python: {sys.version}\n")
@@ -172,24 +152,17 @@ try:
                 fp.write(f"\t{name}: {get_module_version(name)}\n")
             fp.write(f"Arguments: {args}\n")
 
-    if is_standalone:
-        clean_tk_files(COMPILE_DIR)
-        if args.strip:
-            strip_files(COMPILE_DIR)
-    else:
-        # nuitka puts exe outside of dist when not standalone
-        os.rename(
-            os.path.join(WORKING_DIR, EXECUTABLE_NAME),
-            os.path.join(COMPILE_DIR, EXECUTABLE_NAME),
-        )
+    clean_tk_files(COMPILE_FOLDER)
+    if args.strip:
+        strip_files(COMPILE_FOLDER)
 
     if not args.debug:
         delete_folder(install_path)
-        os.rename(COMPILE_DIR, install_path)
+        os.rename(COMPILE_FOLDER, install_path)
 finally:
     if not args.debug and not args.no_cleanup:
-        delete_folders([BUILD_DIR, COMPILE_DIR, TMP_DIR])
-        delete_file(os.path.join(WORKING_DIR, f"{FILE}.cmd"))
+        delete_folders([BUILD_FOLDER, COMPILE_FOLDER, TMP_FOLDER])
+        delete_file(os.path.join(WORKING_FOLDER, f"{FILE}.cmd"))
 
 print("\nFinished")
 print("Installed to", install_path)
