@@ -158,19 +158,6 @@ functions_to_skip: dict[str, set[str]] = {
         "scale_with_quality",
     },
     "PIL._binary": {"i8", "si16be", "si16le", "si32be", "si32le"},
-    "PIL.features": {
-        "check",
-        "check_codec",
-        "check_feature",
-        "get_supported",
-        "get_supported_codecs",
-        "get_supported_features",
-        "get_supported_modules",
-        "pilinfo",
-        "version",
-        "version_codec",
-        "version_feature",
-    },
     "PIL.AvifImagePlugin": {"get_codec_version", "register_mime"},
     "PIL.Image": {
         "__getstate__",
@@ -307,7 +294,6 @@ vars_to_skip: dict[str, set[str]] = {
     "numpy._core.records": {"__all__", "__module__", "numfmt"},
     "numpy._core.shape_base": {"__all__", "array_function_dispatch"},
     "numpy.exceptions": {"__all__", "_is_loaded"},
-    "PIL.features": {"codecs", "features"},
     "PIL.Image": {"MIME", "TYPE_CHECKING"},
     "PIL.ImageDraw": {"Outline", "TYPE_CHECKING"},
     "PIL.ImageFile": {"TYPE_CHECKING"},
@@ -420,14 +406,13 @@ from_imports_to_skip: dict[str, set[str]] = {
         "normalize_axis_tuple",
         "set_module",
     },
-    "PIL.features": {"deprecate"},
     "PIL.Image": {"deprecate"},
     "PIL.ImageMath": {"deprecate"},
     "PIL.ImageMode": {"deprecate"},
     "PIL.JpegImagePlugin": {"deprecate"},
 }
 
-dict_keys_to_skip: dict[str, set[str]] = {"PIL.features": {"tkinter"}}
+dict_keys_to_skip: dict[str, set[str]] = {}
 
 decorators_to_skip: dict[str, set[str]] = {
     f"{IMAGE_VIEWER_NAME}.ui.base": {"abstractmethod"},

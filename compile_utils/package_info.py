@@ -2,17 +2,3 @@
 
 IMAGE_VIEWER_NAME: str = "image_viewer"
 PROJECT_FILE: str = "pyproject.toml"
-
-# All modules that nuitka will need to follow imports to
-MODULES: list[str] = [
-    "actions",
-    "animation",
-    "config",
-    "constants",
-    "files",
-    "image",
-    "state",
-    "ui",
-    "util",
-    "viewer",
-]

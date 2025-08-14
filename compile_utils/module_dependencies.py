@@ -11,11 +11,7 @@ module_dependencies: list[Requirement] = parse_requirements_file("requirements.t
 
 # Some modules can't be followed normally or need to
 # be checked explicitly
-modules_to_include: list[str] = [
-    "numpy._core._exceptions",
-    "util._generic",
-]
-
+modules_to_include: list[str] = ["numpy._core._exceptions", "util._generic"]
 if os.name == "nt":
     modules_to_include += ["util._os_nt"]
 
@@ -175,6 +171,7 @@ modules_to_skip: list[str] = [
     "PIL.ImageTransform",
     "PIL.ImageWin",
     "PIL.TarIO",
+    "PIL.features",
     "PIL.report",
     "py_compile",
     "pydoc",
