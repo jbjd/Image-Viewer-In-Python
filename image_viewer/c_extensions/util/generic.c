@@ -1,4 +1,7 @@
+#define Py_LIMITED_API 0x030C0000
+
 #include <Python.h>
+#include <ctype.h>
 #include <tre/tre.h>
 
 static regex_t valid_keybind_regex;
@@ -13,7 +16,7 @@ static PyObject *is_valid_hex_color(PyObject *self, PyObject *arg)
         return Py_False;
     }
 
-    const char *hex = PyUnicode_AsUTF8(arg);
+    const char *hex = PyUnicode_AsUTF8AndSize(arg, NULL);
 
     if (hex[0] != '#')
     {
@@ -43,7 +46,7 @@ static PyObject *is_valid_keybind(PyObject *self, PyObject *arg)
         }
     }
 
-    const char *keybind = PyUnicode_AsUTF8(arg);
+    const char *keybind = PyUnicode_AsUTF8AndSize(arg, NULL);
 
     const int search_result = tre_regexec(&valid_keybind_regex, keybind, 0, NULL, 0);
 

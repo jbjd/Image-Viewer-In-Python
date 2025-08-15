@@ -1,36 +1,35 @@
 ifeq ($(OS),Windows_NT)
     PYTHON = python
-	PYTHON_DLL = python312
 	COMPILED_EXT = pyd
 	OS_FLAGS =
 else
-    PYTHON = python3.12
-	PYTHON_DLL = python3.12
+    PYTHON = python3
 	COMPILED_EXT = so
 	OS_FLAGS = -fPIC
+endif
+
+PYTHON_DLL = python3
+
+ifneq (,$(wildcard .venv))  # If .venv folder exists, use that
+	ifeq ($(OS),Windows_NT)
+		PYTHON := .venv/Scripts/$(PYTHON)
+	else
+		PYTHON := .venv/$(PYTHON)
+	endif
+else
+    PYTHON := $(shell $(PYTHON) -c "import sys;print(sys.base_prefix)")/$(PYTHON)
 endif
 
 # Base prefix ignores venv
 PYTHON_BASE_PREFIX := $(shell $(PYTHON) -c "import sys;print(sys.base_prefix)")
 
-ifneq (,$(wildcard .venv))  # If .venv folder exists, use that
-	ifeq ($(OS),Windows_NT)
-		INSTALL_STEP_PREFIX = .venv/Scripts
-	else
-		INSTALL_STEP_PREFIX = .venv
-	endif
-else
-    INSTALL_STEP_PREFIX := $(PYTHON_BASE_PREFIX)
-endif
-
 # Install step python may be venv or not
 # But for compiling C we need to use the real python installation
 ifeq ($(OS),Windows_NT)
-    PYTHON_FOR_INSTALL_STEP := $(INSTALL_STEP_PREFIX)/$(PYTHON)
 	PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/
 	PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/
 else
-    PYTHON_FOR_INSTALL_STEP := $(INSTALL_STEP_PREFIX)/bin/$(PYTHON)
+# TODO parse 3.12 out of python
 	PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/python3.12/
 	PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/python3.12/
 endif
@@ -51,7 +50,7 @@ build-util-generic:
 build-all: build-util-os-nt build-util-generic
 
 install:
-	$(PYTHON_FOR_INSTALL_STEP) compile.py --strip --no-cleanup
+	$(PYTHON) compile.py --strip --no-cleanup
 
 clean:
 	rm --preserve-root -Irf */__pycache__/ *.dist/ *.build/ build/ tmp*/ *.egg-info/ .mypy_cache/ .pytest_cache/ */ERROR.log *.exe .coverage compilation-report.xml nuitka-crash-report.xml

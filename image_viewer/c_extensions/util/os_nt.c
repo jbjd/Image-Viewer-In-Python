@@ -1,9 +1,10 @@
-#define INITGUID
+#define Py_LIMITED_API 0x030C0000
 #define PY_SSIZE_T_CLEAN
+#define INITGUID
 
+#include <Python.h>
 #include <fileapi.h>
 #include <oleauto.h>
-#include <Python.h>
 #include <shlguid.h>
 #include <shlwapi.h>
 #include <windows.h>
@@ -374,7 +375,7 @@ end:
 
 static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
-    const char *path = PyUnicode_AsUTF8(arg);
+    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
     if (path == NULL)
     {
         return NULL;

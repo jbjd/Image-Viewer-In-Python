@@ -69,8 +69,10 @@ def validate_python_version() -> None:
     required_python: tuple[int, int] = get_required_python_version()
     used_python: tuple[int, int] = version_info[:2]
 
-    if used_python != required_python:
-        warnings.warn(f"Expecting python {required_python} but found {used_python}")
+    if used_python < required_python:
+        warnings.warn(
+            f"Expecting python {required_python} or higher but found {used_python}"
+        )
 
     version: str = version_tuple_to_str(used_python)
     if version in PythonVersions.getNotYetSupportedPythonVersions():
