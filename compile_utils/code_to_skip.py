@@ -160,6 +160,7 @@ functions_to_skip: dict[str, set[str]] = {
     "PIL._binary": {"i8", "si16be", "si16le", "si32be", "si32le"},
     "PIL.AvifImagePlugin": {"get_codec_version", "register_mime"},
     "PIL.Image": {
+        "__arrow_c_array__",
         "__getstate__",
         "__repr__",
         "__setstate__",
@@ -178,6 +179,7 @@ functions_to_skip: dict[str, set[str]] = {
         "deprecate",
         "effect_mandelbrot",
         "entropy",
+        "fromarrow",
         "fromqimage",
         "fromqpixmap",
         "get_child_images",
@@ -336,7 +338,11 @@ classes_to_skip: dict[str, set[str]] = {
     "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
+    "PIL.Image": {
+        "SupportsArrayInterface",
+        "SupportsArrowArrayInterface",
+        "SupportsGetData",
+    },
     "PIL.ImageFile": {
         "Parser",
         "PyEncoder",
@@ -679,6 +685,13 @@ from collections import namedtuple""",
             ),
         ],
         "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
+        "PIL.JpegImagePlugin": [
+            RegexReplacement(  # Remove .mpo support for now
+                r"def jpeg_factory\(.*return im",
+                "def jpeg_factory(fp,filename=None):return JpegImageFile(fp,filename)",
+                flags=re.DOTALL,
+            )
+        ],
         "PIL.PngImagePlugin": [
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
