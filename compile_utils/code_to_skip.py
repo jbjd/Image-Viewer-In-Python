@@ -116,7 +116,7 @@ functions_to_skip: dict[str, set[str]] = {
         "cross",
         "extend_all",
     },
-    "numpy._core.numerictypes": {"maximum_sctype"},
+    "numpy._core.numerictypes": {"issubsctype", "maximum_sctype"},
     "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
     "numpy._core.records": {
         "__repr__",
@@ -406,7 +406,8 @@ from_imports_to_skip: dict[str, set[str]] = {
     },
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
-    "numpy._core.umath": {"_add_newdoc_ufunc"},
+    "numpy._core.shape_base": {"overrides"},
+    "numpy._core.umath": {"_UFUNC_API", "_add_newdoc_ufunc"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
