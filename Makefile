@@ -36,7 +36,7 @@ else
 endif
 
 C_SOURCE = image_viewer/c_extensions
-C_FLAGS_SHARED = -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -l$(PYTHON_DLL) -O3 -fno-signed-zeros -s -shared -Wall -Werror $(OS_FLAGS)
+C_FLAGS_SHARED = -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -l$(PYTHON_DLL) -march=native -mtune=native -O3 -fno-signed-zeros -s -shared -Wall -Werror $(OS_FLAGS)
 
 build-util-os-nt:
 ifeq ($(OS),Windows_NT)

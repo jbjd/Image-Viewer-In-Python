@@ -116,7 +116,7 @@ functions_to_skip: dict[str, set[str]] = {
         "cross",
         "extend_all",
     },
-    "numpy._core.numerictypes": {"maximum_sctype"},
+    "numpy._core.numerictypes": {"issubsctype", "maximum_sctype"},
     "numpy._core.overrides": {"add_docstring", "verify_matching_signatures"},
     "numpy._core.records": {
         "__repr__",
@@ -158,8 +158,10 @@ functions_to_skip: dict[str, set[str]] = {
         "scale_with_quality",
     },
     "PIL._binary": {"i8", "si16be", "si16le", "si32be", "si32le"},
+    "PIL._util": {"new"},
     "PIL.AvifImagePlugin": {"get_codec_version", "register_mime"},
     "PIL.Image": {
+        "__arrow_c_array__",
         "__getstate__",
         "__repr__",
         "__setstate__",
@@ -178,6 +180,7 @@ functions_to_skip: dict[str, set[str]] = {
         "deprecate",
         "effect_mandelbrot",
         "entropy",
+        "fromarrow",
         "fromqimage",
         "fromqpixmap",
         "get_child_images",
@@ -336,7 +339,11 @@ classes_to_skip: dict[str, set[str]] = {
     "numpy._core.getlimits": {"finfo", "iinfo"},
     # Hidden use of ComplexWarning, VisibleDeprecationWarning
     "numpy.exceptions": {"ModuleDeprecationWarning", "RankWarning"},
-    "PIL.Image": {"SupportsArrayInterface", "SupportsGetData"},
+    "PIL.Image": {
+        "SupportsArrayInterface",
+        "SupportsArrowArrayInterface",
+        "SupportsGetData",
+    },
     "PIL.ImageFile": {
         "Parser",
         "PyEncoder",
@@ -384,7 +391,7 @@ from_imports_to_skip: dict[str, set[str]] = {
         "version",
     },
     "numpy._core._ufunc_config": {"set_module"},
-    "numpy._core.arrayprint": {"set_module"},
+    "numpy._core.arrayprint": {"array_function_dispatch", "set_module"},
     "numpy._core.fromnumeric": {"set_module"},
     "numpy._core.getlimits": {"set_module"},
     "numpy._core.numeric": {"_asarray", "set_module"},
@@ -400,7 +407,8 @@ from_imports_to_skip: dict[str, set[str]] = {
     },
     "numpy._core.overrides": {"getargspec", "set_module"},
     "numpy._core.records": {"_get_legacy_print_mode", "set_module"},
-    "numpy._core.umath": {"_add_newdoc_ufunc"},
+    "numpy._core.shape_base": {"overrides"},
+    "numpy._core.umath": {"_UFUNC_API", "_add_newdoc_ufunc"},
     "numpy.lib._stride_tricks_impl": {
         "array_function_dispatch",
         "normalize_axis_tuple",
@@ -448,6 +456,7 @@ module_imports_to_skip: dict[str, set[str]] = {
         "lib",
     },
     "numpy._core.__init__": {"function_base"},
+    "numpy._core.arrayprint": {"numerictypes"},
     "numpy._core.numeric": {"_asarray"},
     "numpy._core.overrides": {"numpy._core._multiarray_umath"},
     "numpy._core.umath": {"numpy"},
@@ -679,6 +688,13 @@ from collections import namedtuple""",
             ),
         ],
         "PIL.ImagePalette": [RegexReplacement(pattern="tostring = tobytes")],
+        "PIL.JpegImagePlugin": [
+            RegexReplacement(  # Remove .mpo support for now
+                r"def jpeg_factory\(.*return im",
+                "def jpeg_factory(fp,filename=None):return JpegImageFile(fp,filename)",
+                flags=re.DOTALL,
+            )
+        ],
         "PIL.PngImagePlugin": [
             RegexReplacement(
                 pattern=r"raise EOFError\(.*?\)", replacement="raise EOFError"
