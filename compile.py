@@ -41,7 +41,7 @@ validate_python_version()
 WORKING_FOLDER: str = os.path.normpath(os.path.dirname(__file__))
 FILE: str = "__main__"
 TMP_FOLDER: str = os.path.join(WORKING_FOLDER, "tmp")
-CODE_FOLDER: str = os.path.join(WORKING_FOLDER, "image_viewer")
+CODE_FOLDER: str = os.path.join(WORKING_FOLDER, IMAGE_VIEWER_NAME)
 COMPILE_FOLDER: str = os.path.join(WORKING_FOLDER, f"{FILE}.dist")
 BUILD_FOLDER: str = os.path.join(WORKING_FOLDER, f"{FILE}.build")
 
