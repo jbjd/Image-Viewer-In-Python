@@ -45,14 +45,8 @@ else
 	@echo "Nothing to do for build-util-os-nt:"
 endif
 
-ifeq ($(OS),Windows_NT)
-    C_UTIL_GENERIC_FLAGS = -Wl,-Bstatic,-Bsymbolic -ltre -Wl,-Bdynamic
-else
-    C_UTIL_GENERIC_FLAGS = -ltre
-endif
-
 build-util-generic:
-	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) $(C_UTIL_GENERIC_FLAGS)
+	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) -Wl,-Bstatic,-Bsymbolic -ltre -Wl,-Bdynamic
 
 
 ifeq ($(OS),Windows_NT)
