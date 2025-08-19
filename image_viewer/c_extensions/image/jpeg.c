@@ -3,7 +3,6 @@
 #include <Python.h>
 #include <turbojpeg.h>
 
-
 static inline int get_scaled_dimension(int dimension, int numerator, int denominator)
 {
     return (dimension * numerator + denominator - 1) / denominator;
@@ -54,9 +53,13 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
         goto destroy;
     }
 
-    // Read JPEG data into the buffer
-    fread(jpegBuffer, sizeof(char), jpegSize, jpegFile);
+    const size_t readBytes = fread(jpegBuffer, sizeof(char), jpegSize, jpegFile);
     fclose(jpegFile);
+
+    if (readBytes != jpegSize)
+    {
+        goto free;
+    }
 
     int width, height;
     if (tjDecompressHeader(decompressHandle, jpegBuffer, jpegSize, &width, &height) < 0)
