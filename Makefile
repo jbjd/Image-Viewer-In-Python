@@ -49,7 +49,7 @@ build-util-generic:
 	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) -Wl,-Bstatic -ltre -Wl,-Bdynamic
 
 build-image-jpeg-ext:
-	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_jpeg_ext.pyd -static-libgcc -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive -lturbojpeg -Wl,-Bdynamic
+	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_jpeg_ext.$(COMPILED_EXT) -static-libgcc -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive -lturbojpeg -Wl,-Bdynamic
 
 build-all: build-util-os-nt build-util-generic build-image-jpeg-ext
 
