@@ -32,8 +32,7 @@ jobs:
       - name: Install Validate Dependencies
         run: |
           pip install -r requirements_dev.txt
-          sudo apt-get install libtre-dev
-          sudo apt-get install -y libturbojpeg
+          sudo apt-get install libtre-dev libturbojpeg0-dev -y
           make build-all
 
       - name: Validate Config.ini Schema
