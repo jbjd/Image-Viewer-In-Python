@@ -46,9 +46,19 @@ else
 endif
 
 build-util-generic:
-	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) -Wl,-Bstatic -ltre -Wl,-Bdynamic
+	gcc $(C_SOURCE)/util/generic.c $(C_FLAGS_SHARED) -o image_viewer/util/_generic.$(COMPILED_EXT) -Wl,-Bstatic,-Bsymbolic -ltre -Wl,-Bdynamic
 
-build-all: build-util-os-nt build-util-generic
+
+ifeq ($(OS),Windows_NT)
+    C_JPEG_FLAGS = -static-libgcc -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive -lturbojpeg -Wl,-Bdynamic
+else
+    C_JPEG_FLAGS = -lturbojpeg
+endif
+
+build-image-jpeg-ext:
+	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_jpeg_ext.$(COMPILED_EXT) $(C_JPEG_FLAGS)
+
+build-all: build-util-os-nt build-util-generic build-image-jpeg-ext
 
 install:
 	$(PYTHON_FOR_INSTALL_STEP) compile.py --strip --no-cleanup
@@ -57,4 +67,4 @@ clean:
 	rm --preserve-root -Irf */__pycache__/ *.dist/ *.build/ build/ tmp*/ *.egg-info/ .mypy_cache/ .pytest_cache/ */ERROR.log *.exe .coverage compilation-report.xml nuitka-crash-report.xml
 
 test:
-	pytest --cov=image_viewer --cov-report term-missing
+	$(PYTHON_FOR_INSTALL_STEP) -m pytest --cov=image_viewer --cov-report term-missing

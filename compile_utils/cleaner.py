@@ -91,8 +91,7 @@ def clean_file_and_copy(
         ),
     )
 
-    edit_imports: bool = module_name != "numpy"
-    source = run_autoflake(source, remove_unused_imports=edit_imports)
+    source = run_autoflake(source, remove_unused_imports=True)
 
     with open(new_path, "w", encoding="utf-8") as fp:
         fp.write(source)

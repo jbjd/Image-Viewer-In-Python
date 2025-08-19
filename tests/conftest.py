@@ -73,12 +73,12 @@ def file_manager_with_3_images(image_cache: ImageCache) -> ImageFileManager:
 
 @pytest.fixture
 def image_resizer() -> ImageResizer:
-    return ImageResizer(CODE_DIR, 1920, 1080)
+    return ImageResizer(1920, 1080)
 
 
 @pytest.fixture
 def image_loader(image_cache: ImageCache) -> ImageLoader:
-    image_loader = ImageLoader(CODE_DIR, 1920, 1080, image_cache, lambda *_: None)
+    image_loader = ImageLoader(1920, 1080, image_cache, lambda *_: None)
     image_loader.PIL_image = MockImage()
     return image_loader
 

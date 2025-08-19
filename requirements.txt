@@ -1,4 +1,2 @@
 Pillow==11.3.0
-PyTurboJPEG==1.8.0
-Numpy==2.3.2
 Send2trash==1.8.3; platform_system != "Windows"
