@@ -51,7 +51,7 @@ build-util-generic:
 build-image-jpeg-ext:
 	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_jpeg_ext.pyd -static-libgcc -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,--no-whole-archive -lturbojpeg -Wl,-Bdynamic
 
-build-all: build-util-os-nt build-util-generic
+build-all: build-util-os-nt build-util-generic build-image-jpeg-ext
 
 install:
 	$(PYTHON_FOR_INSTALL_STEP) compile.py --strip --no-cleanup
