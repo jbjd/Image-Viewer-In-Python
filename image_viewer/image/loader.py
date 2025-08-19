@@ -4,6 +4,7 @@ from collections.abc import Callable
 from io import BytesIO
 from os import stat
 from threading import Thread
+from time import perf_counter
 
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
@@ -133,12 +134,18 @@ class ImageLoader:
             resized_image = cached_image_data.image
         else:
             original_mode: str = original_image.mode
+            a = perf_counter()
             resized_image_result: Image | None = self._resize_or_get_placeholder(
                 path_to_image, original_image
             )
             if resized_image_result is None:
                 return None
-
+            if (
+                original_image.format == "JPEG"
+                and self.image_resizer._get_jpeg_scale_factor(*original_image.size)
+                is not None
+            ):
+                print(path_to_image, perf_counter() - a)
             resized_image = resized_image_result
 
             size_display: str = get_byte_display(byte_size)
