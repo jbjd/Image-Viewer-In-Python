@@ -6,6 +6,7 @@ from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
 
 from image_viewer.image.resizer import ImageResizer
+from tests.conftest import IMG_DIR
 
 _MODULE_PATH: str = "image_viewer.image.resizer"
 
@@ -39,7 +40,6 @@ def test_fit_dimensions_to_screen_and_get_interpolation(
     assert dimensions == expected_dimensions
 
 
-# TODO: Functional test of large JPEG
 def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer):
     """When fitting a small jpeg, should fallback to generic fit function"""
     image: Image = new_image("RGB", (1000, 1000))  # smaller than screen
@@ -50,6 +50,21 @@ def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer)
     ):
         image_resizer.get_jpeg_fit_to_screen(image, "")
         mock_decode_scaled_jpeg.assert_not_called()
+
+
+def test_jpeg_fit_to_screen_large_image(tk_app: Tk, image_resizer: ImageResizer):
+    """When fitting a small jpeg, should fallback to generic fit function"""
+
+    image: Image = new_image("RGB", (1000, 4000))
+
+    scaled_image: Image | None = image_resizer.get_jpeg_fit_to_screen(
+        image, IMG_DIR + "/sub_folder.png/large.jpg"
+    )
+
+    # Scaled based on 1920x1080 screen
+    assert scaled_image is not None
+    assert scaled_image.width == 270
+    assert scaled_image.height == 1080
 
 
 def test_get_image_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
