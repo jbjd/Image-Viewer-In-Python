@@ -46,7 +46,7 @@ else
 endif
 
 ifeq ($(OS),Windows_NT)
-    C_UTIL_GENERIC_FLAGS = -Wl,-Bstatic,-Bsymbolic -ltre -Wl,-Bdynamicmic
+    C_UTIL_GENERIC_FLAGS = -Wl,-Bstatic,-Bsymbolic -ltre -Wl,-Bdynamic
 else
     C_UTIL_GENERIC_FLAGS = -ltre
 endif
