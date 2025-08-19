@@ -33,6 +33,7 @@ jobs:
         run: |
           pip install -r requirements_dev.txt
           sudo apt-get install libtre-dev
+          sudo apt-get install -y libturbojpeg
           make build-all
 
       - name: Validate Config.ini Schema
@@ -46,7 +47,6 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt
-          sudo apt-get install -y libturbojpeg
 
         # xvfb enables tkinter in these tests
       - name: Unit Tests

@@ -52,7 +52,7 @@ files_to_include: list[str] = ["config.ini"]
 if os.name == "nt":
     EXECUTABLE_EXT = ".exe"
     DEFAULT_INSTALL_PATH = "C:/Program Files/Personal Image Viewer/"
-    files_to_include += ["icon/icon.ico", "dll/libturbojpeg.dll"]
+    files_to_include += ["icon/icon.ico"]
 else:
     EXECUTABLE_EXT = ".bin"
     DEFAULT_INSTALL_PATH = "/usr/local/personal-image-viewer/"
@@ -89,11 +89,7 @@ try:
             print(f"Error getting module {module_name}'s filepath")
             continue
         base_file_name: str = os.path.basename(module.__file__)
-        if module_name == "numpy":
-            site_packages_path: str = os.path.dirname(os.path.dirname(module.__file__))
-            lib_path: str = os.path.join(site_packages_path, "numpy.libs")
-            copy_folder(lib_path, os.path.join(TMP_FOLDER, "numpy.libs"))
-        elif module_name == "PIL" and os.name != "nt":
+        if module_name == "PIL" and os.name != "nt":
             site_packages_path = os.path.dirname(os.path.dirname(module.__file__))
             lib_path = os.path.join(site_packages_path, "pillow.libs")
             copy_folder(lib_path, os.path.join(TMP_FOLDER, "pillow.libs"))

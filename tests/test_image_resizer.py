@@ -4,11 +4,10 @@ from unittest.mock import patch
 import pytest
 from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
-from turbojpeg import TurboJPEG
 
-from image_viewer.constants import ImageFormats
 from image_viewer.image.resizer import ImageResizer
-from tests.test_util.mocks import MockImage
+
+_MODULE_PATH: str = "image_viewer.image.resizer"
 
 
 def test_jpeg_scale_factor(image_resizer: ImageResizer):
@@ -40,38 +39,25 @@ def test_fit_dimensions_to_screen_and_get_interpolation(
     assert dimensions == expected_dimensions
 
 
-def test_get_fit_to_screen(image_resizer: ImageResizer):
-    """Should delegate resize to correct function based on image type"""
-
-    # JPEG is special case
-    with patch.object(ImageResizer, "_get_jpeg_fit_to_screen") as mock_jpeg_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format=ImageFormats.JPEG))
-        mock_jpeg_fit.assert_called_once()
-
-    # Any other type should use generic resize functions
-    with patch.object(
-        ImageResizer, "_get_image_fit_to_screen_with_PIL"
-    ) as mock_generic_fit:
-        image_resizer.get_image_fit_to_screen(MockImage(format=ImageFormats.PNG))
-        mock_generic_fit.assert_called_once()
-
-
-@patch.object(ImageResizer, "_get_image_fit_to_screen_with_PIL")
+# TODO: Functional test of large JPEG
 def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer):
     """When fitting a small jpeg, should fallback to generic fit function"""
     image: Image = new_image("RGB", (1000, 1000))  # smaller than screen
 
-    with patch.object(TurboJPEG, "decode") as mock_decode:
-        image_resizer._get_jpeg_fit_to_screen(image)
-        mock_decode.assert_not_called()
+    with (
+        patch.object(ImageResizer, "get_image_fit_to_screen"),
+        patch(f"{_MODULE_PATH}.decode_scaled_jpeg") as mock_decode_scaled_jpeg,
+    ):
+        image_resizer.get_jpeg_fit_to_screen(image, "")
+        mock_decode_scaled_jpeg.assert_not_called()
 
 
-def test_generic_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
+def test_get_image_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
     """Should resize and return PIL image"""
     image: Image = new_image("RGB", (10, 10))
 
     with patch("image_viewer.image.resizer.resize", return_value=image) as mock_resize:
-        assert isinstance(image_resizer._get_image_fit_to_screen_with_PIL(image), Image)
+        assert isinstance(image_resizer.get_image_fit_to_screen(image), Image)
         mock_resize.assert_called_once()
 
 
@@ -85,7 +71,7 @@ def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
     image: Image = new_image("RGB", (1920, 1080))
 
     # Mock zoom factor above min zoom when image is already the size of the screen
-    with patch("image_viewer.image.resizer.resize", return_value=image):
+    with patch(f"{_MODULE_PATH}.resize", return_value=image):
         with patch.object(
             ImageResizer,
             "_calculate_zoom_factor",

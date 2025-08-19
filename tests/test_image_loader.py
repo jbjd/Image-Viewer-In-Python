@@ -80,5 +80,5 @@ def test_load_image_resize_error(image_loader: ImageLoader):
         with patch(
             f"{_MODULE_PATH}.get_placeholder_for_errored_image"
         ) as mock_get_placeholder:
-            image_loader._resize_or_get_placeholder()
+            image_loader._resize_or_get_placeholder("", Image())
             mock_get_placeholder.assert_called_once()

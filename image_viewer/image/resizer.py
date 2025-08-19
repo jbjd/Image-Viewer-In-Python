@@ -1,11 +1,10 @@
 """Classes for resizing PIL images"""
 
-import os
 from typing import Final
 
-from PIL.Image import Image, Resampling, fromarray
-from turbojpeg import TJPF_RGB, TurboJPEG
+from PIL.Image import Image, Resampling, frombytes
 
+from image._jpeg_ext import decode_scaled_jpeg
 from util.PIL import resize
 
 JPEG_MAX_DIMENSION: Final[int] = 65_535
@@ -28,20 +27,9 @@ class ImageResizer:
 
     __slots__ = ("jpeg_helper", "screen_height", "screen_width")
 
-    def __init__(
-        self, path_to_exe_folder: str, screen_width: int, screen_height: int
-    ) -> None:
+    def __init__(self, screen_width: int, screen_height: int) -> None:
         self.screen_width: Final[int] = screen_width
         self.screen_height: Final[int] = screen_height
-
-        turbo_jpeg_lib_path: str | None = None  # None will auto detect
-
-        if os.name == "nt":
-            turbo_jpeg_lib_path = os.path.join(
-                path_to_exe_folder, "dll/libturbojpeg.dll"
-            )
-
-        self.jpeg_helper = TurboJPEG(turbo_jpeg_lib_path)
 
     def get_zoomed_image(self, image: Image, zoom_level: int) -> ZoomedImageResult:
         """Resizes image using the provided zoom_level.
@@ -110,7 +98,7 @@ class ImageResizer:
             return (1, 2)
         return None
 
-    def _get_jpeg_fit_to_screen(self, image: Image) -> Image:
+    def get_jpeg_fit_to_screen(self, image: Image, path_to_image: str) -> Image | None:
         """Resizes a JPEG utilizing libjpeg-turbo to shrink very large images"""
         image_width, image_height = image.size
         scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
@@ -118,18 +106,18 @@ class ImageResizer:
         )
         # if small do a normal resize, otherwise utilize libJpegTurbo
         if scale_factor is None:
-            return self._get_image_fit_to_screen_with_PIL(image)
+            return self.get_image_fit_to_screen(image)
 
-        image.fp.seek(0)  # type: ignore
-        image_as_array = self.jpeg_helper.decode(
-            image.fp.read(),  # type: ignore
-            TJPF_RGB,
-            scale_factor,
-            0,
+        jpeg_result: Image | None = decode_scaled_jpeg(
+            path_to_image,
+            scale_factor,  # frombytes is the expected value to be passed
+            frombytes,  # type: ignore
         )
-        return self._get_image_fit_to_screen_with_PIL(fromarray(image_as_array))
+        return (
+            None if jpeg_result is None else self.get_image_fit_to_screen(jpeg_result)
+        )
 
-    def _get_image_fit_to_screen_with_PIL(  # pylint: disable=invalid-name
+    def get_image_fit_to_screen(  # pylint: disable=invalid-name
         self, image: Image
     ) -> Image:
         """Resizes image to screen with PIL"""
@@ -140,13 +128,6 @@ class ImageResizer:
         )
 
         return resize(image, dimensions, interpolation)
-
-    def get_image_fit_to_screen(self, image: Image) -> Image:
-        """Resizes image to screen using either libjpeg-turbo or PIL"""
-        if image.format == "JPEG":
-            return self._get_jpeg_fit_to_screen(image)
-
-        return self._get_image_fit_to_screen_with_PIL(image)
 
     def fit_dimensions_to_screen(
         self, image_width: int, image_height: int

@@ -84,7 +84,6 @@ class ViewerApp:
         )
 
         self.image_loader: ImageLoader = ImageLoader(
-            path_to_exe_folder,
             screen_width,
             screen_height,
             image_cache,

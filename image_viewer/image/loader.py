@@ -51,16 +51,13 @@ class ImageLoader:
 
     def __init__(
         self,
-        path_to_exe_folder: str,
         screen_width: int,
         screen_height: int,
         image_cache: ImageCache,
         animation_callback: Callable[[int, int], None],
     ) -> None:
         self.image_cache: ImageCache = image_cache
-        self.image_resizer: ImageResizer = ImageResizer(
-            path_to_exe_folder, screen_width, screen_height
-        )
+        self.image_resizer: ImageResizer = ImageResizer(screen_width, screen_height)
 
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
@@ -127,8 +124,6 @@ class ImageLoader:
             return None
 
         original_image: Image = read_image_response.image
-        self.current_load_id += 1
-        self.PIL_image = original_image
         byte_size: int = stat(path_to_image).st_size
 
         # check if was cached and not changed outside of program
@@ -138,7 +133,14 @@ class ImageLoader:
             resized_image = cached_image_data.image
         else:
             original_mode: str = original_image.mode
-            resized_image = self._resize_or_get_placeholder()
+            resized_image_result: Image | None = self._resize_or_get_placeholder(
+                path_to_image, original_image
+            )
+            if resized_image_result is None:
+                return None
+
+            resized_image = resized_image_result
+
             size_display: str = get_byte_display(byte_size)
 
             self.image_cache[path_to_image] = ImageCacheEntry(
@@ -150,6 +152,9 @@ class ImageLoader:
                 read_image_response.format,
             )
 
+        self.current_load_id += 1
+        self.PIL_image = original_image
+
         frame_count: int = getattr(original_image, "n_frames", 1)
         if frame_count > 1:
             self.begin_animation(original_image, resized_image, frame_count)
@@ -159,11 +164,20 @@ class ImageLoader:
 
         return resized_image
 
-    def _resize_or_get_placeholder(self) -> Image:
+    def _resize_or_get_placeholder(
+        self, path_to_image: str, original_image: Image
+    ) -> Image | None:
         """Resizes PIL image or returns placeholder if corrupted in some way"""
-        current_image: Image
+        current_image: Image | None
         try:
-            current_image = self.image_resizer.get_image_fit_to_screen(self.PIL_image)
+            if original_image.format == "JPEG":
+                current_image = self.image_resizer.get_jpeg_fit_to_screen(
+                    original_image, path_to_image
+                )
+            else:
+                current_image = self.image_resizer.get_image_fit_to_screen(
+                    original_image
+                )
         except OSError as e:
             current_image = get_placeholder_for_errored_image(
                 e,
