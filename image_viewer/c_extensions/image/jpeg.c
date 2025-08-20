@@ -2,37 +2,22 @@
 
 #include <Python.h>
 #include <turbojpeg.h>
-#include <stdio.h>
 
+// CMemoryViewBuffer Start
 typedef struct
 {
     PyObject_HEAD;
     char *buffer;
+    unsigned long bufferSize;
     PyObject *buffer_view;
 } CMemoryViewBuffer;
 
 static PyMemberDef CMemoryViewBuffer_members[] = {
-    {"buffer_view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, buffer_view), 0, 0},
+    {"buffer_view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, buffer_view), Py_READONLY, 0},
     {NULL}};
-
-// static int CMemoryViewBuffer_init(CMemoryViewBuffer *self, PyObject *args, PyObject *kwds) {
-//     // Ignore kwds
-
-//     PyObject *pyMemoryView;
-//     if (!PyArg_ParseTuple(args, "O", &pyMemoryView)) {
-//         return -1;
-//     }
-
-//     Py_XINCREF(pyMemoryView);
-//     self->buffer_view = pyMemoryView;
-//     self->buffer = NULL;  // Must be set by caller
-
-//     return 0;
-// }
 
 static void CMemoryViewBuffer_dealloc(CMemoryViewBuffer *self)
 {
-    printf("dealloc\n");
     free(self->buffer);
     Py_XDECREF(self->buffer_view);
     Py_TYPE(self)->tp_free((PyObject *)self);
@@ -43,11 +28,59 @@ static PyTypeObject CMemoryViewBuffer_Type = {
     .tp_basicsize = sizeof(CMemoryViewBuffer),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    // .tp_new = PyType_GenericNew,
-    // .tp_init = (initproc)CMemoryViewBuffer_init,
     .tp_dealloc = (destructor)CMemoryViewBuffer_dealloc,
     .tp_members = CMemoryViewBuffer_members,
 };
+
+static inline CMemoryViewBuffer *CMemoryViewBuffer_New(PyObject *pyMemoryView, char *buffer, unsigned long bufferSize)
+{
+    CMemoryViewBuffer *cMemoryBuffer = (CMemoryViewBuffer *)PyObject_New(CMemoryViewBuffer, &CMemoryViewBuffer_Type);
+    cMemoryBuffer->buffer_view = pyMemoryView;
+    cMemoryBuffer->buffer = buffer;
+    cMemoryBuffer->bufferSize = bufferSize;
+
+    return cMemoryBuffer;
+}
+// CMemoryViewBuffer End
+
+// CMemoryViewBufferJpeg End
+typedef struct
+{
+    CMemoryViewBuffer base;
+    PyObject *dimensions;
+} CMemoryViewBufferJpeg;
+
+static PyMemberDef CMemoryViewBufferJpeg_members[] = {
+    {"dimensions", Py_T_OBJECT_EX, offsetof(CMemoryViewBufferJpeg, dimensions), Py_READONLY, 0},
+    {NULL}};
+
+static void CMemoryViewBufferJpeg_dealloc(CMemoryViewBufferJpeg *self)
+{
+    Py_XDECREF(self->dimensions);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyTypeObject CMemoryViewBufferJpeg_Type = {
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_jpeg_ext.CMemoryViewBufferJpeg",
+    .tp_basicsize = sizeof(CMemoryViewBufferJpeg),
+    .tp_itemsize = 0,
+    .tp_base = &CMemoryViewBuffer_Type,
+    .tp_flags = Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .tp_dealloc = (destructor)CMemoryViewBufferJpeg_dealloc,
+    .tp_members = CMemoryViewBufferJpeg_members,
+};
+
+static inline CMemoryViewBufferJpeg *CMemoryViewBufferJpeg_New(PyObject *pyMemoryView, char *buffer, unsigned long bufferSize, int width, int height)
+{
+    CMemoryViewBufferJpeg *cMemoryBuffer = (CMemoryViewBufferJpeg *)PyObject_New(CMemoryViewBufferJpeg, &CMemoryViewBufferJpeg_Type);
+    cMemoryBuffer->base.buffer_view = pyMemoryView;
+    cMemoryBuffer->base.buffer = buffer;
+    cMemoryBuffer->base.bufferSize = bufferSize;
+    cMemoryBuffer->dimensions = Py_BuildValue("(ii)", width, height);
+
+    return cMemoryBuffer;
+}
+// CMemoryViewBufferJpeg End
 
 static PyObject *read_image_into_buffer(PyObject *self, PyObject *arg)
 {
@@ -66,6 +99,12 @@ static PyObject *read_image_into_buffer(PyObject *self, PyObject *arg)
     fseek(file, 0, SEEK_END);
     const long size = ftell(file);
     fseek(file, 0, SEEK_SET);
+
+    if (size < 0)
+    {
+        fclose(file);
+        goto error;
+    }
 
     char *buffer = (char *)malloc(size * sizeof(char));
     if (buffer == NULL)
@@ -87,11 +126,7 @@ static PyObject *read_image_into_buffer(PyObject *self, PyObject *arg)
         goto error;
     }
 
-    CMemoryViewBuffer *cMemoryBuffer = (CMemoryViewBuffer*)PyObject_New(CMemoryViewBuffer, &CMemoryViewBuffer_Type);
-    cMemoryBuffer->buffer = buffer;
-    cMemoryBuffer->buffer_view = pyMemoryView;
-
-    return (PyObject *)cMemoryBuffer;
+    return (PyObject *)CMemoryViewBuffer_New(pyMemoryView, buffer, size);
 error:
     return Py_None;
 }
@@ -103,17 +138,13 @@ static inline int get_scaled_dimension(int dimension, int numerator, int denomin
 
 static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ssize_t argLen)
 {
-    if (argLen != 3)
+    if (argLen != 2)
     {
-        PyErr_SetString(PyExc_TypeError, "decode_scaled_jpeg takes exactly three arguments");
+        PyErr_SetString(PyExc_TypeError, "decode_scaled_jpeg takes exactly two arguments");
         return NULL;
     }
 
-    const char *path = PyUnicode_AsUTF8AndSize(args[0], NULL);
-    if (path == NULL)
-    {
-        return NULL;
-    }
+    CMemoryViewBuffer *memoryViewBuffer = (CMemoryViewBuffer *)args[0];
 
     int scaledNumerator, scaledDenominator;
     if (!PyArg_ParseTuple(args[1], "ii", &scaledNumerator, &scaledDenominator))
@@ -129,35 +160,10 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
         return NULL;
     }
 
-    FILE *jpegFile = fopen(path, "rb");
-    if (jpegFile == NULL)
-    {
-        goto destroy;
-    }
-
-    fseek(jpegFile, 0, SEEK_END);
-    long jpegSize = ftell(jpegFile);
-    fseek(jpegFile, 0, SEEK_SET);
-
-    unsigned char *jpegBuffer = (unsigned char *)malloc(jpegSize * sizeof(unsigned char));
-    if (jpegBuffer == NULL)
-    {
-        fclose(jpegFile);
-        goto destroy;
-    }
-
-    const size_t readBytes = fread(jpegBuffer, sizeof(char), jpegSize, jpegFile);
-    fclose(jpegFile);
-
-    if (readBytes != jpegSize)
-    {
-        goto free;
-    }
-
     int width, height;
-    if (tjDecompressHeader(decompressHandle, jpegBuffer, jpegSize, &width, &height) < 0)
+    if (tjDecompressHeader(decompressHandle, (unsigned char *)memoryViewBuffer->buffer, memoryViewBuffer->bufferSize, &width, &height) < 0)
     {
-        goto free;
+        goto destroy;
     }
 
     const int pixelFormat = TJPF_RGB;
@@ -165,17 +171,17 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
     const int scaledWidth = get_scaled_dimension(width, scaledNumerator, scaledDenominator);
     const int scaledHeight = get_scaled_dimension(height, scaledNumerator, scaledDenominator);
 
-    Py_ssize_t resizedJpegBufferSize = scaledWidth * scaledHeight * pixelSize * sizeof(char);
+    unsigned long resizedJpegBufferSize = scaledWidth * scaledHeight * pixelSize * sizeof(char);
     char *resizedJpegBuffer = (char *)malloc(resizedJpegBufferSize);
     if (resizedJpegBuffer == NULL)
     {
-        goto free;
+        goto destroy;
     }
 
     if (tjDecompress2(
             decompressHandle,
-            jpegBuffer,
-            jpegSize,
+            (unsigned char *)memoryViewBuffer->buffer,
+            memoryViewBuffer->bufferSize,
             (unsigned char *)resizedJpegBuffer,
             scaledWidth,
             0,
@@ -183,37 +189,17 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
             pixelFormat,
             0) < 0)
     {
-        goto freeBoth;
+        goto destroy;
     }
 
     PyObject *pyJpegMemoryView = PyMemoryView_FromMemory(resizedJpegBuffer, resizedJpegBufferSize, PyBUF_READ);
     if (pyJpegMemoryView == NULL)
     {
-        goto freeBoth;
+        goto destroy;
     }
 
-    PyObject *pyImageDimensions = Py_BuildValue("(ii)", scaledWidth, scaledHeight);
-    if (pyImageDimensions == NULL)
-    {
-        goto freeMemView;
-    }
-    PyObject *pyImageArgs = Py_BuildValue("(sOO)", "RGB\0", pyImageDimensions, pyJpegMemoryView);
-    if (pyImageArgs == NULL)
-    {
-        goto freeImageDimensions;
-    }
+    pyReturnValue = (PyObject *)CMemoryViewBufferJpeg_New(pyJpegMemoryView, resizedJpegBuffer, resizedJpegBufferSize, scaledWidth, scaledHeight);
 
-    pyReturnValue = PyObject_CallObject(args[2], pyImageArgs);
-
-    Py_DECREF(pyImageArgs);
-freeImageDimensions:
-    Py_DECREF(pyImageDimensions);
-freeMemView:
-    Py_DECREF(pyJpegMemoryView);
-freeBoth:
-    free(resizedJpegBuffer);
-free:
-    free(jpegBuffer);
 destroy:
     tjDestroy(decompressHandle);
     return pyReturnValue;
@@ -233,14 +219,16 @@ static struct PyModuleDef jpeg_module = {
 
 PyMODINIT_FUNC PyInit__jpeg_ext(void)
 {
-    if (PyType_Ready(&CMemoryViewBuffer_Type) < 0)
+    if (PyType_Ready(&CMemoryViewBuffer_Type) < 0 ||
+        PyType_Ready(&CMemoryViewBufferJpeg_Type) < 0)
     {
         return NULL;
     }
 
     PyObject *module = PyModule_Create(&jpeg_module);
 
-    if (PyModule_AddObjectRef(module, "CMemoryViewBuffer", (PyObject *)&CMemoryViewBuffer_Type) < 0)
+    if (PyModule_AddObjectRef(module, "CMemoryViewBuffer", (PyObject *)&CMemoryViewBuffer_Type) < 0 ||
+        PyModule_AddObjectRef(module, "CMemoryViewBufferJpeg", (PyObject *)&CMemoryViewBufferJpeg_Type) < 0)
     {
         Py_DECREF(module);
         return NULL;
