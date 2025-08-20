@@ -117,10 +117,8 @@ class ImageLoader:
             if image_buffer is None:
                 return None
 
-            image_bytes_io = BytesIO(image_buffer.buffer_view)
-            expected_format: str = magic_number_guess(
-                image_buffer.buffer_view[:4].tobytes()
-            )
+            image_bytes_io = BytesIO(image_buffer.view)
+            expected_format: str = magic_number_guess(image_buffer.view[:4].tobytes())
             image: Image = open_image(image_bytes_io, "r", (expected_format,))
 
             return ReadImageResponse(image_buffer, image, expected_format)

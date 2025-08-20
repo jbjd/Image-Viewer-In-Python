@@ -9,17 +9,17 @@ typedef struct
     PyObject_HEAD;
     char *buffer;
     unsigned long bufferSize;
-    PyObject *buffer_view;
+    PyObject *view;
 } CMemoryViewBuffer;
 
 static PyMemberDef CMemoryViewBuffer_members[] = {
-    {"buffer_view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, buffer_view), Py_READONLY, 0},
+    {"view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, view), Py_READONLY, 0},
     {NULL}};
 
 static void CMemoryViewBuffer_dealloc(CMemoryViewBuffer *self)
 {
     free(self->buffer);
-    Py_XDECREF(self->buffer_view);
+    Py_XDECREF(self->view);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -35,7 +35,7 @@ static PyTypeObject CMemoryViewBuffer_Type = {
 static inline CMemoryViewBuffer *CMemoryViewBuffer_New(PyObject *pyMemoryView, char *buffer, unsigned long bufferSize)
 {
     CMemoryViewBuffer *cMemoryBuffer = (CMemoryViewBuffer *)PyObject_New(CMemoryViewBuffer, &CMemoryViewBuffer_Type);
-    cMemoryBuffer->buffer_view = pyMemoryView;
+    cMemoryBuffer->view = pyMemoryView;
     cMemoryBuffer->buffer = buffer;
     cMemoryBuffer->bufferSize = bufferSize;
 
@@ -73,7 +73,7 @@ static PyTypeObject CMemoryViewBufferJpeg_Type = {
 static inline CMemoryViewBufferJpeg *CMemoryViewBufferJpeg_New(PyObject *pyMemoryView, char *buffer, unsigned long bufferSize, int width, int height)
 {
     CMemoryViewBufferJpeg *cMemoryBuffer = (CMemoryViewBufferJpeg *)PyObject_New(CMemoryViewBufferJpeg, &CMemoryViewBufferJpeg_Type);
-    cMemoryBuffer->base.buffer_view = pyMemoryView;
+    cMemoryBuffer->base.view = pyMemoryView;
     cMemoryBuffer->base.buffer = buffer;
     cMemoryBuffer->base.bufferSize = bufferSize;
     cMemoryBuffer->dimensions = Py_BuildValue("(ii)", width, height);

@@ -114,7 +114,7 @@ class ImageResizer:
             image_bytes, scale_factor
         )
         return self.get_image_fit_to_screen(
-            frombytes("RGB", jpeg_result.dimensions, jpeg_result.buffer_view)
+            frombytes("RGB", jpeg_result.dimensions, jpeg_result.view)
         )
 
     def get_image_fit_to_screen(  # pylint: disable=invalid-name
