@@ -2,6 +2,99 @@
 
 #include <Python.h>
 #include <turbojpeg.h>
+#include <stdio.h>
+
+typedef struct
+{
+    PyObject_HEAD;
+    char *buffer;
+    PyObject *buffer_view;
+} CMemoryViewBuffer;
+
+static PyMemberDef CMemoryViewBuffer_members[] = {
+    {"buffer_view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, buffer_view), 0, 0},
+    {NULL}};
+
+// static int CMemoryViewBuffer_init(CMemoryViewBuffer *self, PyObject *args, PyObject *kwds) {
+//     // Ignore kwds
+
+//     PyObject *pyMemoryView;
+//     if (!PyArg_ParseTuple(args, "O", &pyMemoryView)) {
+//         return -1;
+//     }
+
+//     Py_XINCREF(pyMemoryView);
+//     self->buffer_view = pyMemoryView;
+//     self->buffer = NULL;  // Must be set by caller
+
+//     return 0;
+// }
+
+static void CMemoryViewBuffer_dealloc(CMemoryViewBuffer *self)
+{
+    printf("dealloc\n");
+    free(self->buffer);
+    Py_XDECREF(self->buffer_view);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyTypeObject CMemoryViewBuffer_Type = {
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_jpeg_ext.CMemoryViewBuffer",
+    .tp_basicsize = sizeof(CMemoryViewBuffer),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    // .tp_new = PyType_GenericNew,
+    // .tp_init = (initproc)CMemoryViewBuffer_init,
+    .tp_dealloc = (destructor)CMemoryViewBuffer_dealloc,
+    .tp_members = CMemoryViewBuffer_members,
+};
+
+static PyObject *read_image_into_buffer(PyObject *self, PyObject *arg)
+{
+    const char *path = PyUnicode_AsUTF8(arg);
+    if (path == NULL)
+    {
+        return NULL;
+    }
+
+    FILE *file = fopen(path, "rb");
+    if (file == NULL)
+    {
+        return Py_None;
+    }
+
+    fseek(file, 0, SEEK_END);
+    const long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *buffer = (char *)malloc(size * sizeof(char));
+    if (buffer == NULL)
+    {
+        fclose(file);
+        goto error;
+    }
+
+    const size_t readBytes = fread(buffer, sizeof(char), size, file);
+    fclose(file);
+    if (readBytes != size)
+    {
+        goto error;
+    }
+
+    PyObject *pyMemoryView = PyMemoryView_FromMemory(buffer, size, PyBUF_READ);
+    if (pyMemoryView == NULL)
+    {
+        goto error;
+    }
+
+    CMemoryViewBuffer *cMemoryBuffer = (CMemoryViewBuffer*)PyObject_New(CMemoryViewBuffer, &CMemoryViewBuffer_Type);
+    cMemoryBuffer->buffer = buffer;
+    cMemoryBuffer->buffer_view = pyMemoryView;
+
+    return (PyObject *)cMemoryBuffer;
+error:
+    return Py_None;
+}
 
 static inline int get_scaled_dimension(int dimension, int numerator, int denominator)
 {
@@ -127,6 +220,7 @@ destroy:
 }
 
 static PyMethodDef jpeg_methods[] = {
+    {"read_image_into_buffer", read_image_into_buffer, METH_O, NULL},
     {"decode_scaled_jpeg", (PyCFunction)decode_scaled_jpeg, METH_FASTCALL, NULL},
     {NULL, NULL, 0, NULL}};
 
@@ -139,5 +233,18 @@ static struct PyModuleDef jpeg_module = {
 
 PyMODINIT_FUNC PyInit__jpeg_ext(void)
 {
-    return PyModule_Create(&jpeg_module);
+    if (PyType_Ready(&CMemoryViewBuffer_Type) < 0)
+    {
+        return NULL;
+    }
+
+    PyObject *module = PyModule_Create(&jpeg_module);
+
+    if (PyModule_AddObjectRef(module, "CMemoryViewBuffer", (PyObject *)&CMemoryViewBuffer_Type) < 0)
+    {
+        Py_DECREF(module);
+        return NULL;
+    }
+
+    return module;
 }
