@@ -58,7 +58,7 @@ endif
 build-image-read:
 	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_read.$(COMPILED_EXT) $(C_JPEG_FLAGS)
 
-build-all: build-util-os-nt build-util-generic build-image-jpeg-ext
+build-all: build-util-os-nt build-util-generic build-image-read
 
 install:
 	$(PYTHON_FOR_INSTALL_STEP) compile.py --strip --no-cleanup
