@@ -24,9 +24,12 @@ from util.PIL import get_placeholder_for_errored_image, rotate_image
 class ReadImageResponse:
     """Response when reading an image from disk"""
 
-    __slots__ = ("image", "format")
+    __slots__ = ("image_buffer", "image", "format")
 
-    def __init__(self, image: Image, format: str) -> None:
+    def __init__(
+        self, image_buffer: CMemoryViewBuffer, image: Image, format: str
+    ) -> None:
+        self.image_buffer: CMemoryViewBuffer = image_buffer
         self.image: Image = image
         self.format: str = format
 
@@ -43,7 +46,7 @@ class ImageLoader:
         "animation_callback",
         "current_load_id",
         "frame_index",
-        "image_bytes",
+        "image_buffer",
         "image_cache",
         "image_resizer",
         "PIL_image",
@@ -63,7 +66,7 @@ class ImageLoader:
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
         self.PIL_image = Image()  # pylint: disable=invalid-name
-        self.image_bytes: CMemoryViewBuffer
+        self.image_buffer: CMemoryViewBuffer
         self.current_load_id: int = 0
 
         self.animation_frames: list[Frame | None] = []
@@ -108,23 +111,19 @@ class ImageLoader:
         """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
-            image_bytes: CMemoryViewBuffer | None = read_image_into_buffer(
+            image_buffer: CMemoryViewBuffer | None = read_image_into_buffer(
                 path_to_image
             )
-            if image_bytes is None:
+            if image_buffer is None:
                 return None
 
-            image_bytes_io = BytesIO(image_bytes.buffer_view)
+            image_bytes_io = BytesIO(image_buffer.buffer_view)
             expected_format: str = magic_number_guess(
-                image_bytes.buffer_view[:4].tobytes()
+                image_buffer.buffer_view[:4].tobytes()
             )
             image: Image = open_image(image_bytes_io, "r", (expected_format,))
 
-            self.PIL_image = image
-            self.image_bytes = image_bytes
-            self.current_load_id += 1
-
-            return ReadImageResponse(image, expected_format)
+            return ReadImageResponse(image_buffer, image, expected_format)
         except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
@@ -137,6 +136,10 @@ class ImageLoader:
 
         original_image: Image = read_image_response.image
         byte_size: int = stat(path_to_image).st_size
+
+        self.PIL_image = original_image
+        self.image_buffer = read_image_response.image_buffer
+        self.current_load_id += 1
 
         # check if cached and not changed outside of program
         resized_image: Image
@@ -173,7 +176,7 @@ class ImageLoader:
         try:
             if self.PIL_image.format == "JPEG":
                 current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                    self.PIL_image, self.image_bytes
+                    self.PIL_image, self.image_buffer
                 )
             else:
                 current_image = self.image_resizer.get_image_fit_to_screen(

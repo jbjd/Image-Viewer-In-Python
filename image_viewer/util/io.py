@@ -58,21 +58,11 @@ def try_convert_file_and_save_new(
     return True
 
 
-def read_file_as_base64(path: str) -> str:
+def read_file_as_base64(image_buffer: memoryview) -> str:
     """Given a file path, opens it and turns it into a base64 string.
 
-    Errors are ignored during byte -> str conversion.
+    Errors are ignored during byte -> str conversion."""
 
-    Raises FileNotFoundError or OSError if failed to open file"""
-
-    file_bytes: bytes = read_file_as_bytes(path)
-
-    return binascii.b2a_base64(file_bytes, newline=False).decode(
+    return binascii.b2a_base64(image_buffer, newline=False).decode(
         "ascii", errors="ignore"
     )
-
-
-def read_file_as_bytes(path: str) -> bytes:
-    """Given a file path, opens it and returns it as bytes"""
-    with open(path, "rb") as fp:
-        return fp.read()

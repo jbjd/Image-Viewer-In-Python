@@ -1,4 +1,4 @@
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
@@ -69,7 +69,7 @@ def test_load_image_in_cache(image_loader: ImageLoader):
         patch.object(
             ImageLoader,
             "read_image",
-            lambda *_: ReadImageResponse(Image(), image_format),
+            lambda *_: ReadImageResponse(MagicMock(), Image(), image_format),
         ),
         patch(f"{_MODULE_PATH}.open_image", lambda *_: Image()),
         patch(f"{_MODULE_PATH}.stat", lambda _: mock_os_stat),
