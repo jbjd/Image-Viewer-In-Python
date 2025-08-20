@@ -4,7 +4,7 @@ from typing import Final
 
 from PIL.Image import Image, Resampling, frombytes
 
-from image._jpeg_ext import CMemoryViewBuffer, CMemoryViewBufferJpeg, decode_scaled_jpeg
+from image._read import CMemoryViewBuffer, CMemoryViewBufferJpeg, decode_scaled_jpeg
 from util.PIL import resize
 
 JPEG_MAX_DIMENSION: Final[int] = 65_535

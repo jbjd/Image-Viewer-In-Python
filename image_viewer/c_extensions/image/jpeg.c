@@ -24,7 +24,7 @@ static void CMemoryViewBuffer_dealloc(CMemoryViewBuffer *self)
 }
 
 static PyTypeObject CMemoryViewBuffer_Type = {
-    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_jpeg_ext.CMemoryViewBuffer",
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_read.CMemoryViewBuffer",
     .tp_basicsize = sizeof(CMemoryViewBuffer),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
@@ -61,7 +61,7 @@ static void CMemoryViewBufferJpeg_dealloc(CMemoryViewBufferJpeg *self)
 }
 
 static PyTypeObject CMemoryViewBufferJpeg_Type = {
-    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_jpeg_ext.CMemoryViewBufferJpeg",
+    .ob_base = PyVarObject_HEAD_INIT(NULL, 0).tp_name = "_read.CMemoryViewBufferJpeg",
     .tp_basicsize = sizeof(CMemoryViewBufferJpeg),
     .tp_itemsize = 0,
     .tp_base = &CMemoryViewBuffer_Type,
@@ -210,12 +210,12 @@ static PyMethodDef jpeg_methods[] = {
 
 static struct PyModuleDef jpeg_module = {
     PyModuleDef_HEAD_INIT,
-    "_jpeg_ext",
+    "_read",
     "Python interface for jpeg helper functions written in C",
     -1,
     jpeg_methods};
 
-PyMODINIT_FUNC PyInit__jpeg_ext(void)
+PyMODINIT_FUNC PyInit__read(void)
 {
     if (PyType_Ready(&CMemoryViewBuffer_Type) < 0 ||
         PyType_Ready(&CMemoryViewBufferJpeg_Type) < 0)

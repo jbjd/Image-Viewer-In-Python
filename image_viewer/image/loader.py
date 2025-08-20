@@ -11,7 +11,7 @@ from PIL.Image import open as open_image
 
 from animation.frame import Frame
 from constants import Rotation, ZoomDirection
-from image._jpeg_ext import CMemoryViewBuffer, read_image_into_buffer
+from image._read import CMemoryViewBuffer, read_image_into_buffer
 from image.cache import ImageCache, ImageCacheEntry
 from image.file import magic_number_guess
 from image.resizer import ImageResizer, ZoomedImageResult

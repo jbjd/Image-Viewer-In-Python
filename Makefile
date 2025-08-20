@@ -55,8 +55,8 @@ else
     C_JPEG_FLAGS = -lturbojpeg
 endif
 
-build-image-jpeg-ext:
-	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_jpeg_ext.$(COMPILED_EXT) $(C_JPEG_FLAGS)
+build-image-read:
+	gcc $(C_SOURCE)/image/jpeg.c $(C_FLAGS_SHARED) -o image_viewer/image/_read.$(COMPILED_EXT) $(C_JPEG_FLAGS)
 
 build-all: build-util-os-nt build-util-generic build-image-jpeg-ext
 
