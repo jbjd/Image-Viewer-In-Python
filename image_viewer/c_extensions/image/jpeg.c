@@ -112,11 +112,11 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
 
     pyReturnValue = PyObject_CallObject(args[2], pyImageArgs);
 
-    Py_XDECREF(pyImageArgs);
+    Py_DECREF(pyImageArgs);
 freeImageDimensions:
-    Py_XDECREF(pyImageDimensions);
+    Py_DECREF(pyImageDimensions);
 freeMemView:
-    Py_XDECREF(pyJpegMemoryView);
+    Py_DECREF(pyJpegMemoryView);
 freeBoth:
     free(resizedJpegBuffer);
 free:
