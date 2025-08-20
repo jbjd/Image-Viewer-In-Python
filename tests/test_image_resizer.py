@@ -1,10 +1,10 @@
-from tkinter import Tk
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL.Image import Image, Resampling
 from PIL.Image import new as new_image
 
+from image_viewer.image.loader import ImageLoader
 from image_viewer.image.resizer import ImageResizer
 from tests.conftest import IMG_DIR
 
@@ -40,7 +40,7 @@ def test_fit_dimensions_to_screen_and_get_interpolation(
     assert dimensions == expected_dimensions
 
 
-def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer):
+def test_jpeg_fit_to_screen_small_image(image_resizer: ImageResizer):
     """When fitting a small jpeg, should fallback to generic fit function"""
     image: Image = new_image("RGB", (1000, 1000))  # smaller than screen
 
@@ -48,17 +48,20 @@ def test_jpeg_fit_to_screen_small_image(tk_app: Tk, image_resizer: ImageResizer)
         patch.object(ImageResizer, "get_image_fit_to_screen"),
         patch(f"{_MODULE_PATH}.decode_scaled_jpeg") as mock_decode_scaled_jpeg,
     ):
-        image_resizer.get_jpeg_fit_to_screen(image, "")
+        image_resizer.get_jpeg_fit_to_screen(image, MagicMock())
         mock_decode_scaled_jpeg.assert_not_called()
 
 
-def test_jpeg_fit_to_screen_large_image(tk_app: Tk, image_resizer: ImageResizer):
+def test_jpeg_fit_to_screen_large_image(
+    image_loader: ImageLoader, image_resizer: ImageResizer
+):
     """When fitting a small jpeg, should fallback to generic fit function"""
 
     image: Image = new_image("RGB", (1000, 4000))
 
+    image_loader.read_image(IMG_DIR + "/sub_folder.png/large.jpg")
     scaled_image: Image | None = image_resizer.get_jpeg_fit_to_screen(
-        image, IMG_DIR + "/sub_folder.png/large.jpg"
+        image, image_loader.image_bytes
     )
 
     # Scaled based on 1920x1080 screen
@@ -67,7 +70,7 @@ def test_jpeg_fit_to_screen_large_image(tk_app: Tk, image_resizer: ImageResizer)
     assert scaled_image.height == 1080
 
 
-def test_get_image_fit_to_screen(tk_app: Tk, image_resizer: ImageResizer):
+def test_get_image_fit_to_screen(image_resizer: ImageResizer):
     """Should resize and return PIL image"""
     image: Image = new_image("RGB", (10, 10))
 
@@ -81,7 +84,7 @@ def test_scale_dimensions(image_resizer: ImageResizer):
     assert image_resizer._scale_dimensions((1920, 1080), 1.5) == (2880, 1620)
 
 
-def test_get_zoomed_image_cap(tk_app: Tk, image_resizer: ImageResizer):
+def test_get_zoomed_image_cap(image_resizer: ImageResizer):
     """Should determine when zoom cap hit"""
     image: Image = new_image("RGB", (1920, 1080))
 
