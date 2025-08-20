@@ -26,7 +26,7 @@ def read_image_into_buffer(image_path: str) -> CMemoryViewBuffer | None:
 
 def decode_scaled_jpeg(
     image_bytes: CMemoryViewBuffer, scale_factor: tuple[int, int]
-) -> CMemoryViewBufferJpeg | None:
+) -> CMemoryViewBufferJpeg:
     """Given an image's bytes, decode them as a scaled jpeg and return its bytes as a CMemoryViewBuffer
     or None if reading the image failed"""
 

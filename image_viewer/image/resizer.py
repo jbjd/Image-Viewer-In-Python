@@ -100,7 +100,7 @@ class ImageResizer:
 
     def get_jpeg_fit_to_screen(
         self, image: Image, image_bytes: CMemoryViewBuffer
-    ) -> Image | None:
+    ) -> Image:
         """Resizes a JPEG utilizing libjpeg-turbo to shrink very large images"""
         image_width, image_height = image.size
         scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
@@ -110,15 +110,11 @@ class ImageResizer:
         if scale_factor is None:
             return self.get_image_fit_to_screen(image)
 
-        jpeg_result: CMemoryViewBufferJpeg | None = decode_scaled_jpeg(
+        jpeg_result: CMemoryViewBufferJpeg = decode_scaled_jpeg(
             image_bytes, scale_factor
         )
-        return (
-            None
-            if jpeg_result is None
-            else self.get_image_fit_to_screen(
-                frombytes("RGB", jpeg_result.dimensions, jpeg_result.buffer_view)
-            )
+        return self.get_image_fit_to_screen(
+            frombytes("RGB", jpeg_result.dimensions, jpeg_result.buffer_view)
         )
 
     def get_image_fit_to_screen(  # pylint: disable=invalid-name

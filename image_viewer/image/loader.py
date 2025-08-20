@@ -145,11 +145,7 @@ class ImageLoader:
             resized_image = cached_image_data.image
         else:
             original_mode: str = original_image.mode
-            resized_image_result: Image | None = self._resize_or_get_placeholder()
-            if resized_image_result is None:
-                return None
-
-            resized_image = resized_image_result
+            resized_image = self._resize_or_get_placeholder()
 
             size_display: str = get_byte_display(byte_size)
 
@@ -171,9 +167,9 @@ class ImageLoader:
 
         return resized_image
 
-    def _resize_or_get_placeholder(self) -> Image | None:
+    def _resize_or_get_placeholder(self) -> Image:
         """Resizes PIL image or returns placeholder if corrupted in some way"""
-        current_image: Image | None
+        current_image: Image
         try:
             if self.PIL_image.format == "JPEG":
                 current_image = self.image_resizer.get_jpeg_fit_to_screen(

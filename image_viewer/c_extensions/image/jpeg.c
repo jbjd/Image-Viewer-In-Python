@@ -152,8 +152,6 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
         return NULL;
     }
 
-    PyObject *pyReturnValue = Py_None;
-
     tjhandle decompressHandle = tjInitDecompress();
     if (decompressHandle == NULL)
     {
@@ -163,7 +161,7 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
     int width, height;
     if (tjDecompressHeader(decompressHandle, (unsigned char *)memoryViewBuffer->buffer, memoryViewBuffer->bufferSize, &width, &height) < 0)
     {
-        goto destroy;
+        return NULL;
     }
 
     const int pixelFormat = TJPF_RGB;
@@ -175,7 +173,7 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
     char *resizedJpegBuffer = (char *)malloc(resizedJpegBufferSize);
     if (resizedJpegBuffer == NULL)
     {
-        goto destroy;
+        return NULL;
     }
 
     if (tjDecompress2(
@@ -198,11 +196,11 @@ static PyObject *decode_scaled_jpeg(PyObject *self, PyObject *const *args, Py_ss
         goto destroy;
     }
 
-    pyReturnValue = (PyObject *)CMemoryViewBufferJpeg_New(pyJpegMemoryView, resizedJpegBuffer, resizedJpegBufferSize, scaledWidth, scaledHeight);
+    return (PyObject *)CMemoryViewBufferJpeg_New(pyJpegMemoryView, resizedJpegBuffer, resizedJpegBufferSize, scaledWidth, scaledHeight);
 
 destroy:
     tjDestroy(decompressHandle);
-    return pyReturnValue;
+    return NULL;
 }
 
 static PyMethodDef jpeg_methods[] = {
