@@ -11,7 +11,7 @@ module_dependencies: list[Requirement] = parse_requirements_file("requirements.t
 
 # Some modules can't be followed normally or need to
 # be checked explicitly
-modules_to_include: list[str] = ["image._jpeg_ext", "util._generic"]
+modules_to_include: list[str] = ["image._read", "util._generic"]
 if os.name == "nt":
     modules_to_include += ["util._os_nt"]
 

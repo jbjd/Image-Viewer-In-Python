@@ -4,7 +4,7 @@ from typing import Final
 
 from PIL.Image import Image, Resampling, frombytes
 
-from image._jpeg_ext import decode_scaled_jpeg
+from image._read import CMemoryViewBuffer, CMemoryViewBufferJpeg, decode_scaled_jpeg
 from util.PIL import resize
 
 JPEG_MAX_DIMENSION: Final[int] = 65_535
@@ -98,7 +98,9 @@ class ImageResizer:
             return (1, 2)
         return None
 
-    def get_jpeg_fit_to_screen(self, image: Image, path_to_image: str) -> Image | None:
+    def get_jpeg_fit_to_screen(
+        self, image: Image, image_bytes: CMemoryViewBuffer
+    ) -> Image:
         """Resizes a JPEG utilizing libjpeg-turbo to shrink very large images"""
         image_width, image_height = image.size
         scale_factor: tuple[int, int] | None = self._get_jpeg_scale_factor(
@@ -108,13 +110,11 @@ class ImageResizer:
         if scale_factor is None:
             return self.get_image_fit_to_screen(image)
 
-        jpeg_result: Image | None = decode_scaled_jpeg(
-            path_to_image,
-            scale_factor,  # frombytes is the expected value to be passed
-            frombytes,  # type: ignore
+        jpeg_result: CMemoryViewBufferJpeg = decode_scaled_jpeg(
+            image_bytes, scale_factor
         )
-        return (
-            None if jpeg_result is None else self.get_image_fit_to_screen(jpeg_result)
+        return self.get_image_fit_to_screen(
+            frombytes("RGB", jpeg_result.dimensions, jpeg_result.view)
         )
 
     def get_image_fit_to_screen(  # pylint: disable=invalid-name

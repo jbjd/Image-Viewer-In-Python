@@ -11,12 +11,12 @@ from PIL.Image import open as open_image
 
 from animation.frame import Frame
 from constants import Rotation, ZoomDirection
+from image._read import CMemoryViewBuffer, read_image_into_buffer
 from image.cache import ImageCache, ImageCacheEntry
 from image.file import magic_number_guess
 from image.resizer import ImageResizer, ZoomedImageResult
 from state.rotation_state import RotationState
 from state.zoom_state import ZoomState
-from util.io import read_file_as_bytes
 from util.os import get_byte_display
 from util.PIL import get_placeholder_for_errored_image, rotate_image
 
@@ -24,9 +24,12 @@ from util.PIL import get_placeholder_for_errored_image, rotate_image
 class ReadImageResponse:
     """Response when reading an image from disk"""
 
-    __slots__ = ("image", "format")
+    __slots__ = ("image_buffer", "image", "format")
 
-    def __init__(self, image: Image, format: str) -> None:
+    def __init__(
+        self, image_buffer: CMemoryViewBuffer, image: Image, format: str
+    ) -> None:
+        self.image_buffer: CMemoryViewBuffer = image_buffer
         self.image: Image = image
         self.format: str = format
 
@@ -43,6 +46,7 @@ class ImageLoader:
         "animation_callback",
         "current_load_id",
         "frame_index",
+        "image_buffer",
         "image_cache",
         "image_resizer",
         "PIL_image",
@@ -62,6 +66,7 @@ class ImageLoader:
         self.animation_callback: Callable[[int, int], None] = animation_callback
 
         self.PIL_image = Image()  # pylint: disable=invalid-name
+        self.image_buffer: CMemoryViewBuffer
         self.current_load_id: int = 0
 
         self.animation_frames: list[Frame | None] = []
@@ -106,13 +111,17 @@ class ImageLoader:
         """Tries to open file on disk as PIL Image
         Returns Image or None on failure"""
         try:
-            image_bytes: bytes = read_file_as_bytes(path_to_image)
+            image_buffer: CMemoryViewBuffer | None = read_image_into_buffer(
+                path_to_image
+            )
+            if image_buffer is None:
+                return None
 
-            image_bytes_io = BytesIO(image_bytes)
-            expected_format: str = magic_number_guess(image_bytes[:4])
+            image_bytes_io = BytesIO(image_buffer.view)
+            expected_format: str = magic_number_guess(image_buffer.view[:4].tobytes())
             image: Image = open_image(image_bytes_io, "r", (expected_format,))
 
-            return ReadImageResponse(image, expected_format)
+            return ReadImageResponse(image_buffer, image, expected_format)
         except (FileNotFoundError, UnidentifiedImageError, OSError):
             return None
 
@@ -126,20 +135,18 @@ class ImageLoader:
         original_image: Image = read_image_response.image
         byte_size: int = stat(path_to_image).st_size
 
-        # check if was cached and not changed outside of program
+        self.PIL_image = original_image
+        self.image_buffer = read_image_response.image_buffer
+        self.current_load_id += 1
+
+        # check if cached and not changed outside of program
         resized_image: Image
         cached_image_data = self.image_cache.get(path_to_image)
         if cached_image_data is not None and byte_size == cached_image_data.byte_size:
             resized_image = cached_image_data.image
         else:
             original_mode: str = original_image.mode
-            resized_image_result: Image | None = self._resize_or_get_placeholder(
-                path_to_image, original_image
-            )
-            if resized_image_result is None:
-                return None
-
-            resized_image = resized_image_result
+            resized_image = self._resize_or_get_placeholder()
 
             size_display: str = get_byte_display(byte_size)
 
@@ -152,9 +159,6 @@ class ImageLoader:
                 read_image_response.format,
             )
 
-        self.current_load_id += 1
-        self.PIL_image = original_image
-
         frame_count: int = getattr(original_image, "n_frames", 1)
         if frame_count > 1:
             self.begin_animation(original_image, resized_image, frame_count)
@@ -164,19 +168,17 @@ class ImageLoader:
 
         return resized_image
 
-    def _resize_or_get_placeholder(
-        self, path_to_image: str, original_image: Image
-    ) -> Image | None:
+    def _resize_or_get_placeholder(self) -> Image:
         """Resizes PIL image or returns placeholder if corrupted in some way"""
-        current_image: Image | None
+        current_image: Image
         try:
-            if original_image.format == "JPEG":
+            if self.PIL_image.format == "JPEG":
                 current_image = self.image_resizer.get_jpeg_fit_to_screen(
-                    original_image, path_to_image
+                    self.PIL_image, self.image_buffer
                 )
             else:
                 current_image = self.image_resizer.get_image_fit_to_screen(
-                    original_image
+                    self.PIL_image
                 )
         except OSError as e:
             current_image = get_placeholder_for_errored_image(

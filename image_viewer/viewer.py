@@ -373,12 +373,10 @@ class ViewerApp:
             convert_file_to_base64_and_save_to_clipboard(
                 self.file_manager.path_to_image
             )
-        else:  # TODO: Write a C implementation and remove python implementation
-
-            try:
-                image_base64: str = read_file_as_base64(self.file_manager.path_to_image)
-            except (FileNotFoundError, OSError):
-                return
+        else:
+            image_base64: str = read_file_as_base64(
+                self.image_loader.image_buffer.buffer_view
+            )
 
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)
