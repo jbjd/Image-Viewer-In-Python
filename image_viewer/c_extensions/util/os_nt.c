@@ -7,7 +7,9 @@
 #include <shlguid.h>
 #include <shlwapi.h>
 #include <windows.h>
+
 #include "b64/cencode.h"
+#include "image/read.h"
 
 #ifdef __MINGW32__
 #include <shlobj.h>
@@ -372,61 +374,51 @@ end:
     return Py_None;
 }
 
-static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
+static PyObject *read_memory_as_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
-    const char *path = PyUnicode_AsUTF8(arg);
-    if (path == NULL)
-    {
-        return NULL;
-    }
+    CMemoryViewBuffer *memoryViewBuffer = (CMemoryViewBuffer *)arg;
+    unsigned long remainingBytesToEncode = memoryViewBuffer->bufferSize;
+    char *originalBufferPosition = memoryViewBuffer->buffer;
 
-    const HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fileAccess == INVALID_HANDLE_VALUE)
-    {
-        return Py_None;
-    }
-
-    LARGE_INTEGER fileSizeContainer;
-    if (!GetFileSizeEx(fileAccess, &fileSizeContainer))
-    {
-        return Py_None;
-    }
-    const ULONGLONG fileSize = fileSizeContainer.QuadPart;
-
-    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * fileSize);
-    if (hGlobal == NULL)
-    {
-        return Py_None;
-    }
+    Py_BEGIN_ALLOW_THREADS;
 
     // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
+    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * remainingBytesToEncode);
+    if (hGlobal == NULL)
+    {
+        goto end;
+    }
+
     base64_encodestate state;
-    const int INPUT_BUFFER_SIZE = 65536;
-    char inputBuffer[INPUT_BUFFER_SIZE];
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
-    char *currentPosition = encodedBuffer;
+    char *encodedBufferPosition = encodedBuffer;
 
     if (encodedBuffer == NULL)
     {
         GlobalFree(hGlobal);
-        return Py_None;
+        goto end;
     }
 
     base64_init_encodestate(&state);
 
-    DWORD bytesRead;
-    while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0)
+    const unsigned long MAX_BYTES_TO_ENCODE_AT_ONCE = 1048576;
+    while (remainingBytesToEncode > 0)
     {
-        currentPosition += base64_encode_block(inputBuffer, (unsigned)bytesRead, currentPosition, &state);
+        unsigned bytesToEncode = (unsigned)(remainingBytesToEncode < MAX_BYTES_TO_ENCODE_AT_ONCE ? remainingBytesToEncode : MAX_BYTES_TO_ENCODE_AT_ONCE);
+
+        encodedBufferPosition += base64_encode_block(originalBufferPosition, bytesToEncode, encodedBufferPosition, &state);
+        remainingBytesToEncode -= bytesToEncode;
+        originalBufferPosition += bytesToEncode;
     }
 
     base64_encode_blockend(encodedBuffer, &state);
 
     GlobalUnlock(hGlobal);
-    CloseHandle(fileAccess);
 
     set_win_clipboard(0, CF_TEXT, encodedBuffer);
 
+end:
+    Py_END_ALLOW_THREADS;
     return Py_None;
 }
 
@@ -436,7 +428,7 @@ static PyMethodDef os_methods[] = {
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
     {"open_with", (PyCFunction)open_with, METH_FASTCALL, NULL},
     {"drop_file_to_clipboard", (PyCFunction)drop_file_to_clipboard, METH_FASTCALL, NULL},
-    {"convert_file_to_base64_and_save_to_clipboard", convert_file_to_base64_and_save_to_clipboard, METH_O, NULL},
+    {"read_memory_as_base64_and_save_to_clipboard", read_memory_as_base64_and_save_to_clipboard, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {

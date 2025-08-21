@@ -18,15 +18,15 @@ from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
-from util.io import read_file_as_base64
+from util.io import read_memory_as_base64
 from util.os import show_info
 from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
     from util._os_nt import (
-        convert_file_to_base64_and_save_to_clipboard,
         drop_file_to_clipboard,
         open_with,
+        read_memory_as_base64_and_save_to_clipboard,
     )
 else:
     from tkinter import PhotoImage as tkPhotoImage  # pylint: disable=ungrouped-imports
@@ -370,11 +370,13 @@ class ViewerApp:
         it to the clipboard"""
 
         if os.name == "nt":
-            convert_file_to_base64_and_save_to_clipboard(
-                self.file_manager.path_to_image
-            )
+            read_memory_as_base64_and_save_to_clipboard(self.image_loader.image_buffer)
         else:
-            image_base64: str = read_file_as_base64(self.image_loader.image_buffer.view)
+            # TODO: See if I can use memoryview for clipboard_append
+            # so conversion can be in C
+            image_base64: str = read_memory_as_base64(
+                self.image_loader.image_buffer.view
+            )
 
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)

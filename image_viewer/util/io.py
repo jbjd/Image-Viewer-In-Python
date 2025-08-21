@@ -58,8 +58,8 @@ def try_convert_file_and_save_new(
     return True
 
 
-def read_file_as_base64(image_buffer: memoryview) -> str:
-    """Given a file path, opens it and turns it into a base64 string.
+def read_memory_as_base64(image_buffer: memoryview) -> str:
+    """Given a memory view, decode it into a base64 string.
 
     Errors are ignored during byte -> str conversion."""
 
