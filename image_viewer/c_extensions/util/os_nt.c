@@ -374,41 +374,42 @@ end:
     return Py_None;
 }
 
-static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
+static PyObject *read_memory_as_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
     CMemoryViewBuffer *memoryViewBuffer = (CMemoryViewBuffer *)arg;
+    unsigned long remainingBytesToEncode = memoryViewBuffer->bufferSize;
+    char *originalBufferPosition = memoryViewBuffer->buffer;
+
+    Py_BEGIN_ALLOW_THREADS;
 
     // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
-    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * memoryViewBuffer->bufferSize);
+    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * remainingBytesToEncode);
     if (hGlobal == NULL)
     {
-        return Py_None;
+        goto end;
     }
 
     base64_encodestate state;
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
-    char *currentPosition = encodedBuffer;
+    char *encodedBufferPosition = encodedBuffer;
 
     if (encodedBuffer == NULL)
     {
         GlobalFree(hGlobal);
-        return Py_None;
+        goto end;
     }
 
     base64_init_encodestate(&state);
 
+    const unsigned long MAX_BYTES_TO_ENCODE_AT_ONCE = 1048576;
+    while (remainingBytesToEncode > 0)
+    {
+        unsigned bytesToEncode = (unsigned)(remainingBytesToEncode < MAX_BYTES_TO_ENCODE_AT_ONCE ? remainingBytesToEncode : MAX_BYTES_TO_ENCODE_AT_ONCE);
 
-    //const int MAX_BYTES_TO_ENCODE_AT_ONCE = 1048576;
-    //unsigned long bytesLeftToEncode = memoryViewBuffer->bufferSize;
-    //unsigned long bytesEncoded = 0;
-    //while (bytesLeftToEncode)
-    //{
-        //unsigned bytesToEncode = bytesLeftToEncode > MAX_BYTES_TO_ENCODE_AT_ONCE ? MAX_BYTES_TO_ENCODE_AT_ONCE : (unsigned)bytesLeftToEncode;
-    printf("%ld\n", memoryViewBuffer->bufferSize);
-    currentPosition += base64_encode_block(memoryViewBuffer->buffer, memoryViewBuffer->bufferSize, currentPosition, &state);
-    // bytesLeftToEncode -= bytesToEncode;
-    // bytesEncoded += bytesToEncode;
-    //}
+        encodedBufferPosition += base64_encode_block(originalBufferPosition, bytesToEncode, encodedBufferPosition, &state);
+        remainingBytesToEncode -= bytesToEncode;
+        originalBufferPosition += bytesToEncode;
+    }
 
     base64_encode_blockend(encodedBuffer, &state);
 
@@ -416,6 +417,8 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
 
     set_win_clipboard(0, CF_TEXT, encodedBuffer);
 
+end:
+    Py_END_ALLOW_THREADS;
     return Py_None;
 }
 
@@ -425,7 +428,7 @@ static PyMethodDef os_methods[] = {
     {"get_files_in_folder", get_files_in_folder, METH_O, NULL},
     {"open_with", (PyCFunction)open_with, METH_FASTCALL, NULL},
     {"drop_file_to_clipboard", (PyCFunction)drop_file_to_clipboard, METH_FASTCALL, NULL},
-    {"convert_file_to_base64_and_save_to_clipboard", convert_file_to_base64_and_save_to_clipboard, METH_O, NULL},
+    {"read_memory_as_base64_and_save_to_clipboard", read_memory_as_base64_and_save_to_clipboard, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
 static struct PyModuleDef os_module = {

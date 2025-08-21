@@ -18,13 +18,13 @@ from ui.button_icon_factory import ButtonIconFactory
 from ui.canvas import CustomCanvas
 from ui.image import DropdownImageUIElement
 from ui.rename_entry import RenameEntry
-from util.io import read_file_as_base64
+from util.io import read_memory_as_base64
 from util.os import show_info
 from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
     from util._os_nt import (
-        convert_file_to_base64_and_save_to_clipboard,
+        read_memory_as_base64_and_save_to_clipboard,
         drop_file_to_clipboard,
         open_with,
     )
@@ -369,19 +369,17 @@ class ViewerApp:
         """Converts the file's bytes into base64 and copies
         it to the clipboard"""
 
-        a = perf_counter()
-
         if os.name == "nt":
-            convert_file_to_base64_and_save_to_clipboard(
+            read_memory_as_base64_and_save_to_clipboard(self.image_loader.image_buffer)
+        else:
+            # TODO: See if I can use memoryview for clipboard_append
+            # so conversion can be in C
+            image_base64: str = read_memory_as_base64(
                 self.image_loader.image_buffer.view
             )
-        else:
-            image_base64: str = read_file_as_base64(self.image_loader.image_buffer.view)
 
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)
-
-        print(perf_counter() - a)
 
     def show_details(self, _: Event | None = None) -> None:
         """Gets details on image and shows it in a UI popup"""

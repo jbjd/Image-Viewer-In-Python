@@ -2,6 +2,8 @@
 
 import os
 
+from image._read import CMemoryViewBuffer
+
 if os.name == "nt":
     def trash_file(hwnd: int, file: str) -> None:
         """Moves provided file to trash"""
@@ -19,5 +21,9 @@ if os.name == "nt":
     def drop_file_to_clipboard(hwnd: int, file: str) -> None:
         """Copies a file to clipboard as an HDROP"""
 
-    def convert_file_to_base64_and_save_to_clipboard(file: str) -> None:
-        """Reads a file, converts it to base64, and copies it to clipboard"""
+    def read_memory_as_base64_and_save_to_clipboard(
+        image_buffer: CMemoryViewBuffer,
+    ) -> None:
+        """Given an image file's buffer, converts it to base64, and copies it to clipboard"""
+
+del CMemoryViewBuffer
