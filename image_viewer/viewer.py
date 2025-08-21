@@ -24,9 +24,9 @@ from util.PIL import create_dropdown_image, init_PIL
 
 if os.name == "nt":
     from util._os_nt import (
-        read_memory_as_base64_and_save_to_clipboard,
         drop_file_to_clipboard,
         open_with,
+        read_memory_as_base64_and_save_to_clipboard,
     )
 else:
     from tkinter import PhotoImage as tkPhotoImage  # pylint: disable=ungrouped-imports
