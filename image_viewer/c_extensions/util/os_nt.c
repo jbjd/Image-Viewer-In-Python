@@ -7,7 +7,9 @@
 #include <shlguid.h>
 #include <shlwapi.h>
 #include <windows.h>
+
 #include "b64/cencode.h"
+#include "image/read.h"
 
 #ifdef __MINGW32__
 #include <shlobj.h>
@@ -374,35 +376,16 @@ end:
 
 static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, PyObject *arg)
 {
-    const char *path = PyUnicode_AsUTF8(arg);
-    if (path == NULL)
-    {
-        return NULL;
-    }
+    CMemoryViewBuffer *memoryViewBuffer = (CMemoryViewBuffer *)arg;
 
-    const HANDLE fileAccess = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fileAccess == INVALID_HANDLE_VALUE)
-    {
-        return Py_None;
-    }
-
-    LARGE_INTEGER fileSizeContainer;
-    if (!GetFileSizeEx(fileAccess, &fileSizeContainer))
-    {
-        return Py_None;
-    }
-    const ULONGLONG fileSize = fileSizeContainer.QuadPart;
-
-    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * fileSize);
+    // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
+    HGLOBAL hGlobal = GlobalAlloc(GHND, 2 * memoryViewBuffer->bufferSize);
     if (hGlobal == NULL)
     {
         return Py_None;
     }
 
-    // encoded data is ~4/3x the size of the original data so make encoded buffer 2x the size.
     base64_encodestate state;
-    const int INPUT_BUFFER_SIZE = 65536;
-    char inputBuffer[INPUT_BUFFER_SIZE];
     char *encodedBuffer = (char *)GlobalLock(hGlobal);
     char *currentPosition = encodedBuffer;
 
@@ -414,16 +397,22 @@ static PyObject *convert_file_to_base64_and_save_to_clipboard(PyObject *self, Py
 
     base64_init_encodestate(&state);
 
-    DWORD bytesRead;
-    while (ReadFile(fileAccess, inputBuffer, INPUT_BUFFER_SIZE, &bytesRead, NULL) && bytesRead > 0)
-    {
-        currentPosition += base64_encode_block(inputBuffer, (unsigned)bytesRead, currentPosition, &state);
-    }
+
+    //const int MAX_BYTES_TO_ENCODE_AT_ONCE = 1048576;
+    //unsigned long bytesLeftToEncode = memoryViewBuffer->bufferSize;
+    //unsigned long bytesEncoded = 0;
+    //while (bytesLeftToEncode)
+    //{
+        //unsigned bytesToEncode = bytesLeftToEncode > MAX_BYTES_TO_ENCODE_AT_ONCE ? MAX_BYTES_TO_ENCODE_AT_ONCE : (unsigned)bytesLeftToEncode;
+    printf("%ld\n", memoryViewBuffer->bufferSize);
+    currentPosition += base64_encode_block(memoryViewBuffer->buffer, memoryViewBuffer->bufferSize, currentPosition, &state);
+    // bytesLeftToEncode -= bytesToEncode;
+    // bytesEncoded += bytesToEncode;
+    //}
 
     base64_encode_blockend(encodedBuffer, &state);
 
     GlobalUnlock(hGlobal);
-    CloseHandle(fileAccess);
 
     set_win_clipboard(0, CF_TEXT, encodedBuffer);
 

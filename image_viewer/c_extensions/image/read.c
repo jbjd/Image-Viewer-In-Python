@@ -4,15 +4,9 @@
 #include <stddef.h>
 #include <turbojpeg.h>
 
-// CMemoryViewBuffer Start
-typedef struct
-{
-    PyObject_HEAD;
-    char *buffer;
-    unsigned long bufferSize;
-    PyObject *view;
-} CMemoryViewBuffer;
+#include "read.h"
 
+// CMemoryViewBuffer Start
 static PyMemberDef CMemoryViewBuffer_members[] = {
     {"view", Py_T_OBJECT_EX, offsetof(CMemoryViewBuffer, view), Py_READONLY, 0},
     {NULL}};
@@ -45,12 +39,6 @@ static inline CMemoryViewBuffer *CMemoryViewBuffer_New(PyObject *pyMemoryView, c
 // CMemoryViewBuffer End
 
 // CMemoryViewBufferJpeg End
-typedef struct
-{
-    CMemoryViewBuffer base;
-    PyObject *dimensions;
-} CMemoryViewBufferJpeg;
-
 static PyMemberDef CMemoryViewBufferJpeg_members[] = {
     {"dimensions", Py_T_OBJECT_EX, offsetof(CMemoryViewBufferJpeg, dimensions), Py_READONLY, 0},
     {NULL}};
