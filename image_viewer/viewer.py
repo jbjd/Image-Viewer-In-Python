@@ -374,9 +374,7 @@ class ViewerApp:
                 self.file_manager.path_to_image
             )
         else:
-            image_base64: str = read_file_as_base64(
-                self.image_loader.image_buffer.buffer_view
-            )
+            image_base64: str = read_file_as_base64(self.image_loader.image_buffer.view)
 
             self.app.clipboard_clear()
             self.app.clipboard_append(image_base64)
