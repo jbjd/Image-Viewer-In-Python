@@ -1,6 +1,0 @@
-*.py text diff=python
-*.txt text=auto
-*.ini text=auto
-*.md text=auto
-*.dll binary
-*.xcf binary
