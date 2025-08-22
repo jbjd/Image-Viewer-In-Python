@@ -216,12 +216,12 @@ def clean_tk_files(compile_dir: str) -> None:
 
 def strip_files(compile_dir: str) -> None:
     """Runs strip on all exe/dll files in provided dir"""
-    EXIT_SUCCESS: int = 0
 
+    # Had issues adding .so here on linux. Should be revisited here at some point
     for strippable_file in _files_in_folder_iter(compile_dir, (".exe", ".dll", ".pyd")):
-        result = subprocess.run(["strip", "--strip-all", strippable_file])
+        result = subprocess.run(["strip", "--strip-all", strippable_file], check=False)
 
-        if result.returncode != EXIT_SUCCESS:
+        if result.returncode != 0:
             warnings.warn(f"Failed to strip file {strippable_file}")
 
 

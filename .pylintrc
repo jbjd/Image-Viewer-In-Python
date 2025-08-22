@@ -5,8 +5,9 @@ ignore-paths=.+build/.*.py,.*.pyi
 
 [MESSAGES CONTROL]
 
-disable=import-error,
-        import-outside-toplevel,
-        line-too-long,
-        protected-access,
-        too-few-public-methods
+disable=import-error,  # Lots of false flags here
+        import-outside-toplevel,  # Sometimes needed in this repo
+        line-too-long,  # Checked by flake
+        protected-access,  # Needed to access image draws
+        too-few-public-methods,  # Classes used as response types
+        no-name-in-module  # Getting these due to compiled modules

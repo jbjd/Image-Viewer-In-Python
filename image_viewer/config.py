@@ -20,8 +20,10 @@ def _validate_hex_or_default(hex_color: str, default: str) -> str:
 
 
 def _validate_keybind_or_default(keybind: str, default: str) -> str:
-    """Returns keybind if it follows the format
-    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
+    """Returns keybind if it follows the format:
+
+    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]> <[a-zA-Z0-9]>
+
     or default if not"""
 
     return keybind if is_valid_keybind(keybind) else default

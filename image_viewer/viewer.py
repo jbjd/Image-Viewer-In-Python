@@ -143,7 +143,7 @@ class ViewerApp:
         )
         app.bind(config.keybinds.refresh, self.refresh)
         app.bind(config.keybinds.reload_image, lambda _: self.load_image_unblocking())
-        app.bind(config.keybinds.rename, self.toggle_show_rename_window)
+        app.bind(config.keybinds.rename, self._handle_input_toggle_show_rename_window)
         app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
@@ -220,7 +220,9 @@ class ViewerApp:
 
         button_x_offset -= icon_size
         dropdown_button = ToggleableButtonUIElement(
-            canvas, *button_icon_factory.make_dropdown_icons(), self.handle_dropdown
+            canvas,
+            *button_icon_factory.make_dropdown_icons(),
+            self.toggle_show_dropdown,
         )
         dropdown_button.add_to_canvas(ButtonName.DROPDOWN, button_x_offset)
 
@@ -263,6 +265,11 @@ class ViewerApp:
         return int(original_pixels * self.width_ratio)
 
     # Functions handling specific user input
+
+    def _handle_input_toggle_show_rename_window(self, event: Event) -> None:
+        """Wraps toggle_show_rename_window to be called by a tkinter keybind"""
+        if event.widget is self.app:
+            self.toggle_show_rename_window()
 
     def handle_mouse_wheel(self, event: Event) -> None:
         """On mouse wheel: either moves between images
@@ -360,7 +367,7 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    def handle_dropdown(self, _: Event | None = None) -> None:
+    def toggle_show_dropdown(self) -> None:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
         self.update_details_dropdown()
@@ -421,7 +428,7 @@ class ViewerApp:
         if self.file_manager.move_to_new_file():
             self.load_image()
 
-    def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
+    def exit(self, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
         try:
             self.canvas.delete(self.canvas.file_name_text_id)
@@ -431,9 +438,11 @@ class ViewerApp:
         except AttributeError:
             pass
 
-        raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
+        # exit(0) here didn't work with --standalone, probably need to do sys.exit
+        # but then I would have to import sys just for that
+        raise SystemExit(exit_code)
 
-    def minimize(self, _: Event | None = None) -> None:
+    def minimize(self) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
         self.need_to_redraw = True
         self.app.iconify()
@@ -471,7 +480,7 @@ class ViewerApp:
             return
         self.load_image_unblocking()
 
-    def trash_image(self, _: Event | None = None) -> None:
+    def trash_image(self) -> None:
         """Move current image to trash and moves to next"""
         self.clear_image()
         self.hide_rename_window()
@@ -491,7 +500,7 @@ class ViewerApp:
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
 
-    def toggle_show_rename_window(self, _: Event | None = None) -> None:
+    def toggle_show_rename_window(self) -> None:
         """Either shows or hides rename window and shifts focus accordingly"""
         if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()
