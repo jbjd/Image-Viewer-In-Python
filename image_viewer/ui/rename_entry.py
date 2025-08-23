@@ -5,7 +5,7 @@ from constants import TEXT_RGB
 from ui.base import UIElementBase
 
 
-class RenameEntry(Entry, UIElementBase):  # pylint: disable=too-many-ancestors
+class RenameEntry(Entry, UIElementBase):
     """Entry for use in a rename window"""
 
     ERROR_COLOR: str = "#E6505F"

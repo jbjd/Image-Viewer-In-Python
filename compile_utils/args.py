@@ -142,7 +142,7 @@ class CompileArgumentParser(ArgumentParser):
         super().add_argument(name, help=help_text, action=action, default=default)
 
     # Override the args of the super class
-    def parse_known_args(  # type: ignore
+    def parse_known_args(  # type: ignore # pylint: disable=arguments-differ
         self, modules_to_skip: list[str]
     ) -> tuple[CompileNamespace, list[str]]:
         """Returns CompileNamespace of user args and list of args to pass to nuitka"""

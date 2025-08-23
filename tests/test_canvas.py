@@ -1,3 +1,5 @@
+"""Tests for the CustomCanvas class."""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,7 +11,7 @@ from tests.test_util.mocks import MockEvent
 
 
 def test_create_assets(canvas: CustomCanvas, example_image: Image):
-    """Ensure creation of buttons, text, and topbar goes well"""
+    """Should successfully create buttons, text, and topbar."""
 
     # Should store id after creation
     canvas.create_name_text(0, 0, "test.png")
@@ -20,7 +22,7 @@ def test_create_assets(canvas: CustomCanvas, example_image: Image):
     # Should store image after creation or garbage collector kills topbar
     display_image = PhotoImage(example_image)
     canvas.create_topbar(display_image)
-    assert canvas.topbar is display_image
+    assert canvas._topbar is display_image
 
 
 def test_update_image_display(canvas: CustomCanvas, example_image: Image):

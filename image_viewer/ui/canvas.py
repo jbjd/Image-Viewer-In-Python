@@ -10,10 +10,11 @@ from ui.image import ImageUIElement
 from util.os import maybe_truncate_long_name
 
 
-class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
+class CustomCanvas(Canvas):
     """Extended version of tkinter's canvas to support internal methods"""
 
     __slots__ = (
+        "_topbar",
         "button_name_to_object",
         "drag_start_x",
         "drag_start_y",
@@ -21,7 +22,6 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         "image_display",
         "screen_width",
         "screen_height",
-        "topbar",
     )
 
     def __init__(self, master: Tk, background_color: str) -> None:
@@ -36,7 +36,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
         self.screen_height: int = master.winfo_height()
         self.drag_start_x: int
         self.drag_start_y: int
-        self.topbar: PhotoImage
+        self._topbar: PhotoImage
 
         self.create_rectangle(
             0,
@@ -98,7 +98,7 @@ class CustomCanvas(Canvas):  # pylint: disable=too-many-ancestors
 
     def create_topbar(self, topbar_img: PhotoImage) -> None:
         """Creates the topbar and stores it"""
-        self.topbar = topbar_img  # save from garbage collector
+        self._topbar = topbar_img  # save from garbage collector
         self.create_image(
             0, 0, image=topbar_img, anchor="nw", tag=TkTags.TOPBAR, state="hidden"
         )

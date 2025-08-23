@@ -25,11 +25,14 @@ class ActionUndoer(deque[FileAction]):
 
     __slots__ = ()
 
-    def __init__(self, maxlen: int = 4) -> None:
-        super().__init__(maxlen=maxlen)
+    def __init__(self, max_length: int = 4) -> None:
+        super().__init__(maxlen=max_length)
 
     def undo(self) -> UndoResponse:
-        """Returns tuple of image to add, image to remove, if any"""
+        """Returns response with image to restore and/or remove based on action
+        being undone"""
+        # pylint: disable=unidiomatic-typecheck
+
         action: FileAction = self.pop()
 
         if type(action) is Rename:
@@ -58,6 +61,8 @@ class ActionUndoer(deque[FileAction]):
     def get_undo_message(self) -> str:
         """Looks at top of deque and formats the information in a string.
         Throws IndexError when empty"""
+        # pylint: disable=unidiomatic-typecheck
+
         action: FileAction = self[-1]
 
         if type(action) is Rename:

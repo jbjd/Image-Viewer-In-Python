@@ -1,3 +1,5 @@
+"""Tests for the ImageLoader class."""
+
 from unittest.mock import MagicMock, mock_open, patch
 
 from PIL import UnidentifiedImageError

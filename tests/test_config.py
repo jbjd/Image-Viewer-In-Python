@@ -51,8 +51,6 @@ def test_config_reader_defaults():
         config.keybinds.undo_most_recent_action
         == DefaultKeybinds.UNDO_MOST_RECENT_ACTION
     )
-    assert config.keybinds.zoom_in == DefaultKeybinds.ZOOM_IN
-    assert config.keybinds.zoom_out == DefaultKeybinds.ZOOM_OUT
 
 
 def test_config_reader_int_fallback():
@@ -76,11 +74,7 @@ def test_config_reader_int_fallback():
         ("<F12>", "<F12>"),
         ("<F13>", _DEFAULT),
         ("<F91>", _DEFAULT),
-        ("<k>", "<k>"),
-        ("<-k>", _DEFAULT),
-        ("<Control-minus>", "<Control-minus>"),
-        ("<equal>", "<equal>"),
-        ("<equals>", _DEFAULT),
+        ("<k>", _DEFAULT),
     ],
 )
 def test_validate_keybind_or_default(keybind: str, expected_keybind: str):

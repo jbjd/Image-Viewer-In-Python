@@ -29,7 +29,7 @@ if os.name == "nt":
         read_memory_as_base64_and_save_to_clipboard,
     )
 else:
-    from tkinter import PhotoImage as tkPhotoImage  # pylint: disable=ungrouped-imports
+    from tkinter import PhotoImage as tkPhotoImage
 
 
 class ViewerApp:
@@ -148,12 +148,16 @@ class ViewerApp:
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
         app.bind(
-            config.keybinds.zoom_in,
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
+            "<equal>",
+            lambda e: self._only_for_this_window(
+                e, self.load_zoomed_or_rotated_image_unblocking, ZoomDirection.IN
+            ),
         )
         app.bind(
-            config.keybinds.zoom_out,
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
+            "<minus>",
+            lambda e: self._only_for_this_window(
+                e, self.load_zoomed_or_rotated_image_unblocking, ZoomDirection.OUT
+            ),
         )
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
@@ -180,7 +184,7 @@ class ViewerApp:
             app.bind("<Button-4>", self.handle_mouse_wheel)
             app.bind("<Button-5>", self.handle_mouse_wheel)
 
-    def _load_assets(  # pylint: disable=too-many-locals
+    def _load_assets(
         self,
         canvas: CustomCanvas,
         font_file: str,
@@ -220,7 +224,9 @@ class ViewerApp:
 
         button_x_offset -= icon_size
         dropdown_button = ToggleableButtonUIElement(
-            canvas, *button_icon_factory.make_dropdown_icons(), self.handle_dropdown
+            canvas,
+            *button_icon_factory.make_dropdown_icons(),
+            self.toggle_show_dropdown,
         )
         dropdown_button.add_to_canvas(ButtonName.DROPDOWN, button_x_offset)
 
@@ -300,16 +306,13 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    # Leaving this since may be helpful in a future keybind refactor
-    # def _only_for_this_window(
-    #     self,
-    #     event: Event,
-    #     function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
-    # ) -> None:
-    #     """Given a callable that accepts a tkinter Event,
-    #     only call it if self.app is the target"""
-    #     if event.widget is self.app:
-    #         function_to_call(event)
+    def _only_for_this_window(
+        self, event: Event, function_to_call: Callable[[], None], *args
+    ) -> None:
+        """Given a callable that accepts a tkinter Event,
+        only call it if self.app is the target"""
+        if event.widget is self.app:
+            function_to_call(*args)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
@@ -360,7 +363,7 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    def handle_dropdown(self, _: Event | None = None) -> None:
+    def toggle_show_dropdown(self) -> None:
         """Handle when user clicks on the dropdown arrow"""
         self.dropdown.toggle_display()
         self.update_details_dropdown()
@@ -421,7 +424,7 @@ class ViewerApp:
         if self.file_manager.move_to_new_file():
             self.load_image()
 
-    def exit(self, _: Event | None = None, exit_code: int = 0) -> NoReturn:
+    def exit(self, exit_code: int = 0) -> NoReturn:
         """Safely exits the program"""
         try:
             self.canvas.delete(self.canvas.file_name_text_id)
@@ -431,9 +434,11 @@ class ViewerApp:
         except AttributeError:
             pass
 
-        raise SystemExit(exit_code)  # exit(0) here didn't work with --standalone
+        # exit(0) here didn't work with --standalone, probably need to do sys.exit
+        # but then I would have to import sys just for that
+        raise SystemExit(exit_code)
 
-    def minimize(self, _: Event | None = None) -> None:
+    def minimize(self) -> None:
         """Minimizes the app and sets flag to redraw current image when opened again"""
         self.need_to_redraw = True
         self.app.iconify()
@@ -471,7 +476,7 @@ class ViewerApp:
             return
         self.load_image_unblocking()
 
-    def trash_image(self, _: Event | None = None) -> None:
+    def trash_image(self) -> None:
         """Move current image to trash and moves to next"""
         self.clear_image()
         self.hide_rename_window()

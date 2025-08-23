@@ -1,4 +1,3 @@
-from tkinter import Tk
 from unittest.mock import MagicMock, patch
 
 from PIL.Image import Image, new
@@ -40,7 +39,7 @@ def test_init_PIL():  # pylint: disable=invalid-name
     del ImageDraw
 
 
-def test_create_images(tk_app: Tk):
+def test_create_images():
     init_PIL(DEFAULT_FONT, 20)
 
     dropdown = create_dropdown_image("test\ntest")

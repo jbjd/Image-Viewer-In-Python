@@ -27,13 +27,13 @@ class HoverableButtonUIElement(ButtonUIElementBase):
         self,
         canvas: CustomCanvas,
         icon: IconImages,
-        function_to_bind: Callable[[Event | None], None],
+        function_to_bind: Callable[[], None],
     ) -> None:
         super().__init__()
         self.canvas: CustomCanvas = canvas
         self.icon: PhotoImage = icon.default
         self.icon_hovered: PhotoImage = icon.hovered
-        self.function_to_bind: Callable[[Event | None], None] = function_to_bind
+        self.function_to_bind: Callable[[], None] = function_to_bind
 
     def add_to_canvas(
         self, name: ButtonName, x_offset: int = 0, y_offset: int = 0
@@ -52,8 +52,8 @@ class HoverableButtonUIElement(ButtonUIElementBase):
         self.canvas.tag_bind(id, "<Leave>", self.on_leave)
         self.canvas.tag_bind(id, "<ButtonRelease-1>", self.on_click)
 
-    def on_click(self, event: Event | None = None) -> None:
-        self.function_to_bind(event)
+    def on_click(self, _: Event | None = None) -> None:
+        self.function_to_bind()
 
     def on_enter(self, _: Event | None = None) -> None:
         self.canvas.itemconfigure(self.id, image=self._get_hovered_icon())
@@ -78,7 +78,7 @@ class ToggleableButtonUIElement(HoverableButtonUIElement):
         canvas: CustomCanvas,
         icon: IconImages,
         active_icon: IconImages,
-        function_to_bind: Callable[[Event | None], None],
+        function_to_bind: Callable[[], None],
     ) -> None:
         super().__init__(canvas, icon, function_to_bind)
         self.active_icon: PhotoImage = active_icon.default
