@@ -22,7 +22,7 @@ def _validate_hex_or_default(hex_color: str, default: str) -> str:
 def _validate_keybind_or_default(keybind: str, default: str) -> str:
     """Returns keybind if it follows the format:
 
-    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]> <[a-zA-Z0-9]>
+    <F[0-9]> <F1[0-2]> <Control-[a-zA-Z0-9]>
 
     or default if not"""
 
@@ -39,8 +39,6 @@ class DefaultKeybinds(StrEnum):
     RENAME = "<F2>"
     SHOW_DETAILS = "<Control-d>"
     UNDO_MOST_RECENT_ACTION = "<Control-z>"
-    ZOOM_IN = "<equal>"
-    ZOOM_OUT = "<minus>"
 
 
 class Config:
@@ -69,8 +67,6 @@ class Config:
             config_parser.get_string_safe("KEYBINDS", "RENAME"),
             config_parser.get_string_safe("KEYBINDS", "SHOW_DETAILS"),
             config_parser.get_string_safe("KEYBINDS", "UNDO_MOST_RECENT_ACTION"),
-            config_parser.get_string_safe("KEYBINDS", "ZOOM_IN"),
-            config_parser.get_string_safe("KEYBINDS", "ZOOM_OUT"),
         )
 
         self.background_color = _validate_hex_or_default(
@@ -92,8 +88,6 @@ class KeybindConfig:
         "rename",
         "show_details",
         "undo_most_recent_action",
-        "zoom_in",
-        "zoom_out",
     )
 
     def __init__(
@@ -105,8 +99,6 @@ class KeybindConfig:
         rename: str,
         show_details: str,
         undo_most_recent_action: str,
-        zoom_in: str,
-        zoom_out: str,
     ) -> None:
         self.copy_to_clipboard_as_base64: str = _validate_keybind_or_default(
             copy_to_clipboard_as_base64, DefaultKeybinds.COPY_TO_CLIPBOARD_AS_BASE64
@@ -127,8 +119,6 @@ class KeybindConfig:
         self.undo_most_recent_action: str = _validate_keybind_or_default(
             undo_most_recent_action, DefaultKeybinds.UNDO_MOST_RECENT_ACTION
         )
-        self.zoom_in = _validate_keybind_or_default(zoom_in, DefaultKeybinds.ZOOM_IN)
-        self.zoom_out = _validate_keybind_or_default(zoom_out, DefaultKeybinds.ZOOM_OUT)
 
 
 class ConfigParserExt(ConfigParser):

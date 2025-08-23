@@ -143,17 +143,21 @@ class ViewerApp:
         )
         app.bind(config.keybinds.refresh, self.refresh)
         app.bind(config.keybinds.reload_image, lambda _: self.load_image_unblocking())
-        app.bind(config.keybinds.rename, self._handle_input_toggle_show_rename_window)
+        app.bind(config.keybinds.rename, self.toggle_show_rename_window)
         app.bind(config.keybinds.show_details, self.show_details)
         app.bind(config.keybinds.move_to_new_file, self.move_to_new_file)
         app.bind(config.keybinds.undo_most_recent_action, self.undo_most_recent_action)
         app.bind(
-            config.keybinds.zoom_in,
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.IN),
+            "<equal>",
+            lambda e: self._only_for_this_window(
+                e, self.load_zoomed_or_rotated_image_unblocking, ZoomDirection.IN
+            ),
         )
         app.bind(
-            config.keybinds.zoom_out,
-            lambda _: self.load_zoomed_or_rotated_image_unblocking(ZoomDirection.OUT),
+            "<minus>",
+            lambda e: self._only_for_this_window(
+                e, self.load_zoomed_or_rotated_image_unblocking, ZoomDirection.OUT
+            ),
         )
         app.bind("<Left>", self.handle_lr_arrow)
         app.bind("<Right>", self.handle_lr_arrow)
@@ -266,11 +270,6 @@ class ViewerApp:
 
     # Functions handling specific user input
 
-    def _handle_input_toggle_show_rename_window(self, event: Event) -> None:
-        """Wraps toggle_show_rename_window to be called by a tkinter keybind"""
-        if event.widget is self.app:
-            self.toggle_show_rename_window()
-
     def handle_mouse_wheel(self, event: Event) -> None:
         """On mouse wheel: either moves between images
         or zooms when right mouse held"""
@@ -307,16 +306,13 @@ class ViewerApp:
         else:
             self.show_topbar()
 
-    # Leaving this since may be helpful in a future keybind refactor
-    # def _only_for_this_window(
-    #     self,
-    #     event: Event,
-    #     function_to_call: Callable[[Event | None], None] | Callable[[Event], None],
-    # ) -> None:
-    #     """Given a callable that accepts a tkinter Event,
-    #     only call it if self.app is the target"""
-    #     if event.widget is self.app:
-    #         function_to_call(event)
+    def _only_for_this_window(
+        self, event: Event, function_to_call: Callable[[], None], *args
+    ) -> None:
+        """Given a callable that accepts a tkinter Event,
+        only call it if self.app is the target"""
+        if event.widget is self.app:
+            function_to_call(*args)
 
     def handle_key_release(self, event: Event) -> None:
         """Handle key release, current just used for L/R arrow release"""
@@ -500,7 +496,7 @@ class ViewerApp:
         self.canvas.itemconfigure(self.rename_entry.id, state="normal")
         self.rename_entry.focus()
 
-    def toggle_show_rename_window(self) -> None:
+    def toggle_show_rename_window(self, _: Event | None = None) -> None:
         """Either shows or hides rename window and shifts focus accordingly"""
         if self.canvas.is_widget_visible(self.rename_entry.id):
             self.hide_rename_window()

@@ -47,8 +47,6 @@ schema = Schema(
             "rename": empty_or_valid_keybind,
             "show_details": empty_or_valid_keybind,
             "undo_most_recent_action": empty_or_valid_keybind,
-            "zoom_in": empty_or_valid_keybind,
-            "zoom_out": empty_or_valid_keybind,
         },
         "UI": {"background_color": empty_or_valid_hex_color},
     }
