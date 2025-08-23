@@ -117,9 +117,7 @@ class ImageResizer:
             frombytes("RGB", jpeg_result.dimensions, jpeg_result.view)
         )
 
-    def get_image_fit_to_screen(  # pylint: disable=invalid-name
-        self, image: Image
-    ) -> Image:
+    def get_image_fit_to_screen(self, image: Image) -> Image:
         """Resizes image to screen with PIL"""
         image_width, image_height = image.size
         interpolation: Resampling = self.get_resampling(image_width, image_height)

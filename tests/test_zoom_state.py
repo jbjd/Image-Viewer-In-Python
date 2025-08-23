@@ -1,9 +1,13 @@
+"""Tests for the ZoomState class."""
+
 from image_viewer.constants import ZoomDirection
 from image_viewer.state.zoom_state import ZoomState
 
 
-def test_try_update_zoom_level(zoom_state: ZoomState):
-    """Should move zoom up or down based on input"""
+def test_try_update_zoom_level():
+    """Should move zoom up or down based on input."""
+    zoom_state = ZoomState()
+
     assert zoom_state.level == 0
 
     updated = zoom_state.try_update_zoom_level(ZoomDirection.OUT)
@@ -19,8 +23,10 @@ def test_try_update_zoom_level(zoom_state: ZoomState):
     assert updated
 
 
-def test_utility_functions(zoom_state: ZoomState):
-    """Ensure zoom cap sets correctly and reset goes to default values"""
+def test_set_current_zoom_level_as_max():
+    """Should set zoom cap correctly and reset should go to default values."""
+    zoom_state = ZoomState()
+
     zoom_state.level = 5
     zoom_state.set_current_zoom_level_as_max()
 

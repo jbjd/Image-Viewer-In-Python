@@ -54,7 +54,9 @@ class MockImage(Image):
         if n_frames > 1:  # Like PIL, only set for animations
             self.is_animated: bool = True
 
-    def convert(self, new_mode: str) -> Self:  # type: ignore
+    def convert(  # type: ignore # pylint: disable=arguments-differ
+        self, new_mode: str
+    ) -> Self:
         self.mode = new_mode
         return self
 

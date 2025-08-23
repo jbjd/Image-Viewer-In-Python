@@ -1,3 +1,5 @@
+"""Tests for the actions module."""
+
 from unittest.mock import patch
 
 import pytest
@@ -18,9 +20,10 @@ from image_viewer.actions.undoer import (
 _MODULE_PATH = "image_viewer.actions"
 
 
-def test_cap():
-    """Test that last X actions are preserved"""
-    action_undoer = ActionUndoer(maxlen=4)
+def test_max_length():
+    """Should only preserve the last X actions."""
+    max_length: int = 4
+    action_undoer = ActionUndoer(max_length)
 
     action_undoer.append(Rename("This will get", "thrown out"))
     action_undoer.append(Rename("", ""))
@@ -28,7 +31,7 @@ def test_cap():
     action_undoer.append(Convert("", "", True))
     action_undoer.append(Delete(""))
 
-    assert len(action_undoer) == 4
+    assert len(action_undoer) == max_length
 
 
 @pytest.mark.parametrize(
@@ -40,7 +43,12 @@ def test_cap():
         (Rename("original_path", "new_path")),
     ],
 )
-def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
+def test_undo_action(action: FileAction):
+    """Should call correct functions based on action to undo"""
+    # pylint: disable=unidiomatic-typecheck
+
+    action_undoer = ActionUndoer()
+
     action_undoer.append(action)
     assert action_undoer.get_undo_message()
 
@@ -71,6 +79,10 @@ def test_undo_action(action_undoer: ActionUndoer, action: FileAction):
 
 
 def _assert_correct_undo_response(action: FileAction, undo_response: UndoResponse):
+    """Assert that given a specific file actions,
+    response has correct values populated."""
+    # pylint: disable=unidiomatic-typecheck
+
     if type(action) is Delete:
         assert not undo_response.path_to_remove
     else:

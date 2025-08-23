@@ -1,3 +1,5 @@
+"""Tests for the __main__.py file."""
+
 from unittest.mock import mock_open, patch
 
 from image_viewer.__main__ import exception_hook

@@ -10,4 +10,9 @@ disable=import-error,  # Lots of false flags here
         line-too-long,  # Checked by flake
         protected-access,  # Needed to access image draws
         too-few-public-methods,  # Classes used as response types
-        no-name-in-module  # Getting these due to compiled modules
+        no-name-in-module,  # Getting these due to compiled modules
+        ungrouped-imports  # Checked by isort
+
+[DESIGN]
+max-args=7
+max-positional-arguments=7

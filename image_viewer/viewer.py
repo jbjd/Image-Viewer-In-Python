@@ -29,7 +29,7 @@ if os.name == "nt":
         read_memory_as_base64_and_save_to_clipboard,
     )
 else:
-    from tkinter import PhotoImage as tkPhotoImage  # pylint: disable=ungrouped-imports
+    from tkinter import PhotoImage as tkPhotoImage
 
 
 class ViewerApp:
@@ -184,7 +184,7 @@ class ViewerApp:
             app.bind("<Button-4>", self.handle_mouse_wheel)
             app.bind("<Button-5>", self.handle_mouse_wheel)
 
-    def _load_assets(  # pylint: disable=too-many-locals
+    def _load_assets(
         self,
         canvas: CustomCanvas,
         font_file: str,

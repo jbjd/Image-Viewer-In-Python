@@ -1,3 +1,5 @@
+"""Tests for the ImageCache class."""
+
 from unittest.mock import patch
 
 from PIL.Image import Image
@@ -7,7 +9,7 @@ from tests.test_util.mocks import MockStatResult
 
 
 def test_image_cache_full():
-    """Should respect set value for max items and remove last inserted"""
+    """Should respect set value for max items and remove last inserted."""
 
     cache = ImageCache(2)
 
@@ -24,7 +26,7 @@ def test_image_cache_full():
 
 
 def test_zero_length_cache():
-    """Should not try to insert anything when max items is 0"""
+    """Should not try to insert anything when max items is 0."""
 
     cache = ImageCache(0)
 
@@ -36,7 +38,7 @@ def test_zero_length_cache():
 
 
 def test_update_key():
-    """Should move value from one key to another"""
+    """Should move value from one key to another."""
 
     cache = ImageCache(1)
 
@@ -54,7 +56,7 @@ def test_update_key():
 
 def test_image_cache_fresh(image_cache: ImageCache):
     """Should say image cache is fresh if cached byte size
-    is the same as size on disk"""
+    is the same as size on disk."""
 
     image = Image()
     byte_size = 99
@@ -75,4 +77,5 @@ def test_image_cache_fresh(image_cache: ImageCache):
 
 
 def _get_empty_cache_entry() -> ImageCacheEntry:
+    """Returns an ImageCacheEntry with placeholder values"""
     return ImageCacheEntry(Image(), (0, 0), "", 0, "", "")
