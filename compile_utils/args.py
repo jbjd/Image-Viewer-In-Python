@@ -6,7 +6,6 @@ from enum import StrEnum
 from compile_utils.code_to_skip import data_files_to_exclude, dlls_to_exclude
 from compile_utils.constants import BUILD_INFO_FILE, REPORT_FILE
 from compile_utils.module_dependencies import modules_to_include
-from compile_utils.validation import raise_if_not_root
 
 
 class ConsoleMode(StrEnum):
@@ -157,9 +156,6 @@ class CompileArgumentParser(ArgumentParser):
 
     def _validate_args(self, nuitka_args: list[str], debug: bool) -> None:
         """Validates root privilege and no unknown arguments present"""
-        if not debug:
-            raise_if_not_root()
-
         for extra_arg in nuitka_args:
             if extra_arg.split("=")[0] not in self.VALID_NUITKA_ARGS:
                 raise ValueError(f"Unknown argument {extra_arg}")

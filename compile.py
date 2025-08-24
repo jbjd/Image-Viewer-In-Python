@@ -32,6 +32,7 @@ from compile_utils.module_dependencies import (
 from compile_utils.nuitka_ext import start_nuitka_compilation
 from compile_utils.package_info import IMAGE_VIEWER_NAME
 from compile_utils.validation import (
+    raise_if_not_root,
     validate_module_requirements,
     validate_python_version,
 )
@@ -65,6 +66,9 @@ parser = CompileArgumentParser(DEFAULT_INSTALL_PATH)
 args: CompileNamespace
 nuitka_args: list[str]
 args, nuitka_args = parser.parse_known_args(modules_to_skip)
+
+if not args.debug and not args.skip_nuitka:
+    raise_if_not_root()
 
 if os.name == "nt":
     nuitka_args += [
